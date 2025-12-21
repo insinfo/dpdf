@@ -534,7 +534,7 @@ dependencies:
 
 1. ✅ Portar `PdfArray` e `PdfDictionary`
 2. ✅ Portar `PdfStream` e `FilterHandlers`
-3. ⬜ Criar testes unitários para tokenizer e objetos PDF
+3. ✅ Criar testes unitários para tokenizer e objetos PDF (62 testes)
 4. ⬜ Portar `PdfReader` (leitura básica de PDF)
 
 ### Médio Prazo (1 Mês)

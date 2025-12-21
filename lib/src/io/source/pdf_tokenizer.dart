@@ -114,9 +114,11 @@ class PdfTokenizer {
   /// Builds the delimiter lookup table.
   static List<bool> _buildDelimsTable() {
     final delims = List<bool>.filled(257, false);
+    // Mark EOF (-1) as delimiter to prevent infinite loops
+    delims[0] = true; // EOF: -1 + 1 = 0
     // Mark delimiters: whitespace and special characters
     // 0 (null), 9 (tab), 10 (LF), 12 (FF), 13 (CR), 32 (space)
-    delims[0 + 1] = true; // null
+    delims[0 + 1] = true; // null (byte 0)
     delims[9 + 1] = true; // tab
     delims[10 + 1] = true; // LF
     delims[12 + 1] = true; // FF

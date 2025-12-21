@@ -1,0 +1,577 @@
+# Roteiro: Portando iText para Dart
+
+## Visão Geral
+
+Este documento descreve o plano detalhado para portar a biblioteca **iText 7 for .NET** para **Dart**. O iText é uma biblioteca robusta para criação e manipulação de PDFs. A portabilidade segue a estrutura modular do projeto original.
+
+o ideal é ir portando e implementando testes para ir validando a implementação
+e ir otimizando a implementação
+va colocando comentario // TODO onde não esta completo ou onde merece otimizar atraves de benchmark (onde se cria duas ou mais implementações e testa para ver qual é melhor)
+
+IMPORTANTE nada no codigo ou nos testes podem depender do diretorio referencias C:\MyDartProjects\itext\referencias pois ele sera removido no futuro o que 
+for necessario tera que ser copiado para um diretorios apropriado
+
+**Fonte de Referência:** `C:\MyDartProjects\itext\referencias\itext-dotnet-develop`
+
+**Destino Dart:** `C:\MyDartProjects\itext\lib\src`
+
+---
+
+## Índice
+
+1. [Arquitetura do iText](#arquitetura-do-itext)
+2. [Módulos e Dependências](#módulos-e-dependências)
+3. [Fases da Portabilidade](#fases-da-portabilidade)
+4. [Fase 1: Fundação (commons + io)](#fase-1-fundação-commons--io)
+5. [Fase 2: Kernel (Núcleo PDF)](#fase-2-kernel-núcleo-pdf)
+6. [Fase 3: Layout e Alto Nível](#fase-3-layout-e-alto-nível)
+7. [Fase 4: Módulos Adicionais](#fase-4-módulos-adicionais)
+8. [Considerações de Portabilidade C# → Dart](#considerações-de-portabilidade-c--dart)
+9. [Progresso Atual](#progresso-atual)
+10. [Próximos Passos](#próximos-passos)
+
+---
+
+## Arquitetura do iText
+
+O iText 7 possui uma arquitetura modular:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    itext.layout                              │
+│              (Alto nível: Document, Paragraph, Table)        │
+├─────────────────────────────────────────────────────────────┤
+│                    itext.kernel                              │
+│     (Núcleo PDF: PdfDocument, PdfPage, PdfObject, etc.)     │
+├──────────────────────┬──────────────────────────────────────┤
+│      itext.io        │            itext.commons             │
+│   (I/O, Fontes,      │      (Utils, Exceções, Logs)         │
+│    Codecs, Images)   │                                      │
+└──────────────────────┴──────────────────────────────────────┘
+```
+
+### Módulos Opcionais:
+- `itext.forms` - Formulários PDF (AcroForms)
+- `itext.sign` - Assinaturas digitais
+- `itext.barcodes` - Códigos de barras
+- `itext.pdfa` - Conformidade PDF/A
+- `itext.pdfua` - Conformidade PDF/UA
+- `itext.svg` - Suporte SVG
+- `itext.styledxmlparser` - Parser XML/CSS
+
+---
+
+## Módulos e Dependências
+
+### Ordem de Portabilidade (baseada em dependências):
+
+1. **itext.commons** - Sem dependências internas
+2. **itext.io** - Depende de commons
+3. **itext.kernel** - Depende de commons + io
+4. **itext.layout** - Depende de kernel
+5. **itext.forms** - Depende de kernel
+6. **itext.sign** - Depende de kernel + forms
+7. **itext.barcodes** - Depende de kernel
+8. **itext.pdfa** / **itext.pdfua** - Depende de kernel
+9. **itext.styledxmlparser** - Depende de io + commons
+10. **itext.svg** - Depende de styledxmlparser + kernel
+
+---
+
+## Fases da Portabilidade
+
+### Resumo das Fases:
+
+| Fase | Módulos | Estimativa | Status |
+|------|---------|------------|--------|
+| 1 | commons, io | 2-3 semanas | 🔴 Não iniciado |
+| 2 | kernel | 3-4 semanas | 🔴 Não iniciado |
+| 3 | layout | 2-3 semanas | 🔴 Não iniciado |
+| 4 | forms, sign, barcodes, etc. | 3-4 semanas | 🔴 Não iniciado |
+
+---
+
+## Fase 1: Fundação (commons + io)
+
+### 1.1 itext.commons
+
+**Diretório fonte:** `referencias/itext-dotnet-develop/itext/itext.commons/itext/commons/`
+
+**Estrutura a portar:**
+
+```
+commons/
+├── CommonsExtension.cs      → Funções de extensão (integrar em utils)
+├── ITextLogManager.cs       → Sistema de logging
+├── actions/                 → Ações e eventos
+├── bouncycastle/            → Interface para criptografia (adaptar)
+├── datastructures/          → Estruturas de dados customizadas
+├── digest/                  → Algoritmos de digest
+├── exceptions/              → Classes de exceção
+├── json/                    → Serialização JSON
+├── logs/                    → Constantes de log
+└── utils/                   → Utilitários gerais
+```
+
+**Tarefas:**
+
+- [x] **1.1.1** Criar estrutura de diretórios `lib/src/commons/`
+- [x] **1.1.2** Portar `exceptions/` - Exceções base
+  - ✅ ITextException
+  - PdfException
+  - IoException (portado em io/exceptions)
+- [ ] **1.1.3** Portar `utils/` - Utilitários
+  - JavaUtil (adaptar para Dart)
+  - MessageFormatUtil
+  - DateTimeUtil
+  - EncodingUtil
+- [ ] **1.1.4** Portar `datastructures/`
+  - SingletonList
+  - NullUnlimitedList
+- [ ] **1.1.5** Portar `logs/` - Constantes de mensagens
+- [ ] **1.1.6** Portar `actions/` - Sistema de eventos
+- [ ] **1.1.7** Adaptar sistema de logging para Dart
+- [ ] **1.1.8** Interface para criptografia (via `pointycastle` package)
+
+### 1.2 itext.io
+
+**Diretório fonte:** `referencias/itext-dotnet-develop/itext/itext.io/itext/io/`
+
+**Estrutura a portar:**
+
+```
+io/
+├── IOExtensions.cs          → Extensões de I/O
+├── codec/                   → Codecs (zlib, lzw, etc.)
+├── colors/                  → Definições de cores
+├── exceptions/              → Exceções específicas de I/O
+├── font/                    → Subsistema de fontes
+│   ├── Type1Font
+│   ├── TrueTypeFont
+│   ├── CFFFont
+│   └── FontProgram
+├── image/                   → Leitura de imagens
+│   ├── PngImageHelper
+│   ├── JpegImageParser
+│   └── ImageData
+├── logs/                    → Mensagens de log I/O
+├── resolver/                → Resolução de recursos
+├── source/                  → Leitura de dados PDF
+│   ├── IRandomAccessSource
+│   ├── RandomAccessFileOrArray
+│   ├── PdfTokenizer         ⭐ Crítico
+│   ├── ByteBuffer
+│   └── ByteUtils
+└── util/                    → Utilitários de I/O
+```
+
+**Tarefas:**
+
+- [x] **1.2.1** Criar estrutura de diretórios `lib/src/io/`
+- [ ] **1.2.2** Portar `source/` - **PRIORIDADE ALTA** ⭐
+  - [x] `IRandomAccessSource` → Interface de acesso aleatório
+  - [x] `ArrayRandomAccessSource` → Fonte baseada em array
+  - [x] `ByteBuffer` → Buffer de bytes
+  - [x] `ByteUtils` → Utilitários de bytes
+  - [x] `RandomAccessFileOrArray` → Acesso a arquivos
+  - [x] `PdfTokenizer` → Tokenizador PDF ⭐ (987 linhas) ✅
+- [ ] **1.2.3** Portar `codec/` - Compressão/Descompressão
+  - [ ] Integrar com `archive` package ou implementar
+  - [ ] Zlib (deflate/inflate)
+  - [ ] LZW
+  - [ ] Flate
+- [ ] **1.2.4** Portar `font/` - Sistema de fontes
+  - [ ] FontProgram (base)
+  - [ ] Type1Font
+  - [ ] TrueTypeFont
+  - [ ] OpenTypeFont
+  - [ ] FontCache
+- [ ] **1.2.5** Portar `image/` - Leitura de imagens
+  - [ ] ImageData
+  - [ ] PngImageHelper
+  - [ ] JpegImageParser
+  - [ ] BmpImageHelper
+  - [ ] TiffImageHelper
+- [ ] **1.2.6** Portar `colors/` - Definições de cores
+- [ ] **1.2.7** Portar `exceptions/` e `logs/`
+
+---
+
+## Fase 2: Kernel (Núcleo PDF)
+
+**Diretório fonte:** `referencias/itext-dotnet-develop/itext/itext.kernel/itext/kernel/`
+
+### 2.1 Objetos PDF Base
+
+```
+kernel/pdf/
+├── PdfObject.cs             → Classe base para todos objetos PDF
+├── PdfBoolean.cs            → Boolean
+├── PdfNumber.cs             → Número
+├── PdfString.cs             → String
+├── PdfName.cs               → Nome (93KB! - muitas constantes)
+├── PdfNull.cs               → Null
+├── PdfArray.cs              → Array
+├── PdfDictionary.cs         → Dicionário
+├── PdfStream.cs             → Stream
+├── PdfIndirectReference.cs  → Referência indireta
+└── PdfLiteral.cs            → Literal
+```
+
+**Tarefas:**
+
+- [ ] **2.1.1** Portar `PdfObject` - Classe base
+- [ ] **2.1.2** Portar tipos primitivos
+  - [ ] PdfBoolean
+  - [ ] PdfNumber
+  - [ ] PdfString
+  - [ ] PdfNull
+  - [ ] PdfLiteral
+- [ ] **2.1.3** Portar `PdfName` (inclui constantes extensivas)
+- [ ] **2.1.4** Portar tipos compostos
+  - [ ] PdfArray
+  - [ ] PdfDictionary
+- [ ] **2.1.5** Portar `PdfStream`
+- [ ] **2.1.6** Portar `PdfIndirectReference`
+
+### 2.2 Documento e Páginas
+
+```
+kernel/pdf/
+├── PdfDocument.cs           → Documento PDF principal (125KB!)
+├── PdfPage.cs               → Página PDF (86KB)
+├── PdfPages.cs              → Árvore de páginas
+├── PdfPagesTree.cs          → Gerenciamento da árvore
+├── PdfCatalog.cs            → Catálogo do documento
+├── PdfResources.cs          → Recursos (fontes, imagens, etc.)
+└── PdfVersion.cs            → Versão do PDF
+```
+
+**Tarefas:**
+
+- [ ] **2.2.1** Portar `PdfVersion`
+- [ ] **2.2.2** Portar `PdfCatalog`
+- [ ] **2.2.3** Portar `PdfResources`
+- [ ] **2.2.4** Portar `PdfPages` e `PdfPagesTree`
+- [ ] **2.2.5** Portar `PdfPage`
+- [ ] **2.2.6** Portar `PdfDocument`
+
+### 2.3 Leitura e Escrita
+
+```
+kernel/pdf/
+├── PdfReader.cs             → Leitor PDF (82KB) ⭐
+├── PdfWriter.cs             → Escritor PDF (24KB)
+├── PdfOutputStream.cs       → Stream de saída
+├── PdfXrefTable.cs          → Tabela de referências cruzadas
+├── ReaderProperties.cs      → Configurações de leitura
+├── WriterProperties.cs      → Configurações de escrita
+└── DocumentProperties.cs    → Propriedades do documento
+```
+
+**Tarefas:**
+
+- [ ] **2.3.1** Portar `PdfXrefTable`
+- [ ] **2.3.2** Portar `PdfOutputStream`
+- [ ] **2.3.3** Portar `ReaderProperties` e `WriterProperties`
+- [ ] **2.3.4** Portar `PdfReader` ⭐
+- [ ] **2.3.5** Portar `PdfWriter`
+
+### 2.4 Canvas e Desenho
+
+```
+kernel/pdf/canvas/
+├── PdfCanvas.cs             → Canvas para desenho
+├── parser/                  → Parser de conteúdo
+└── wmf/                     → Suporte WMF
+```
+
+**Tarefas:**
+
+- [ ] **2.4.1** Portar `PdfCanvas`
+- [ ] **2.4.2** Portar parser de conteúdo
+
+### 2.5 Subpastas do Kernel
+
+```
+kernel/
+├── actions/       → Ações PDF
+├── annot/         → Anotações
+├── colors/        → Espaços de cor
+├── crypto/        → Criptografia
+├── exceptions/    → Exceções
+├── font/          → Fontes no kernel
+├── geom/          → Geometria (Rectangle, Matrix, etc.)
+├── numbering/     → Numeração
+├── utils/         → Utilitários
+└── xmp/           → Metadados XMP
+```
+
+---
+
+## Fase 3: Layout e Alto Nível
+
+**Diretório fonte:** `referencias/itext-dotnet-develop/itext/itext.layout/`
+
+### 3.1 Elementos de Layout
+
+```
+layout/
+├── Document.cs              → Documento de alto nível
+├── Canvas.cs                → Canvas de layout
+├── element/                 → Elementos
+│   ├── Paragraph.cs
+│   ├── Text.cs
+│   ├── Image.cs
+│   ├── Table.cs
+│   ├── Cell.cs
+│   ├── List.cs
+│   └── ListItem.cs
+├── layout/                  → Sistema de layout
+├── property/                → Propriedades
+├── renderer/                → Renderizadores
+└── style/                   → Estilos
+```
+
+**Tarefas:**
+
+- [ ] **3.1.1** Portar propriedades e estilos
+- [ ] **3.1.2** Portar elementos básicos (Text, Paragraph)
+- [ ] **3.1.3** Portar elementos complexos (Table, List)
+- [ ] **3.1.4** Portar sistema de renderização
+- [ ] **3.1.5** Portar Document e Canvas de alto nível
+
+---
+
+## Fase 4: Módulos Adicionais
+
+### 4.1 itext.forms
+
+- [ ] AcroForm
+- [ ] PdfFormField
+- [ ] TextFormField
+- [ ] CheckBoxFormField
+- [ ] etc.
+
+### 4.2 itext.sign
+
+- [ ] Assinaturas digitais
+- [ ] Integração com certificados
+
+### 4.3 itext.barcodes
+
+- [ ] Code128
+- [ ] QRCode
+- [ ] EAN
+- [ ] etc.
+
+### 4.4 Outros
+
+- [ ] itext.pdfa
+- [ ] itext.pdfua
+- [ ] itext.svg
+- [ ] itext.styledxmlparser
+
+---
+
+## Considerações de Portabilidade C# → Dart
+
+### Equivalências de Tipos
+
+| C# | Dart |
+|----|------|
+| `byte[]` | `Uint8List` |
+| `int` | `int` |
+| `long` | `int` (64-bit em Dart) |
+| `float` | `double` |
+| `double` | `double` |
+| `string` | `String` |
+| `Stream` | `List<int>` / `Uint8List` / `RandomAccessFile` |
+| `Dictionary<K,V>` | `Map<K,V>` |
+| `List<T>` | `List<T>` |
+| `IDisposable` | Não existe (usar `try/finally`) |
+| `async/await` | `async/await` (Future) |
+
+### Padrões de Conversão
+
+#### 1. Properties → Getters/Setters
+```csharp
+// C#
+public int Count { get; set; }
+
+// Dart
+int _count;
+int get count => _count;
+set count(int value) => _count = value;
+```
+
+#### 2. Extension Methods → Funções Globais ou Extensões Dart
+```csharp
+// C#
+public static string JSubstring(this string str, int begin, int end)
+
+// Dart
+extension StringExtensions on String {
+  String jSubstring(int begin, int end) => substring(begin, end);
+}
+```
+
+#### 3. Dispose Pattern → try/finally
+```csharp
+// C#
+using (var doc = new PdfDocument(...)) { }
+
+// Dart
+final doc = PdfDocument(...);
+try {
+  // uso
+} finally {
+  doc.close();
+}
+```
+
+#### 4. Nullable Types
+```csharp
+// C#
+string? name;
+
+// Dart
+String? name;
+```
+
+#### 5. Internal Classes → Prefixo underscore
+```csharp
+// C#
+internal class Helper { }
+
+// Dart (em arquivo separado ou prefixo _)
+class _Helper { }
+```
+
+### Dependências Dart Recomendadas
+
+```yaml
+dependencies:
+  pointycastle: ^3.7.0      # Criptografia (substitui BouncyCastle)
+  archive: ^3.4.0            # Compressão (zlib, gzip)
+  xml: ^6.3.0                # Parsing XML
+  collection: ^1.18.0        # Coleções avançadas
+  crypto: ^3.0.3             # Hashing
+  convert: ^3.1.1            # Codificação/Decodificação
+  path: ^1.8.3               # Manipulação de caminhos
+  typed_data: ^1.3.2         # Dados tipados (Uint8List, etc.)
+```
+
+---
+
+## Progresso Atual
+
+### Status por Módulo
+
+| Módulo | Arquivos Portados | Total Estimado | Progresso |
+|--------|-------------------|----------------|-----------|
+| commons | 1 | ~30 | 3% |
+| io | 10 | ~50 | 20% |
+| kernel | 14 | ~150 | 9% |
+| layout | 0 | ~80 | 0% |
+| forms | 0 | ~40 | 0% |
+| sign | 0 | ~30 | 0% |
+
+### Arquivos Portados
+
+#### commons/exceptions/
+- ✅ `itext_exception.dart` - Classe base de exceção
+
+#### io/exceptions/
+- ✅ `io_exception.dart` - Exceção de I/O
+- ✅ `io_exception_message_constant.dart` - Constantes de mensagens
+
+#### io/source/
+- ✅ `i_random_access_source.dart` - Interface de acesso aleatório
+- ✅ `array_random_access_source.dart` - Fonte baseada em array
+- ✅ `independent_random_access_source.dart` - Wrapper independente
+- ✅ `thread_safe_random_access_source.dart` - Wrapper thread-safe
+- ✅ `byte_buffer.dart` - Buffer de bytes
+- ✅ `byte_utils.dart` - Utilitários de bytes
+- ✅ `random_access_file_or_array.dart` - Leitor unificado
+- ✅ `pdf_tokenizer.dart` - Tokenizador PDF ⭐
+
+#### kernel/pdf/
+- ✅ `pdf_object.dart` - Classe base e PdfIndirectReference
+- ✅ `pdf_boolean.dart` - Valores booleanos
+- ✅ `pdf_null.dart` - Valor null
+- ✅ `pdf_number.dart` - Valores numéricos
+- ✅ `pdf_string.dart` - Strings PDF
+- ✅ `pdf_name.dart` - Nomes PDF com constantes
+- ✅ `pdf_array.dart` - Arrays PDF
+- ✅ `pdf_dictionary.dart` - Dicionários PDF
+- ✅ `pdf_stream.dart` - Streams PDF
+- ✅ `pdf_primitive_object.dart` - Classe base para objetos primitivos
+- ✅ `pdf_literal.dart` - Literais PDF
+
+#### kernel/exceptions/
+- ✅ `kernel_exception_message_constant.dart` - Constantes de mensagens de erro
+- ✅ `pdf_exception.dart` - Exceções PDF
+
+#### kernel/utils/
+- ✅ `filter_handlers.dart` - Decodificadores de filtros (FlateDecode, LZW, ASCII85, etc.)
+
+---
+
+## Próximos Passos
+
+### Imediato (Esta Semana)
+
+1. ✅ Criar roteiro detalhado (este documento)
+2. ✅ Configurar estrutura de diretórios
+3. ⬜ Adicionar dependências ao `pubspec.yaml`
+4. ✅ Iniciar com `commons/exceptions/`
+5. ✅ Portar `ByteBuffer` e `ByteUtils`
+6. ✅ Portar `PdfTokenizer` ⭐
+7. ✅ Portar objetos PDF básicos (`PdfObject`, `PdfName`, etc.)
+
+### Curto Prazo (Próximas 2 Semanas)
+
+1. ✅ Portar `PdfArray` e `PdfDictionary`
+2. ✅ Portar `PdfStream` e `FilterHandlers`
+3. ⬜ Criar testes unitários para tokenizer e objetos PDF
+4. ⬜ Portar `PdfReader` (leitura básica de PDF)
+
+### Médio Prazo (1 Mês)
+
+1. ⬜ Completar kernel básico
+2. ⬜ Implementar leitura de PDF simples
+3. ⬜ Implementar escrita de PDF simples
+
+---
+
+## Notas e Decisões de Design
+
+### Decisão 1: Nomenclatura
+- Manter nomes de classes similares ao original para facilitar comparação
+- Usar convenções Dart para métodos (camelCase)
+
+### Decisão 2: Arquitetura de Arquivos
+- Um arquivo por classe principal
+- Classes auxiliares pequenas podem ficar no mesmo arquivo
+
+### Decisão 3: Async vs Sync
+- Manter operações de I/O síncronas inicialmente
+- Converter para async quando necessário para Flutter
+
+### Decisão 4: Testes
+- Criar testes unitários para cada componente portado
+- Usar arquivos PDF de referência dos testes originais
+
+---
+
+## Referências
+
+- [iText 7 Community for .NET](https://github.com/itext/itext-dotnet)
+- [PDF Reference 1.7](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf)
+- [Dart Language Tour](https://dart.dev/guides/language/language-tour)
+- [Effective Dart](https://dart.dev/guides/language/effective-dart)
+
+---
+
+_Última atualização: 2025-12-21_

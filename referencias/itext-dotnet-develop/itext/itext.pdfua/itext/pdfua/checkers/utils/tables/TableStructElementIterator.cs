@@ -1,0 +1,301 @@
+/*
+This file is part of the iText (R) project.
+Copyright (c) 1998-2025 Apryse Group NV
+Authors: Apryse Software.
+
+This program is offered under a commercial and under the AGPL license.
+For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
+
+AGPL licensing:
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+using System;
+using System.Collections.Generic;
+using iText.Commons.Datastructures;
+using iText.Commons.Utils;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Tagging;
+using iText.Pdfua.Checkers.Utils;
+using iText.Pdfua.Exceptions;
+
+namespace iText.Pdfua.Checkers.Utils.Tables {
+    /// <summary>Creates an iterator to iterate over the table structures.</summary>
+    public class TableStructElementIterator : ITableIterator<PdfStructElem> {
+//\cond DO_NOT_DOCUMENT
+        internal readonly PdfUAValidationContext context;
+//\endcond
+
+        private readonly IList<PdfStructElem> all = new List<PdfStructElem>();
+
+        private readonly Dictionary<PdfStructElem, Tuple2<int, int>> locationCache = new Dictionary<PdfStructElem, 
+            Tuple2<int, int>>();
+
+        private int amountOfCols = 0;
+
+        private int amountOfRowsHeader = 0;
+
+        private int amountOfRowsBody = 0;
+
+        private int amountOfRowsFooter = 0;
+
+        private int iterIndex = 0;
+
+        private PdfStructElem currentValue;
+
+        /// <summary>
+        /// Creates a new
+        /// <see cref="TableStructElementIterator"/>
+        /// instance.
+        /// </summary>
+        /// <param name="tableStructElem">the root table struct element.</param>
+        /// <param name="context">the validation context.</param>
+        public TableStructElementIterator(PdfStructElem tableStructElem, PdfUAValidationContext context) {
+            this.context = context;
+            FlattenElements(tableStructElem);
+        }
+
+        /// <summary>Checks if there is a next element in the iteration.</summary>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if there is a next element,
+        /// <see langword="false"/>
+        /// otherwise
+        /// </returns>
+        public virtual bool HasNext() {
+            return iterIndex < all.Count;
+        }
+
+        /// <summary>Gets the next table structure element in the iteration.</summary>
+        /// <returns>
+        /// the next
+        /// <see cref="iText.Kernel.Pdf.Tagging.PdfStructElem"/>
+        /// in the iteration
+        /// </returns>
+        public virtual PdfStructElem Next() {
+            currentValue = all[iterIndex++];
+            return currentValue;
+        }
+
+        /// <summary>Gets the number of rows in the body of the table.</summary>
+        /// <returns>the number of rows in the table body</returns>
+        public virtual int GetAmountOfRowsBody() {
+            return this.amountOfRowsBody;
+        }
+
+        /// <summary>Gets the number of rows in the header of the table.</summary>
+        /// <returns>the number of rows in the table header</returns>
+        public virtual int GetAmountOfRowsHeader() {
+            return this.amountOfRowsHeader;
+        }
+
+        /// <summary>Gets the number of rows in the footer of the table.</summary>
+        /// <returns>the number of rows in the table footer</returns>
+        public virtual int GetAmountOfRowsFooter() {
+            return this.amountOfRowsFooter;
+        }
+
+        /// <summary>Gets the total number of columns in the table.</summary>
+        /// <returns>the total number of columns in the table</returns>
+        public virtual int GetNumberOfColumns() {
+            return this.amountOfCols;
+        }
+
+        /// <summary>Gets the zero-based row index of the current table element.</summary>
+        /// <returns>the zero-based row index of the current element</returns>
+        public virtual int GetRow() {
+            return locationCache.Get(currentValue).GetFirst();
+        }
+
+        /// <summary>Gets the zero-based column index of the current table element.</summary>
+        /// <returns>the zero-based column index of the current element</returns>
+        public virtual int GetCol() {
+            return locationCache.Get(currentValue).GetSecond();
+        }
+
+        /// <summary>Gets the rowspan attribute value of the current table element.</summary>
+        /// <returns>the rowspan value of the current element (minimum 1)</returns>
+        public virtual int GetRowspan() {
+            return GetRowspan(currentValue);
+        }
+
+        /// <summary>Gets the colspan attribute value of the current table element.</summary>
+        /// <returns>the colspan value of the current element (minimum 1)</returns>
+        public virtual int GetColspan() {
+            return GetColspan(currentValue);
+        }
+
+        private void FlattenElements(PdfStructElem table) {
+            IList<PdfStructElem> rows = ExtractTableRows(table);
+            SetAmountOfCols(rows);
+            Build2DRepresentationOfTagTreeStructures(rows);
+        }
+
+        private PdfName GetRole(IStructureNode node) {
+            String roleStr = this.context.ResolveToStandardRole(node);
+            if (roleStr == null) {
+                return null;
+            }
+            return new PdfName(roleStr);
+        }
+
+        private IList<PdfStructElem> ExtractTableRows(PdfStructElem table) {
+            IList<IStructureNode> kids = table.GetKids();
+            IList<PdfStructElem> rows = new List<PdfStructElem>();
+            foreach (IStructureNode kid in kids) {
+                if (kid == null) {
+                    continue;
+                }
+                PdfName kidRole = GetRole(kid);
+                if (PdfName.THead.Equals(kidRole)) {
+                    IList<PdfStructElem> headerRows = ExtractAllTrTags(kid.GetKids());
+                    this.amountOfRowsHeader = headerRows.Count;
+                    rows.AddAll(headerRows);
+                }
+                else {
+                    if (PdfName.TBody.Equals(kidRole)) {
+                        IList<PdfStructElem> bodyRows = ExtractAllTrTags(kid.GetKids());
+                        this.amountOfRowsBody += bodyRows.Count;
+                        rows.AddAll(bodyRows);
+                    }
+                    else {
+                        if (PdfName.TFoot.Equals(kidRole)) {
+                            IList<PdfStructElem> footerRows = ExtractAllTrTags(kid.GetKids());
+                            this.amountOfRowsFooter = footerRows.Count;
+                            rows.AddAll(footerRows);
+                        }
+                        else {
+                            if (PdfName.TR.Equals(kidRole)) {
+                                IList<PdfStructElem> bodyRows = ExtractAllTrTags(JavaCollectionsUtil.SingletonList(kid));
+                                this.amountOfRowsBody += bodyRows.Count;
+                                rows.AddAll(bodyRows);
+                            }
+                        }
+                    }
+                }
+            }
+            return rows;
+        }
+
+        private void Build2DRepresentationOfTagTreeStructures(IList<PdfStructElem> rows) {
+            // A matrix which is filled by true for all occupied cells taking colspan and rowspan into account
+            bool[][] arr = new bool[rows.Count][];
+            for (int i = 0; i < arr.Length; i++) {
+                arr[i] = new bool[amountOfCols];
+            }
+            for (int rowIdx = 0; rowIdx < rows.Count; rowIdx++) {
+                IList<PdfStructElem> cells = ExtractCells(rows[rowIdx]);
+                foreach (PdfStructElem cell in cells) {
+                    int colSpan = GetColspan(cell);
+                    int rowSpan = GetRowspan(cell);
+                    int firstOpenColIndex = -1;
+                    for (int i = 0; i < amountOfCols; i++) {
+                        if (!arr[rowIdx][i]) {
+                            firstOpenColIndex = i;
+                            break;
+                        }
+                    }
+                    if (firstOpenColIndex == -1) {
+                        throw new PdfUAConformanceException(MessageFormatUtil.Format(PdfUAExceptionMessageConstants.ROWS_SPAN_DIFFERENT_NUMBER_OF_COLUMNS
+                            , rowIdx, rowIdx + 1));
+                    }
+                    // Set the colspan and rowspan of each cell with a placeholder
+                    for (int i = rowIdx; i < rowIdx + rowSpan; i++) {
+                        for (int j = firstOpenColIndex; j < firstOpenColIndex + colSpan; j++) {
+                            arr[i][j] = true;
+                        }
+                    }
+                    locationCache.Put(cell, new Tuple2<int, int>(rowIdx, firstOpenColIndex));
+                    all.Add(cell);
+                }
+            }
+            // Now go over the matrix and convert remaining false (empty spaces) into dummy struct elems
+            for (int rowIdx = 0; rowIdx < arr.Length; rowIdx++) {
+                for (int colIdx = 0; colIdx < arr[rowIdx].Length; colIdx++) {
+                    if (!arr[rowIdx][colIdx]) {
+                        PdfStructElem pdfStructElem = new PdfStructElem(new PdfDictionary());
+                        locationCache.Put(pdfStructElem, new Tuple2<int, int>(rowIdx, colIdx));
+                        all.Add(pdfStructElem);
+                    }
+                }
+            }
+        }
+
+        private void SetAmountOfCols(IList<PdfStructElem> rows) {
+            foreach (PdfStructElem row in rows) {
+                int amt = 0;
+                foreach (PdfStructElem kid in ExtractCells(row)) {
+                    amt += GetColspan(kid);
+                }
+                amountOfCols = Math.Max(amt, amountOfCols);
+            }
+        }
+
+        private IList<PdfStructElem> ExtractCells(PdfStructElem row) {
+            IList<PdfStructElem> elems = new List<PdfStructElem>();
+            foreach (IStructureNode kid in row.GetKids()) {
+                if (kid is PdfStructElem) {
+                    PdfName kidRole = this.GetRole(kid);
+                    if ((PdfName.TH.Equals(kidRole) || PdfName.TD.Equals(kidRole))) {
+                        elems.Add((PdfStructElem)kid);
+                    }
+                }
+            }
+            return elems;
+        }
+
+        private static int GetColspan(PdfStructElem structElem) {
+            return GetIntValueFromAttributes(structElem, PdfName.ColSpan);
+        }
+
+        private static int GetRowspan(PdfStructElem structElem) {
+            return GetIntValueFromAttributes(structElem, PdfName.RowSpan);
+        }
+
+        private static int GetIntValueFromAttributes(PdfStructElem elem, PdfName name) {
+            PdfObject @object = elem.GetAttributes(false);
+            if (@object is PdfArray) {
+                PdfArray array = (PdfArray)@object;
+                foreach (PdfObject pdfObject in array) {
+                    if (pdfObject is PdfDictionary) {
+                        PdfNumber f = ((PdfDictionary)pdfObject).GetAsNumber(name);
+                        if (f != null) {
+                            return f.IntValue();
+                        }
+                    }
+                }
+            }
+            else {
+                if (@object is PdfDictionary) {
+                    PdfNumber f = ((PdfDictionary)@object).GetAsNumber(name);
+                    if (f != null) {
+                        return f.IntValue();
+                    }
+                }
+            }
+            return 1;
+        }
+
+        private IList<PdfStructElem> ExtractAllTrTags(IList<IStructureNode> possibleTrs) {
+            IList<PdfStructElem> elems = new List<PdfStructElem>();
+            foreach (IStructureNode possibleTr in possibleTrs) {
+                String resolvedRole = context.ResolveToStandardRole(possibleTr);
+                if (possibleTr is PdfStructElem && PdfName.TR.GetValue().Equals(resolvedRole)) {
+                    elems.Add((PdfStructElem)possibleTr);
+                }
+            }
+            return elems;
+        }
+    }
+}

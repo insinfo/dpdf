@@ -1,0 +1,238 @@
+/*
+This file is part of the iText (R) project.
+Copyright (c) 1998-2025 Apryse Group NV
+Authors: Apryse Software.
+
+This program is offered under a commercial and under the AGPL license.
+For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
+
+AGPL licensing:
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+using System.Collections.Generic;
+using iText.Commons.Utils;
+using iText.Kernel.Geom;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas;
+using iText.Kernel.Pdf.Xobject;
+
+namespace iText.Kernel.Pdf.Canvas.Parser.Data {
+    /// <summary>Represents image data from a PDF.</summary>
+    public class ImageRenderInfo : AbstractRenderInfo {
+        /// <summary>The coordinate transformation matrix that was in effect when the image was rendered.</summary>
+        private readonly Matrix ctm;
+
+        private readonly PdfImageXObject image;
+
+        /// <summary>The color space dictionary from resources which are associated with the image.</summary>
+        private readonly PdfDictionary colorSpaceDictionary;
+
+        /// <summary>Defines if the encountered image was inline.</summary>
+        private readonly bool isInline;
+
+        private readonly PdfName resourceName;
+
+        /// <summary>Hierarchy of nested canvas tags for the text from the most inner (nearest to text) tag to the most outer.
+        ///     </summary>
+        private readonly IList<CanvasTag> canvasTagHierarchy;
+
+        /// <summary>Creates an ImageRenderInfo.</summary>
+        /// <param name="canvasTagHierarchy">
+        /// the hierarchy of nested canvas tags for the text from the most
+        /// inner (nearest to text) tag to the most outer
+        /// </param>
+        /// <param name="gs">
+        /// the
+        /// <see cref="iText.Kernel.Pdf.Canvas.CanvasGraphicsState">canvas graphics state</see>
+        /// </param>
+        /// <param name="ctm">the coordinate transformation matrix at the time the image is rendered</param>
+        /// <param name="imageStream">the image stream object</param>
+        /// <param name="resourceName">
+        /// the
+        /// <see cref="iText.Kernel.Pdf.PdfName">name</see>
+        /// of the image resource
+        /// </param>
+        /// <param name="colorSpaceDictionary">the color space dictionary from resources which are associated with the image
+        ///     </param>
+        /// <param name="isInline">defines if the encountered image was inline</param>
+        public ImageRenderInfo(Stack<CanvasTag> canvasTagHierarchy, CanvasGraphicsState gs, Matrix ctm, PdfStream 
+            imageStream, PdfName resourceName, PdfDictionary colorSpaceDictionary, bool isInline)
+            : base(gs) {
+            this.canvasTagHierarchy = JavaCollectionsUtil.UnmodifiableList<CanvasTag>(new List<CanvasTag>(canvasTagHierarchy
+                ));
+            this.resourceName = resourceName;
+            this.ctm = ctm;
+            this.image = new PdfImageXObject(imageStream);
+            this.colorSpaceDictionary = colorSpaceDictionary;
+            this.isInline = isInline;
+        }
+
+        /// <summary>Gets the image wrapped in ImageXObject.</summary>
+        /// <remarks>
+        /// Gets the image wrapped in ImageXObject.
+        /// You can:
+        /// <list type="bullet">
+        /// <item><description>get image bytes with
+        /// <see cref="iText.Kernel.Pdf.Xobject.PdfImageXObject.GetImageBytes(bool)"/>
+        /// , these image bytes
+        /// represent native image, i.e you can write these bytes to disk and get just an usual image;
+        /// </description></item>
+        /// <item><description>obtain PdfStream object which contains image dictionary with
+        /// <see cref="iText.Kernel.Pdf.PdfObjectWrapper{T}.GetPdfObject()"/>
+        /// method;
+        /// </description></item>
+        /// <item><description>convert image to
+        /// <see cref="System.Drawing.Bitmap"/>
+        /// with
+        /// <see cref="iText.Kernel.Pdf.Xobject.PdfImageXObject.GetBufferedImage()"/>
+        /// ;  // Android-Conversion-Skip-Line (java.awt library isn't available on Android)
+        /// </description></item>
+        /// </list>
+        /// </remarks>
+        /// <returns>
+        /// the
+        /// <see cref="iText.Kernel.Pdf.Xobject.PdfImageXObject">image</see>
+        /// </returns>
+        public virtual PdfImageXObject GetImage() {
+            return image;
+        }
+
+        /// <summary>Gets the name of the image resource.</summary>
+        /// <returns>
+        /// the
+        /// <see cref="iText.Kernel.Pdf.PdfName">name</see>
+        /// of the image resource
+        /// </returns>
+        public virtual PdfName GetImageResourceName() {
+            return resourceName;
+        }
+
+        /// <summary>Gets the vector in User space representing the start point of the image.</summary>
+        /// <returns>
+        /// the
+        /// <see cref="iText.Kernel.Geom.Vector">vector</see>
+        /// in User space representing the start point of the image
+        /// </returns>
+        public virtual Vector GetStartPoint() {
+            return new Vector(0, 0, 1).Cross(ctm);
+        }
+
+        /// <summary>Gets the coordinate transformation matrix in User space which was active when this image was rendered.
+        ///     </summary>
+        /// <returns>
+        /// the coordinate transformation matrix in User space which was active when this image
+        /// was rendered
+        /// </returns>
+        public virtual Matrix GetImageCtm() {
+            return ctm;
+        }
+
+        /// <summary>Gets the size of the image in User space units.</summary>
+        /// <returns>the size of the image, in User space units</returns>
+        public virtual float GetArea() {
+            // the image space area is 1, so we multiply that by the determinant of the CTM to get the transformed area
+            return ctm.GetDeterminant();
+        }
+
+        /// <summary>Gets the inline flag.</summary>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if image was inlined in original stream
+        /// </returns>
+        public virtual bool IsInline() {
+            return isInline;
+        }
+
+        /// <summary>Gets the color space dictionary of the image.</summary>
+        /// <returns>the color space dictionary from resources which are associated with the image</returns>
+        public virtual PdfDictionary GetColorSpaceDictionary() {
+            return colorSpaceDictionary;
+        }
+
+        /// <summary>Gets hierarchy of the canvas tags that wraps given text.</summary>
+        /// <returns>list of the wrapping canvas tags. The first tag is the innermost (nearest to the text).</returns>
+        public virtual IList<CanvasTag> GetCanvasTagHierarchy() {
+            return canvasTagHierarchy;
+        }
+
+        /// <summary>
+        /// Gets the marked-content identifier associated with this
+        /// <see cref="ImageRenderInfo"/>
+        /// instance.
+        /// </summary>
+        /// <returns>associated marked-content identifier or -1 in case content is unmarked</returns>
+        public virtual int GetMcid() {
+            foreach (CanvasTag tag in canvasTagHierarchy) {
+                if (tag.HasMcid()) {
+                    return tag.GetMcid();
+                }
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// Checks if this
+        /// <see cref="ImageRenderInfo"/>
+        /// instance is associated with a marked content sequence
+        /// with a given mcid.
+        /// </summary>
+        /// <param name="mcid">a marked content id</param>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if the image is marked with this id,
+        /// <see langword="false"/>
+        /// otherwise
+        /// </returns>
+        public virtual bool HasMcid(int mcid) {
+            return HasMcid(mcid, false);
+        }
+
+        /// <summary>
+        /// Checks if this
+        /// <see cref="ImageRenderInfo"/>
+        /// instance is associated with a marked content sequence
+        /// with a given mcid.
+        /// </summary>
+        /// <param name="mcid">a marked content id</param>
+        /// <param name="checkTheTopmostLevelOnly">indicates whether to check the topmost level of marked content stack only
+        ///     </param>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if this
+        /// <see cref="ImageRenderInfo"/>
+        /// instance is marked with this id,
+        /// <see langword="false"/>
+        /// otherwise
+        /// </returns>
+        public virtual bool HasMcid(int mcid, bool checkTheTopmostLevelOnly) {
+            if (checkTheTopmostLevelOnly) {
+                if (canvasTagHierarchy != null) {
+                    int infoMcid = GetMcid();
+                    return infoMcid != -1 && infoMcid == mcid;
+                }
+            }
+            else {
+                foreach (CanvasTag tag in canvasTagHierarchy) {
+                    if (tag.HasMcid() && (tag.GetMcid() == mcid)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+}

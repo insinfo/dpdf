@@ -184,8 +184,8 @@ io/
   - [ ] LZW
   - [ ] Flate
 - [ ] **1.2.4** Portar `font/` - Sistema de fontes
-  - [ ] FontProgram (base)
-  - [ ] Type1Font
+  - [x] FontProgram (base)
+  - [x] Type1Font (Parcial - Fontes Standard e parsing AFM básico)
   - [ ] TrueTypeFont
   - [ ] OpenTypeFont
   - [ ] FontCache
@@ -589,7 +589,7 @@ dependencies:
 2. ✅ Implementar leitura de PDF simples (xref table, trailer, objetos)
 3. ✅ Implementar escrita de PDF simples
 4. ✅ Portar `PdfCanvas` para desenho de conteúdo (Base implementada com otimização)
-5. ⬜ Implementar suporte básico a fontes (Standard Type 1)
+5. ✅ Implementar suporte básico a fontes (Standard Type 1)
 6. ⬜ Implementar processamento de streams de conteúdo (Content Streams)
 7. ✅ TODO: Otimizar escrita do `PdfCanvas` usando `BytesBuilder` ou `PdfOutputStream` para evitar cópias de array.
 

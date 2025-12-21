@@ -9,6 +9,7 @@ import 'package:itext/src/kernel/pdf/canvas/canvas_graphics_state.dart';
 import 'package:itext/src/kernel/geom/matrix.dart';
 import 'package:itext/src/kernel/font/pdf_font.dart';
 import 'package:itext/src/kernel/pdf/pdf_string.dart';
+import 'package:itext/src/kernel/pdf/pdf_name.dart';
 
 /// PdfCanvas class represents an algorithm for writing data into content stream.
 class PdfCanvas {
@@ -194,20 +195,18 @@ class PdfCanvas {
     return this;
   }
 
-  PdfCanvas setFontAndSize(PdfFont font, double size) {
+  Future<PdfCanvas> setFontAndSize(PdfFont font, double size) async {
     currentGs.fontSize = size;
     currentGs.font = font;
 
     if (resources != null && document != null) {
-      // TODO: Implement resources.addFont
-      // PdfName fontName = resources!.addFont(document!, font);
-      // For now, assume a name
-      // contentStream!.getOutputStream()
-      //   ..writePdfName(fontName)
-      //   ..writeSpace()
-      //   ..writeDouble(size)
-      //   ..writeSpace()
-      //   ..writeBytes(Tf);
+      PdfName fontName = await resources!.addFont(document!, font);
+      contentStream!.getOutputStream()
+        ..writePdfName(fontName)
+        ..writeSpace()
+        ..writeDouble(size)
+        ..writeSpace()
+        ..writeBytes(Tf);
     }
     return this;
   }

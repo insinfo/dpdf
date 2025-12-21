@@ -128,7 +128,7 @@ class PdfTokenizer {
 
   /// Reads bytes fully into the provided buffer.
   Future<void> readFully(Uint8List bytes) async {
-    await _file.readFully(bytes);
+    _file.readFully(bytes);
   }
 
   /// Gets the current position.
@@ -139,7 +139,7 @@ class PdfTokenizer {
   /// Closes this tokenizer.
   Future<void> close() async {
     if (_closeStream) {
-      await _file.close();
+      _file.close();
     }
   }
 

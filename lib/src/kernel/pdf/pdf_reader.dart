@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import '../../io/source/random_access_file_or_array.dart';
-import '../../io/source/array_random_access_source.dart';
 import '../../io/source/pdf_tokenizer.dart';
 import '../exceptions/pdf_exception.dart';
 import '../exceptions/kernel_exception_message_constant.dart';
@@ -51,8 +50,7 @@ class PdfReader {
 
   /// Creates a PdfReader from file bytes.
   PdfReader.fromBytes(Uint8List bytes)
-      : _tokens = PdfTokenizer(
-            RandomAccessFileOrArray(ArrayRandomAccessSource(bytes)));
+      : _tokens = PdfTokenizer(RandomAccessFileOrArray(bytes));
 
   /// Creates a PdfReader from a file path.
   static Future<PdfReader> fromFile(String path) async {

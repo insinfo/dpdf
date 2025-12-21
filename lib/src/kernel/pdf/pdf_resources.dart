@@ -2,6 +2,8 @@ import 'pdf_object.dart';
 import 'pdf_dictionary.dart';
 import 'pdf_name.dart';
 import 'pdf_object_wrapper.dart';
+import 'package:itext/src/kernel/pdf/pdf_document.dart';
+import 'package:itext/src/kernel/font/pdf_font.dart';
 
 /// Wrapper class that represent resource dictionary.
 class PdfResources extends PdfObjectWrapper<PdfDictionary> {
@@ -97,6 +99,11 @@ class PdfResources extends PdfObjectWrapper<PdfDictionary> {
     resourceCategory.put(resName, resource);
     setModified();
     return resName;
+  }
+
+  Future<PdfName> addFont(PdfDocument document, PdfFont font) async {
+    return addResource(
+        font.getPdfObject(), PdfName.font, await _fontNamesGen.generate(this));
   }
 
   PdfName getResourceName(PdfObject resource) {

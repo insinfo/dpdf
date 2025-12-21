@@ -7,8 +7,7 @@ import 'package:itext/itext.dart';
 /// Helper to create tokenizer from string
 PdfTokenizer tokenizerFromString(String content) {
   final bytes = Uint8List.fromList(utf8.encode(content));
-  final source = ArrayRandomAccessSource(bytes);
-  return PdfTokenizer(RandomAccessFileOrArray(source));
+  return PdfTokenizer(RandomAccessFileOrArray(bytes));
 }
 
 void main() {

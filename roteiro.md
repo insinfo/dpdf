@@ -275,7 +275,7 @@ kernel/pdf/
 **Tarefas:**
 
 - [x] **2.3.1** Portar `PdfXrefTable`
-- [ ] **2.3.2** Portar `PdfOutputStream`
+- [x] **2.3.2** Portar `PdfOutputStream`
 - [ ] **2.3.3** Portar `ReaderProperties` e `WriterProperties`
 - [x] **2.3.4** Portar `PdfReader` ⭐
 - [x] **2.3.5** Portar `PdfWriter`
@@ -534,6 +534,32 @@ dependencies:
 #### kernel/utils/
 - ✅ `filter_handlers.dart` - Decodificadores de filtros (FlateDecode, LZW, ASCII85, etc.)
 
+#### kernel/geom/
+- ✅ `rectangle.dart` - Geometria de retângulo
+- ✅ `page_size.dart` - Tamanhos de página padrão
+- ✅ `matrix.dart` - Matriz de transformação 3x3
+
+#### kernel/colors/
+- ✅ `color.dart` - Classe base de cor
+- ✅ `device_gray.dart` - Cor DeviceGray
+- ✅ `device_rgb.dart` - Cor DeviceRgb
+- ✅ `device_cmyk.dart` - Cor DeviceCmyk
+
+#### kernel/pdf/colorspace/
+- ✅ `pdf_color_space.dart` - Espaços de cor PDF (Async factory)
+- ✅ `pdf_device_cs.dart` - Espaços de cor de dispositivo
+
+#### kernel/pdf/extgstate/
+- ✅ `pdf_ext_g_state.dart` - Estado gráfico estendido (Async getters)
+
+#### kernel/pdf/canvas/
+- ✅ `pdf_canvas_constants.dart` - Constantes de canvas
+- ✅ `canvas_graphics_state.dart` - Estado gráfico do canvas
+- ✅ `pdf_canvas.dart` - Canvas de desenho (Parcial)
+
+#### kernel/font/
+- ✅ `pdf_font.dart` - Stub base para fontes
+
 ---
 
 ## Próximos Passos
@@ -562,9 +588,14 @@ dependencies:
 1. ✅ Completar kernel básico e transição assíncrona
 2. ✅ Implementar leitura de PDF simples (xref table, trailer, objetos)
 3. ✅ Implementar escrita de PDF simples
-4. ⬜ Portar `PdfCanvas` para desenho de conteúdo
+4. ✅ Portar `PdfCanvas` para desenho de conteúdo (Base implementada com otimização)
 5. ⬜ Implementar suporte básico a fontes (Standard Type 1)
 6. ⬜ Implementar processamento de streams de conteúdo (Content Streams)
+7. ✅ TODO: Otimizar escrita do `PdfCanvas` usando `BytesBuilder` ou `PdfOutputStream` para evitar cópias de array.
+
+#### kernel/pdf/
+- ✅ `pdf_output_stream.dart` - Stream de saída otimizado
+
 
 ---
 

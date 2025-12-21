@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'pdf_dictionary.dart';
 import 'pdf_name.dart';
 import 'pdf_object.dart';
+import 'pdf_output_stream.dart';
 import '../utils/filter_handlers.dart';
 
 /// Compression level constants.
@@ -45,6 +46,9 @@ class PdfStream extends PdfDictionary {
   /// Length of the stream data (from dictionary or calculated).
   int _length = -1;
 
+  PdfOutputStream? _outputStream;
+  BytesBuilder? _bytesBuilder;
+
   /// Creates a PdfStream with bytes content.
   ///
   /// [bytes] The initial content of the stream.
@@ -55,8 +59,6 @@ class PdfStream extends PdfDictionary {
     _compressionLevel = compressionLevel;
     if (bytes != null && bytes.isNotEmpty) {
       _outputBytes = Uint8List.fromList(bytes);
-    } else {
-      _outputBytes = Uint8List(0);
     }
   }
 
@@ -88,11 +90,15 @@ class PdfStream extends PdfDictionary {
 
   @override
   PdfObject clone() {
-    final cloned = PdfStream.withBytes(_outputBytes, _compressionLevel);
-    // Note: Clone here is sync, it won't be able to easily copy the dictionary entries
-    // that were inherited from PdfDictionary without being async.
-    // However, if we know the parent is sync-clonable...
-    // Actually, PdfDictionary.clone() is sync.
+    Uint8List? bytes;
+    if (_bytesBuilder != null) {
+      bytes = _bytesBuilder!.toBytes();
+    } else {
+      bytes = _outputBytes;
+    }
+
+    final cloned = PdfStream.withBytes(bytes, _compressionLevel);
+    // Note: Clone here is sync
     final map = getMap();
     if (map != null) {
       for (final entry in map.entries) {
@@ -123,6 +129,19 @@ class PdfStream extends PdfDictionary {
   /// Gets the offset where stream data starts in the file.
   int getOffset() => _offset;
 
+  /// Gets the output stream.
+  PdfOutputStream getOutputStream() {
+    if (_outputStream == null) {
+      _bytesBuilder = BytesBuilder();
+      if (_outputBytes != null) {
+        _bytesBuilder!.add(_outputBytes!);
+        // _outputBytes = null; // Keep it as fallback or clear? safer to clear to avoid dupe
+      }
+      _outputStream = PdfOutputStream.fromBuilder(_bytesBuilder!);
+    }
+    return _outputStream!;
+  }
+
   /// Gets the decoded stream bytes.
   ///
   /// If [decoded] is true, filters are applied to decode the stream.
@@ -137,7 +156,14 @@ class PdfStream extends PdfDictionary {
       // Stream was created by InputStream
       return null;
     }
-    Uint8List? bytes = _outputBytes;
+
+    Uint8List? bytes;
+    if (_bytesBuilder != null) {
+      bytes = _bytesBuilder!.toBytes();
+    } else {
+      bytes = _outputBytes;
+    }
+
     if (bytes != null && decoded && containsKey(PdfName.filter)) {
       bytes = await FilterHandlers.decodeBytes(bytes, this);
     }
@@ -162,14 +188,16 @@ class PdfStream extends PdfDictionary {
 
     if (append) {
       if (bytes != null) {
-        final oldBytes = _outputBytes ?? Uint8List(0);
-        final newBytes = Uint8List(oldBytes.length + bytes.length);
-        newBytes.setRange(0, oldBytes.length, oldBytes);
-        newBytes.setRange(oldBytes.length, newBytes.length, bytes);
-        _outputBytes = newBytes;
+        getOutputStream().writeBytes(bytes);
       }
     } else {
-      _outputBytes = bytes != null ? Uint8List.fromList(bytes) : Uint8List(0);
+      // Replace content
+      _bytesBuilder = BytesBuilder();
+      _outputStream = PdfOutputStream.fromBuilder(_bytesBuilder!);
+      _outputBytes = null;
+      if (bytes != null) {
+        _bytesBuilder!.add(bytes);
+      }
     }
 
     _offset = 0;
@@ -189,12 +217,19 @@ class PdfStream extends PdfDictionary {
     super.releaseContent();
     _outputBytes = null;
     _inputStream = null;
+    _bytesBuilder = null;
+    _outputStream = null;
   }
 
   @override
   String toString() {
     final dictStr = super.toString();
-    final len = _outputBytes?.length ?? _length;
+    var len = _length;
+    if (_bytesBuilder != null) {
+      len = _bytesBuilder!.length;
+    } else if (_outputBytes != null) {
+      len = _outputBytes!.length;
+    }
     return '$dictStr stream($len bytes)';
   }
 }

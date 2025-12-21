@@ -368,4 +368,12 @@ class PdfName extends PdfObject {
   static final PdfName maxLen = PdfName.intern('MaxLen');
   static final PdfName properties = PdfName.intern('Properties');
   static final PdfName shading = PdfName.intern('Shading');
+  static final PdfName relativeColorimetric =
+      PdfName.intern('RelativeColorimetric');
+  static final PdfName absoluteColorimetric =
+      PdfName.intern('AbsoluteColorimetric');
+  static final PdfName perceptual = PdfName.intern('Perceptual');
+  static final PdfName saturation = PdfName.intern('Saturation');
+  static final PdfName normal = PdfName.intern('Normal');
+  static final PdfName none = PdfName.intern('None');
 }

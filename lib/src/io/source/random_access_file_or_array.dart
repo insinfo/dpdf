@@ -62,29 +62,29 @@ class RandomAccessFileOrArray {
   /// Reads a single byte.
   ///
   /// Returns the byte, or -1 if EOF is reached.
-  int read() {
+  Future<int> read() async {
     if (_isBack) {
       _isBack = false;
       return _back & 0xFF;
     }
-    return _byteSource.get(_byteSourcePosition++);
+    return await _byteSource.get(_byteSourcePosition++);
   }
 
   /// Gets the next byte without moving current position.
   ///
   /// Returns the next byte, or -1 if EOF is reached.
-  int peek() {
+  Future<int> peek() async {
     if (_isBack) {
       return _back & 0xFF;
     }
-    return _byteSource.get(_byteSourcePosition);
+    return await _byteSource.get(_byteSourcePosition);
   }
 
   /// Gets the next `buffer.length` bytes without moving current position.
   ///
   /// Returns the number of read bytes. If it is less than buffer.length
   /// it means EOF has been reached.
-  int peekBuffer(Uint8List buffer) {
+  Future<int> peekBuffer(Uint8List buffer) async {
     var offset = 0;
     var length = buffer.length;
     var count = 0;
@@ -94,8 +94,8 @@ class RandomAccessFileOrArray {
       ++count;
     }
     if (length > 0) {
-      final byteSourceCount =
-          _byteSource.getRange(_byteSourcePosition, buffer, offset, length);
+      final byteSourceCount = await _byteSource.getRange(
+          _byteSourcePosition, buffer, offset, length);
       if (byteSourceCount > 0) {
         count += byteSourceCount;
       }
@@ -109,7 +109,7 @@ class RandomAccessFileOrArray {
   /// [off] offset at which to start storing characters
   /// [len] maximum number of characters to read
   /// Returns the number of bytes actually read or -1 in case of EOF.
-  int readBytes(Uint8List b, int off, int len) {
+  Future<int> readBytes(Uint8List b, int off, int len) async {
     if (len == 0) {
       return 0;
     }
@@ -122,7 +122,7 @@ class RandomAccessFileOrArray {
     }
     if (len > 0) {
       final byteSourceCount =
-          _byteSource.getRange(_byteSourcePosition, b, off, len);
+          await _byteSource.getRange(_byteSourcePosition, b, off, len);
       if (byteSourceCount > 0) {
         count += byteSourceCount;
         _byteSourcePosition += byteSourceCount;
@@ -137,20 +137,20 @@ class RandomAccessFileOrArray {
   /// Reads bytes to the buffer.
   ///
   /// This method will try to read as many bytes as the buffer can hold.
-  int readBuffer(Uint8List b) {
-    return readBytes(b, 0, b.length);
+  Future<int> readBuffer(Uint8List b) async {
+    return await readBytes(b, 0, b.length);
   }
 
   /// Reads bytes to fill the buffer completely.
-  void readFully(Uint8List b) {
-    readFullyRange(b, 0, b.length);
+  Future<void> readFully(Uint8List b) async {
+    await readFullyRange(b, 0, b.length);
   }
 
   /// Reads bytes to fill the buffer completely within the specified range.
-  void readFullyRange(Uint8List b, int off, int len) {
+  Future<void> readFullyRange(Uint8List b, int off, int len) async {
     var n = 0;
     do {
-      final count = readBytes(b, off + n, len - n);
+      final count = await readBytes(b, off + n, len - n);
       if (count < 0) {
         throw EndOfStreamException();
       }
@@ -161,7 +161,7 @@ class RandomAccessFileOrArray {
   /// Make an attempt to skip the specified amount of bytes in source.
   ///
   /// However it may skip less amount of bytes. Possibly zero.
-  int skip(int n) {
+  Future<int> skip(int n) async {
     if (n <= 0) {
       return 0;
     }
@@ -176,7 +176,7 @@ class RandomAccessFileOrArray {
       }
     }
     final pos = getPosition();
-    final len = length();
+    final len = await length();
     var newpos = pos + n;
     if (newpos > len) {
       newpos = len;
@@ -186,19 +186,19 @@ class RandomAccessFileOrArray {
   }
 
   /// Skips the specified number of bytes.
-  int skipBytes(int n) {
-    return skip(n);
+  Future<int> skipBytes(int n) async {
+    return await skip(n);
   }
 
   /// Closes the underlying source.
-  void close() {
+  Future<void> close() async {
     _isBack = false;
-    _byteSource.close();
+    await _byteSource.close();
   }
 
   /// Gets the total amount of bytes in the source.
-  int length() {
-    return _byteSource.length();
+  Future<int> length() async {
+    return await _byteSource.length();
   }
 
   /// Sets the current position in the source to the specified index.
@@ -213,8 +213,8 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads a boolean.
-  bool readBoolean() {
-    final ch = read();
+  Future<bool> readBoolean() async {
+    final ch = await read();
     if (ch < 0) {
       throw EndOfStreamException();
     }
@@ -222,8 +222,8 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads a signed byte.
-  int readByte() {
-    final ch = read();
+  Future<int> readByte() async {
+    final ch = await read();
     if (ch < 0) {
       throw EndOfStreamException();
     }
@@ -231,8 +231,8 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads an unsigned byte.
-  int readUnsignedByte() {
-    final ch = read();
+  Future<int> readUnsignedByte() async {
+    final ch = await read();
     if (ch < 0) {
       throw EndOfStreamException();
     }
@@ -240,9 +240,9 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads a signed 16-bit number (big-endian).
-  int readShort() {
-    final ch1 = read();
-    final ch2 = read();
+  Future<int> readShort() async {
+    final ch1 = await read();
+    final ch2 = await read();
     if ((ch1 | ch2) < 0) {
       throw EndOfStreamException();
     }
@@ -255,9 +255,9 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads a signed 16-bit number (little-endian).
-  int readShortLE() {
-    final ch1 = read();
-    final ch2 = read();
+  Future<int> readShortLE() async {
+    final ch1 = await read();
+    final ch2 = await read();
     if ((ch1 | ch2) < 0) {
       throw EndOfStreamException();
     }
@@ -270,9 +270,9 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads an unsigned 16-bit number (big-endian).
-  int readUnsignedShort() {
-    final ch1 = read();
-    final ch2 = read();
+  Future<int> readUnsignedShort() async {
+    final ch1 = await read();
+    final ch2 = await read();
     if ((ch1 | ch2) < 0) {
       throw EndOfStreamException();
     }
@@ -280,9 +280,9 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads an unsigned 16-bit number (little-endian).
-  int readUnsignedShortLE() {
-    final ch1 = read();
-    final ch2 = read();
+  Future<int> readUnsignedShortLE() async {
+    final ch1 = await read();
+    final ch2 = await read();
     if ((ch1 | ch2) < 0) {
       throw EndOfStreamException();
     }
@@ -290,9 +290,9 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads a Unicode character (big-endian).
-  int readChar() {
-    final ch1 = read();
-    final ch2 = read();
+  Future<int> readChar() async {
+    final ch1 = await read();
+    final ch2 = await read();
     if ((ch1 | ch2) < 0) {
       throw EndOfStreamException();
     }
@@ -300,9 +300,9 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads a Unicode character (little-endian).
-  int readCharLE() {
-    final ch1 = read();
-    final ch2 = read();
+  Future<int> readCharLE() async {
+    final ch1 = await read();
+    final ch2 = await read();
     if ((ch1 | ch2) < 0) {
       throw EndOfStreamException();
     }
@@ -310,11 +310,11 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads a signed 32-bit integer (big-endian).
-  int readInt() {
-    final ch1 = read();
-    final ch2 = read();
-    final ch3 = read();
-    final ch4 = read();
+  Future<int> readInt() async {
+    final ch1 = await read();
+    final ch2 = await read();
+    final ch3 = await read();
+    final ch4 = await read();
     if ((ch1 | ch2 | ch3 | ch4) < 0) {
       throw EndOfStreamException();
     }
@@ -322,11 +322,11 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads a signed 32-bit integer (little-endian).
-  int readIntLE() {
-    final ch1 = read();
-    final ch2 = read();
-    final ch3 = read();
-    final ch4 = read();
+  Future<int> readIntLE() async {
+    final ch1 = await read();
+    final ch2 = await read();
+    final ch3 = await read();
+    final ch4 = await read();
     if ((ch1 | ch2 | ch3 | ch4) < 0) {
       throw EndOfStreamException();
     }
@@ -334,11 +334,11 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads an unsigned 32-bit integer (big-endian).
-  int readUnsignedInt() {
-    final ch1 = read();
-    final ch2 = read();
-    final ch3 = read();
-    final ch4 = read();
+  Future<int> readUnsignedInt() async {
+    final ch1 = await read();
+    final ch2 = await read();
+    final ch3 = await read();
+    final ch4 = await read();
     if ((ch1 | ch2 | ch3 | ch4) < 0) {
       throw EndOfStreamException();
     }
@@ -346,11 +346,11 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads an unsigned 32-bit integer (little-endian).
-  int readUnsignedIntLE() {
-    final ch1 = read();
-    final ch2 = read();
-    final ch3 = read();
-    final ch4 = read();
+  Future<int> readUnsignedIntLE() async {
+    final ch1 = await read();
+    final ch2 = await read();
+    final ch3 = await read();
+    final ch4 = await read();
     if ((ch1 | ch2 | ch3 | ch4) < 0) {
       throw EndOfStreamException();
     }
@@ -358,52 +358,52 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads a signed 64-bit integer (big-endian).
-  int readLong() {
-    return (readInt() << 32) + (readInt() & 0xFFFFFFFF);
+  Future<int> readLong() async {
+    return (await readInt() << 32) + (await readInt() & 0xFFFFFFFF);
   }
 
   /// Reads a signed 64-bit integer (little-endian).
-  int readLongLE() {
-    final i1 = readIntLE();
-    final i2 = readIntLE();
+  Future<int> readLongLE() async {
+    final i1 = await readIntLE();
+    final i2 = await readIntLE();
     return (i2 << 32) + (i1 & 0xFFFFFFFF);
   }
 
   /// Reads a 32-bit float (big-endian).
-  double readFloat() {
+  Future<double> readFloat() async {
     final bytes = Uint8List(4);
-    readFully(bytes);
+    await readFully(bytes);
     return (ByteData.view(bytes.buffer)).getFloat32(0);
   }
 
   /// Reads a 32-bit float (little-endian).
-  double readFloatLE() {
+  Future<double> readFloatLE() async {
     final bytes = Uint8List(4);
-    readFully(bytes);
+    await readFully(bytes);
     return (ByteData.view(bytes.buffer)).getFloat32(0, Endian.little);
   }
 
   /// Reads a 64-bit double (big-endian).
-  double readDouble() {
+  Future<double> readDouble() async {
     final bytes = Uint8List(8);
-    readFully(bytes);
+    await readFully(bytes);
     return (ByteData.view(bytes.buffer)).getFloat64(0);
   }
 
   /// Reads a 64-bit double (little-endian).
-  double readDoubleLE() {
+  Future<double> readDoubleLE() async {
     final bytes = Uint8List(8);
-    readFully(bytes);
+    await readFully(bytes);
     return (ByteData.view(bytes.buffer)).getFloat64(0, Endian.little);
   }
 
   /// Reads a line of text.
-  String? readLine() {
+  Future<String?> readLine() async {
     final input = StringBuffer();
     var c = -1;
     var eol = false;
     while (!eol) {
-      c = read();
+      c = await read();
       switch (c) {
         case -1:
         case 0x0A: // '\n'
@@ -412,7 +412,7 @@ class RandomAccessFileOrArray {
         case 0x0D: // '\r'
           eol = true;
           final cur = getPosition();
-          if (read() != 0x0A) {
+          if (await read() != 0x0A) {
             seek(cur);
           }
           break;
@@ -428,9 +428,9 @@ class RandomAccessFileOrArray {
   }
 
   /// Reads a String from the source as bytes using the given encoding.
-  String readString(int length, [Encoding encoding = latin1]) {
+  Future<String> readString(int length, [Encoding encoding = latin1]) async {
     final buf = Uint8List(length);
-    readFully(buf);
+    await readFully(buf);
     return encoding.decode(buf);
   }
 

@@ -8,7 +8,7 @@ import 'package:itext/itext.dart';
 void main() {
   group('FilterHandlers', () {
     group('FlateDecode', () {
-      test('decodes simple zlib compressed data', () {
+      test('decodes simple zlib compressed data', () async {
         // Compress some test data
         final original =
             utf8.encode('Hello, World! This is a test of FlateDecode filter.');
@@ -17,7 +17,7 @@ void main() {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.flateDecodeFilter);
 
-        final decoded = FilterHandlers.decodeBytes(
+        final decoded = await FilterHandlers.decodeBytes(
           Uint8List.fromList(compressed),
           dict,
         );
@@ -25,13 +25,13 @@ void main() {
         expect(decoded, equals(Uint8List.fromList(original)));
       });
 
-      test('handles empty input', () {
+      test('handles empty input', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.flateDecodeFilter);
 
         // Empty zlib stream
         final compressed = zlib.encode([]);
-        final decoded = FilterHandlers.decodeBytes(
+        final decoded = await FilterHandlers.decodeBytes(
           Uint8List.fromList(compressed),
           dict,
         );
@@ -39,25 +39,25 @@ void main() {
         expect(decoded, isEmpty);
       });
 
-      test('returns original bytes on invalid data', () {
+      test('returns original bytes on invalid data', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.flateDecodeFilter);
 
         final invalid = Uint8List.fromList([0x00, 0x01, 0x02, 0x03]);
-        final decoded = FilterHandlers.decodeBytes(invalid, dict);
+        final decoded = await FilterHandlers.decodeBytes(invalid, dict);
 
         expect(decoded, equals(invalid));
       });
     });
 
     group('ASCIIHexDecode', () {
-      test('decodes simple hex string', () {
+      test('decodes simple hex string', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.asciiHexDecodeFilter);
 
         // "Hello" in hex
         final hexData = utf8.encode('48656C6C6F>');
-        final decoded = FilterHandlers.decodeBytes(
+        final decoded = await FilterHandlers.decodeBytes(
           Uint8List.fromList(hexData),
           dict,
         );
@@ -65,12 +65,12 @@ void main() {
         expect(utf8.decode(decoded), equals('Hello'));
       });
 
-      test('handles lowercase hex', () {
+      test('handles lowercase hex', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.asciiHexDecodeFilter);
 
         final hexData = utf8.encode('48656c6c6f>');
-        final decoded = FilterHandlers.decodeBytes(
+        final decoded = await FilterHandlers.decodeBytes(
           Uint8List.fromList(hexData),
           dict,
         );
@@ -78,12 +78,12 @@ void main() {
         expect(utf8.decode(decoded), equals('Hello'));
       });
 
-      test('ignores whitespace', () {
+      test('ignores whitespace', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.asciiHexDecodeFilter);
 
         final hexData = utf8.encode('48 65\n6C\r6C\t6F>');
-        final decoded = FilterHandlers.decodeBytes(
+        final decoded = await FilterHandlers.decodeBytes(
           Uint8List.fromList(hexData),
           dict,
         );
@@ -91,13 +91,13 @@ void main() {
         expect(utf8.decode(decoded), equals('Hello'));
       });
 
-      test('pads odd number of hex digits', () {
+      test('pads odd number of hex digits', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.asciiHexDecodeFilter);
 
         // Odd number: "4" should become 0x40
         final hexData = utf8.encode('4>');
-        final decoded = FilterHandlers.decodeBytes(
+        final decoded = await FilterHandlers.decodeBytes(
           Uint8List.fromList(hexData),
           dict,
         );
@@ -107,7 +107,7 @@ void main() {
     });
 
     group('ASCII85Decode', () {
-      test('decodes simple ASCII85 data', () {
+      test('decodes simple ASCII85 data', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.ascii85DecodeFilter);
 
@@ -115,7 +115,7 @@ void main() {
         // "Hello" = [72, 101, 108, 108, 111]
         // In ASCII85: "87cURDZ~>"
         final a85Data = utf8.encode('87cURDZ~>');
-        final decoded = FilterHandlers.decodeBytes(
+        final decoded = await FilterHandlers.decodeBytes(
           Uint8List.fromList(a85Data),
           dict,
         );
@@ -123,13 +123,13 @@ void main() {
         expect(utf8.decode(decoded.sublist(0, 5)), equals('Hello'));
       });
 
-      test('handles z abbreviation for zeros', () {
+      test('handles z abbreviation for zeros', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.ascii85DecodeFilter);
 
         // 'z' represents 4 zero bytes
         final a85Data = utf8.encode('z~>');
-        final decoded = FilterHandlers.decodeBytes(
+        final decoded = await FilterHandlers.decodeBytes(
           Uint8List.fromList(a85Data),
           dict,
         );
@@ -137,12 +137,12 @@ void main() {
         expect(decoded, equals(Uint8List.fromList([0, 0, 0, 0])));
       });
 
-      test('ignores whitespace', () {
+      test('ignores whitespace', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.ascii85DecodeFilter);
 
         final a85Data = utf8.encode('8 7\nc\rU\tRDZ~>');
-        final decoded = FilterHandlers.decodeBytes(
+        final decoded = await FilterHandlers.decodeBytes(
           Uint8List.fromList(a85Data),
           dict,
         );
@@ -152,7 +152,7 @@ void main() {
     });
 
     group('RunLengthDecode', () {
-      test('decodes literal run', () {
+      test('decodes literal run', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.runLengthDecodeFilter);
 
@@ -160,38 +160,38 @@ void main() {
         // Format: [length - 1] [bytes...]
         final rlData = Uint8List.fromList(
             [4, 72, 101, 108, 108, 111, 128]); // "Hello" + EOD
-        final decoded = FilterHandlers.decodeBytes(rlData, dict);
+        final decoded = await FilterHandlers.decodeBytes(rlData, dict);
 
         expect(utf8.decode(decoded), equals('Hello'));
       });
 
-      test('decodes repeat run', () {
+      test('decodes repeat run', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.runLengthDecodeFilter);
 
         // Repeat run: length=251 means repeat next byte (257-251)=6 times
         final rlData =
             Uint8List.fromList([251, 65, 128]); // 'A' repeated 6 times + EOD
-        final decoded = FilterHandlers.decodeBytes(rlData, dict);
+        final decoded = await FilterHandlers.decodeBytes(rlData, dict);
 
         expect(utf8.decode(decoded), equals('AAAAAA'));
       });
 
-      test('handles mixed runs', () {
+      test('handles mixed runs', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.runLengthDecodeFilter);
 
         // Literal "Hi" + repeat 'X' 3 times
         final rlData = Uint8List.fromList(
             [1, 72, 105, 254, 88, 128]); // "Hi" + "XXX" + EOD
-        final decoded = FilterHandlers.decodeBytes(rlData, dict);
+        final decoded = await FilterHandlers.decodeBytes(rlData, dict);
 
         expect(utf8.decode(decoded), equals('HiXXX'));
       });
     });
 
     group('LZWDecode', () {
-      test('decodes simple LZW data', () {
+      test('decodes simple LZW data', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName.lzwDecodeFilter);
 
@@ -202,13 +202,13 @@ void main() {
             [0x80, 0x0B, 0x60, 0x50, 0x22, 0x0C, 0x0C, 0x85, 0x01]);
 
         // Should not throw
-        final decoded = FilterHandlers.decodeBytes(lzwData, dict);
+        final decoded = await FilterHandlers.decodeBytes(lzwData, dict);
         expect(decoded, isA<Uint8List>());
       });
     });
 
     group('Multiple Filters', () {
-      test('applies filters in order', () {
+      test('applies filters in order', () async {
         final dict = PdfDictionary();
 
         // Create filter array: ASCIIHex -> (decode hex first, then treat result)
@@ -217,7 +217,7 @@ void main() {
         dict.put(PdfName.filter, filters);
 
         final hexData = utf8.encode('48656C6C6F>'); // "Hello"
-        final decoded = FilterHandlers.decodeBytes(
+        final decoded = await FilterHandlers.decodeBytes(
           Uint8List.fromList(hexData),
           dict,
         );
@@ -227,22 +227,22 @@ void main() {
     });
 
     group('No Filter', () {
-      test('returns original bytes when no filter', () {
+      test('returns original bytes when no filter', () async {
         final dict = PdfDictionary();
         final data = Uint8List.fromList([1, 2, 3, 4, 5]);
 
-        final result = FilterHandlers.decodeBytes(data, dict);
+        final result = await FilterHandlers.decodeBytes(data, dict);
         expect(result, equals(data));
       });
     });
 
     group('Unknown Filter', () {
-      test('returns original bytes for unknown filter', () {
+      test('returns original bytes for unknown filter', () async {
         final dict = PdfDictionary();
         dict.put(PdfName.filter, PdfName('UnknownFilter'));
 
         final data = Uint8List.fromList([1, 2, 3, 4, 5]);
-        final result = FilterHandlers.decodeBytes(data, dict);
+        final result = await FilterHandlers.decodeBytes(data, dict);
 
         expect(result, equals(data));
       });
@@ -303,46 +303,46 @@ void main() {
       expect(identical(name, PdfName.type), isTrue);
     });
 
-    test('PdfArray operations', () {
+    test('PdfArray operations', () async {
       final arr = PdfArray();
       arr.add(PdfNumber(1));
       arr.add(PdfNumber(2));
       arr.add(PdfNumber(3));
 
       expect(arr.size(), equals(3));
-      expect(arr.getAsNumber(0)?.intValue(), equals(1));
-      expect(arr.getAsNumber(1)?.intValue(), equals(2));
-      expect(arr.getAsNumber(2)?.intValue(), equals(3));
+      expect((await arr.getAsNumber(0))?.intValue(), equals(1));
+      expect((await arr.getAsNumber(1))?.intValue(), equals(2));
+      expect((await arr.getAsNumber(2))?.intValue(), equals(3));
     });
 
-    test('PdfArray toDoubleArray', () {
+    test('PdfArray toDoubleArray', () async {
       final arr = PdfArray();
       arr.add(PdfNumber(1.5));
       arr.add(PdfNumber(2.5));
       arr.add(PdfNumber(3.5));
 
-      final doubles = arr.toDoubleArray();
+      final doubles = await arr.toDoubleArray();
       expect(doubles, equals([1.5, 2.5, 3.5]));
     });
 
-    test('PdfArray toIntArray', () {
+    test('PdfArray toIntArray', () async {
       final arr = PdfArray();
       arr.add(PdfNumber(1));
       arr.add(PdfNumber(2));
       arr.add(PdfNumber(3));
 
-      final ints = arr.toIntArray();
+      final ints = await arr.toIntArray();
       expect(ints, equals([1, 2, 3]));
     });
 
-    test('PdfDictionary operations', () {
+    test('PdfDictionary operations', () async {
       final dict = PdfDictionary();
       dict.put(PdfName.type, PdfName.page);
       dict.put(PdfName.count, PdfNumber(10));
 
       expect(dict.size(), equals(2));
-      expect(dict.getAsName(PdfName.type), equals(PdfName.page));
-      expect(dict.getAsNumber(PdfName.count)?.intValue(), equals(10));
+      expect(await dict.getAsName(PdfName.type), equals(PdfName.page));
+      expect((await dict.getAsNumber(PdfName.count))?.intValue(), equals(10));
     });
 
     test('PdfDictionary containsKey', () {
@@ -353,12 +353,12 @@ void main() {
       expect(dict.containsKey(PdfName.count), isFalse);
     });
 
-    test('PdfStream operations', () {
+    test('PdfStream operations', () async {
       final content = Uint8List.fromList(utf8.encode('Hello Stream'));
       final stream = PdfStream.withBytes(content);
 
       expect(stream.isStream(), isTrue);
-      expect(stream.getBytes(), equals(content));
+      expect(await stream.getBytes(), equals(content));
     });
 
     test('PdfLiteral operations', () {

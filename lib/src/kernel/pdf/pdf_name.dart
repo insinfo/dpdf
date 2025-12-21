@@ -366,4 +366,6 @@ class PdfName extends PdfObject {
   static final PdfName tu = PdfName.intern('TU');
   static final PdfName tm = PdfName.intern('TM');
   static final PdfName maxLen = PdfName.intern('MaxLen');
+  static final PdfName properties = PdfName.intern('Properties');
+  static final PdfName shading = PdfName.intern('Shading');
 }

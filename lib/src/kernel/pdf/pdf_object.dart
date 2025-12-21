@@ -1,3 +1,5 @@
+import 'pdf_document.dart';
+
 /// PDF object type constants.
 class PdfObjectType {
   PdfObjectType._();
@@ -173,6 +175,15 @@ abstract class PdfObject {
     return this;
   }
 
+  /// Makes the object indirect.
+  PdfObject makeIndirect(PdfDocument document) {
+    if (getIndirectReference() == null) {
+      setIndirectReference(document.createNextIndirectReference());
+      getIndirectReference()!.setRefersTo(this);
+    }
+    return this;
+  }
+
   /// Creates new instance of object.
   PdfObject newInstance();
 
@@ -225,9 +236,18 @@ class PdfIndirectReference extends PdfObject {
   /// State flags for the reference.
   int _refState = 0;
 
+  /// PdfDocument object belongs to.
+  PdfDocument? _pdfDocument;
+
   /// Creates a new indirect reference.
   PdfIndirectReference(this.objNr, [int genNr = 0, this._refersTo])
       : _genNr = genNr;
+
+  PdfDocument? getDocument() => _pdfDocument;
+
+  void setDocument(PdfDocument? doc) {
+    _pdfDocument = doc;
+  }
 
   @override
   int getObjectType() => PdfObjectType.indirectReference;
@@ -243,7 +263,10 @@ class PdfIndirectReference extends PdfObject {
   }
 
   /// Gets the object this reference points to.
-  PdfObject? getRefersTo([bool allowFlushed = false]) {
+  Future<PdfObject?> getRefersTo([bool allowFlushed = false]) async {
+    if (_refersTo == null && _pdfDocument != null) {
+      _refersTo = await _pdfDocument!.readObject(this);
+    }
     if (allowFlushed || !checkState(PdfObject.flushed)) {
       return _refersTo;
     }

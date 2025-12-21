@@ -1,6 +1,6 @@
 /// iText for Dart - PDF library
 ///
-/// A Dart port of the iText 7 PDF library.
+/// A Dart port of the iText PDF library.
 library itext;
 
 // Commons - Exceptions

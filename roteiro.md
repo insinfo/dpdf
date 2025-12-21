@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Este documento descreve o plano detalhado para portar a biblioteca **iText 7 for .NET** para **Dart**. O iText é uma biblioteca robusta para criação e manipulação de PDFs. A portabilidade segue a estrutura modular do projeto original.
+Este documento descreve o plano detalhado para portar a biblioteca **iText for .NET** para **Dart**. O iText é uma biblioteca robusta para criação e manipulação de PDFs. A portabilidade segue a estrutura modular do projeto original.
 
 o ideal é ir portando e implementando testes para ir validando a implementação
 e ir otimizando a implementação
@@ -10,6 +10,9 @@ va colocando comentario // TODO onde não esta completo ou onde merece otimizar 
 
 IMPORTANTE nada no codigo ou nos testes podem depender do diretorio referencias C:\MyDartProjects\itext\referencias pois ele sera removido no futuro o que 
 for necessario tera que ser copiado para um diretorios apropriado
+
+alto desempenho e não bloqueante é imporante para usar esta lib com servidores web
+algumas micro otimizações podem ser necessarias
 
 **Fonte de Referência:** `C:\MyDartProjects\itext\referencias\itext-dotnet-develop`
 
@@ -220,19 +223,19 @@ kernel/pdf/
 
 **Tarefas:**
 
-- [ ] **2.1.1** Portar `PdfObject` - Classe base
-- [ ] **2.1.2** Portar tipos primitivos
-  - [ ] PdfBoolean
-  - [ ] PdfNumber
-  - [ ] PdfString
-  - [ ] PdfNull
-  - [ ] PdfLiteral
-- [ ] **2.1.3** Portar `PdfName` (inclui constantes extensivas)
-- [ ] **2.1.4** Portar tipos compostos
-  - [ ] PdfArray
-  - [ ] PdfDictionary
-- [ ] **2.1.5** Portar `PdfStream`
-- [ ] **2.1.6** Portar `PdfIndirectReference`
+- [x] **2.1.1** Portar `PdfObject` - Classe base
+- [x] **2.1.2** Portar tipos primitivos
+  - [x] PdfBoolean
+  - [x] PdfNumber
+  - [x] PdfString
+  - [x] PdfNull
+  - [x] PdfLiteral
+- [x] **2.1.3** Portar `PdfName` (inclui constantes extensivas)
+- [x] **2.1.4** Portar tipos compostos
+  - [x] PdfArray
+  - [x] PdfDictionary
+- [x] **2.1.5** Portar `PdfStream`
+- [x] **2.1.6** Portar `PdfIndirectReference`
 
 ### 2.2 Documento e Páginas
 
@@ -249,12 +252,12 @@ kernel/pdf/
 
 **Tarefas:**
 
-- [ ] **2.2.1** Portar `PdfVersion`
-- [ ] **2.2.2** Portar `PdfCatalog`
-- [ ] **2.2.3** Portar `PdfResources`
-- [ ] **2.2.4** Portar `PdfPages` e `PdfPagesTree`
-- [ ] **2.2.5** Portar `PdfPage`
-- [ ] **2.2.6** Portar `PdfDocument`
+- [x] **2.2.1** Portar `PdfVersion`
+- [x] **2.2.2** Portar `PdfCatalog`
+- [x] **2.2.3** Portar `PdfResources`
+- [x] **2.2.4** Portar `PdfPages` e `PdfPagesTree`
+- [x] **2.2.5** Portar `PdfPage`
+- [x] **2.2.6** Portar `PdfDocument`
 
 ### 2.3 Leitura e Escrita
 
@@ -271,11 +274,11 @@ kernel/pdf/
 
 **Tarefas:**
 
-- [ ] **2.3.1** Portar `PdfXrefTable`
+- [x] **2.3.1** Portar `PdfXrefTable`
 - [ ] **2.3.2** Portar `PdfOutputStream`
 - [ ] **2.3.3** Portar `ReaderProperties` e `WriterProperties`
-- [ ] **2.3.4** Portar `PdfReader` ⭐
-- [ ] **2.3.5** Portar `PdfWriter`
+- [x] **2.3.4** Portar `PdfReader` ⭐
+- [x] **2.3.5** Portar `PdfWriter`
 
 ### 2.4 Canvas e Desenho
 
@@ -472,7 +475,7 @@ dependencies:
 |--------|-------------------|----------------|-----------|
 | commons | 1 | ~30 | 3% |
 | io | 10 | ~50 | 20% |
-| kernel | 14 | ~150 | 9% |
+| kernel | 30 | ~150 | 20% |
 | layout | 0 | ~80 | 0% |
 | forms | 0 | ~40 | 0% |
 | sign | 0 | ~30 | 0% |
@@ -497,19 +500,32 @@ dependencies:
 - ✅ `pdf_tokenizer.dart` - Tokenizador PDF ⭐
 
 #### kernel/pdf/
-- ✅ `pdf_object.dart` - Classe base e PdfIndirectReference
+- ✅ `pdf_object.dart` - Classe base e PdfIndirectReference (Async)
 - ✅ `pdf_boolean.dart` - Valores booleanos
 - ✅ `pdf_null.dart` - Valor null
 - ✅ `pdf_number.dart` - Valores numéricos
 - ✅ `pdf_string.dart` - Strings PDF
 - ✅ `pdf_name.dart` - Nomes PDF com constantes
-- ✅ `pdf_array.dart` - Arrays PDF
-- ✅ `pdf_dictionary.dart` - Dicionários PDF
-- ✅ `pdf_stream.dart` - Streams PDF
+- ✅ `pdf_array.dart` - Arrays PDF (Async elements)
+- ✅ `pdf_dictionary.dart` - Dicionários PDF (Async elements)
+- ✅ `pdf_stream.dart` - Streams PDF (Async)
 - ✅ `pdf_primitive_object.dart` - Classe base para objetos primitivos
 - ✅ `pdf_literal.dart` - Literais PDF
 - ✅ `pdf_xref_table.dart` - Tabela de referências cruzadas (xref)
-- ✅ `pdf_reader.dart` - Leitor de documentos PDF básico ⭐
+- ✅ `pdf_reader.dart` - Leitor de documentos PDF (Async) ⭐
+- ✅ `pdf_writer.dart` - Escritor de documentos PDF (Async)
+- ✅ `pdf_document.dart` - Documento PDF principal (Async)
+- ✅ `pdf_page.dart` - Página PDF (Async)
+- ✅ `pdf_pages.dart` - Árvore de páginas (Async)
+- ✅ `pdf_pages_tree.dart` - Gerenciamento da árvore de páginas (Async)
+- ✅ `pdf_catalog.dart` - Catálogo do documento (Async)
+- ✅ `pdf_resources.dart` - Recursos PDF (Async)
+- ✅ `pdf_version.dart` - Versão do PDF
+- ✅ `pdf_object_wrapper.dart` - Wrapper para objetos PDF
+
+#### kernel/geom/
+- ✅ `rectangle.dart` - Geometria de retângulo
+- ✅ `page_size.dart` - Tamanhos de página padrão
 
 #### kernel/exceptions/
 - ✅ `kernel_exception_message_constant.dart` - Constantes de mensagens de erro
@@ -522,7 +538,7 @@ dependencies:
 
 ## Próximos Passos
 
-### Imediato (Esta Semana)
+### Imediato 
 
 1. ✅ Criar roteiro detalhado (este documento)
 2. ✅ Configurar estrutura de diretórios
@@ -532,7 +548,7 @@ dependencies:
 6. ✅ Portar `PdfTokenizer` ⭐
 7. ✅ Portar objetos PDF básicos (`PdfObject`, `PdfName`, etc.)
 
-### Curto Prazo (Próximas 2 Semanas)
+### Curto Prazo 
 
 1. ✅ Portar `PdfArray` e `PdfDictionary`
 2. ✅ Portar `PdfStream` e `FilterHandlers`
@@ -541,20 +557,21 @@ dependencies:
 5. ✅ Portar `PdfXrefTable` (tabela de referências cruzadas)
 6. ✅ Adicionar benchmarks para FilterHandlers
 
-### Médio Prazo (1 Mês)
+### Médio Prazo 
 
-1. ⬜ Completar kernel básico
-   - Implementar parsing de xref streams (PDF 1.5+)
-   - Implementar CCITTFaxDecode e JBIG2Decode
+1. ✅ Completar kernel básico e transição assíncrona
 2. ✅ Implementar leitura de PDF simples (xref table, trailer, objetos)
-3. ⬜ Implementar escrita de PDF simples
+3. ✅ Implementar escrita de PDF simples
+4. ⬜ Portar `PdfCanvas` para desenho de conteúdo
+5. ⬜ Implementar suporte básico a fontes (Standard Type 1)
+6. ⬜ Implementar processamento de streams de conteúdo (Content Streams)
 
 ---
 
 ## Notas e Decisões de Design
 
 ### Decisão 1: Nomenclatura
-- Manter nomes de classes similares ao original para facilitar comparação
+- Manter nomes de classes e metodos similares ao original para facilitar comparação
 - Usar convenções Dart para métodos (camelCase)
 
 ### Decisão 2: Arquitetura de Arquivos
@@ -562,8 +579,8 @@ dependencies:
 - Classes auxiliares pequenas podem ficar no mesmo arquivo
 
 ### Decisão 3: Async vs Sync
-- Manter operações de I/O síncronas inicialmente
-- Converter para async quando necessário para Flutter
+- IMPORTANTE Manter operações de I/O async para poder usar esta lib junto com um servidor web dart onde é necessario não bloquear
+
 
 ### Decisão 4: Testes
 - Criar testes unitários para cada componente portado

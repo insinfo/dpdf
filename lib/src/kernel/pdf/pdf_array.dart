@@ -4,6 +4,7 @@ import 'pdf_number.dart';
 import 'pdf_string.dart';
 import 'pdf_boolean.dart';
 import 'pdf_dictionary.dart';
+import 'pdf_stream.dart';
 
 /// A representation of an array as described in the PDF specification.
 ///
@@ -85,19 +86,15 @@ class PdfArray extends PdfObject {
   bool get isEmptyArray => _list?.isEmpty ?? true;
 
   /// Checks whether the array contains the passed object.
-  bool containsObject(PdfObject o) {
+  Future<bool> containsObject(PdfObject o) async {
     if (_list == null) return false;
-    if (_list!.contains(o)) return true;
     for (final pdfObject in _list!) {
-      if (_equalContent(o, pdfObject)) {
+      if (await _equalContent(o, pdfObject)) {
         return true;
       }
     }
     return false;
   }
-
-  /// Returns an iterator over the array elements.
-  Iterator<PdfObject> get iterator => _PdfArrayDirectIterator(_list ?? []);
 
   /// Adds the passed PdfObject to the array.
   void add(PdfObject pdfObject) {
@@ -130,23 +127,14 @@ class PdfArray extends PdfObject {
   }
 
   /// Gets the (direct) PdfObject at the specified index.
-  PdfObject? get(int index, [bool asDirect = true]) {
+  Future<PdfObject?> get(int index, [bool asDirect = true]) async {
     if (_list == null || index >= _list!.length) return null;
-    if (!asDirect) {
-      return _list![index];
-    }
     final obj = _list![index];
-    if (obj.getObjectType() == PdfObjectType.indirectReference) {
-      return (obj as PdfIndirectReference).getRefersTo(true);
+    if (asDirect && obj.getObjectType() == PdfObjectType.indirectReference) {
+      return await (obj as PdfIndirectReference).getRefersTo(true);
     }
     return obj;
   }
-
-  /// Operator to get element at index.
-  PdfObject? operator [](int index) => get(index);
-
-  /// Operator to set element at index.
-  void operator []=(int index, PdfObject value) => set(index, value);
 
   /// Removes the PdfObject at the specified index.
   void removeAt(int index) {
@@ -154,11 +142,10 @@ class PdfArray extends PdfObject {
   }
 
   /// Removes the first occurrence of the specified PdfObject.
-  void remove(PdfObject o) {
+  Future<void> remove(PdfObject o) async {
     if (_list == null) return;
-    if (_list!.remove(o)) return;
     for (var i = 0; i < _list!.length; i++) {
-      if (_equalContent(o, _list![i])) {
+      if (await _equalContent(o, _list![i])) {
         _list!.removeAt(i);
         return;
       }
@@ -171,14 +158,12 @@ class PdfArray extends PdfObject {
   }
 
   /// Gets the first index of the specified PdfObject.
-  int indexOf(PdfObject o) {
+  Future<int> indexOf(PdfObject o) async {
     if (_list == null) return -1;
-    var index = 0;
-    for (final pdfObject in _list!) {
-      if (_equalContent(o, pdfObject)) {
-        return index;
+    for (var i = 0; i < _list!.length; i++) {
+      if (await _equalContent(o, _list![i])) {
+        return i;
       }
-      index++;
     }
     return -1;
   }
@@ -188,7 +173,7 @@ class PdfArray extends PdfObject {
     return _list?.sublist(fromIndex, toIndex) ?? [];
   }
 
-  /// Returns an unmodifiable list representation.
+  /// Returns a list copy of the array elements.
   List<PdfObject> toListCopy({bool growable = true}) {
     if (!growable) {
       return List.unmodifiable(_list ?? []);
@@ -196,9 +181,14 @@ class PdfArray extends PdfObject {
     return List<PdfObject>.from(_list ?? []);
   }
 
+  /// Returns a list of the array elements (alias for toListCopy).
+  List<PdfObject> toList() {
+    return List<PdfObject>.from(_list ?? []);
+  }
+
   /// Returns the element at the specified index as a PdfArray.
-  PdfArray? getAsArray(int index) {
-    final direct = get(index, true);
+  Future<PdfArray?> getAsArray(int index) async {
+    final direct = await get(index, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.array) {
       return direct as PdfArray;
     }
@@ -206,8 +196,8 @@ class PdfArray extends PdfObject {
   }
 
   /// Returns the element at the specified index as a PdfDictionary.
-  PdfDictionary? getAsDictionary(int index) {
-    final direct = get(index, true);
+  Future<PdfDictionary?> getAsDictionary(int index) async {
+    final direct = await get(index, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.dictionary) {
       return direct as PdfDictionary;
     }
@@ -215,8 +205,8 @@ class PdfArray extends PdfObject {
   }
 
   /// Returns the element at the specified index as a PdfNumber.
-  PdfNumber? getAsNumber(int index) {
-    final direct = get(index, true);
+  Future<PdfNumber?> getAsNumber(int index) async {
+    final direct = await get(index, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.number) {
       return direct as PdfNumber;
     }
@@ -224,8 +214,8 @@ class PdfArray extends PdfObject {
   }
 
   /// Returns the element at the specified index as a PdfName.
-  PdfName? getAsName(int index) {
-    final direct = get(index, true);
+  Future<PdfName?> getAsName(int index) async {
+    final direct = await get(index, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.name) {
       return direct as PdfName;
     }
@@ -233,8 +223,8 @@ class PdfArray extends PdfObject {
   }
 
   /// Returns the element at the specified index as a PdfString.
-  PdfString? getAsString(int index) {
-    final direct = get(index, true);
+  Future<PdfString?> getAsString(int index) async {
+    final direct = await get(index, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.string) {
       return direct as PdfString;
     }
@@ -242,19 +232,28 @@ class PdfArray extends PdfObject {
   }
 
   /// Returns the element at the specified index as a PdfBoolean.
-  PdfBoolean? getAsBoolean(int index) {
-    final direct = get(index, true);
+  Future<PdfBoolean?> getAsBoolean(int index) async {
+    final direct = await get(index, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.boolean) {
       return direct as PdfBoolean;
     }
     return null;
   }
 
+  /// Returns the element at the specified index as a PdfStream.
+  Future<PdfStream?> getAsStream(int index) async {
+    final direct = await get(index, true);
+    if (direct != null && direct.getObjectType() == PdfObjectType.stream) {
+      return direct as PdfStream;
+    }
+    return null;
+  }
+
   /// Returns this array as an array of doubles.
-  List<double> toDoubleArray() {
+  Future<List<double>> toDoubleArray() async {
     final result = <double>[];
     for (var k = 0; k < size(); k++) {
-      final num = getAsNumber(k);
+      final num = await getAsNumber(k);
       if (num != null) {
         result.add(num.doubleValue());
       }
@@ -263,10 +262,10 @@ class PdfArray extends PdfObject {
   }
 
   /// Returns this array as an array of ints.
-  List<int> toIntArray() {
+  Future<List<int>> toIntArray() async {
     final result = <int>[];
     for (var k = 0; k < size(); k++) {
-      final num = getAsNumber(k);
+      final num = await getAsNumber(k);
       if (num != null) {
         result.add(num.intValue());
       }
@@ -275,10 +274,10 @@ class PdfArray extends PdfObject {
   }
 
   /// Returns this array as an array of booleans.
-  List<bool> toBooleanArray() {
+  Future<List<bool>> toBooleanArray() async {
     final result = <bool>[];
     for (var k = 0; k < size(); k++) {
-      final b = getAsBoolean(k);
+      final b = await getAsBoolean(k);
       if (b != null) {
         result.add(b.getValue());
       }
@@ -292,15 +291,15 @@ class PdfArray extends PdfObject {
   }
 
   /// Helper to compare PDF object content.
-  static bool _equalContent(PdfObject? obj1, PdfObject? obj2) {
+  static Future<bool> _equalContent(PdfObject? obj1, PdfObject? obj2) async {
     if (obj1 == null || obj2 == null) return obj1 == obj2;
     PdfObject? direct1 = obj1;
     PdfObject? direct2 = obj2;
     if (obj1.isIndirectReference()) {
-      direct1 = (obj1 as PdfIndirectReference).getRefersTo(true);
+      direct1 = await (obj1 as PdfIndirectReference).getRefersTo(true);
     }
     if (obj2.isIndirectReference()) {
-      direct2 = (obj2 as PdfIndirectReference).getRefersTo(true);
+      direct2 = await (obj2 as PdfIndirectReference).getRefersTo(true);
     }
     return direct1 == direct2;
   }
@@ -317,28 +316,5 @@ class PdfArray extends PdfObject {
     }
     buffer.write(']');
     return buffer.toString();
-  }
-}
-
-/// Iterator that returns direct objects.
-class _PdfArrayDirectIterator implements Iterator<PdfObject> {
-  final List<PdfObject> _list;
-  int _index = -1;
-
-  _PdfArrayDirectIterator(this._list);
-
-  @override
-  PdfObject get current {
-    final obj = _list[_index];
-    if (obj.getObjectType() == PdfObjectType.indirectReference) {
-      return (obj as PdfIndirectReference).getRefersTo(true) ?? obj;
-    }
-    return obj;
-  }
-
-  @override
-  bool moveNext() {
-    _index++;
-    return _index < _list.length;
   }
 }

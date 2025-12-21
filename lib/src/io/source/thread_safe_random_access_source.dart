@@ -15,26 +15,26 @@ class ThreadSafeRandomAccessSource implements IRandomAccessSource {
   ThreadSafeRandomAccessSource(this._source);
 
   @override
-  int get(int position) {
+  Future<int> get(int position) {
     // In single-isolate Dart, no locking is needed
     return _source.get(position);
   }
 
   @override
-  int getRange(int position, Uint8List bytes, int off, int len) {
+  Future<int> getRange(int position, Uint8List bytes, int off, int len) {
     // In single-isolate Dart, no locking is needed
     return _source.getRange(position, bytes, off, len);
   }
 
   @override
-  int length() {
+  Future<int> length() {
     // In single-isolate Dart, no locking is needed
     return _source.length();
   }
 
   @override
-  void close() {
+  Future<void> close() {
     // In single-isolate Dart, no locking is needed
-    _source.close();
+    return _source.close();
   }
 }

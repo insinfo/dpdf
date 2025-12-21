@@ -127,8 +127,8 @@ class PdfTokenizer {
   }
 
   /// Reads bytes fully into the provided buffer.
-  void readFully(Uint8List bytes) {
-    _file.readFully(bytes);
+  Future<void> readFully(Uint8List bytes) async {
+    await _file.readFully(bytes);
   }
 
   /// Gets the current position.
@@ -137,38 +137,38 @@ class PdfTokenizer {
   }
 
   /// Closes this tokenizer.
-  void close() {
+  Future<void> close() async {
     if (_closeStream) {
-      _file.close();
+      await _file.close();
     }
   }
 
   /// Gets the length of the source.
-  int length() {
-    return _file.length();
+  Future<int> length() async {
+    return await _file.length();
   }
 
   /// Reads a single byte.
-  int read() {
-    return _file.read();
+  Future<int> read() async {
+    return await _file.read();
   }
 
   /// Gets the next byte without moving position.
-  int peek() {
-    return _file.peek();
+  Future<int> peek() async {
+    return await _file.peek();
   }
 
   /// Gets the next buffer.length bytes without moving position.
-  int peekBuffer(Uint8List buffer) {
-    return _file.peekBuffer(buffer);
+  Future<int> peekBuffer(Uint8List buffer) async {
+    return await _file.peekBuffer(buffer);
   }
 
   /// Reads a string of specified size.
-  String readString(int size) {
+  Future<String> readString(int size) async {
     final buf = StringBuffer();
     int ch;
     while (size-- > 0) {
-      ch = read();
+      ch = await read();
       if (ch == -1) {
         break;
       }
@@ -231,8 +231,8 @@ class PdfTokenizer {
   }
 
   /// Gets the header offset in the file.
-  int getHeaderOffset() {
-    final str = readString(1024);
+  Future<int> getHeaderOffset() async {
+    final str = await readString(1024);
     var idx = str.indexOf('%PDF-');
     if (idx < 0) {
       idx = str.indexOf('%FDF-');
@@ -244,9 +244,9 @@ class PdfTokenizer {
   }
 
   /// Checks and returns the PDF header.
-  String checkPdfHeader() {
-    _file.seek(0);
-    final str = readString(1024);
+  Future<String> checkPdfHeader() async {
+    seek(0);
+    final str = await readString(1024);
     final idx = str.indexOf('%PDF-');
     if (idx != 0) {
       throw IoException(IoExceptionMessageConstant.pdfHeaderNotFound);
@@ -255,9 +255,9 @@ class PdfTokenizer {
   }
 
   /// Checks the FDF header.
-  void checkFdfHeader() {
-    _file.seek(0);
-    final str = readString(1024);
+  Future<void> checkFdfHeader() async {
+    seek(0);
+    final str = await readString(1024);
     final idx = str.indexOf('%FDF-');
     if (idx != 0) {
       throw IoException(IoExceptionMessageConstant.fdfStartxrefNotFound);
@@ -265,16 +265,16 @@ class PdfTokenizer {
   }
 
   /// Gets the position of startxref.
-  int getStartxref() {
+  Future<int> getStartxref() async {
     const arrLength = 1024;
-    final fileLength = _file.length();
+    final fileLength = await _file.length();
     var pos = fileLength - arrLength;
     if (pos < 1) {
       pos = 1;
     }
     while (pos > 0) {
-      _file.seek(pos);
-      final str = readString(arrLength);
+      seek(pos);
+      final str = await readString(arrLength);
       final idx = str.lastIndexOf('startxref');
       if (idx >= 0) {
         return pos + idx;
@@ -286,17 +286,17 @@ class PdfTokenizer {
   }
 
   /// Gets the next %%EOF marker position.
-  int getNextEof() {
+  Future<int> getNextEof() async {
     const arrLength = 128;
     String str;
     do {
-      final currentPosition = _file.getPosition();
-      str = readString(arrLength);
+      final currentPosition = getPosition();
+      str = await readString(arrLength);
       final eofPosition = str.indexOf('%%EOF');
       if (eofPosition >= 0) {
         // Include following EOL bytes
-        _file.seek(currentPosition + eofPosition + 5);
-        final remainingBytes = readString(4);
+        seek(currentPosition + eofPosition + 5);
+        final remainingBytes = await readString(4);
         var eolCount = 0;
         for (final b in remainingBytes.codeUnits) {
           if (b == 0x0A || b == 0x0D) {
@@ -309,18 +309,18 @@ class PdfTokenizer {
         return currentPosition + eofPosition + eolCount + 5;
       }
       // Ensure '%%EOF' is not cut in half
-      _file.seek(_file.getPosition() - 4);
+      seek(_file.getPosition() - 4);
     } while (str.length > 4);
     throw IoException(IoExceptionMessageConstant.pdfEofNotFound);
   }
 
   /// Reads the next valid token, resolving references.
-  void nextValidToken() {
+  Future<void> nextValidToken() async {
     var level = 0;
     Uint8List? n1;
     Uint8List? n2;
     var ptr = 0;
-    while (nextToken()) {
+    while (await nextToken()) {
       if (_type == TokenType.comment) {
         continue;
       }
@@ -335,7 +335,7 @@ class PdfTokenizer {
           break;
         case 1:
           if (_type != TokenType.number) {
-            _file.seek(ptr);
+            seek(ptr);
             _type = TokenType.number;
             _outBuf.reset().appendBytes(n1!);
             return;
@@ -363,7 +363,7 @@ class PdfTokenizer {
               return;
             }
           }
-          _file.seek(ptr);
+          seek(ptr);
           _type = TokenType.number;
           _outBuf.reset().appendBytes(n1!);
           return;
@@ -379,11 +379,11 @@ class PdfTokenizer {
   /// Reads the next token.
   ///
   /// Returns true if a token was read, false if EOF.
-  bool nextToken() {
+  Future<bool> nextToken() async {
     int ch;
     _outBuf.reset();
     do {
-      ch = _file.read();
+      ch = await _file.read();
     } while (ch != -1 && isWhitespace(ch));
 
     if (ch == -1) {
@@ -403,7 +403,7 @@ class PdfTokenizer {
       case 0x2F: // '/'
         _type = TokenType.name;
         while (true) {
-          ch = _file.read();
+          ch = await _file.read();
           if (_delims[ch + 1]) {
             break;
           }
@@ -413,7 +413,7 @@ class PdfTokenizer {
         break;
 
       case 0x3E: // '>'
-        ch = _file.read();
+        ch = await _file.read();
         if (ch != 0x3E) {
           // '>'
           throwError(IoExceptionMessageConstant.gtNotExpected);
@@ -422,7 +422,7 @@ class PdfTokenizer {
         break;
 
       case 0x3C: // '<'
-        final v1Initial = _file.read();
+        final v1Initial = await _file.read();
         if (v1Initial == 0x3C) {
           // '<'
           _type = TokenType.startDic;
@@ -434,7 +434,7 @@ class PdfTokenizer {
         var v2 = 0;
         while (true) {
           while (isWhitespace(v1)) {
-            v1 = _file.read();
+            v1 = await _file.read();
           }
           if (v1 == 0x3E) {
             // '>'
@@ -445,9 +445,9 @@ class PdfTokenizer {
           if (v1 < 0) {
             break;
           }
-          v2 = _file.read();
+          v2 = await _file.read();
           while (isWhitespace(v2)) {
-            v2 = _file.read();
+            v2 = await _file.read();
           }
           if (v2 == 0x3E) {
             // '>'
@@ -458,7 +458,7 @@ class PdfTokenizer {
           if (v2 < 0) {
             break;
           }
-          v1 = _file.read();
+          v1 = await _file.read();
         }
         if (v1 < 0 || v2 < 0) {
           throwError(IoExceptionMessageConstant.errorReadingString);
@@ -468,7 +468,7 @@ class PdfTokenizer {
       case 0x25: // '%'
         _type = TokenType.comment;
         do {
-          ch = _file.read();
+          ch = await _file.read();
         } while (ch != -1 && ch != 0x0D && ch != 0x0A); // '\r' '\n'
         break;
 
@@ -477,7 +477,7 @@ class PdfTokenizer {
         _hexString = false;
         var nesting = 0;
         while (true) {
-          ch = _file.read();
+          ch = await _file.read();
           if (ch == -1) {
             break;
           }
@@ -493,7 +493,7 @@ class PdfTokenizer {
           } else if (ch == 0x5C) {
             // '\\'
             _outBuf.append(0x5C);
-            ch = _file.read();
+            ch = await _file.read();
             if (ch < 0) {
               break;
             }
@@ -518,34 +518,34 @@ class PdfTokenizer {
             // '-'
             do {
               ++numberOfMinuses;
-              ch = _file.read();
+              ch = await _file.read();
             } while (ch == 0x2D);
             _outBuf.append(0x2D);
           } else {
             _outBuf.append(ch);
-            ch = _file.read();
+            ch = await _file.read();
           }
           while (ch >= 0x30 && ch <= 0x39) {
             // '0'-'9'
             _outBuf.append(ch);
-            ch = _file.read();
+            ch = await _file.read();
           }
           if (ch == 0x2E) {
             // '.'
             isReal = true;
             _outBuf.append(ch);
-            ch = _file.read();
+            ch = await _file.read();
             // Check for minus after '.'
             var numberOfMinusesAfterDot = 0;
             if (ch == 0x2D) {
               numberOfMinusesAfterDot++;
-              ch = _file.read();
+              ch = await _file.read();
             }
             while (ch >= 0x30 && ch <= 0x39) {
               if (numberOfMinusesAfterDot == 0) {
                 _outBuf.append(ch);
               }
-              ch = _file.read();
+              ch = await _file.read();
             }
           }
           if (numberOfMinuses > 1 && !isReal) {
@@ -557,7 +557,7 @@ class PdfTokenizer {
           _type = TokenType.other;
           do {
             _outBuf.append(ch);
-            ch = _file.read();
+            ch = await _file.read();
           } while (!_delims[ch + 1]);
         }
         if (ch != -1) {
@@ -764,12 +764,13 @@ class PdfTokenizer {
   /// Reads data into the provided ByteBuffer.
   ///
   /// Skips initial whitespace.
-  bool readLineSegment(ByteBuffer buffer, [bool isNullWhitespace = true]) {
+  Future<bool> readLineSegment(ByteBuffer buffer,
+      [bool isNullWhitespace = true]) async {
     int c;
     var eol = false;
 
     // Skip initial whitespace
-    while (isWhitespace((c = read()), isNullWhitespace)) {}
+    while (isWhitespace((c = await read()), isNullWhitespace)) {}
 
     var prevWasWhitespace = false;
     while (!eol) {
@@ -782,7 +783,7 @@ class PdfTokenizer {
         case 0x0D: // '\r'
           eol = true;
           final cur = getPosition();
-          if (read() != 0x0A) {
+          if (await read() != 0x0A) {
             seek(cur);
           }
           break;
@@ -806,7 +807,7 @@ class PdfTokenizer {
       if (eol || buffer.size() == buffer.capacity()) {
         eol = true;
       } else {
-        c = read();
+        c = await read();
       }
     }
 
@@ -814,7 +815,7 @@ class PdfTokenizer {
     if (buffer.size() == buffer.capacity()) {
       eol = false;
       while (!eol) {
-        switch (c = read()) {
+        switch (c = await read()) {
           case -1:
           case 0x0A:
             eol = true;
@@ -822,7 +823,7 @@ class PdfTokenizer {
           case 0x0D:
             eol = true;
             final cur = getPosition();
-            if (read() != 0x0A) {
+            if (await read() != 0x0A) {
               seek(cur);
             }
             break;
@@ -836,20 +837,20 @@ class PdfTokenizer {
   /// Check whether line starts with object declaration.
   ///
   /// Returns [objectNumber, generation] if check is successful, otherwise null.
-  static List<int>? checkObjectStart(PdfTokenizer lineTokenizer) {
+  static Future<List<int>?> checkObjectStart(PdfTokenizer lineTokenizer) async {
     try {
       lineTokenizer.seek(0);
-      if (!lineTokenizer.nextToken() ||
+      if (!await lineTokenizer.nextToken() ||
           lineTokenizer.getTokenType() != TokenType.number) {
         return null;
       }
       final num = lineTokenizer.getIntValue();
-      if (!lineTokenizer.nextToken() ||
+      if (!await lineTokenizer.nextToken() ||
           lineTokenizer.getTokenType() != TokenType.number) {
         return null;
       }
       final gen = lineTokenizer.getIntValue();
-      if (!lineTokenizer.nextToken()) {
+      if (!await lineTokenizer.nextToken()) {
         return null;
       }
       if (!_arraysEquals(obj, lineTokenizer.getByteContent())) {

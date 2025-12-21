@@ -14,6 +14,9 @@ class PdfDictionary extends PdfObject {
   /// The internal map.
   Map<PdfName, PdfObject>? _map;
 
+  /// Gets the internal map.
+  Map<PdfName, PdfObject>? getMap() => _map;
+
   /// Creates a new PdfDictionary instance.
   PdfDictionary() {
     _map = <PdfName, PdfObject>{};
@@ -70,29 +73,22 @@ class PdfDictionary extends PdfObject {
   /// If [asDirect] is true and the value is an indirect reference,
   /// attempts to resolve it. If the reference cannot be resolved,
   /// returns the reference itself.
-  PdfObject? get(PdfName key, [bool asDirect = true]) {
+  Future<PdfObject?> get(PdfName key, [bool asDirect = true]) async {
     if (_map == null) return null;
-    if (!asDirect) {
-      return _map![key];
-    }
     final obj = _map![key];
-    if (obj != null && obj.getObjectType() == PdfObjectType.indirectReference) {
-      final resolved = (obj as PdfIndirectReference).getRefersTo(true);
+    if (asDirect &&
+        obj != null &&
+        obj.getObjectType() == PdfObjectType.indirectReference) {
+      final resolved = await (obj as PdfIndirectReference).getRefersTo(true);
       // Return resolved object if available, otherwise the reference itself
       return resolved ?? obj;
     }
     return obj;
   }
 
-  /// Operator to get value by key.
-  PdfObject? operator [](PdfName key) => get(key);
-
-  /// Operator to set value by key.
-  void operator []=(PdfName key, PdfObject value) => put(key, value);
-
   /// Returns the value as a PdfArray.
-  PdfArray? getAsArray(PdfName key) {
-    final direct = get(key, true);
+  Future<PdfArray?> getAsArray(PdfName key) async {
+    final direct = await get(key, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.array) {
       return direct as PdfArray;
     }
@@ -100,8 +96,8 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Returns the value as a PdfDictionary.
-  PdfDictionary? getAsDictionary(PdfName key) {
-    final direct = get(key, true);
+  Future<PdfDictionary?> getAsDictionary(PdfName key) async {
+    final direct = await get(key, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.dictionary) {
       return direct as PdfDictionary;
     }
@@ -109,8 +105,8 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Returns the value as a PdfNumber.
-  PdfNumber? getAsNumber(PdfName key) {
-    final direct = get(key, true);
+  Future<PdfNumber?> getAsNumber(PdfName key) async {
+    final direct = await get(key, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.number) {
       return direct as PdfNumber;
     }
@@ -118,8 +114,8 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Returns the value as a PdfName.
-  PdfName? getAsName(PdfName key) {
-    final direct = get(key, true);
+  Future<PdfName?> getAsName(PdfName key) async {
+    final direct = await get(key, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.name) {
       return direct as PdfName;
     }
@@ -127,8 +123,8 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Returns the value as a PdfString.
-  PdfString? getAsString(PdfName key) {
-    final direct = get(key, true);
+  Future<PdfString?> getAsString(PdfName key) async {
+    final direct = await get(key, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.string) {
       return direct as PdfString;
     }
@@ -136,8 +132,8 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Returns the value as a PdfBoolean.
-  PdfBoolean? getAsBoolean(PdfName key) {
-    final direct = get(key, true);
+  Future<PdfBoolean?> getAsBoolean(PdfName key) async {
+    final direct = await get(key, true);
     if (direct != null && direct.getObjectType() == PdfObjectType.boolean) {
       return direct as PdfBoolean;
     }
@@ -145,20 +141,20 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Returns the value as a double.
-  double? getAsFloat(PdfName key) {
-    final number = getAsNumber(key);
+  Future<double?> getAsFloat(PdfName key) async {
+    final number = await getAsNumber(key);
     return number?.doubleValue();
   }
 
   /// Returns the value as an int.
-  int? getAsInt(PdfName key) {
-    final number = getAsNumber(key);
+  Future<int?> getAsInt(PdfName key) async {
+    final number = await getAsNumber(key);
     return number?.intValue();
   }
 
   /// Returns the value as a bool.
-  bool? getAsBool(PdfName key) {
-    final b = getAsBoolean(key);
+  Future<bool?> getAsBool(PdfName key) async {
+    final b = await getAsBoolean(key);
     return b?.getValue();
   }
 
@@ -193,29 +189,36 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Returns all the values.
-  Iterable<PdfObject> values([bool asDirects = true]) {
+  Future<Iterable<PdfObject>> values([bool asDirects = true]) async {
     if (_map == null) return [];
     if (!asDirects) {
       return _map!.values;
     }
-    return _map!.values.map((obj) {
+    final result = <PdfObject>[];
+    for (final obj in _map!.values) {
       if (obj.getObjectType() == PdfObjectType.indirectReference) {
-        return (obj as PdfIndirectReference).getRefersTo(true) ?? obj;
+        result
+            .add(await (obj as PdfIndirectReference).getRefersTo(true) ?? obj);
+      } else {
+        result.add(obj);
       }
-      return obj;
-    });
+    }
+    return result;
   }
 
   /// Returns all entries.
-  Iterable<MapEntry<PdfName, PdfObject>> entrySet() {
+  Future<Iterable<MapEntry<PdfName, PdfObject>>> entrySet() async {
     if (_map == null) return [];
-    return _map!.entries.map((entry) {
+    final result = <MapEntry<PdfName, PdfObject>>[];
+    for (final entry in _map!.entries) {
       var value = entry.value;
       if (value.getObjectType() == PdfObjectType.indirectReference) {
-        value = (value as PdfIndirectReference).getRefersTo(true) ?? value;
+        value =
+            await (value as PdfIndirectReference).getRefersTo(true) ?? value;
       }
-      return MapEntry(entry.key, value);
-    });
+      result.add(MapEntry(entry.key, value));
+    }
+    return result;
   }
 
   /// Creates a clone excluding specified keys.
@@ -232,10 +235,13 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Merges fields from another dictionary that don't exist in this one.
-  void mergeDifferent(PdfDictionary other) {
+  Future<void> mergeDifferent(PdfDictionary other) async {
     for (final key in other.keySet()) {
       if (!containsKey(key)) {
-        put(key, other.get(key)!);
+        final val = await other.get(key);
+        if (val != null) {
+          put(key, val);
+        }
       }
     }
   }

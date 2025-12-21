@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'pdf_dictionary.dart';
 import 'pdf_name.dart';
 import 'pdf_object.dart';
+import '../utils/filter_handlers.dart';
 
 /// Compression level constants.
 class CompressionConstants {
@@ -67,18 +68,19 @@ class PdfStream extends PdfDictionary {
       : this.withBytes(null, compressionLevel);
 
   /// Creates a PdfStream for reading from an existing PDF file.
-  ///
-  /// This constructor is used internally by PdfReader.
-  PdfStream.fromReader(int offset, PdfDictionary keys) {
-    _compressionLevel = CompressionConstants.undefinedCompression;
-    _offset = offset;
+  static Future<PdfStream> fromReader(int offset, PdfDictionary keys) async {
+    final stream = PdfStream();
+    stream._compressionLevel = CompressionConstants.undefinedCompression;
+    stream._offset = offset;
     // Copy all entries from the keys dictionary
-    for (final entry in keys.entrySet()) {
-      put(entry.key, entry.value);
+    final entries = await keys.entrySet();
+    for (final entry in entries) {
+      stream.put(entry.key, entry.value);
     }
     // Get length from dictionary
-    final lengthNum = getAsNumber(PdfName.length);
-    _length = lengthNum?.intValue() ?? 0;
+    final lengthNum = await stream.getAsNumber(PdfName.length);
+    stream._length = lengthNum?.intValue() ?? 0;
+    return stream;
   }
 
   @override
@@ -87,8 +89,15 @@ class PdfStream extends PdfDictionary {
   @override
   PdfObject clone() {
     final cloned = PdfStream.withBytes(_outputBytes, _compressionLevel);
-    for (final entry in entrySet()) {
-      cloned.put(entry.key, entry.value.clone());
+    // Note: Clone here is sync, it won't be able to easily copy the dictionary entries
+    // that were inherited from PdfDictionary without being async.
+    // However, if we know the parent is sync-clonable...
+    // Actually, PdfDictionary.clone() is sync.
+    final map = getMap();
+    if (map != null) {
+      for (final entry in map.entries) {
+        cloned.put(entry.key, entry.value.clone());
+      }
     }
     return cloned;
   }
@@ -120,7 +129,7 @@ class PdfStream extends PdfDictionary {
   /// Note: DCTDecode and JPXDecode filters will be ignored.
   ///
   /// Returns null if the stream was created from an InputStream.
-  Uint8List? getBytes([bool decoded = true]) {
+  Future<Uint8List?> getBytes([bool decoded = true]) async {
     if (isFlushed()) {
       throw StateError('Cannot operate with flushed PdfStream');
     }
@@ -130,13 +139,13 @@ class PdfStream extends PdfDictionary {
     }
     Uint8List? bytes = _outputBytes;
     if (bytes != null && decoded && containsKey(PdfName.filter)) {
-      bytes = _decodeBytes(bytes);
+      bytes = await FilterHandlers.decodeBytes(bytes, this);
     }
     return bytes;
   }
 
   /// Gets the raw (uncompressed) stream bytes.
-  Uint8List? getRawBytes() => getBytes(false);
+  Future<Uint8List?> getRawBytes() async => await getBytes(false);
 
   /// Sets the stream content.
   ///
@@ -167,32 +176,6 @@ class PdfStream extends PdfDictionary {
     // Remove filters since data is now raw
     remove(PdfName.filter);
     remove(PdfName.decodeParms);
-  }
-
-  /// Decodes bytes based on the stream's filter.
-  Uint8List _decodeBytes(Uint8List bytes) {
-    // Use FilterHandlers for decoding
-    // Import: import '../utils/filter_handlers.dart';
-    // return FilterHandlers.decodeBytes(bytes, this);
-
-    // For now, inline basic FlateDecode support using dart:io
-    final filterObj = get(PdfName.filter);
-    if (filterObj == null) {
-      return bytes;
-    }
-
-    // Check if it's FlateDecode
-    if (filterObj is PdfName && filterObj.getValue() == 'FlateDecode') {
-      try {
-        // Use dart:io zlib for decompression
-        // This requires importing dart:io
-        return bytes; // Placeholder - actual implementation in FilterHandlers
-      } catch (e) {
-        return bytes;
-      }
-    }
-
-    return bytes;
   }
 
   /// Updates the length field.

@@ -14,23 +14,23 @@ class IndependentRandomAccessSource implements IRandomAccessSource {
   IndependentRandomAccessSource(this._source);
 
   @override
-  int get(int position) {
+  Future<int> get(int position) {
     return _source.get(position);
   }
 
   @override
-  int getRange(int position, Uint8List bytes, int off, int len) {
+  Future<int> getRange(int position, Uint8List bytes, int off, int len) {
     return _source.getRange(position, bytes, off, len);
   }
 
   @override
-  int length() {
+  Future<int> length() {
     return _source.length();
   }
 
   /// Does nothing - the underlying source is not closed.
   @override
-  void close() {
+  Future<void> close() async {
     // do not close the source
   }
 }

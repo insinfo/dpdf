@@ -166,4 +166,10 @@ class KernelExceptionMessageConstant {
   static const String invalidRangeArray = 'Invalid range array.';
   static const String invalidLength =
       'The offset + length must be lower than or equal to the length of the byte array.';
+
+  // Wrapper errors
+  static const String toFlushThisWrapperUnderlyingObjectMustBeAddedToDocument =
+      'To flush this wrapper, underlying object must be added to document.';
+  static const String objectMustBeIndirectToWorkWithThisWrapper =
+      'Object must be indirect to work with this wrapper.';
 }

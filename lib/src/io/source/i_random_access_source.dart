@@ -11,7 +11,7 @@ abstract class IRandomAccessSource {
   ///
   /// [position] byte position
   /// Returns the byte, or -1 if EOF is reached.
-  int get(int position);
+  Future<int> get(int position);
 
   /// Read an array of bytes of specified length from the specified position
   /// of source to the buffer applying the offset.
@@ -25,15 +25,15 @@ abstract class IRandomAccessSource {
   /// [off] offset into the output buffer where results will be placed
   /// [len] the number of bytes to read
   /// Returns the number of bytes actually read, or -1 if the file is at EOF.
-  int getRange(int position, Uint8List bytes, int off, int len);
+  Future<int> getRange(int position, Uint8List bytes, int off, int len);
 
   /// Gets the length of the source.
   ///
   /// Returns the length of this source.
-  int length();
+  Future<int> length();
 
   /// Closes this source.
   ///
   /// The underlying data structure or source (if any) will also be closed.
-  void close();
+  Future<void> close();
 }

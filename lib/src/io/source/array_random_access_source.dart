@@ -15,7 +15,7 @@ class ArrayRandomAccessSource implements IRandomAccessSource {
   }
 
   @override
-  int get(int offset) {
+  Future<int> get(int offset) async {
     if (_array == null) {
       throw StateError(IoExceptionMessageConstant.alreadyClosed);
     }
@@ -26,24 +26,25 @@ class ArrayRandomAccessSource implements IRandomAccessSource {
   }
 
   @override
-  int getRange(int offset, Uint8List bytes, int off, int len) {
+  Future<int> getRange(int offset, Uint8List bytes, int off, int len) async {
     if (_array == null) {
       throw StateError(IoExceptionMessageConstant.alreadyClosed);
     }
     if (offset >= _array!.length) {
       return -1;
     }
-    if (offset + len > _array!.length) {
-      len = _array!.length - offset;
+    var actualLen = len;
+    if (offset + actualLen > _array!.length) {
+      actualLen = _array!.length - offset;
     }
-    for (var i = 0; i < len; i++) {
+    for (var i = 0; i < actualLen; i++) {
       bytes[off + i] = _array![offset + i];
     }
-    return len;
+    return actualLen;
   }
 
   @override
-  int length() {
+  Future<int> length() async {
     if (_array == null) {
       throw StateError(IoExceptionMessageConstant.alreadyClosed);
     }
@@ -51,7 +52,7 @@ class ArrayRandomAccessSource implements IRandomAccessSource {
   }
 
   @override
-  void close() {
+  Future<void> close() async {
     _array = null;
   }
 }

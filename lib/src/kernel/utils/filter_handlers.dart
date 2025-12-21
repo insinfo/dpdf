@@ -49,13 +49,14 @@ class FilterHandlers {
   /// [streamDict] The stream's dictionary containing filter information.
   ///
   /// Returns the decoded bytes.
-  static Uint8List decodeBytes(Uint8List bytes, PdfDictionary streamDict) {
-    final filterObj = streamDict.get(PdfName.filter);
+  static Future<Uint8List> decodeBytes(
+      Uint8List bytes, PdfDictionary streamDict) async {
+    final filterObj = await streamDict.get(PdfName.filter);
     if (filterObj == null) {
       return bytes;
     }
 
-    final decodeParmsObj = streamDict.get(PdfName.decodeParms);
+    final decodeParmsObj = await streamDict.get(PdfName.decodeParms);
 
     // Single filter
     if (filterObj is PdfName) {
@@ -64,10 +65,9 @@ class FilterHandlers {
         parms = decodeParmsObj;
       } else if (decodeParmsObj is PdfArray) {
         // Some malformed PDFs may provide array even with single filter.
-        parms = decodeParmsObj.getAsDictionary(0);
+        parms = await decodeParmsObj.getAsDictionary(0);
       }
-      // TODO: Handle case where decodeParmsObj is something else (robustness)
-      return _applyFilter(bytes, filterObj, parms);
+      return await _applyFilter(bytes, filterObj, parms);
     }
 
     // Array of filters
@@ -81,15 +81,15 @@ class FilterHandlers {
       }
 
       for (var i = 0; i < n; i++) {
-        final filter = filterObj.getAsName(i);
+        final filter = await filterObj.getAsName(i);
         if (filter == null) continue;
 
         PdfDictionary? parms;
         if (decodeParmsArray != null && i < decodeParmsArray.size()) {
-          parms = decodeParmsArray.getAsDictionary(i);
+          parms = await decodeParmsArray.getAsDictionary(i);
         }
 
-        result = _applyFilter(result, filter, parms);
+        result = await _applyFilter(result, filter, parms);
       }
       return result;
     }
@@ -98,14 +98,14 @@ class FilterHandlers {
   }
 
   /// Applies a single filter to decode bytes.
-  static Uint8List _applyFilter(
-      Uint8List bytes, PdfName filter, PdfDictionary? parms) {
+  static Future<Uint8List> _applyFilter(
+      Uint8List bytes, PdfName filter, PdfDictionary? parms) async {
     final filterName = filter.getValue();
 
     switch (filterName) {
       case 'FlateDecode':
       case 'Fl':
-        return _flateDecode(bytes, parms);
+        return await _flateDecode(bytes, parms);
 
       case 'ASCIIHexDecode':
       case 'AHx':
@@ -117,7 +117,7 @@ class FilterHandlers {
 
       case 'LZWDecode':
       case 'LZW':
-        return _lzwDecode(bytes, parms);
+        return await _lzwDecode(bytes, parms);
 
       case 'RunLengthDecode':
       case 'RL':
@@ -152,16 +152,17 @@ class FilterHandlers {
   }
 
   /// Decodes FlateDecode (zlib) compressed data.
-  static Uint8List _flateDecode(Uint8List bytes, PdfDictionary? parms) {
+  static Future<Uint8List> _flateDecode(
+      Uint8List bytes, PdfDictionary? parms) async {
     try {
       final decompressed = zlib.decode(bytes);
       var result = _toUint8List(decompressed);
 
       // Apply predictor if specified
       if (parms != null) {
-        final predictor = parms.getAsInt(_predictorKey);
+        final predictor = await parms.getAsInt(_predictorKey);
         if (predictor != null && predictor > 1) {
-          result = _applyPredictor(result, parms, predictor);
+          result = await _applyPredictor(result, parms, predictor);
         }
       }
 
@@ -173,15 +174,15 @@ class FilterHandlers {
   }
 
   /// Applies PNG/TIFF predictors for FlateDecode/LZWDecode.
-  static Uint8List _applyPredictor(
-      Uint8List bytes, PdfDictionary parms, int predictor) {
+  static Future<Uint8List> _applyPredictor(
+      Uint8List bytes, PdfDictionary parms, int predictor) async {
     if (predictor == 1) {
       return bytes;
     }
 
-    final columns = parms.getAsInt(_columnsKey) ?? 1;
-    final colors = parms.getAsInt(_colorsKey) ?? 1;
-    final bitsPerComponent = parms.getAsInt(_bpcKey) ?? 8;
+    final columns = await parms.getAsInt(_columnsKey) ?? 1;
+    final colors = await parms.getAsInt(_colorsKey) ?? 1;
+    final bitsPerComponent = await parms.getAsInt(_bpcKey) ?? 8;
 
     final bytesPerPixel = (colors * bitsPerComponent + 7) ~/ 8;
     final bytesPerRow = (columns * colors * bitsPerComponent + 7) ~/ 8;
@@ -200,9 +201,6 @@ class FilterHandlers {
   }
 
   /// Applies PNG predictor decoding.
-  ///
-  /// Optimization: writes directly to output buffer and reads previous row
-  /// from output itself, avoiding per-line allocations.
   static Uint8List _pngPredictor(
       Uint8List bytes, int bytesPerRow, int bytesPerPixel) {
     final rowSize = bytesPerRow + 1; // +1 for filter byte
@@ -293,33 +291,25 @@ class FilterHandlers {
   }
 
   /// Decodes ASCIIHexDecode data.
-  ///
-  /// Optimization: pre-allocates output buffer (upper bound) and returns view.
   static Uint8List _asciiHexDecode(Uint8List bytes) {
-    // Upper bound: each 2 chars become 1 byte.
     final out = Uint8List((bytes.length >> 1) + 2);
     var outLen = 0;
-
     var firstNibble = -1;
 
     for (var i = 0; i < bytes.length; i++) {
       final ch = bytes[i];
-
-      // End of data: '>'
       if (ch == 0x3E) break;
-
-      // Skip whitespace (space, tab, LF, CR, FF)
       if (ch == 0x20 || ch == 0x09 || ch == 0x0A || ch == 0x0D || ch == 0x0C) {
         continue;
       }
 
       int nibble;
       if (ch >= 0x30 && ch <= 0x39) {
-        nibble = ch - 0x30; // '0'-'9'
+        nibble = ch - 0x30;
       } else if (ch >= 0x41 && ch <= 0x46) {
-        nibble = ch - 0x41 + 10; // 'A'-'F'
+        nibble = ch - 0x41 + 10;
       } else if (ch >= 0x61 && ch <= 0x66) {
-        nibble = ch - 0x61 + 10; // 'a'-'f'
+        nibble = ch - 0x61 + 10;
       } else {
         continue;
       }
@@ -332,7 +322,6 @@ class FilterHandlers {
       }
     }
 
-    // Odd number of hex digits => pad low nibble with 0
     if (firstNibble >= 0) {
       out[outLen++] = (firstNibble << 4);
     }
@@ -341,35 +330,23 @@ class FilterHandlers {
   }
 
   /// Decodes ASCII85Decode data.
-  ///
-  /// Optimization: uses growable Uint8List buffer instead of List<int>.
   static Uint8List _ascii85Decode(Uint8List bytes) {
-    // Heuristic: 5 chars => 4 bytes. Reserve approximate size.
     final out = _GrowableBytes(((bytes.length * 4) ~/ 5) + 16);
-
     var tuple = 0;
     var count = 0;
 
     for (var i = 0; i < bytes.length; i++) {
       final ch = bytes[i];
-
-      // End of data: "~>"
       if (ch == 0x7E && i + 1 < bytes.length && bytes[i + 1] == 0x3E) {
         break;
       }
-
-      // Skip whitespace (space, tab, LF, CR, FF)
       if (ch == 0x20 || ch == 0x09 || ch == 0x0A || ch == 0x0D || ch == 0x0C) {
         continue;
       }
-
-      // 'z' => 4 zeros (only if not in middle of a group)
       if (ch == 0x7A && count == 0) {
         out.addRepeat(0, 4);
         continue;
       }
-
-      // Accept from '!'(0x21) to 'u'(0x75)
       if (ch < 0x21 || ch > 0x75) continue;
 
       tuple = tuple * 85 + (ch - 0x21);
@@ -385,12 +362,10 @@ class FilterHandlers {
       }
     }
 
-    // Trailing group
     if (count > 1) {
       for (var n = count; n < 5; n++) {
-        tuple = tuple * 85 + 84; // pad with 'u'
+        tuple = tuple * 85 + 84;
       }
-      // If count = k, emit k-1 bytes
       for (var n = 0; n < count - 1; n++) {
         out.addByte((tuple >> (24 - n * 8)) & 0xFF);
       }
@@ -400,24 +375,14 @@ class FilterHandlers {
   }
 
   /// Decodes LZWDecode data.
-  ///
-  /// Heavy optimization:
-  /// - Bit reading via byte buffer, not bit-by-bit.
-  /// - Dictionary as prefix/suffix arrays (Int32List/Uint8List),
-  ///   avoiding List<List<int>> allocations.
-  /// - Output via growable Uint8List buffer.
-  ///
-  /// TODO(benchmark): Test MSB-first vs LSB-first for edge cases.
-  /// Some malformed PDFs may use different bit ordering.
-  static Uint8List _lzwDecode(Uint8List bytes, PdfDictionary? parms) {
-    final earlyChange = parms?.getAsInt(_earlyChangeKey) ?? 1;
+  static Future<Uint8List> _lzwDecode(
+      Uint8List bytes, PdfDictionary? parms) async {
+    final earlyChange = await parms?.getAsInt(_earlyChangeKey) ?? 1;
 
     const clearCode = 256;
     const eodCode = 257;
     const maxCode = 4096;
 
-    // LZW dictionary:
-    // For codes >= 258: prefix[code] = previous code, suffix[code] = last byte.
     final prefix = Int32List(maxCode);
     prefix.fillRange(0, maxCode, -1);
 
@@ -432,7 +397,6 @@ class FilterHandlers {
     var nextCode = 258;
     var codeSize = 9;
 
-    // Bit reader (MSB-first), compatible with PDF LZW.
     var bytePos = 0;
     var bitBuffer = 0;
     var bitsInBuffer = 0;
@@ -443,7 +407,6 @@ class FilterHandlers {
         bitBuffer = (bitBuffer << 8) | (bytes[bytePos++] & 0xFF);
         bitsInBuffer += 8;
       }
-
       bitsInBuffer -= codeSize;
       final code = (bitBuffer >> bitsInBuffer) & ((1 << codeSize) - 1);
       bitBuffer &= (bitsInBuffer == 0) ? 0 : ((1 << bitsInBuffer) - 1);
@@ -461,9 +424,7 @@ class FilterHandlers {
     while (true) {
       final code = readCode();
       if (code < 0) break;
-
       if (code == eodCode) break;
-
       if (code == clearCode) {
         resetTable();
         oldCode = -1;
@@ -474,15 +435,12 @@ class FilterHandlers {
       bool special = false;
 
       if (curCode == nextCode && oldCode >= 0) {
-        // Special case: KwKwK (code not yet in dictionary)
         curCode = oldCode;
         special = true;
       } else if (curCode > nextCode) {
-        // Invalid code
         break;
       }
 
-      // Decode curCode to stack (bytes in reverse order)
       var top = 0;
       var t = curCode;
       while (t >= 256) {
@@ -492,43 +450,36 @@ class FilterHandlers {
       }
       if (t < 0) break;
 
-      stack[top++] = t; // t is now < 256 (first byte of string)
+      stack[top++] = t;
       var firstChar = stack[top - 1];
 
-      // Emit string (correct order)
       for (var i = top - 1; i >= 0; i--) {
         out.addByte(stack[i]);
       }
 
       if (special) {
-        // string = oldString + oldFirstChar
         out.addByte(oldFirstChar);
         firstChar = oldFirstChar;
       }
 
-      // Add new entry to dictionary
       if (oldCode >= 0 && nextCode < maxCode) {
         prefix[nextCode] = oldCode;
         suffix[nextCode] = firstChar;
         nextCode++;
-
-        // earlyChange: increase codeSize "one code before" when = 1
         if (codeSize < 12 && (nextCode + earlyChange) == (1 << codeSize)) {
           codeSize++;
         }
       }
-
       oldCode = code;
       oldFirstChar = firstChar;
     }
 
     var result = out.takeBytes();
 
-    // Apply predictor if specified
     if (parms != null) {
-      final predictor = parms.getAsInt(_predictorKey);
+      final predictor = await parms.getAsInt(_predictorKey);
       if (predictor != null && predictor > 1) {
-        result = _applyPredictor(result, parms, predictor);
+        result = await _applyPredictor(result, parms, predictor);
       }
     }
 
@@ -536,17 +487,12 @@ class FilterHandlers {
   }
 
   /// Decodes RunLengthDecode data.
-  ///
-  /// Optimization: uses growable Uint8List buffer.
   static Uint8List _runLengthDecode(Uint8List bytes) {
     final out = _GrowableBytes(bytes.length);
-
     var i = 0;
     while (i < bytes.length) {
       final len = bytes[i++];
-
-      if (len == 128) break; // EOD
-
+      if (len == 128) break;
       if (len < 128) {
         final count = len + 1;
         final end = (i + count <= bytes.length) ? (i + count) : bytes.length;
@@ -559,22 +505,15 @@ class FilterHandlers {
         out.addRepeat(repeatByte, count);
       }
     }
-
     return out.takeBytes();
   }
 
-  /// Efficiently converts List<int> to Uint8List avoiding unnecessary copies.
   static Uint8List _toUint8List(List<int> bytes) {
-    if (bytes is Uint8List) {
-      return bytes;
-    }
+    if (bytes is Uint8List) return bytes;
     return Uint8List.fromList(bytes);
   }
 }
 
-/// Growable buffer based on Uint8List (more efficient than List<int> + fromList).
-///
-/// TODO(benchmark): Compare with BytesBuilder for different payload sizes.
 final class _GrowableBytes {
   Uint8List _buf;
   int _len = 0;
@@ -585,17 +524,12 @@ final class _GrowableBytes {
   void _ensureCapacity(int additional) {
     final needed = _len + additional;
     if (needed <= _buf.length) return;
-
     var newCap = _buf.isEmpty ? 256 : _buf.length;
     while (newCap < needed) {
-      // Double until 1MB, then grow by 50%
       newCap = newCap < 1024 * 1024 ? (newCap << 1) : (newCap + (newCap >> 1));
     }
-
     final nb = Uint8List(newCap);
-    if (_len > 0) {
-      nb.setRange(0, _len, _buf);
-    }
+    if (_len > 0) nb.setRange(0, _len, _buf);
     _buf = nb;
   }
 

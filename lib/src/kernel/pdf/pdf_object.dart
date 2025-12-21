@@ -1,27 +1,3 @@
-/*
- * This file is part of the iText (R) project.
- * Copyright (c) 1998-2025 Apryse Group NV
- * Authors: Apryse Software.
- *
- * This program is offered under a commercial and under the AGPL license.
- * For commercial licensing, contact us at https://itextpdf.com/sales.
- * For AGPL licensing, see below.
- *
- * AGPL licensing:
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
-
 /// PDF object type constants.
 class PdfObjectType {
   PdfObjectType._();
@@ -231,32 +207,39 @@ class PdfIndirectReference extends PdfObject {
   /// Object number.
   final int objNr;
 
-  /// Generation number.
-  final int genNr;
+  /// Generation number (mutable for reuse).
+  int _genNr;
 
   /// The object this reference points to.
   PdfObject? _refersTo;
 
   /// Offset in the file where the object is stored.
-  int offset = 0;
+  int _offset = 0;
+
+  /// Object stream number (0 if not in an object stream).
+  int _objStreamNumber = 0;
+
+  /// Index in the object stream.
+  int _index = 0;
 
   /// State flags for the reference.
   int _refState = 0;
 
   /// Creates a new indirect reference.
-  PdfIndirectReference(this.objNr, this.genNr, [this._refersTo]);
+  PdfIndirectReference(this.objNr, [int genNr = 0, this._refersTo])
+      : _genNr = genNr;
 
   @override
   int getObjectType() => PdfObjectType.indirectReference;
 
   @override
   PdfObject clone() {
-    return PdfIndirectReference(objNr, genNr, _refersTo);
+    return PdfIndirectReference(objNr, _genNr, _refersTo);
   }
 
   @override
   PdfObject newInstance() {
-    return PdfIndirectReference(objNr, genNr);
+    return PdfIndirectReference(objNr, _genNr);
   }
 
   /// Gets the object this reference points to.
@@ -281,7 +264,36 @@ class PdfIndirectReference extends PdfObject {
   int getObjNumber() => objNr;
 
   /// Gets the generation number.
-  int getGenNumber() => genNr;
+  int getGenNumber() => _genNr;
+
+  /// Increments the generation number.
+  void incrementGenNumber() {
+    _genNr++;
+  }
+
+  /// Gets the offset in the file.
+  int getOffset() => _offset;
+
+  /// Sets the offset in the file.
+  void setOffset(int offset) {
+    _offset = offset;
+  }
+
+  /// Gets the object stream number.
+  int getObjStreamNumber() => _objStreamNumber;
+
+  /// Sets the object stream number.
+  void setObjStreamNumber(int objStreamNumber) {
+    _objStreamNumber = objStreamNumber;
+  }
+
+  /// Gets the index in the object stream.
+  int getIndex() => _index;
+
+  /// Sets the index in the object stream.
+  void setIndex(int index) {
+    _index = index;
+  }
 
   @override
   bool checkState(int state) {
@@ -302,16 +314,32 @@ class PdfIndirectReference extends PdfObject {
 
   @override
   String toString() {
-    return '$objNr $genNr R';
+    return '$objNr $_genNr R';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! PdfIndirectReference) return false;
-    return objNr == other.objNr && genNr == other.genNr;
+    return objNr == other.objNr && _genNr == other._genNr;
   }
 
   @override
-  int get hashCode => Object.hash(objNr, genNr);
+  int get hashCode => Object.hash(objNr, _genNr);
+}
+
+/// State enum for object state flags (convenience).
+class PdfObjectState {
+  PdfObjectState._();
+
+  static const int flushed = PdfObject.flushed;
+  static const int free = PdfObject.free;
+  static const int reading = PdfObject.reading;
+  static const int modified = PdfObject.modified;
+  static const int originalObjectStream = PdfObject.originalObjectStream;
+  static const int mustBeFlushed = PdfObject.mustBeFlushed;
+  static const int mustBeIndirect = PdfObject.mustBeIndirect;
+  static const int forbidRelease = PdfObject.forbidRelease;
+  static const int readOnly = PdfObject.readOnly;
+  static const int unencrypted = PdfObject.unencrypted;
 }

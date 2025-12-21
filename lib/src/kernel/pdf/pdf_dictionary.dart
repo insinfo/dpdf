@@ -1,27 +1,3 @@
-/*
- * This file is part of the iText (R) project.
- * Copyright (c) 1998-2025 Apryse Group NV
- * Authors: Apryse Software.
- *
- * This program is offered under a commercial and under the AGPL license.
- * For commercial licensing, contact us at https://itextpdf.com/sales.
- * For AGPL licensing, see below.
- *
- * AGPL licensing:
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
-
 import 'pdf_object.dart';
 import 'pdf_name.dart';
 import 'pdf_number.dart';
@@ -90,6 +66,10 @@ class PdfDictionary extends PdfObject {
   bool containsValue(PdfObject value) => _map?.containsValue(value) ?? false;
 
   /// Returns the value associated with this key.
+  ///
+  /// If [asDirect] is true and the value is an indirect reference,
+  /// attempts to resolve it. If the reference cannot be resolved,
+  /// returns the reference itself.
   PdfObject? get(PdfName key, [bool asDirect = true]) {
     if (_map == null) return null;
     if (!asDirect) {
@@ -97,7 +77,9 @@ class PdfDictionary extends PdfObject {
     }
     final obj = _map![key];
     if (obj != null && obj.getObjectType() == PdfObjectType.indirectReference) {
-      return (obj as PdfIndirectReference).getRefersTo(true);
+      final resolved = (obj as PdfIndirectReference).getRefersTo(true);
+      // Return resolved object if available, otherwise the reference itself
+      return resolved ?? obj;
     }
     return obj;
   }

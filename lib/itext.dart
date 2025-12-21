@@ -32,6 +32,8 @@ export 'src/kernel/pdf/pdf_dictionary.dart';
 export 'src/kernel/pdf/pdf_stream.dart';
 export 'src/kernel/pdf/pdf_primitive_object.dart';
 export 'src/kernel/pdf/pdf_literal.dart';
+export 'src/kernel/pdf/pdf_xref_table.dart';
+export 'src/kernel/pdf/pdf_reader.dart';
 
 // Kernel - Exceptions
 export 'src/kernel/exceptions/kernel_exception_message_constant.dart';

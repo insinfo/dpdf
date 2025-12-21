@@ -508,6 +508,8 @@ dependencies:
 - ✅ `pdf_stream.dart` - Streams PDF
 - ✅ `pdf_primitive_object.dart` - Classe base para objetos primitivos
 - ✅ `pdf_literal.dart` - Literais PDF
+- ✅ `pdf_xref_table.dart` - Tabela de referências cruzadas (xref)
+- ✅ `pdf_reader.dart` - Leitor de documentos PDF básico ⭐
 
 #### kernel/exceptions/
 - ✅ `kernel_exception_message_constant.dart` - Constantes de mensagens de erro
@@ -534,13 +536,17 @@ dependencies:
 
 1. ✅ Portar `PdfArray` e `PdfDictionary`
 2. ✅ Portar `PdfStream` e `FilterHandlers`
-3. ✅ Criar testes unitários para tokenizer e objetos PDF (62 testes)
-4. ⬜ Portar `PdfReader` (leitura básica de PDF)
+3. ✅ Criar testes unitários para tokenizer e objetos PDF (72 testes)
+4. ✅ Portar `PdfReader` (leitura básica de PDF) ⭐
+5. ✅ Portar `PdfXrefTable` (tabela de referências cruzadas)
+6. ✅ Adicionar benchmarks para FilterHandlers
 
 ### Médio Prazo (1 Mês)
 
 1. ⬜ Completar kernel básico
-2. ⬜ Implementar leitura de PDF simples
+   - Implementar parsing de xref streams (PDF 1.5+)
+   - Implementar CCITTFaxDecode e JBIG2Decode
+2. ✅ Implementar leitura de PDF simples (xref table, trailer, objetos)
 3. ⬜ Implementar escrita de PDF simples
 
 ---

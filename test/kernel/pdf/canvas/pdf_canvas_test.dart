@@ -1,12 +1,12 @@
 import 'dart:io';
-import 'package:itext/src/io/font/type1_font.dart';
-import 'package:itext/src/io/font/constants/standard_fonts.dart';
-import 'package:itext/src/kernel/font/pdf_type1_font.dart';
-import 'package:itext/src/kernel/pdf/pdf_document.dart';
-import 'package:itext/src/kernel/pdf/pdf_writer.dart';
-import 'package:itext/src/kernel/pdf/pdf_resources.dart';
-import 'package:itext/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:itext/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/io/font/type1_font.dart';
+import 'package:dpdf/src/io/font/constants/standard_fonts.dart';
+import 'package:dpdf/src/kernel/font/pdf_type1_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_resources.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,7 +1,7 @@
-/// iText for Dart - PDF library
+/// dpdf a dart PDF library inspired in iText
 ///
 /// A Dart port of the iText PDF library.
-library itext;
+library dpdf;
 
 // Commons - Exceptions
 export 'src/commons/exceptions/itext_exception.dart';

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:itext/itext.dart';
+import 'package:dpdf/dpdf.dart';
 
 /// Simple benchmark for FilterHandlers
 ///

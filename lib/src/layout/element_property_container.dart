@@ -1,6 +1,6 @@
-import 'package:itext/src/layout/i_property_container.dart';
-import 'package:itext/src/layout/properties/property.dart';
-import 'package:itext/src/layout/properties/unit_value.dart';
+import 'package:dpdf/src/layout/i_property_container.dart';
+import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/properties/unit_value.dart';
 
 abstract class ElementPropertyContainer<T extends IPropertyContainer>
     implements IPropertyContainer {

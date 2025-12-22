@@ -1,10 +1,10 @@
 import 'dart:math';
 
-import 'package:itext/src/io/font/constants/font_mac_style_flags.dart';
-import 'package:itext/src/io/font/font_identification.dart';
-import 'package:itext/src/io/font/font_metrics.dart';
-import 'package:itext/src/io/font/font_names.dart';
-import 'package:itext/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/io/font/constants/font_mac_style_flags.dart';
+import 'package:dpdf/src/io/font/font_identification.dart';
+import 'package:dpdf/src/io/font/font_metrics.dart';
+import 'package:dpdf/src/io/font/font_names.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
 
 abstract class FontProgram {
   static const int HORIZONTAL_SCALING_FACTOR = 100;

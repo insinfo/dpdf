@@ -1,8 +1,8 @@
-import 'package:itext/src/layout/element/abstract_element.dart';
-import 'package:itext/src/layout/element/i_leaf_element.dart';
-import 'package:itext/src/layout/properties/property.dart';
-import 'package:itext/src/layout/renderer/i_renderer.dart';
-import 'package:itext/src/layout/renderer/text_renderer.dart';
+import 'package:dpdf/src/layout/element/abstract_element.dart';
+import 'package:dpdf/src/layout/element/i_leaf_element.dart';
+import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/renderer/i_renderer.dart';
+import 'package:dpdf/src/layout/renderer/text_renderer.dart';
 import 'dart:math' as math;
 
 class Text extends AbstractElement<Text> implements ILeafElement {

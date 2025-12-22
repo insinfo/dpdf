@@ -1,9 +1,9 @@
 import 'package:collection/collection.dart';
-import 'package:itext/src/kernel/pdf/colorspace/pdf_color_space.dart';
-import 'package:itext/src/kernel/pdf/colorspace/pdf_device_cs.dart';
-import 'package:itext/src/kernel/colors/device_gray.dart';
-import 'package:itext/src/kernel/colors/device_rgb.dart';
-import 'package:itext/src/kernel/colors/device_cmyk.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_device_cs.dart';
+import 'package:dpdf/src/kernel/colors/device_gray.dart';
+import 'package:dpdf/src/kernel/colors/device_rgb.dart';
+import 'package:dpdf/src/kernel/colors/device_cmyk.dart';
 
 /// Represents a color.
 class Color {

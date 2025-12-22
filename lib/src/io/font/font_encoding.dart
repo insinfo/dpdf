@@ -1,8 +1,8 @@
 import 'dart:typed_data';
-import 'package:itext/src/io/font/adobe_glyph_list.dart';
-import 'package:itext/src/io/font/pdf_encodings.dart';
+import 'package:dpdf/src/io/font/adobe_glyph_list.dart';
+import 'package:dpdf/src/io/font/pdf_encodings.dart';
 
-import 'package:itext/src/io/util/text_util.dart';
+import 'package:dpdf/src/io/util/text_util.dart';
 
 class FontEncoding {
   static const String NOTDEF = ".notdef";

@@ -73,7 +73,7 @@ class PdfDocument {
 
   PdfDictionary getTrailer() => _trailer!;
 
-  Future<void> addNewPage([PageSize? pageSize]) async {
+  Future<PdfPage> addNewPage([PageSize? pageSize]) async {
     _checkClosingStatus();
     final size = pageSize ?? _defaultPageSize;
     final pageDict = PdfDictionary();
@@ -83,6 +83,12 @@ class PdfDocument {
 
     final page = PdfPage(pageDict);
     await _catalog!.getPageTree().addPage(page);
+    return page;
+  }
+
+  Future<PdfPage?> getPage(int pageNumber) async {
+    _checkClosingStatus();
+    return _catalog!.getPageTree().getPage(pageNumber);
   }
 
   int getNumberOfPages() {

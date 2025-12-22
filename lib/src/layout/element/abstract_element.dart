@@ -1,7 +1,7 @@
-import 'package:itext/src/layout/element_property_container.dart';
-import 'package:itext/src/layout/element/i_element.dart';
-import 'package:itext/src/layout/element/i_abstract_element.dart';
-import 'package:itext/src/layout/renderer/i_renderer.dart';
+import 'package:dpdf/src/layout/element_property_container.dart';
+import 'package:dpdf/src/layout/element/i_element.dart';
+import 'package:dpdf/src/layout/element/i_abstract_element.dart';
+import 'package:dpdf/src/layout/renderer/i_renderer.dart';
 
 abstract class AbstractElement<T extends IElement>
     extends ElementPropertyContainer<T> implements IAbstractElement {

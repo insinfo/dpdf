@@ -1,8 +1,8 @@
-import 'package:itext/src/layout/element_property_container.dart';
-import 'package:itext/src/layout/element/i_block_element.dart';
-import 'package:itext/src/kernel/pdf/pdf_document.dart';
-import 'package:itext/src/layout/renderer/root_renderer.dart';
-import 'package:itext/src/layout/i_property_container.dart';
+import 'package:dpdf/src/layout/element_property_container.dart';
+import 'package:dpdf/src/layout/element/i_block_element.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/layout/renderer/root_renderer.dart';
+import 'package:dpdf/src/layout/i_property_container.dart';
 
 abstract class RootElement<T extends IPropertyContainer>
     extends ElementPropertyContainer<T> {

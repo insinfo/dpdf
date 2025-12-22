@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:itext/src/io/font/font_program.dart';
-import 'package:itext/src/io/font/otf/glyph.dart';
-import 'package:itext/src/io/font/open_type_parser.dart';
-import 'package:itext/src/io/exceptions/io_exception.dart';
-import 'package:itext/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:dpdf/src/io/font/font_program.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/io/font/open_type_parser.dart';
+import 'package:dpdf/src/io/exceptions/io_exception.dart';
+import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
 
 class TrueTypeFont extends FontProgram {
   late OpenTypeParser fontParser;
@@ -35,14 +35,12 @@ class TrueTypeFont extends FontProgram {
 
     isFontSpecific = fontParser.cmaps.fontSpecific;
 
-    // TODO: implement readKerning and readBbox in parser
-    // kerning = fontParser.readKerning(head.unitsPerEm);
-    // bBoxes = fontParser.readBbox(head.unitsPerEm);
+    kerning = fontParser.readKerning(head.unitsPerEm);
+    bBoxes = fontParser.readBbox(head.unitsPerEm);
 
     fontNames = fontParser.getFontNames();
 
     fontMetrics.setUnitsPerEm(head.unitsPerEm);
-    // fontMetrics.updateBbox(head.xMin, head.yMin, head.xMax, head.yMax); // updateBbox doesn't exist in Dart FontMetrics yet? Check it.
     fontMetrics.setBbox(head.xMin, head.yMin, head.xMax, head.yMax);
 
     fontMetrics.setNumberOfGlyphs(fontParser.readNumGlyphs());
@@ -69,7 +67,32 @@ class TrueTypeFont extends FontProgram {
     fontMetrics.setSuperscriptSize(os_2.ySuperscriptYSize);
     fontMetrics.setIsFixedPitch(post.isFixedPitch);
 
-    // TODO: Font identification and Panose from os_2
+    fontIdentification.setPanose(os_2.panose);
+
+    // Populate glyphs
+    fillFontGlyphs();
+  }
+
+  void fillFontGlyphs() {
+    Map<int, List<int>>? cmap = fontParser.cmaps.cmap31;
+    if (cmap == null) cmap = fontParser.cmaps.cmap10;
+    if (cmap == null) cmap = fontParser.cmaps.cmap310;
+    if (cmap == null && fontParser.cmaps.cmap03 != null)
+      cmap = fontParser.cmaps.cmap03;
+
+    if (cmap != null) {
+      cmap.forEach((unicode, entry) {
+        int glyphIndex = entry[0];
+        int width = entry[1];
+        Glyph glyph = Glyph(glyphIndex, width, unicode);
+        unicodeToGlyph[unicode] = glyph;
+        codeToGlyph[unicode] =
+            glyph; // For TrueType, usually same unless distinct encoding
+      });
+    }
+
+    // Fix space if missing
+    fixSpaceIssue();
   }
 
   @override
@@ -79,18 +102,12 @@ class TrueTypeFont extends FontProgram {
 
   @override
   int getKerning(int first, int second) {
-    // Override base implementation if needed, or use base if it uses getKerningByGlyph
-    // Base implementation in FontProgram uses getKerningByGlyph
-    // But TrueTypeFont C# overrides GetKerning(Glyph first, Glyph second)
-    // Here we strictly follow Dart method signatures.
-    // Wait, FontProgram Dart has: int getKerning(int first, int second);
-    // And getKerningByGlyph(Glyph first, Glyph second).
-
-    // We can implement getKerningByGlyph
-    // But kerning map is by char code or glyph index?
-    // C# says: key is Integer where top 16 bits are glyph number for first char...
-    // So it is by glyph index (GID).
-    return 0; // TODO implement
+    Glyph? g1 = getGlyph(first);
+    Glyph? g2 = getGlyph(second);
+    if (g1 != null && g2 != null) {
+      return getKerningByGlyph(g1, g2);
+    }
+    return 0;
   }
 
   @override
@@ -106,8 +123,7 @@ class TrueTypeFont extends FontProgram {
   Uint8List? getFontStreamBytes() {
     if (fontStreamBytes != null) return fontStreamBytes;
     try {
-      fontStreamBytes = null; // TODO: Implement getFullFont in parser
-      // fontStreamBytes = fontParser.getFullFont();
+      fontStreamBytes = fontParser.getFullFont();
     } catch (e) {
       throw IoException(IoExceptionMessageConstant.ioException);
     }

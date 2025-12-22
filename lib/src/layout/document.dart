@@ -1,8 +1,8 @@
-import 'package:itext/src/layout/root_element.dart';
-import 'package:itext/src/kernel/pdf/pdf_document.dart';
-import 'package:itext/src/kernel/geom/page_size.dart';
-import 'package:itext/src/layout/renderer/document_renderer.dart';
-import 'package:itext/src/layout/renderer/root_renderer.dart';
+import 'package:dpdf/src/layout/root_element.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/geom/page_size.dart';
+import 'package:dpdf/src/layout/renderer/document_renderer.dart';
+import 'package:dpdf/src/layout/renderer/root_renderer.dart';
 
 class Document extends RootElement<Document> {
   Document(PdfDocument pdfDocument, [PageSize? pageSize]) : super(pdfDocument) {

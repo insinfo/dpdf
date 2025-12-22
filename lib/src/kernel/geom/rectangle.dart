@@ -81,4 +81,15 @@ class Rectangle {
   String toString() {
     return 'Rectangle: ${width}x$height at ($x, $y)';
   }
+
+  Rectangle clone() {
+    return Rectangle(x, y, width, height);
+  }
+
+  bool equalsWithEpsilon(Rectangle other) {
+    return (x - other.x).abs() < EPS &&
+        (y - other.y).abs() < EPS &&
+        (width - other.width).abs() < EPS &&
+        (height - other.height).abs() < EPS;
+  }
 }

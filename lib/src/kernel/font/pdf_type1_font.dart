@@ -1,13 +1,13 @@
 import 'dart:typed_data';
 
-import 'package:itext/src/io/font/font_encoding.dart';
-import 'package:itext/src/io/font/otf/glyph.dart';
-import 'package:itext/src/io/font/type1_font.dart';
-import 'package:itext/src/kernel/font/pdf_simple_font.dart';
-import 'package:itext/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:itext/src/kernel/pdf/pdf_name.dart';
-import 'package:itext/src/kernel/pdf/pdf_number.dart';
-import 'package:itext/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/io/font/font_encoding.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/io/font/type1_font.dart';
+import 'package:dpdf/src/kernel/font/pdf_simple_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 
 class PdfType1Font extends PdfSimpleFont<Type1Font> {
   PdfType1Font(Type1Font type1Font, [String? encoding, bool embedded = false])

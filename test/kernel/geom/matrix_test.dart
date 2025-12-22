@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:itext/src/kernel/geom/matrix.dart';
+import 'package:dpdf/src/kernel/geom/matrix.dart';
 
 void main() {
   group('Matrix', () {

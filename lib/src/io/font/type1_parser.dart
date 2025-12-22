@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:itext/src/io/source/random_access_file_or_array.dart';
-import 'package:itext/src/io/font/constants/standard_fonts.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/io/font/constants/standard_fonts.dart';
 
 class Type1Parser {
   static const String AFM_HEADER = "StartFontMetrics";

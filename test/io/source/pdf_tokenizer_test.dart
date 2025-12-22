@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:itext/itext.dart';
+import 'package:dpdf/dpdf.dart';
 
 /// Helper to create tokenizer from string
 PdfTokenizer tokenizerFromString(String content) {

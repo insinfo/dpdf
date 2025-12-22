@@ -1,5 +1,5 @@
-import 'package:itext/src/kernel/pdf/pdf_name.dart';
-import 'package:itext/src/kernel/pdf/colorspace/pdf_color_space.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
 
 abstract class PdfDeviceCs extends PdfColorSpace {
   PdfDeviceCs(PdfName pdfObject) : super(pdfObject);

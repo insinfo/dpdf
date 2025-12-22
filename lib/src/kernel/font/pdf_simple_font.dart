@@ -1,17 +1,17 @@
 import 'dart:typed_data';
 
-import 'package:itext/src/io/font/font_encoding.dart';
-import 'package:itext/src/io/font/font_program.dart';
-import 'package:itext/src/io/font/otf/glyph.dart';
-import 'package:itext/src/io/font/otf/glyph_line.dart';
-import 'package:itext/src/io/util/text_util.dart';
-import 'package:itext/src/kernel/font/pdf_font.dart';
-import 'package:itext/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:itext/src/kernel/pdf/pdf_name.dart';
-import 'package:itext/src/kernel/pdf/pdf_number.dart';
-import 'package:itext/src/kernel/pdf/pdf_array.dart';
-import 'package:itext/src/kernel/pdf/pdf_string.dart';
-import 'package:itext/src/kernel/pdf/pdf_output_stream.dart';
+import 'package:dpdf/src/io/font/font_encoding.dart';
+import 'package:dpdf/src/io/font/font_program.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/io/font/otf/glyph_line.dart';
+import 'package:dpdf/src/io/util/text_util.dart';
+import 'package:dpdf/src/kernel/font/pdf_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_output_stream.dart';
 
 abstract class PdfSimpleFont<T extends FontProgram> extends PdfFont {
   FontEncoding? fontEncoding;

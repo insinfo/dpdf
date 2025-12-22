@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:test/test.dart';
-import 'package:itext/src/kernel/pdf/pdf_document.dart';
-import 'package:itext/src/kernel/pdf/pdf_writer.dart';
-import 'package:itext/src/kernel/pdf/pdf_reader.dart';
-import 'package:itext/src/kernel/geom/page_size.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/geom/page_size.dart';
 
 void main() {
   group('PdfDocument Tests', () {

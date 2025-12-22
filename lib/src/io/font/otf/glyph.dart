@@ -1,5 +1,5 @@
 import 'package:collection/collection.dart';
-import 'package:itext/src/io/util/text_util.dart';
+import 'package:dpdf/src/io/util/text_util.dart';
 
 class Glyph {
   static const int REPLACEMENT_CHARACTER = 0xFFFD;
@@ -21,7 +21,7 @@ class Glyph {
   int anchorDelta = 0;
 
   Glyph(this._code, this._width, this._unicode, [this._bbox])
-      : _chars = null,
+      : _chars = _unicode > -1 ? TextUtil.convertFromUtf32(_unicode) : null,
         _isMark = false;
 
   Glyph.withChars(this._code, this._width, List<int>? chars,

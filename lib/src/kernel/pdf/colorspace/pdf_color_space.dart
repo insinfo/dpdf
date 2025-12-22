@@ -1,8 +1,8 @@
-import 'package:itext/src/kernel/pdf/pdf_object.dart';
-import 'package:itext/src/kernel/pdf/pdf_object_wrapper.dart';
-import 'package:itext/src/kernel/pdf/pdf_name.dart';
-import 'package:itext/src/kernel/pdf/pdf_array.dart';
-import 'package:itext/src/kernel/pdf/colorspace/pdf_device_cs.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object_wrapper.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_device_cs.dart';
 
 /// Represents the most common properties of color spaces.
 abstract class PdfColorSpace extends PdfObjectWrapper<PdfObject> {

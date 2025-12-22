@@ -1,0 +1,3 @@
+class MarginsCollapseInfo {
+  // TODO: Implement
+}

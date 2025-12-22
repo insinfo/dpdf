@@ -632,6 +632,27 @@ dependencies:
 #### kernel/pdf/
 - ✅ `pdf_output_stream.dart` - Stream de saída otimizado
 
+#### io/font/
+- ✅ `font_program.dart` - Base para fontes
+- ✅ `open_type_parser.dart` - Parser de tabelas OTF/TTF (tables: head, hhea, os/2, post, cmap, glyf, loca, maxp, kern, name)
+- ✅ `true_type_font.dart` - Fonte TrueType (leitura de tabelas, mapeamento de glifos, kerning)
+- ✅ `font_names.dart` - Metadados de nomes de fonte
+
+#### kernel/font/
+- ✅ `pdf_font.dart` - Base para fontes PDF
+- ✅ `pdf_simple_font.dart` - Fontes simples (Type1, TrueType)
+- ✅ `pdf_type1_font.dart` - Fontes Type 1 Standard
+- ✅ `pdf_true_type_font.dart` - Integração de TTF no PDF (Embedding, Encoding)
+
+#### layout/layout/
+- ✅ `layout_area.dart` - Área de layout
+- ✅ `layout_context.dart` - Contexto de layout
+- ✅ `layout_result.dart` - Resultado de layout
+
+#### layout/renderer/
+- ✅ `draw_context.dart` - Contexto de desenho
+- ✅ `area_break_renderer.dart` - Renderizador de quebra de área
+
 
 ---
 

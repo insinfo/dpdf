@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:itext/itext.dart';
+import 'package:dpdf/dpdf.dart';
 
 /// Creates a minimal valid PDF for testing
 Uint8List createMinimalPdf() {

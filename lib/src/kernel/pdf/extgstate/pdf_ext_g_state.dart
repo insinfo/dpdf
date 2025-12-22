@@ -1,8 +1,8 @@
-import 'package:itext/src/kernel/pdf/pdf_object.dart';
-import 'package:itext/src/kernel/pdf/pdf_object_wrapper.dart';
-import 'package:itext/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:itext/src/kernel/pdf/pdf_name.dart';
-import 'package:itext/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object_wrapper.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
 
 /// Represents a PDF Extended Graphics State.
 class PdfExtGState extends PdfObjectWrapper<PdfDictionary> {

@@ -1,12 +1,12 @@
 import 'dart:typed_data';
-import 'package:itext/src/io/font/adobe_glyph_list.dart';
+import 'package:dpdf/src/io/font/adobe_glyph_list.dart';
 
-import 'package:itext/src/io/font/font_program.dart';
+import 'package:dpdf/src/io/font/font_program.dart';
 
-import 'package:itext/src/io/font/otf/glyph.dart';
-import 'package:itext/src/io/font/type1_parser.dart';
-import 'package:itext/src/io/source/random_access_file_or_array.dart';
-import 'package:itext/src/io/util/string_tokenizer.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/io/font/type1_parser.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/io/util/string_tokenizer.dart';
 
 class Type1Font extends FontProgram {
   static final List<int> PFB_TYPES = [1, 2, 1];

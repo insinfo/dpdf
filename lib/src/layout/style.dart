@@ -1,4 +1,4 @@
-import 'package:itext/src/layout/element_property_container.dart';
+import 'package:dpdf/src/layout/element_property_container.dart';
 
 class Style extends ElementPropertyContainer<Style> {
   Style();

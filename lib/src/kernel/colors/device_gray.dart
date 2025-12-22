@@ -1,6 +1,6 @@
 import 'dart:math';
-import 'package:itext/src/kernel/colors/color.dart';
-import 'package:itext/src/kernel/pdf/colorspace/pdf_device_cs.dart';
+import 'package:dpdf/src/kernel/colors/color.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_device_cs.dart';
 
 /// Color space to specify shades of gray color.
 class DeviceGray extends Color {

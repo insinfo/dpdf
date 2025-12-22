@@ -1,8 +1,8 @@
 import 'dart:typed_data';
-import 'package:itext/src/io/source/byte_utils.dart';
-import 'package:itext/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/io/source/byte_utils.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 
-import 'package:itext/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 
 /// PdfOutputStream class represents an algorithm for writing data into content stream.
 class PdfOutputStream {

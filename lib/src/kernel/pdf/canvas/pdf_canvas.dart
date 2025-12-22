@@ -1,15 +1,19 @@
 import 'dart:typed_data';
-import 'package:itext/src/io/source/byte_utils.dart';
-import 'package:itext/src/kernel/pdf/pdf_stream.dart';
-import 'package:itext/src/kernel/pdf/pdf_resources.dart';
-import 'package:itext/src/kernel/pdf/pdf_document.dart';
-import 'package:itext/src/kernel/pdf/pdf_page.dart';
+import 'package:dpdf/src/io/source/byte_utils.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_resources.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_page.dart';
 
-import 'package:itext/src/kernel/pdf/canvas/canvas_graphics_state.dart';
-import 'package:itext/src/kernel/geom/matrix.dart';
-import 'package:itext/src/kernel/font/pdf_font.dart';
-import 'package:itext/src/kernel/pdf/pdf_string.dart';
-import 'package:itext/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/canvas_graphics_state.dart';
+import 'package:dpdf/src/kernel/geom/matrix.dart';
+import 'package:dpdf/src/kernel/font/pdf_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/colors/color.dart';
+import 'package:dpdf/src/kernel/colors/device_gray.dart';
+import 'package:dpdf/src/kernel/colors/device_rgb.dart';
+import 'package:dpdf/src/kernel/colors/device_cmyk.dart';
 
 /// PdfCanvas class represents an algorithm for writing data into content stream.
 class PdfCanvas {
@@ -26,6 +30,8 @@ class PdfCanvas {
   static final Uint8List G = ByteUtils.getIsoBytes("G\n");
   static final Uint8List g = ByteUtils.getIsoBytes("g\n");
   static final Uint8List gs = ByteUtils.getIsoBytes("gs\n");
+  static final Uint8List k = ByteUtils.getIsoBytes("k\n");
+  static final Uint8List K = ByteUtils.getIsoBytes("K\n");
   static final Uint8List l = ByteUtils.getIsoBytes("l\n");
   static final Uint8List m = ByteUtils.getIsoBytes("m\n");
   static final Uint8List n = ByteUtils.getIsoBytes("n\n");
@@ -75,9 +81,12 @@ class PdfCanvas {
     }
 
     if (stream == null) {
-      // TODO: Implement proper logic to add new stream to page
-      throw UnimplementedError(
-          "Creating new content stream for page is not yet implemented.");
+      stream = PdfStream();
+      final doc = page.getPdfObject().getIndirectReference()?.getDocument();
+      if (doc != null) {
+        stream.makeIndirect(doc);
+      }
+      page.getPdfObject().put(PdfName.contents, stream);
     }
 
     final doc = page.getPdfObject().getIndirectReference()?.getDocument();
@@ -228,6 +237,53 @@ class PdfCanvas {
       ..writePdfStringObject(PdfString(text))
       ..writeSpace()
       ..writeBytes(Tj);
+    return this;
+  }
+
+  PdfCanvas setLineWidth(double lineWidth) {
+    contentStream!.getOutputStream()
+      ..writeDouble(lineWidth)
+      ..writeSpace()
+      ..writeBytes(w);
+    return this;
+  }
+
+  PdfCanvas setFillColor(Color color) {
+    return _setColor(color, true);
+  }
+
+  PdfCanvas setStrokeColor(Color color) {
+    return _setColor(color, false);
+  }
+
+  PdfCanvas _setColor(Color color, bool fill) {
+    if (color is DeviceGray) {
+      contentStream!.getOutputStream()
+        ..writeDouble(color.getColorValue()[0])
+        ..writeSpace()
+        ..writeBytes(fill ? g : G);
+    } else if (color is DeviceRgb) {
+      contentStream!.getOutputStream()
+        ..writeDouble(color.getColorValue()[0])
+        ..writeSpace()
+        ..writeDouble(color.getColorValue()[1])
+        ..writeSpace()
+        ..writeDouble(color.getColorValue()[2])
+        ..writeSpace()
+        ..writeBytes(fill ? rg : RG);
+    } else if (color is DeviceCmyk) {
+      contentStream!.getOutputStream()
+        ..writeDouble(color.getColorValue()[0])
+        ..writeSpace()
+        ..writeDouble(color.getColorValue()[1])
+        ..writeSpace()
+        ..writeDouble(color.getColorValue()[2])
+        ..writeSpace()
+        ..writeDouble(color.getColorValue()[3])
+        ..writeSpace()
+        ..writeBytes(fill ? k : K);
+    }
+    // TODO: Handle other color spaces
     return this;
   }
 }

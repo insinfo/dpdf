@@ -1,9 +1,9 @@
-import 'package:itext/src/layout/element/block_element.dart';
-import 'package:itext/src/layout/element/i_element.dart';
-import 'package:itext/src/layout/element/text.dart';
-import 'package:itext/src/layout/renderer/i_renderer.dart';
-import 'package:itext/src/layout/renderer/paragraph_renderer.dart';
-import 'package:itext/src/kernel/pdf/tagutils/accessibility_properties.dart';
+import 'package:dpdf/src/layout/element/block_element.dart';
+import 'package:dpdf/src/layout/element/i_element.dart';
+import 'package:dpdf/src/layout/element/text.dart';
+import 'package:dpdf/src/layout/renderer/i_renderer.dart';
+import 'package:dpdf/src/layout/renderer/paragraph_renderer.dart';
+import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
 
 class Paragraph extends BlockElement<Paragraph> {
   Paragraph([String? text]) {

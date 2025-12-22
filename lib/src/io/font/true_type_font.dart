@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:dpdf/src/io/font/font_program.dart';
 import 'package:dpdf/src/io/font/otf/glyph.dart';
 import 'package:dpdf/src/io/font/open_type_parser.dart';
+import 'package:dpdf/src/commons/utils/tuple2.dart';
 import 'package:dpdf/src/io/exceptions/io_exception.dart';
 import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
 
@@ -145,4 +146,23 @@ class TrueTypeFont extends FontProgram {
     }
     return flags;
   }
+
+  Uint8List getSubset(Iterable<int> glyphs, bool subsetTables) {
+    Tuple2<int, Uint8List> res = fontParser.getSubset(glyphs, subsetTables);
+    return res.item2;
+  }
+
+  void updateUsedGlyphs(
+      Set<int> glyphs, bool subset, List<List<int>>? subsetRanges) {
+    if (subsetRanges != null) {
+      for (var range in subsetRanges) {
+        for (int k = range[0]; k <= range[1]; k++) {
+          Glyph? g = getGlyph(k);
+          if (g != null) glyphs.add(g.getCode());
+        }
+      }
+    }
+  }
+
+  int getDirectoryOffset() => fontParser.directoryOffset;
 }

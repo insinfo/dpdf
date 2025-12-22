@@ -13,14 +13,44 @@ class RandomAccessFileOrArray {
   }
 
   void readFully(Uint8List bytes) {
-    int len = bytes.length;
-    int offset = 0;
+    readFullyInto(bytes, 0, bytes.length);
+  }
+
+  void readFullyInto(Uint8List bytes, int offset, int length) {
+    int len = length;
+    int currentOffset = offset;
     while (len > 0) {
-      int count = readBuffer(bytes, offset, len);
+      int count = readBufferInto(bytes, currentOffset, len);
       if (count <= 0) throw Exception("EOF");
-      offset += count;
+      currentOffset += count;
       len -= count;
     }
+  }
+
+  int readBufferInto(List<int> buffer, int offset, int length) {
+    int len = length;
+    if (len == 0) return 0;
+
+    int count = 0;
+    if (_back != null && len > 0) {
+      buffer[offset++] = _back!;
+      len--;
+      count++;
+      _back = null;
+    }
+
+    if (len > 0) {
+      int remaining = _data.length - _position;
+      int toRead = len < remaining ? len : remaining;
+      if (toRead <= 0) return count == 0 ? -1 : count;
+
+      for (int i = 0; i < toRead; i++) {
+        buffer[offset + i] = _data[_position + i];
+      }
+      _position += toRead;
+      count += toRead;
+    }
+    return count;
   }
 
   int peekBuffer(Uint8List buffer) {
@@ -132,29 +162,7 @@ class RandomAccessFileOrArray {
   }
 
   int readBuffer(List<int> buffer, [int offset = 0, int? length]) {
-    int len = length ?? buffer.length;
-    if (len == 0) return 0;
-
-    int count = 0;
-    if (_back != null && len > 0) {
-      buffer[offset++] = _back!;
-      len--;
-      count++;
-      _back = null;
-    }
-
-    if (len > 0) {
-      int remaining = _data.length - _position;
-      int toRead = len < remaining ? len : remaining;
-      if (toRead <= 0) return count == 0 ? -1 : count;
-
-      for (int i = 0; i < toRead; i++) {
-        buffer[offset + i] = _data[_position + i];
-      }
-      _position += toRead;
-      count += toRead;
-    }
-    return count;
+    return readBufferInto(buffer, offset, length ?? buffer.length);
   }
 
   int peek() {

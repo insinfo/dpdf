@@ -638,7 +638,9 @@ dependencies:
 4. ✅ Portar `PdfCanvas` para desenho de conteúdo (Base implementada com otimização)
 5. ✅ Implementar suporte básico a fontes (Standard Type 1)
 6. ⬜ Implementar processamento de streams de conteúdo (Content Streams)
-7. ✅ TODO: Otimizar escrita do `PdfCanvas` usando `BytesBuilder` ou `PdfOutputStream` para evitar cópias de array.
+7. ✅ Otimizar escrita do `PdfCanvas` usando `BytesBuilder` para evitar cópias de array.
+8. ✅ Implementar suporte a imagens PNG (Decoding, Interlacing, Masks, PLTE)
+9. ✅ Implementar Subsetting de Fontes TrueType
 
 #### kernel/pdf/
 - ✅ `pdf_output_stream.dart` - Stream de saída otimizado
@@ -648,12 +650,14 @@ dependencies:
 - ✅ `open_type_parser.dart` - Parser de tabelas OTF/TTF (tables: head, hhea, os/2, post, cmap, glyf, loca, maxp, kern, name)
 - ✅ `true_type_font.dart` - Fonte TrueType (leitura de tabelas, mapeamento de glifos, kerning)
 - ✅ `font_names.dart` - Metadados de nomes de fonte
+- ✅ `true_type_font_subsetter.dart` - Subsetting de glifos TTF
+- ✅ `abstract_true_type_font_modifier.dart` - Modificação de tabelas TTF
 
 #### kernel/font/
 - ✅ `pdf_font.dart` - Base para fontes PDF
 - ✅ `pdf_simple_font.dart` - Fontes simples (Type1, TrueType)
 - ✅ `pdf_type1_font.dart` - Fontes Type 1 Standard
-- ✅ `pdf_true_type_font.dart` - Integração de TTF no PDF (Embedding, Encoding)
+- ✅ `pdf_true_type_font.dart` - Integração de TTF no PDF (Embedding, Encoding, Subsetting)
 
 #### layout/layout/
 - ✅ `layout_area.dart` - Área de layout

@@ -3,7 +3,9 @@ import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 import 'package:dpdf/src/io/image/image_data.dart';
+import 'package:dpdf/src/io/image/png_image_data.dart';
 
 class PdfImageXObject extends PdfXObject {
   late final double _width;
@@ -49,21 +51,61 @@ class PdfImageXObject extends PdfXObject {
 
     // Colorspace
     if (image.colorEncodingComponentsNumber != -1) {
-      PdfName colorSpace;
+      PdfName colorSpaceName;
       switch (image.colorEncodingComponentsNumber) {
         case 1:
-          colorSpace = PdfName.deviceGray;
+          colorSpaceName = PdfName.deviceGray;
           break;
         case 3:
-          colorSpace = PdfName.deviceRgb;
+          colorSpaceName = PdfName.deviceRgb;
           break;
         case 4:
-          colorSpace = PdfName.deviceCmyk;
+          colorSpaceName = PdfName.deviceCmyk;
           break;
         default:
-          colorSpace = PdfName.deviceGray;
+          colorSpaceName = PdfName.deviceGray;
       }
-      stream.put(PdfName.colorSpace, colorSpace);
+
+      if (image.colorPalette != null) {
+        final colorSpace = PdfArray();
+        colorSpace.add(PdfName.indexed);
+        colorSpace.add(colorSpaceName);
+        colorSpace
+            .add(PdfNumber((image.colorPalette!.length ~/ 3 - 1).toDouble()));
+        colorSpace.add(PdfStream.withBytes(image.colorPalette!));
+        stream.put(PdfName.colorSpace, colorSpace);
+      } else {
+        stream.put(PdfName.colorSpace, colorSpaceName);
+      }
+    }
+
+    if (image.decodeParms != null) {
+      final parms = PdfDictionary();
+      image.decodeParms!.forEach((key, value) {
+        if (value is int) {
+          parms.put(PdfName(key), PdfNumber(value.toDouble()));
+        } else if (value is double) {
+          parms.put(PdfName(key), PdfNumber(value));
+        } else if (value is String) {
+          parms.put(PdfName(key), PdfName(value));
+        }
+      });
+      stream.put(PdfName.decodeParms, parms);
+    }
+
+    if (image is PngImageData) {
+      if (image.smask != null) {
+        final mask = PdfImageXObject(image.smask!);
+        stream.put(PdfName.sMask, mask.getPdfObject());
+      }
+      if (image.transparency != null) {
+        stream.put(PdfName.mask, PdfArray.fromInts(image.transparency!));
+      }
+    }
+
+    Object? mask = image.imageAttributes?["Mask"];
+    if (mask is List<int>) {
+      stream.put(PdfName.mask, PdfArray.fromInts(mask));
     }
 
     if (image.decode != null) {

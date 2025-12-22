@@ -3,6 +3,7 @@ import 'package:dpdf/src/io/font/font_encoding.dart';
 import 'package:dpdf/src/io/font/true_type_font.dart';
 import 'package:dpdf/src/io/font/otf/glyph.dart';
 import 'package:dpdf/src/io/font/font_names.dart';
+import 'package:dpdf/src/kernel/font/pdf_font.dart';
 import 'package:dpdf/src/kernel/font/pdf_simple_font.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
@@ -78,8 +79,8 @@ class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
         fontName = getFontProgram()!.getFontNames().getFontName()!;
       } else {
         subtype = PdfName.trueType;
-        // UpdateSubsetPrefix not implemented yet
-        fontName = getFontProgram()!.getFontNames().getFontName()!;
+        fontName = PdfFont.updateSubsetPrefix(
+            getFontProgram()!.getFontNames().getFontName()!, subset, embedded);
       }
       flushFontData(fontName, subtype);
     }
@@ -103,8 +104,26 @@ class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
         }
       } else {
         fontFileName = PdfName.fontFile2;
-        // Subsetting logic omitted for now, flushing full font
-        Uint8List? fontStreamBytes = ttf.getFontStreamBytes();
+        Set<int> glyphs = {};
+        for (int k = 0; k < usedGlyphs.length; k++) {
+          if (usedGlyphs[k] != 0) {
+            int uni = fontEncoding!.getUnicode(k);
+            Glyph? glyph =
+                (uni > -1) ? ttf.getGlyph(uni) : ttf.getGlyphByCode(k);
+            if (glyph != null) {
+              glyphs.add(glyph.getCode());
+            }
+          }
+        }
+        ttf.updateUsedGlyphs(glyphs, subset, subsetRanges);
+
+        Uint8List? fontStreamBytes;
+        if (subset || ttf.getDirectoryOffset() > 0) {
+          fontStreamBytes = ttf.getSubset(glyphs, subset);
+        } else {
+          fontStreamBytes = ttf.getFontStreamBytes();
+        }
+
         if (fontStreamBytes != null) {
           fontStream =
               getPdfFontStream(fontStreamBytes, [fontStreamBytes.length]);

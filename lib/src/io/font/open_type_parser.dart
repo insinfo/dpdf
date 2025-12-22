@@ -2,6 +2,8 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 import 'package:dpdf/src/io/font/font_names.dart';
+import 'package:dpdf/src/commons/utils/tuple2.dart';
+import 'package:dpdf/src/io/font/true_type_font_subsetter.dart';
 
 class HeaderTable {
   int flags = 0;
@@ -75,12 +77,6 @@ class CmapTable {
   bool fontSpecific = false;
 }
 
-class Tuple2<T1, T2> {
-  final T1 item1;
-  final T2 item2;
-  Tuple2(this.item1, this.item2);
-}
-
 class OpenTypeParser {
   late RandomAccessFileOrArray raf;
   String? fileName;
@@ -100,6 +96,12 @@ class OpenTypeParser {
   late CmapTable cmaps;
   List<int> glyphWidthsByIndex = [];
   List<int> locaTable = [];
+
+  static const int ARG_1_AND_2_ARE_WORDS = 1;
+  static const int WE_HAVE_A_SCALE = 8;
+  static const int MORE_COMPONENTS = 32;
+  static const int WE_HAVE_AN_X_AND_Y_SCALE = 64;
+  static const int WE_HAVE_A_TWO_BY_TWO = 128;
 
   Map<String, List<int>> tables = {};
 
@@ -595,11 +597,126 @@ class OpenTypeParser {
     return fn;
   }
 
+  Tuple2<int, Uint8List> getSubset(Iterable<int> glyphs, bool subsetTables) {
+    TrueTypeFontSubsetter sb =
+        TrueTypeFontSubsetter(fileName ?? "", this, glyphs, subsetTables);
+    return sb.process();
+  }
+
   int readNumGlyphs() {
     List<int>? maxp = tables["maxp"];
     if (maxp == null) return 65536;
     raf.seek(maxp[0] + 4);
     return raf.readUnsignedShort();
+  }
+
+  List<int> getFlatGlyphs(Iterable<int> glyphs) {
+    Set<int> glyphsUsed = Set<int>.from(glyphs);
+    List<int> glyphsInList = List<int>.from(glyphs);
+    const int glyph0 = 0;
+    if (!glyphsUsed.contains(glyph0)) {
+      glyphsUsed.add(glyph0);
+      glyphsInList.add(glyph0);
+    }
+    List<int>? tableLocation = tables["glyf"];
+    if (tableLocation == null) {
+      throw Exception("Table 'glyf' does not exist in $fileName");
+    }
+    int glyfOffset = tableLocation[0];
+    for (int i = 0; i < glyphsInList.length; i++) {
+      _checkGlyphComposite(
+          glyphsInList[i], glyphsUsed, glyphsInList, glyfOffset);
+    }
+    return glyphsInList;
+  }
+
+  void _checkGlyphComposite(
+      int glyph, Set<int> glyphsUsed, List<int> glyphsInList, int glyfOffset) {
+    int start = locaTable[glyph];
+    if (start == locaTable[glyph + 1]) {
+      return;
+    }
+    RandomAccessFileOrArray tmpRaf = raf.createView();
+    try {
+      tmpRaf.seek(glyfOffset + start);
+      int numContours = tmpRaf.readShort();
+      if (numContours >= 0) {
+        return;
+      }
+      tmpRaf.skipBytes(8);
+      while (true) {
+        int flags = tmpRaf.readUnsignedShort();
+        int cGlyph = tmpRaf.readUnsignedShort();
+        if (!glyphsUsed.contains(cGlyph)) {
+          glyphsUsed.add(cGlyph);
+          glyphsInList.add(cGlyph);
+        }
+        if ((flags & MORE_COMPONENTS) == 0) {
+          return;
+        }
+        int skip;
+        if ((flags & ARG_1_AND_2_ARE_WORDS) != 0) {
+          skip = 4;
+        } else {
+          skip = 2;
+        }
+        if ((flags & WE_HAVE_A_SCALE) != 0) {
+          skip += 2;
+        } else if ((flags & WE_HAVE_AN_X_AND_Y_SCALE) != 0) {
+          skip += 4;
+        } else if ((flags & WE_HAVE_A_TWO_BY_TWO) != 0) {
+          skip += 8;
+        }
+        tmpRaf.skipBytes(skip);
+      }
+    } finally {
+      tmpRaf.close();
+    }
+  }
+
+  Uint8List getGlyphDataForGid(int gid) {
+    List<int>? tableLocation = tables["glyf"];
+    if (tableLocation == null) {
+      throw Exception("Table 'glyf' does not exist in $fileName");
+    }
+    int glyfOffset = tableLocation[0];
+    int start = locaTable[gid];
+    int len = locaTable[gid + 1] - start;
+    Uint8List data = Uint8List(len);
+    RandomAccessFileOrArray tmpRaf = raf.createView();
+    try {
+      tmpRaf.seek(glyfOffset + start);
+      tmpRaf.readFully(data);
+      return data;
+    } finally {
+      tmpRaf.close();
+    }
+  }
+
+  Uint8List getHorizontalMetricForGid(int gid) {
+    List<int>? tableLocation = tables["hmtx"];
+    if (tableLocation == null) {
+      throw Exception("Table 'hmtx' does not exist in $fileName");
+    }
+    int hmtxOffset = tableLocation[0];
+    RandomAccessFileOrArray tmpRaf = raf.createView();
+    try {
+      if (gid < hhea.numberOfHMetrics) {
+        tmpRaf.seek(hmtxOffset + gid * 4);
+        Uint8List metric = Uint8List(4);
+        tmpRaf.readFully(metric);
+        return metric;
+      } else {
+        tmpRaf.seek(hmtxOffset +
+            hhea.numberOfHMetrics * 4 +
+            (gid - hhea.numberOfHMetrics) * 2);
+        Uint8List metric = Uint8List(2);
+        tmpRaf.readFully(metric);
+        return metric;
+      }
+    } finally {
+      tmpRaf.close();
+    }
   }
 
   List<int> getGlyphWidthsByIndex() {

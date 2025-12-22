@@ -9,6 +9,8 @@ abstract class ImageData {
   Uri? url;
   List<int>? transparency;
   ImageType? originalType;
+  int colorType = -1;
+  Uint8List? colorPalette;
   double width = 0;
   double height = 0;
   Uint8List? data;
@@ -28,6 +30,9 @@ abstract class ImageData {
   ImageData? imageMask;
   bool interpolation = false;
   double xyRatio = 0;
+  bool hasCHRM = false;
+  double gamma = 0.0;
+  // PngChromaticities? pngChromaticities; // TODO
   String? filter;
   Map<String, Object>? imageAttributes;
   late final int mySerialId;
@@ -74,6 +79,40 @@ abstract class ImageData {
   }
 
   Uint8List? getData() => data;
+
+  ImageType? getOriginalType() => originalType;
+
+  void setProfile(dynamic profile) {
+    // this.profile = profile;
+  }
+
+  bool isIndexed() => colorType == 3;
+
+  bool isGrayscaleImage() => colorType == 0 || colorType == 4;
+
+  void setColorType(int colorType) => this.colorType = colorType;
+
+  int getColorType() => colorType;
+
+  void setColorPalette(Uint8List palette) => colorPalette = palette;
+
+  void setDpi(int dpiX, int dpiY) {
+    this.dpiX = dpiX;
+    this.dpiY = dpiY;
+  }
+
+  void setXYRatio(double xyRatio) => this.xyRatio = xyRatio;
+
+  void setGamma(double gamma) => this.gamma = gamma;
+
+  void setPngChromaticities(dynamic chrom) {
+    hasCHRM = true;
+    // this.pngChromaticities = chrom;
+  }
+
+  bool isHasCHRM() => hasCHRM;
+
+  void setDeflated(bool deflated) => this.deflated = deflated;
 
   // TODO: LoadData from URL using RandomAccessFileOrArray
 }

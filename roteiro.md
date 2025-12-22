@@ -14,6 +14,8 @@ for necessario tera que ser copiado para um diretorios apropriado
 alto desempenho e não bloqueante é imporante para usar esta lib com servidores web
 algumas micro otimizações podem ser necessarias
 
+os testes não podem depender de arquivos externos copie o que for necessario para a pasta C:\MyDartProjects\itext\test\assets
+
 **Fonte de Referência:** `C:\MyDartProjects\itext\referencias\itext-dotnet-develop`
 
 **Destino Dart:** `C:\MyDartProjects\itext\lib\src`
@@ -578,6 +580,10 @@ dependencies:
 - ✅ `text.dart` - Elemento de texto
 - ✅ `paragraph.dart` - Elemento de parágrafo
 - ✅ `div.dart` - Elemento Div (Bloco genérico)
+- ✅ `table.dart` - Elemento Tabela
+- ✅ `cell.dart` - Elemento Célula
+- ✅ `list.dart` - Elemento Lista
+- ✅ `list_item.dart` - Elemento Item de Lista
 
 #### layout/renderer/
 - ✅ `i_renderer.dart` - Interface de renderização
@@ -587,6 +593,11 @@ dependencies:
 - ✅ `paragraph_renderer.dart` - Renderizador de parágrafo
 - ✅ `root_renderer.dart` - Renderizador raiz
 - ✅ `document_renderer.dart` - Renderizador de documento
+- ✅ `table_renderer.dart` - Renderizador de tabela (Parcial)
+- ✅ `cell_renderer.dart` - Renderizador de célula
+- ✅ `list_renderer.dart` - Renderizador de lista
+- ✅ `list_item_renderer.dart` - Renderizador de item de lista
+- ✅ `line_renderer.dart` - Renderizador de linha (Simplificado)
 
 #### layout/
 - ✅ `root_element.dart` - Elemento raiz

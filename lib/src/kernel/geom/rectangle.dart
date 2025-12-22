@@ -92,4 +92,9 @@ class Rectangle {
         (width - other.width).abs() < EPS &&
         (height - other.height).abs() < EPS;
   }
+
+  void move(double dx, double dy) {
+    x += dx;
+    y += dy;
+  }
 }

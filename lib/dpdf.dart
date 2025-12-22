@@ -1,6 +1,6 @@
-/// dpdf a dart PDF library inspired in iText
 ///
-/// A Dart port of the iText PDF library.
+///
+/// dpdf a dart PDF library inspired in iText
 library dpdf;
 
 // Commons - Exceptions

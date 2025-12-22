@@ -8,19 +8,21 @@ import 'package:dpdf/src/layout/logs/layout_log_message_constant.dart';
 
 import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
-class AreaBreakRenderer implements IRenderer {
+import 'package:dpdf/src/layout/renderer/abstract_renderer.dart';
+
+class AreaBreakRenderer extends AbstractRenderer {
   AreaBreak areaBreak;
 
-  AreaBreakRenderer(this.areaBreak);
+  AreaBreakRenderer(this.areaBreak) : super(areaBreak);
 
   @override
-  Future<void> addChild(IRenderer renderer) async {
+  void addChild(IRenderer renderer) {
     // Unsupported
     print(LayoutLogMessageConstant.areaBreakUnexpected);
   }
 
   @override
-  void setParent(IRenderer parent) {
+  void setParent(IRenderer? parent) {
     // Do nothing or store if needed
   }
 

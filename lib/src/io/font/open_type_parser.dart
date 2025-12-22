@@ -588,6 +588,10 @@ class OpenTypeParser {
     if (allNameEntries[6] != null && allNameEntries[6]!.isNotEmpty) {
       fn.setFontName(allNameEntries[6]![0][3]);
     }
+    // Check embedding license: fsType 2 means restricted
+    fn.setAllowEmbedding((os_2.fsType & 0x0002) == 0);
+    fn.setMacStyle(head.macStyle);
+    fn.setFontWeight(os_2.usWeightClass);
     return fn;
   }
 

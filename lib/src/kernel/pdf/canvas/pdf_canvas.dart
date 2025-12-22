@@ -286,4 +286,19 @@ class PdfCanvas {
     // TODO: Handle other color spaces
     return this;
   }
+
+  Future<PdfCanvas> addXObjectWithTransformationMatrix(PdfStream xObject,
+      double a, double b, double c, double d, double e, double f) async {
+    if (resources != null && document != null) {
+      PdfName xObjectName = await resources!.addXObject(document!, xObject);
+      saveState();
+      concatMatrix(a, b, c, d, e, f);
+      contentStream!.getOutputStream()
+        ..writePdfName(xObjectName)
+        ..writeSpace()
+        ..writeBytes(ByteUtils.getIsoBytes("Do\n"));
+      restoreState();
+    }
+    return this;
+  }
 }

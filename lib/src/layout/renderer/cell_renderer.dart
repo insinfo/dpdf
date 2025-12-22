@@ -2,13 +2,6 @@ import 'package:dpdf/src/layout/renderer/block_renderer.dart';
 import 'package:dpdf/src/layout/element/cell.dart';
 import 'package:dpdf/src/layout/layout/layout_context.dart';
 import 'package:dpdf/src/layout/layout/layout_result.dart';
-import 'package:dpdf/src/layout/renderer/draw_context.dart';
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/layout/properties/property.dart';
-import 'package:dpdf/src/layout/borders/border.dart';
-import 'package:dpdf/src/layout/renderer/abstract_renderer.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
 
 class CellRenderer extends BlockRenderer {
   CellRenderer(Cell modelElement) : super(modelElement);

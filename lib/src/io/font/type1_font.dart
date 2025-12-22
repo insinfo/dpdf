@@ -24,7 +24,9 @@ class Type1Font extends FontProgram {
     process();
   }
 
-  // TODO: Constructor from baseFont name only (StandardFonts)
+  static Type1Font createBuiltInFont(String fontName) {
+    return Type1Font(fontName, "", null, null);
+  }
 
   @override
   int getPdfFontFlags() {

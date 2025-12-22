@@ -18,7 +18,8 @@ void main() {
       final pdfDoc = await PdfDocument.create(writer);
       final doc = Document(pdfDoc);
 
-      final ttf = TrueTypeFont.fromFile("c:/windows/fonts/arial.ttf");
+      final ttf = TrueTypeFont.fromFile(
+          r"C:\MyDartProjects\itext\test\assets\arial.ttf");
 
       // Need to register font or set it property
       // Document sets standard font usually, but let's be explicit

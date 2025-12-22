@@ -1,0 +1,1 @@
+enum ListSymbolAlignment { RIGHT, LEFT }

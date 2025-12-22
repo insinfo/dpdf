@@ -4,6 +4,7 @@ import 'pdf_name.dart';
 import 'pdf_object_wrapper.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
 import 'package:dpdf/src/kernel/font/pdf_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 
 /// Wrapper class that represent resource dictionary.
 class PdfResources extends PdfObjectWrapper<PdfDictionary> {
@@ -48,9 +49,6 @@ class PdfResources extends PdfObjectWrapper<PdfDictionary> {
   PdfResources([PdfDictionary? pdfObject])
       : super(pdfObject ?? PdfDictionary()) {
     // Avoid unused field warnings
-    _fontNamesGen;
-    _imageNamesGen;
-    _formNamesGen;
     _egsNamesGen;
     _propNamesGen;
     _csNamesGen;
@@ -104,6 +102,12 @@ class PdfResources extends PdfObjectWrapper<PdfDictionary> {
   Future<PdfName> addFont(PdfDocument document, PdfFont font) async {
     return addResource(
         font.getPdfObject(), PdfName.font, await _fontNamesGen.generate(this));
+  }
+
+  Future<PdfName> addXObject(PdfDocument document, PdfStream xObject) async {
+    final subtype = await xObject.getAsName(PdfName.subtype);
+    final gen = subtype == PdfName.form ? _formNamesGen : _imageNamesGen;
+    return addResource(xObject, PdfName.xObject, await gen.generate(this));
   }
 
   PdfName getResourceName(PdfObject resource) {

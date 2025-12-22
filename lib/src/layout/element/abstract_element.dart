@@ -11,6 +11,11 @@ abstract class AbstractElement<T extends IElement>
   @override
   List<IElement> getChildren() => childElements;
 
+  T add(IElement element) {
+    childElements.add(element);
+    return this as T;
+  }
+
   @override
   void setNextRenderer(IRenderer renderer) {
     nextRenderer = renderer;

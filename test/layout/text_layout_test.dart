@@ -14,7 +14,8 @@ import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 void main() {
   group('TextLayout Test', () {
     test('Simple layout - no split', () async {
-      final ttf = TrueTypeFont.fromFile("c:/windows/fonts/arial.ttf");
+      final ttf = TrueTypeFont.fromFile(
+          r"C:\MyDartProjects\itext\test\assets\arial.ttf");
       final font = PdfTrueTypeFont(ttf);
 
       final textElement = Text("Hello World");
@@ -37,7 +38,8 @@ void main() {
     });
 
     test('Simple layout - forced split', () async {
-      final ttf = TrueTypeFont.fromFile("c:/windows/fonts/arial.ttf");
+      final ttf = TrueTypeFont.fromFile(
+          r"C:\MyDartProjects\itext\test\assets\arial.ttf");
       final font = PdfTrueTypeFont(ttf);
 
       final textElement = Text("Hello World");
@@ -68,7 +70,8 @@ void main() {
     });
 
     test('Layout with margins', () async {
-      final ttf = TrueTypeFont.fromFile("c:/windows/fonts/arial.ttf");
+      final ttf = TrueTypeFont.fromFile(
+          r"C:\MyDartProjects\itext\test\assets\arial.ttf");
       final font = PdfTrueTypeFont(ttf);
 
       final textElement = Text("Margins");
@@ -101,7 +104,8 @@ void main() {
     });
 
     test('MinMaxWidth calculation', () async {
-      final ttf = TrueTypeFont.fromFile("c:/windows/fonts/arial.ttf");
+      final ttf = TrueTypeFont.fromFile(
+          r"C:\MyDartProjects\itext\test\assets\arial.ttf");
       final font = PdfTrueTypeFont(ttf);
 
       final textElement = Text("Hello World");

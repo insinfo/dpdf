@@ -11,7 +11,8 @@ import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
 void main() {
   test('BlockRenderer MinMaxWidth', () {
-    final ttf = TrueTypeFont.fromFile("c:/windows/fonts/arial.ttf");
+    final ttf =
+        TrueTypeFont.fromFile(r"C:\MyDartProjects\itext\test\assets\arial.ttf");
     final font = PdfTrueTypeFont(ttf);
 
     Paragraph p = Paragraph();

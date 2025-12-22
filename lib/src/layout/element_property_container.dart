@@ -47,6 +47,11 @@ abstract class ElementPropertyContainer<T extends IPropertyContainer>
     return this as T;
   }
 
+  T setFont(Object? font) {
+    setProperty(Property.FONT, font);
+    return this as T;
+  }
+
   T setWidth(double width) {
     setProperty(Property.WIDTH, UnitValue.createPointValue(width));
     return this as T;
@@ -54,6 +59,34 @@ abstract class ElementPropertyContainer<T extends IPropertyContainer>
 
   T setHeight(double height) {
     setProperty(Property.HEIGHT, UnitValue.createPointValue(height));
+    return this as T;
+  }
+
+  T setMarginTop(double margin) {
+    setProperty(Property.MARGIN_TOP, UnitValue.createPointValue(margin));
+    return this as T;
+  }
+
+  T setMarginBottom(double margin) {
+    setProperty(Property.MARGIN_BOTTOM, UnitValue.createPointValue(margin));
+    return this as T;
+  }
+
+  T setMarginLeft(double margin) {
+    setProperty(Property.MARGIN_LEFT, UnitValue.createPointValue(margin));
+    return this as T;
+  }
+
+  T setMarginRight(double margin) {
+    setProperty(Property.MARGIN_RIGHT, UnitValue.createPointValue(margin));
+    return this as T;
+  }
+
+  T setMargin(double margin) {
+    setMarginTop(margin);
+    setMarginBottom(margin);
+    setMarginLeft(margin);
+    setMarginRight(margin);
     return this as T;
   }
 }

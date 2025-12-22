@@ -10,7 +10,6 @@ import 'package:dpdf/src/layout/properties/unit_value.dart';
 import 'package:dpdf/src/layout/properties/property.dart';
 import 'package:dpdf/src/layout/properties/background.dart';
 import 'package:dpdf/src/layout/borders/border.dart';
-import 'package:dpdf/src/kernel/colors/color.dart';
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
@@ -30,19 +29,44 @@ abstract class AbstractRenderer implements IRenderer {
   }
 
   @override
-  Future<void> addChild(IRenderer renderer) async {
+  void addChild(IRenderer renderer) {
     childRenderers.add(renderer);
     renderer.setParent(this);
   }
 
   @override
-  void setParent(IRenderer parent) {
+  List<IRenderer> getChildRenderers() {
+    return childRenderers;
+  }
+
+  @override
+  void setParent(IRenderer? parent) {
     this.parent = parent;
+  }
+
+  @override
+  LayoutArea? getOccupiedArea() {
+    return occupiedArea;
   }
 
   @override
   IRenderer? getNextRenderer() {
     return null;
+  }
+
+  AbstractRenderer createSplitRenderer(int layoutResult) {
+    AbstractRenderer splitRenderer = getNextRenderer() as AbstractRenderer;
+    splitRenderer.modelElement = modelElement;
+    splitRenderer.parent = parent;
+    splitRenderer.occupiedArea = occupiedArea;
+    return splitRenderer;
+  }
+
+  AbstractRenderer createOverflowRenderer(int layoutResult) {
+    AbstractRenderer overflowRenderer = getNextRenderer() as AbstractRenderer;
+    overflowRenderer.modelElement = modelElement;
+    overflowRenderer.parent = parent;
+    return overflowRenderer;
   }
 
   @override
@@ -135,18 +159,65 @@ abstract class AbstractRenderer implements IRenderer {
   @override
   LayoutResult? layout(LayoutContext layoutContext);
 
-  // Property helpers
+  // Property methods
+  @override
+  bool hasProperty(int property) {
+    return getProperty(property) != null;
+  }
+
+  @override
+  bool hasOwnProperty(int property) {
+    return properties.containsKey(property);
+  }
+
+  @override
   T? getProperty<T>(int property) {
     if (properties.containsKey(property)) {
       return properties[property] as T?;
     }
     // Check model
     if (modelElement != null && modelElement!.hasProperty(property)) {
-      return modelElement!.getProperty(property);
+      return modelElement!.getProperty<T>(property);
     }
-    // Check parent (if applicable, though usually properties are inherited explicitly in iText logic, but simplified here)
-    // For now, assume modelElement has it.
+    // Inherit from parent
+    if (parent != null) {
+      return parent!.getProperty<T>(property);
+    }
     return null;
+  }
+
+  @override
+  T? getOwnProperty<T>(int property) {
+    return properties[property] as T?;
+  }
+
+  @override
+  T? getDefaultProperty<T>(int property) {
+    return null; // TODO: Implement defaults
+  }
+
+  @override
+  void setProperty(int property, Object? value) {
+    properties[property] = value;
+  }
+
+  @override
+  void deleteOwnProperty(int property) {
+    properties.remove(property);
+  }
+
+  void addAllProperties(Map<int, dynamic> additionalProperties) {
+    properties.addAll(additionalProperties);
+  }
+
+  Map<int, dynamic> getOwnProperties() {
+    return properties;
+  }
+
+  bool getPropertyAsBoolean(int property) {
+    var val = getProperty(property);
+    if (val is bool) return val;
+    return false;
   }
 
   double? getPropertyAsFloat(int property) {
@@ -171,5 +242,23 @@ abstract class AbstractRenderer implements IRenderer {
   @override
   MinMaxWidth? getMinMaxWidth() {
     return MinMaxWidth(0);
+  }
+
+  @override
+  void move(double dx, double dy) {
+    if (occupiedArea != null) {
+      occupiedArea!.getBBox().move(dx, dy);
+    }
+  }
+
+  double? getFirstYLineRecursively() {
+    // Basic implementation for block-like renderers
+    for (var child in childRenderers) {
+      if (child is AbstractRenderer) {
+        double? y = child.getFirstYLineRecursively();
+        if (y != null) return y;
+      }
+    }
+    return null;
   }
 }

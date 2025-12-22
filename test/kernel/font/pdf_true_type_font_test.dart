@@ -11,9 +11,9 @@ import 'package:test/test.dart';
 void main() {
   group('PdfTrueTypeFont', () {
     test('Load Arial and write text', () async {
-      String fontPath = 'C:/Windows/Fonts/arial.ttf';
+      String fontPath = r'C:\MyDartProjects\itext\test\assets\arial.ttf';
       if (!File(fontPath).existsSync()) {
-        print("Skipping test: arial.ttf not found");
+        print("Skipping test: arial.ttf not found at $fontPath");
         return;
       }
 

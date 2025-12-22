@@ -560,6 +560,42 @@ dependencies:
 #### kernel/font/
 - ✅ `pdf_font.dart` - Stub base para fontes
 
+### Fase 3: Layout (Em andamento)
+
+#### layout/properties/
+- ✅ `property.dart` - Constantes de propriedades
+- ✅ `unit_value.dart` - Valores com unidade (Point, Percent)
+- ✅ `style.dart` - Contêiner de estilos
+
+#### layout/element/
+- ✅ `i_element.dart` - Interface base de elementos
+- ✅ `element_property_container.dart` - Implementação base de propriedades
+- ✅ `i_abstract_element.dart` - Interface de elemento abstrato
+- ✅ `abstract_element.dart` - Elemento abstrato base
+- ✅ `i_block_element.dart` - Interface de elemento de bloco
+- ✅ `block_element.dart` - Elemento de bloco base
+- ✅ `i_leaf_element.dart` - Interface de elemento folha
+- ✅ `text.dart` - Elemento de texto
+- ✅ `paragraph.dart` - Elemento de parágrafo
+- ✅ `div.dart` - Elemento Div (Bloco genérico)
+
+#### layout/renderer/
+- ✅ `i_renderer.dart` - Interface de renderização
+- ✅ `abstract_renderer.dart` - Renderizador base
+- ✅ `block_renderer.dart` - Renderizador de bloco
+- ✅ `text_renderer.dart` - Renderizador de texto
+- ✅ `paragraph_renderer.dart` - Renderizador de parágrafo
+- ✅ `root_renderer.dart` - Renderizador raiz
+- ✅ `document_renderer.dart` - Renderizador de documento
+
+#### layout/
+- ✅ `root_element.dart` - Elemento raiz
+- ✅ `document.dart` - Documento de alto nível
+- ✅ `i_property_container.dart` - Interface de contêiner de propriedades
+
+#### layout/tagging/
+- ✅ `i_accessible_element.dart` - Interface de acessibilidade (Tagging)
+
 ---
 
 ## Próximos Passos
@@ -568,7 +604,7 @@ dependencies:
 
 1. ✅ Criar roteiro detalhado (este documento)
 2. ✅ Configurar estrutura de diretórios
-3. ⬜ Adicionar dependências ao `pubspec.yaml`
+3. ⬜ Adicionar dependências ao `pubspec.yaml` so se for extremamente necessario
 4. ✅ Iniciar com `commons/exceptions/`
 5. ✅ Portar `ByteBuffer` e `ByteUtils`
 6. ✅ Portar `PdfTokenizer` ⭐
@@ -621,7 +657,7 @@ dependencies:
 
 ## Referências
 
-- [iText 7 Community for .NET](https://github.com/itext/itext-dotnet)
+- [iText Community for .NET](https://github.com/itext/itext-dotnet)
 - [PDF Reference 1.7](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf)
 - [Dart Language Tour](https://dart.dev/guides/language/language-tour)
 - [Effective Dart](https://dart.dev/guides/language/effective-dart)

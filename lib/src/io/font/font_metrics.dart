@@ -142,6 +142,14 @@ class FontMetrics {
     this.underlineThickness = underlineThickness;
   }
 
+  void setStrikeoutPosition(int strikeoutPosition) {
+    this.strikeoutPosition = (strikeoutPosition * normalizationCoef).toInt();
+  }
+
+  void setStrikeoutSize(int strikeoutSize) {
+    this.strikeoutSize = (strikeoutSize * normalizationCoef).toInt();
+  }
+
   void setSubscriptSize(int subscriptSize) {
     this.subscriptSize = (subscriptSize * normalizationCoef).toInt();
   }

@@ -125,11 +125,14 @@ commons/
   - ✅ ITextException
   - PdfException
   - IoException (portado em io/exceptions)
-- [ ] **1.1.3** Portar `utils/` - Utilitários
-  - JavaUtil (adaptar para Dart)
-  - MessageFormatUtil
-  - DateTimeUtil
-  - EncodingUtil
+- [x] **1.1.3** Portar `utils/` - Utilitários
+  - ✅ JavaUtil (adaptar para Dart)
+  - ✅ MessageFormatUtil
+  - ✅ DateTimeUtil
+  - ✅ EncodingUtil
+  - ✅ StringUtil
+  - ✅ MathematicUtil
+  - ✅ JavaCollectionsUtil
 - [ ] **1.1.4** Portar `datastructures/`
   - SingletonList
   - NullUnlimitedList
@@ -180,11 +183,13 @@ io/
   - [x] `ByteUtils` → Utilitários de bytes
   - [x] `RandomAccessFileOrArray` → Acesso a arquivos
   - [x] `PdfTokenizer` → Tokenizador PDF ⭐ (987 linhas) ✅
-- [ ] **1.2.3** Portar `codec/` - Compressão/Descompressão
-  - [ ] Integrar com `archive` package ou implementar
-  - [ ] Zlib (deflate/inflate)
-  - [ ] LZW
-  - [ ] Flate
+- [x] **1.2.3** Portar `codec/` - Compressão/Descompressão
+  - ✅ Zlib (usa dart:io nativo)
+  - ✅ LZWCompressor (TIFF/GIF)
+  - ✅ LZWStringTable
+  - ✅ TIFFLZWDecoder
+  - ✅ BitFile (bit-level output)
+  - ✅ PngWriter
 - [ ] **1.2.4** Portar `font/` - Sistema de fontes
   - [x] FontProgram (base)
   - [x] Type1Font (Parcial - Fontes Standard e parsing AFM básico)
@@ -453,7 +458,7 @@ internal class Helper { }
 class _Helper { }
 ```
 
-### Dependências Dart Recomendadas
+### Dependências Dart Recomendadas se necessario
 
 ```yaml
 dependencies:
@@ -475,10 +480,10 @@ dependencies:
 
 | Módulo | Arquivos Portados | Total Estimado | Progresso |
 |--------|-------------------|----------------|-----------|
-| commons | 1 | ~30 | 3% |
-| io | 10 | ~50 | 20% |
+| commons | 8 | ~30 | 25% |
+| io | 17 | ~50 | 35% |
 | kernel | 30 | ~150 | 20% |
-| layout | 0 | ~80 | 0% |
+| layout | 25 | ~80 | 30% |
 | forms | 0 | ~40 | 0% |
 | sign | 0 | ~30 | 0% |
 
@@ -486,6 +491,15 @@ dependencies:
 
 #### commons/exceptions/
 - ✅ `itext_exception.dart` - Classe base de exceção
+
+#### commons/utils/
+- ✅ `java_util.dart` - Utilitários Java-like
+- ✅ `message_format_util.dart` - Formatação de strings com placeholders
+- ✅ `date_time_util.dart` - Utilitários de data/hora
+- ✅ `encoding_util.dart` - Codificação de strings (UTF-8, Latin-1, UTF-16)
+- ✅ `string_util.dart` - Utilitários de string e regex
+- ✅ `mathematic_util.dart` - Arredondamento "away from zero"
+- ✅ `java_collections_util.dart` - Utilitários de coleções Java-like
 
 #### io/exceptions/
 - ✅ `io_exception.dart` - Exceção de I/O
@@ -500,6 +514,13 @@ dependencies:
 - ✅ `byte_utils.dart` - Utilitários de bytes
 - ✅ `random_access_file_or_array.dart` - Leitor unificado
 - ✅ `pdf_tokenizer.dart` - Tokenizador PDF ⭐
+
+#### io/codec/
+- ✅ `bit_file.dart` - Escritor de bits para LZW
+- ✅ `lzw_string_table.dart` - Tabela de strings LZW
+- ✅ `lzw_compressor.dart` - Compressor LZW (TIFF/GIF)
+- ✅ `tiff_lzw_decoder.dart` - Decodificador LZW TIFF
+- ✅ `png_writer.dart` - Escritor de imagens PNG
 
 #### kernel/pdf/
 - ✅ `pdf_object.dart` - Classe base e PdfIndirectReference (Async)
@@ -700,4 +721,4 @@ dependencies:
 
 ---
 
-_Última atualização: 2025-12-21_
+_Última atualização: 2025-12-24_

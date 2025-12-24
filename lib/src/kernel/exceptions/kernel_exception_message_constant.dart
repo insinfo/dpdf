@@ -91,6 +91,8 @@ class KernelExceptionMessageConstant {
       'Unable to read object stream.';
   static const String invalidObjectStreamNumber =
       'Unable to read object {0} with object stream number {1} and index {2} from object stream.';
+  static const String pdfObjectStreamReachMaxSize =
+      'PdfObjectStream reached max size.';
 
   // Page errors
   static const String requestedPageNumberIsOutOfBounds =

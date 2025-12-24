@@ -8,11 +8,13 @@ o ideal é ir portando e implementando testes para ir validando a implementaçã
 e ir otimizando a implementação
 va colocando comentario // TODO onde não esta completo ou onde merece otimizar atraves de benchmark (onde se cria duas ou mais implementações e testa para ver qual é melhor)
 
+portar os testes de C:\MyDartProjects\itext\referencias\itext-dotnet-develop\itext.tests paa dart
+
 IMPORTANTE nada no codigo ou nos testes podem depender do diretorio referencias C:\MyDartProjects\itext\referencias pois ele sera removido no futuro o que 
 for necessario tera que ser copiado para um diretorios apropriado
 
-alto desempenho e não bloqueante é imporante para usar esta lib com servidores web
-algumas micro otimizações podem ser necessarias
+foco em alto desempenho e não bloqueante é imporante para usar esta lib com servidores web
+algumas micro otimizações são necessarias
 
 os testes não podem depender de arquivos externos copie o que for necessario para a pasta C:\MyDartProjects\itext\test\assets
 
@@ -55,13 +57,13 @@ O iText 7 possui uma arquitetura modular:
 └──────────────────────┴──────────────────────────────────────┘
 ```
 
-### Módulos Opcionais:
+### Módulos importantes
 - `itext.forms` - Formulários PDF (AcroForms)
-- `itext.sign` - Assinaturas digitais
+- `itext.sign` - Assinaturas digitais muito importante
 - `itext.barcodes` - Códigos de barras
 - `itext.pdfa` - Conformidade PDF/A
 - `itext.pdfua` - Conformidade PDF/UA
-- `itext.svg` - Suporte SVG
+- `itext.svg` - Suporte SVG muito importante
 - `itext.styledxmlparser` - Parser XML/CSS
 
 ---
@@ -308,7 +310,7 @@ kernel/pdf/canvas/
 **Tarefas:**
 
 - [ ] **2.4.1** Portar `PdfCanvas`
-- [ ] **2.4.2** Portar parser de conteúdo
+- [x] **2.4.2** Portar parser de conteúdo
 
 ### 2.5 Subpastas do Kernel
 
@@ -489,12 +491,12 @@ dependencies:
 
 | Módulo | Arquivos Portados | Total Estimado | Progresso |
 |--------|-------------------|----------------|-----------|
-| commons | 16 | ~30 | 55% |
+| commons | 18 | ~30 | 60% |
 | io | 36 | ~50 | 72% |
-| kernel | 37 | ~150 | 25% |
+| kernel | 54 | ~150 | 36% |
 | layout | 31 | ~80 | 39% |
-| forms | 0 | ~40 | 0% |
-| sign | 0 | ~30 | 0% |
+| forms | 7 | ~40 | 18% |
+| sign | 0 | ~30 | 0% | muito importante
 
 ### Arquivos Portados
 
@@ -580,6 +582,7 @@ dependencies:
 - ✅ `pdf_reader.dart` - Leitor de documentos PDF (Async) ⭐
 - ✅ `pdf_writer.dart` - Escritor de documentos PDF (Async)
 - ✅ `pdf_document.dart` - Documento PDF principal (Async)
+- ✅ `pdf_document_info.dart` - Metadados do documento (Title, Author, etc.)
 - ✅ `pdf_page.dart` - Página PDF (Async)
 - ✅ `pdf_pages.dart` - Árvore de páginas (Async)
 - ✅ `pdf_pages_tree.dart` - Gerenciamento da árvore de páginas (Async)
@@ -589,6 +592,13 @@ dependencies:
 - ✅ `pdf_object_wrapper.dart` - Wrapper para objetos PDF
 - ✅ `writer_properties.dart` - Propriedades de escrita PDF
 - ✅ `reader_properties.dart` - Propriedades de leitura PDF
+- ✅ `pdf_object_stream.dart` - Stream de objetos PDF
+- ✅ `pdf_encryption.dart` - Gerenciamento de criptografia PDF (Parcial)
+- ✅ `encryption_constants.dart` - Constantes de criptografia
+- ✅ `standard_security_handler.dart` - Handler padrão base
+- ✅ `standard_handler_using_standard_40.dart` - RC4 40-bit
+- ✅ `standard_handler_using_standard_128.dart` - RC4 128-bit
+- ✅ `standard_handler_using_aes_256.dart` - AES 256-bit (Async)
 
 #### kernel/geom/
 - ✅ `rectangle.dart` - Geometria de retângulo
@@ -626,6 +636,9 @@ dependencies:
 - ✅ `pdf_canvas_constants.dart` - Constantes de canvas
 - ✅ `canvas_graphics_state.dart` - Estado gráfico do canvas
 - ✅ `pdf_canvas.dart` - Canvas de desenho (Parcial)
+- ✅ `parser/pdf_canvas_processor.dart` - Processador de stream (Content Parser)
+- ✅ `parser/standard_operators.dart` - Operadores padrão (BT, ET, Tj, q, Q)
+- ✅ `parser/listener/i_event_listener.dart` - Interface de listener
 
 #### kernel/font/
 - ✅ `pdf_font.dart` - Stub base para fontes
@@ -705,13 +718,31 @@ dependencies:
 3. ✅ Implementar escrita de PDF simples
 4. ✅ Portar `PdfCanvas` para desenho de conteúdo (Base implementada com otimização)
 5. ✅ Implementar suporte básico a fontes (Standard Type 1)
-6. ⬜ Implementar processamento de streams de conteúdo (Content Streams)
+6. ✅ Implementar processamento de streams de conteúdo (Content Streams)
 7. ✅ Otimizar escrita do `PdfCanvas` usando `BytesBuilder` para evitar cópias de array.
 8. ✅ Implementar suporte a imagens PNG (Decoding, Interlacing, Masks, PLTE)
 9. ✅ Implementar Subsetting de Fontes TrueType
 
 #### kernel/pdf/
 - ✅ `pdf_output_stream.dart` - Stream de saída otimizado
+
+#### kernel/annot/
+- ✅ `pdf_annotation.dart` - Classe base para anotações (Async)
+- ✅ `pdf_widget_annotation.dart` - Anotação de widget (Forms)
+
+#### kernel/pdf/action/
+- ✅ `pdf_action.dart` - Ações PDF (Async)
+
+#### forms/
+- ✅ `pdf_acro_form.dart` - AcroForm (Async/Lazy)
+- ✅ `fields/abstract_pdf_form_field.dart` - Base para campos de formulário (Async)
+- ✅ `fields/pdf_form_field.dart` - Campo de formulário genérico
+- ✅ `fields/pdf_text_form_field.dart` - Campo de texto
+- ✅ `fields/pdf_button_form_field.dart` - Campo de botão (Radio, Checkbox, Push)
+- ✅ `fields/pdf_choice_form_field.dart` - Campo de escolha (Combo, List)
+- ✅ `fields/pdf_signature_form_field.dart` - Campo de assinatura
+- ✅ `fields/pdf_form_creator.dart` - Factory de campos (Async)
+- ✅ `xfa_form.dart` - Stub para XFA
 
 #### io/font/
 - ✅ `font_program.dart` - Base para fontes

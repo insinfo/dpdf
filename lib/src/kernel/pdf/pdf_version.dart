@@ -34,7 +34,8 @@ class PdfVersion implements Comparable<PdfVersion> {
   /// can be found.
   static PdfVersion fromString(String value) {
     for (final version in _values) {
-      if (version.toString() == value) {
+      if (version.toString() == value ||
+          version.toPdfName().getValue() == value) {
         return version;
       }
     }

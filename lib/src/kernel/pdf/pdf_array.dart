@@ -1,3 +1,4 @@
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'pdf_object.dart';
 import 'pdf_name.dart';
 import 'pdf_number.dart';
@@ -55,6 +56,16 @@ class PdfArray extends PdfObject {
     _list = strings
         .map((s) => asNames ? PdfName(s) as PdfObject : PdfString(s))
         .toList();
+  }
+
+  /// Create a new PdfArray from a Rectangle.
+  PdfArray.fromRectangle(Rectangle rect) {
+    _list = [
+      PdfNumber(rect.getX()),
+      PdfNumber(rect.getY()),
+      PdfNumber(rect.getX() + rect.getWidth()),
+      PdfNumber(rect.getY() + rect.getHeight())
+    ];
   }
 
   @override

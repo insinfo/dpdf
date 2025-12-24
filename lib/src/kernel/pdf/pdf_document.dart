@@ -1,109 +1,145 @@
-import 'pdf_object.dart';
+import '../font/pdf_font.dart';
+import '../font/pdf_font_factory.dart';
+import '../geom/page_size.dart';
 import 'pdf_dictionary.dart';
-import 'pdf_name.dart';
-import 'pdf_writer.dart';
+import 'pdf_object.dart';
 import 'pdf_reader.dart';
+import 'pdf_writer.dart';
 import 'pdf_catalog.dart';
+import 'pdf_pages_tree.dart';
 import 'pdf_xref_table.dart';
 import 'pdf_version.dart';
+import 'pdf_encryption.dart';
 import 'pdf_page.dart';
-import '../geom/page_size.dart';
-import '../exceptions/pdf_exception.dart';
+import 'pdf_name.dart';
+import 'pdf_number.dart';
 
-/// Main enter point to work with PDF document.
 class PdfDocument {
-  final PdfXrefTable xref = PdfXrefTable();
-
-  PdfWriter? _writer;
   PdfReader? _reader;
+  PdfWriter? _writer;
+  PdfXrefTable? _xrefTable;
   PdfCatalog? _catalog;
-  PdfDictionary? _trailer;
-  PdfVersion _pdfVersion = PdfVersion.PDF_1_7;
-  PageSize _defaultPageSize = PageSize.defaultSize;
+  PdfPagesTree? _pagesTree;
+  PdfEncryption? _encryption;
+  PdfVersion? _version;
 
   bool _closed = false;
 
-  PdfDocument._({PdfWriter? writer}) : _writer = writer {
+  PdfDocument({PdfReader? reader, PdfWriter? writer})
+      : _reader = reader,
+        _writer = writer {
+    _init();
+  }
+
+  static Future<PdfDocument> create(PdfWriter writer) async {
+    return PdfDocument(writer: writer);
+  }
+
+  static Future<PdfDocument> open(PdfReader reader) async {
+    await reader.read();
+    final doc = PdfDocument(reader: reader);
+    final catalogDict = await reader.getCatalog();
+    if (catalogDict != null) {
+      doc._catalog = PdfCatalog(catalogDict);
+      await doc._catalog!.init();
+      doc._pagesTree = doc._catalog!.getPageTree();
+    }
+    return doc;
+  }
+
+  void _init() {
+    if (_reader != null) {
+      _xrefTable = _reader!.xref;
+      _version = _reader!.getPdfVersion();
+      _reader!.setDocument(this);
+    } else {
+      _xrefTable = PdfXrefTable();
+      _version = PdfVersion.PDF_1_7;
+    }
     if (_writer != null) {
       _writer!.document = this;
     }
   }
 
-  /// Creates a new PDF document for writing.
-  static Future<PdfDocument> create(PdfWriter writer) async {
-    final doc = PdfDocument._(writer: writer);
-    await doc._open();
-    return doc;
-  }
-
-  /// Opens an existing PDF document for reading.
-  static Future<PdfDocument> open(PdfReader reader, {PdfWriter? writer}) async {
-    final doc = PdfDocument._(writer: writer);
-    doc._reader = reader;
-    reader.document = doc;
-    await doc._openFromReader();
-    return doc;
-  }
-
-  Future<void> _openFromReader() async {
-    if (_reader == null) return;
-    await _reader!.read();
-    _trailer = _reader!.getTrailer();
-    final catalogDict = await _reader!.getCatalog();
-    if (catalogDict != null) {
-      _catalog = PdfCatalog(catalogDict);
-      await _catalog!.init();
-    }
-  }
-
-  Future<void> _open() async {
-    _trailer = PdfDictionary();
-    _catalog = PdfCatalog(PdfDictionary());
-    _catalog!.getPdfObject().makeIndirect(this);
-    await _catalog!.init();
-    _trailer!
-        .put(PdfName.root, _catalog!.getPdfObject().getIndirectReference()!);
-    // TODO: Initial setup (info, ID, etc)
-  }
+  PdfReader? getReader() => _reader;
+  PdfWriter? getWriter() => _writer;
 
   PdfCatalog getCatalog() {
-    _checkClosingStatus();
+    if (_catalog == null) {
+      if (_reader != null) {
+        // Try to get from reader
+      }
+      if (_catalog == null) {
+        _catalog = PdfCatalog(PdfDictionary());
+        _catalog!.getPdfObject().makeIndirect(this);
+      }
+    }
     return _catalog!;
   }
 
-  PdfDictionary getTrailer() => _trailer!;
+  void setCatalog(PdfCatalog catalog) {
+    _catalog = catalog;
+  }
+
+  PdfPagesTree getPagesTree() {
+    if (_pagesTree == null) {
+      _pagesTree = PdfPagesTree(getCatalog());
+    }
+    return _pagesTree!;
+  }
+
+  PdfXrefTable? getXrefTable() => _xrefTable;
+
+  PdfEncryption? getEncryption() => _encryption;
+
+  PdfVersion? getVersion() => _version;
+
+  bool isClosed() => _closed;
+
+  PdfIndirectReference createNextIndirectReference() {
+    final objNr = _xrefTable!.size();
+    return _xrefTable!.add(PdfIndirectReference(objNr, 0)..setDocument(this))!;
+  }
+
+  Future<PdfObject?> readObject(PdfIndirectReference reference) async {
+    if (reference.getDocument() != this) {
+      throw ArgumentError("Indirect reference does not belong to document");
+    }
+    if (reference.isFree()) return null;
+    if (_reader != null) {
+      return await _reader!.readObject(reference.getObjNumber());
+    }
+    return null;
+  }
 
   Future<PdfPage> addNewPage([PageSize? pageSize]) async {
-    _checkClosingStatus();
-    final size = pageSize ?? _defaultPageSize;
-    final pageDict = PdfDictionary();
-    pageDict.makeIndirect(this);
-    pageDict.put(PdfName.type, PdfName.page);
-    pageDict.put(PdfName.mediaBox, size.toPdfArray());
-
-    final page = PdfPage(pageDict);
-    await _catalog!.getPageTree().addPage(page);
+    final page = PdfPage(PdfDictionary());
+    page.getPdfObject().makeIndirect(this);
+    page.setMediaBox(pageSize ?? PageSize.defaultSize);
+    await getPagesTree().addPage(page, this);
     return page;
   }
 
   Future<PdfPage?> getPage(int pageNumber) async {
-    _checkClosingStatus();
-    return _catalog!.getPageTree().getPage(pageNumber);
+    return await getPagesTree().getPage(pageNumber);
   }
 
   int getNumberOfPages() {
-    _checkClosingStatus();
-    return _catalog!.getPageTree().getNumberOfPages();
+    return getPagesTree().getNumberOfPages();
   }
 
   Future<void> close() async {
     if (_closed) return;
-    _closed = true;
 
     if (_writer != null) {
       _writer!.writeHeader();
-      // Write all indirect objects
-      for (final ref in xref.references) {
+
+      // Ensure catalog and pages tree are initialized
+      final catalog = getCatalog();
+      await getPagesTree(); // ensure initialized? Wait, getPagesTree is sync but we might need more.
+
+      // We should probably flush all objects from xref table
+      for (final ref in _xrefTable!.references) {
         if (!ref.isFree()) {
           final obj = await ref.getRefersTo();
           if (obj != null) {
@@ -111,38 +147,24 @@ class PdfDocument {
           }
         }
       }
+
       final startxref = _writer!.getPosition();
-      _writer!.writeXrefTable(xref);
-      await _writer!.writeTrailer(_trailer!, startxref);
+      _writer!.writeXrefTable(_xrefTable!);
+
+      final trailer = PdfDictionary();
+      trailer.put(
+          PdfName.intern('Size'), PdfNumber.fromInt(_xrefTable!.size()));
+      trailer.put(PdfName.intern('Root'), catalog.getPdfObject());
+
+      await _writer!.writeTrailer(trailer, startxref);
       _writer!.writeEOF();
-      _writer!.flush();
       await _writer!.close();
     }
 
-    if (_reader != null) {
-      await _reader!.close();
-    }
+    _closed = true;
   }
 
-  void _checkClosingStatus() {
-    if (_closed) {
-      throw PdfException(
-          'Document was closed. It is impossible to execute action.');
-    }
+  Future<PdfFont?> getFont(PdfDictionary fontDict) async {
+    return await PdfFontFactory.createFontFromDictionary(fontDict);
   }
-
-  PdfIndirectReference createNextIndirectReference() {
-    final ref = PdfIndirectReference(xref.size())..setDocument(this);
-    xref.add(ref);
-    return ref;
-  }
-
-  Future<PdfObject?> readObject(PdfIndirectReference ref) async {
-    if (_reader != null) {
-      return await _reader!.readObject(ref.getObjNumber());
-    }
-    return null;
-  }
-
-  PdfVersion getPdfVersion() => _pdfVersion;
 }

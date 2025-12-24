@@ -34,7 +34,10 @@ class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
     }
   }
 
-  // Constructor from Dictionary not implemented yet
+  PdfTrueTypeFont.fromDictionary(PdfDictionary fontDictionary)
+      : super(fontDictionary) {
+    newFont = false;
+  }
 
   @override
   Glyph? getGlyph(int unicode) {

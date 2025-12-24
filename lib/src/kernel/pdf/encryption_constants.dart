@@ -1,59 +1,52 @@
-/// Encryption constants for PDF documents.
-///
-/// Used in [WriterProperties.setStandardEncryption] to specify
-/// the type of encryption and permissions.
+/// Encryption constants for iText.
 class EncryptionConstants {
   EncryptionConstants._();
 
-  // Encryption types
-
-  /// RC4 encryption with 40-bit key.
+  /// Type of encryption. RC4 encryption algorithm will be used with the key length of 40 bits.
   static const int standardEncryption40 = 0;
 
-  /// RC4 encryption with 128-bit key.
+  /// Type of encryption. RC4 encryption algorithm will be used with the key length of 128 bits.
   static const int standardEncryption128 = 1;
 
-  /// AES encryption with 128-bit key.
+  /// Type of encryption. AES encryption algorithm will be used with the key length of 128 bits.
   static const int encryptionAes128 = 2;
 
-  /// AES encryption with 256-bit key.
+  /// Type of encryption. AES encryption algorithm will be used with the key length of 256 bits.
   static const int encryptionAes256 = 3;
 
-  /// AES-GCM encryption (Advanced Encryption Standard-Galois/Counter Mode).
+  /// Type of encryption. Advanced Encryption Standard-Galois/Counter Mode (AES-GCM) encryption algorithm.
   static const int encryptionAesGcm = 4;
 
-  /// Add to mode to keep metadata in clear text.
+  /// Add this to the mode to keep the metadata in clear text.
   static const int doNotEncryptMetadata = 8;
 
-  /// Add to mode to encrypt only embedded files.
+  /// Add this to the mode to encrypt only the embedded files.
   static const int embeddedFilesOnly = 24;
 
-  // Permissions
-
-  /// Permit printing.
+  /// The operation is permitted when the document is opened with the user password.
   static const int allowPrinting = 4 + 2048;
 
-  /// Permit modifying contents.
+  /// The operation is permitted when the document is opened with the user password.
   static const int allowModifyContents = 8;
 
-  /// Permit copying.
+  /// The operation is permitted when the document is opened with the user password.
   static const int allowCopy = 16;
 
-  /// Permit modifying annotations.
+  /// The operation is permitted when the document is opened with the user password.
   static const int allowModifyAnnotations = 32;
 
-  /// Permit filling in form fields.
+  /// The operation is permitted when the document is opened with the user password.
   static const int allowFillIn = 256;
 
-  /// Permit screen readers to read content.
+  /// The operation is permitted when the document is opened with the user password.
   static const int allowScreenreaders = 512;
 
-  /// Permit document assembly.
+  /// The operation is permitted when the document is opened with the user password.
   static const int allowAssembly = 1024;
 
-  /// Permit degraded printing.
+  /// The operation is permitted when the document is opened with the user password.
   static const int allowDegradedPrinting = 4;
 
-  /// Mask to separate encryption type from mode.
+  /// Mask to separate the encryption type from the encryption mode.
   static const int encryptionMask = 7;
 }

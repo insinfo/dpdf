@@ -174,4 +174,26 @@ class DateTimeUtil {
 
     return DateTime(year, month, day, hour, minute, second);
   }
+
+  /// Formats date to PDF format: D:YYYYMMDDHHmmSSOHH'mm
+  static String formatPdfDate(DateTime date) {
+    var d = date.toLocal();
+    var str = 'D:${d.year.toString().padLeft(4, '0')}'
+        '${d.month.toString().padLeft(2, '0')}'
+        '${d.day.toString().padLeft(2, '0')}'
+        '${d.hour.toString().padLeft(2, '0')}'
+        '${d.minute.toString().padLeft(2, '0')}'
+        '${d.second.toString().padLeft(2, '0')}';
+
+    var offset = d.timeZoneOffset;
+    if (offset.inMinutes == 0) {
+      str += 'Z00\'00';
+    } else {
+      var sign = offset.isNegative ? '-' : '+';
+      var hours = offset.inHours.abs().toString().padLeft(2, '0');
+      var minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
+      str += '$sign$hours\'$minutes';
+    }
+    return str;
+  }
 }

@@ -3,7 +3,7 @@ import 'bit_file.dart';
 import 'lzw_string_table.dart';
 
 /// LZW Compressor for TIFF and GIF image formats.
-///
+/// TODO concluir e otimizar
 /// Modified from original LZWCompressor to accept a buffer of data
 /// to be compressed rather than a stream.
 class LZWCompressor {

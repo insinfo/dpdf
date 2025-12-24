@@ -2,17 +2,18 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'pdf_object.dart';
+import 'pdf_primitive_object.dart';
 
 /// Represents a PDF string object.
 ///
 /// PDF strings can be literal strings (in parentheses) or
 /// hexadecimal strings (in angle brackets).
-class PdfString extends PdfObject {
+class PdfString extends PdfPrimitiveObject {
   /// The raw value bytes.
   Uint8List? _value;
 
   /// The decoded string value.
-  String? _content;
+  String? _decodedValue;
 
   /// Whether this is a hex string.
   bool _hexWriting = false;
@@ -22,7 +23,7 @@ class PdfString extends PdfObject {
 
   /// Creates a PdfString from a String.
   PdfString(String value) {
-    _content = value;
+    _decodedValue = value;
     _value = latin1.encode(value);
   }
 
@@ -30,11 +31,14 @@ class PdfString extends PdfObject {
   PdfString.fromBytes(Uint8List value, [bool hexWriting = false]) {
     _value = value;
     _hexWriting = hexWriting;
+    setContent(
+        value); // For strings, the "internal content" is the raw bytes without () or <>
   }
 
   /// Creates an empty PdfString.
   PdfString.empty() {
     _value = Uint8List(0);
+    setContent(_value);
   }
 
   @override
@@ -46,7 +50,7 @@ class PdfString extends PdfObject {
       Uint8List.fromList(_value ?? []),
       _hexWriting,
     );
-    cloned._content = _content;
+    cloned._decodedValue = _decodedValue;
     cloned._encoding = _encoding;
     return cloned;
   }
@@ -61,16 +65,17 @@ class PdfString extends PdfObject {
 
   /// Gets the string value.
   String getValue() {
-    if (_content == null && _value != null) {
-      _content = _decodeContent();
+    if (_decodedValue == null && _value != null) {
+      _decodedValue = _decodeContent();
     }
-    return _content ?? '';
+    return _decodedValue ?? '';
   }
 
   /// Sets the value.
   void setValue(String value) {
-    _content = value;
+    _decodedValue = value;
     _value = latin1.encode(value);
+    setContent(_value);
   }
 
   /// Returns true if this is a hex string.
@@ -161,6 +166,15 @@ class PdfString extends PdfObject {
       bytes.add(char & 0xFF);
     }
     return Uint8List.fromList(bytes);
+  }
+
+  @override
+  void generateContent() {
+    if (_value != null) {
+      setContent(_value);
+    } else {
+      setContent(Uint8List(0));
+    }
   }
 
   @override

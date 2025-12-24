@@ -5,8 +5,12 @@ environment:
   sdk: ^3.6.0
 
 dependencies:
+  pointycastle: ^4.0.0
+  crypto: ^3.0.7
+  archive: ^4.0.7
+  collection: ^1.19.1
   #ffi: ^2.1.3
-
+  
 
 dev_dependencies:
   test: ^1.26.3

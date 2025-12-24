@@ -27,6 +27,11 @@ class PdfType1Font extends PdfSimpleFont<Type1Font> {
     }
   }
 
+  PdfType1Font.fromDictionary(PdfDictionary fontDictionary)
+      : super(fontDictionary) {
+    newFont = false;
+  }
+
   @override
   bool isSubset() => subset;
 

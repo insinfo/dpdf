@@ -12,6 +12,7 @@ import 'pdf_boolean.dart';
 import 'pdf_stream.dart';
 import 'pdf_xref_table.dart';
 import 'pdf_document.dart';
+import 'writer_properties.dart';
 
 /// Writes PDF documents to output.
 class PdfWriter {
@@ -23,11 +24,14 @@ class PdfWriter {
   String _pdfVersion = '1.7';
 
   PdfDocument? document;
+  final WriterProperties properties;
+  bool _isEncrypting = false;
 
-  PdfWriter._(this._output);
+  PdfWriter._(this._output, {WriterProperties? properties})
+      : properties = properties ?? WriterProperties();
 
-  factory PdfWriter.toFile(String path) {
-    return PdfWriter._(File(path).openWrite());
+  factory PdfWriter.toFile(String path, {WriterProperties? properties}) {
+    return PdfWriter._(File(path).openWrite(), properties: properties);
   }
 
   int getPosition() => _currentPos;
@@ -71,8 +75,21 @@ class PdfWriter {
     writeSpace();
     writeInt(ref.getGenNumber());
     writeBytes(_obj);
+
+    // Encryption setup
+    _isEncrypting = false;
+    if (document?.getEncryption() != null) {
+      final enc = document!.getEncryption()!;
+      // Do not encrypt the Encryption Dictionary itself
+      if (obj != enc.getPdfObject()) {
+        enc.setHashKeyForNextObject(ref.getObjNumber(), ref.getGenNumber());
+        _isEncrypting = true;
+      }
+    }
+
     await _writeValue(obj, forceDirect: true);
     writeBytes(_endobj);
+    _isEncrypting = false; // Reset
   }
 
   Future<void> _writeValue(PdfObject obj, {bool forceDirect = false}) async {
@@ -127,8 +144,24 @@ class PdfWriter {
   }
 
   void _writeString(PdfString str) {
-    final bytes = str.getValueBytes() ?? Uint8List(0);
-    if (str.isHexWriting()) {
+    var bytes = str.getValueBytes() ?? Uint8List(0);
+
+    if (_isEncrypting && document?.getEncryption() != null) {
+      final enc = document!.getEncryption()!;
+      if (!enc.isEmbeddedFilesOnly()) {
+        // Basic check, ideally more complex
+        final builder = BytesBuilder();
+        final osEnc = enc.getEncryptionStream(builder);
+        if (osEnc != null) {
+          osEnc.write(bytes);
+          osEnc.finish();
+          bytes = builder.toBytes();
+        }
+      }
+    }
+
+    if (str.isHexWriting() || _isEncrypting) {
+      // Encrypted strings usually hex safe
       writeByte(0x3C); // '<'
       for (final b in bytes) {
         writeString(b.toRadixString(16).padLeft(2, '0').toUpperCase());
@@ -178,7 +211,21 @@ class PdfWriter {
     await _writeDictionary(stream);
     writeNewLine();
     writeString('stream\n');
-    final bytes = await stream.getBytes() ?? Uint8List(0);
+    var bytes = await stream.getBytes() ?? Uint8List(0);
+
+    if (_isEncrypting && document?.getEncryption() != null) {
+      final enc = document!.getEncryption()!;
+      // Streams are usually encrypted unless Metadata?
+      // Metadata stream? Need check. For now encrypt all streams in obj.
+      final builder = BytesBuilder();
+      final osEnc = enc.getEncryptionStream(builder);
+      if (osEnc != null) {
+        osEnc.write(bytes);
+        osEnc.finish();
+        bytes = builder.toBytes();
+      }
+    }
+
     writeBytes(bytes);
     writeNewLine();
     writeString('endstream');
@@ -187,11 +234,16 @@ class PdfWriter {
   void writeXrefTable(PdfXrefTable xref) {
     writeString('xref\n');
     writeString('0 ${xref.size()}\n');
-    for (final ref in xref.references) {
-      final offset = ref.getOffset().toString().padLeft(10, '0');
-      final gen = ref.getGenNumber().toString().padLeft(5, '0');
-      final type = ref.isFree() ? 'f' : 'n';
-      writeString('$offset $gen $type \r\n');
+    for (var i = 0; i < xref.size(); i++) {
+      final ref = xref.get(i);
+      if (ref == null) {
+        writeString('0000000000 65535 f \r\n');
+      } else {
+        final offset = ref.getOffset().toString().padLeft(10, '0');
+        final gen = ref.getGenNumber().toString().padLeft(5, '0');
+        final type = ref.isFree() ? 'f' : 'n';
+        writeString('$offset $gen $type \r\n');
+      }
     }
   }
 

@@ -40,8 +40,6 @@ void main() {
 
     test('constructor calculates rowbytes correctly', () {
       final encoder1 = CCITTG4Encoder(8);
-      final encoder2 = CCITTG4Encoder(9);
-      final encoder3 = CCITTG4Encoder(16);
 
       // 8 pixels = 1 byte
       // 9 pixels = 2 bytes

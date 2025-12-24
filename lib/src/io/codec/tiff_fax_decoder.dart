@@ -1,23 +1,23 @@
 import 'dart:typed_data';
 
-/// Decodes TIFF FAX compressed data (CCITT Group 3 and Group 4).
+/// TODO concluir e otimizar Decodes TIFF FAX compressed data (CCITT Group 3 and Group 4).
 class TIFFFaxDecoder {
-  int _bitPointer = 0;
-  int _bytePointer = 0;
-  late Uint8List _data;
+  // int _bitPointer = 0;
+  // int _bytePointer = 0;
+  // late Uint8List _data;
   final int _w;
-  final int _h;
-  final int _fillOrder;
+  // final int _h;
+  // final int _fillOrder;
 
   int _changingElemSize = 0;
   late List<int> _prevChangingElems;
   late List<int> _currChangingElems;
   int _lastChangingElement = 0;
-  int _compression = 2;
-  int _uncompressedMode = 0;
-  int _fillBits = 0;
-  int _oneD = 0;
-  bool _recoverFromImageError = false;
+  // int _compression = 2;
+  // int _uncompressedMode = 0;
+  // int _fillBits = 0;
+  // int _oneD = 0;
+  // bool _recoverFromImageError = false;
 
   /// Table for flipping bytes when fillOrder = 2.
   static final Uint8List flipTable = Uint8List.fromList([
@@ -279,31 +279,34 @@ class TIFFFaxDecoder {
     0xff,
   ]);
 
-  static final List<int> _table1 = [
-    0x00,
-    0x01,
-    0x03,
-    0x07,
-    0x0f,
-    0x1f,
-    0x3f,
-    0x7f,
-    0xff
-  ];
-  static final List<int> _table2 = [
-    0x00,
-    0x80,
-    0xc0,
-    0xe0,
-    0xf0,
-    0xf8,
-    0xfc,
-    0xfe,
-    0xff
-  ];
+  // static final List<int> _table1 = [
+  //   0x00,
+  //   0x01,
+  //   0x03,
+  //   0x07,
+  //   0x0f,
+  //   0x1f,
+  //   0x3f,
+  //   0x7f,
+  //   0xff
+  // ];
+  // static final List<int> _table2 = [
+  //   0x00,
+  //   0x80,
+  //   0xc0,
+  //   0xe0,
+  //   0xf0,
+  //   0xf8,
+  //   0xfc,
+  //   0xfe,
+  //   0xff
+  // ];
 
   /// Creates a TIFFFaxDecoder.
-  TIFFFaxDecoder(this._fillOrder, this._w, this._h) {
+  /// Creates a TIFFFaxDecoder.
+  TIFFFaxDecoder(int fillOrder, this._w, int h) {
+    // this._fillOrder = fillOrder;
+    // this._h = h;
     _prevChangingElems = List<int>.filled(2 * _w, 0);
     _currChangingElems = List<int>.filled(2 * _w, 0);
   }
@@ -318,14 +321,14 @@ class TIFFFaxDecoder {
   /// Decodes Group 4 compressed data.
   void decodeT6(Uint8List buffer, Uint8List compData, int startX, int height,
       int tiffT6Options) {
-    _data = compData;
-    _compression = 4;
-    _bitPointer = 0;
-    _bytePointer = 0;
+    // _data = compData;
+    // _compression = 4;
+    // _bitPointer = 0;
+    // _bytePointer = 0;
 
-    int scanlineStride = (_w + 7) ~/ 8;
-    int a0, a1, b1, b2;
-    int entry, code, bits;
+    // int scanlineStride = (_w + 7) ~/ 8;
+    // int a1, b1, b2;
+    // int entry, code, bits;
     int isWhite;
     int currIndex;
     List<int> temp;
@@ -336,9 +339,9 @@ class TIFFFaxDecoder {
     }
     _changingElemSize = 0;
 
-    int lineOffset = 0;
+    // int lineOffset = 0;
     for (int lines = 0; lines < height; lines++) {
-      a0 = -1;
+      int a0 = -1;
       isWhite = 1;
       temp = _prevChangingElems;
       _prevChangingElems = _currChangingElems;
@@ -347,7 +350,7 @@ class TIFFFaxDecoder {
 
       while (a0 < _w) {
         _getNextChangingElement(a0, isWhite, _prevChangingElems);
-        b1 = _lastChangingElement;
+        // b1 = _lastChangingElement;
 
         // Simplified G4 decoding - just advance
         // Full implementation would decode mode codes here
@@ -358,7 +361,7 @@ class TIFFFaxDecoder {
       _currChangingElems[currIndex++] = _w;
       _changingElemSize = currIndex;
 
-      lineOffset += scanlineStride;
+      // lineOffset += scanlineStride;
     }
   }
 
@@ -375,58 +378,58 @@ class TIFFFaxDecoder {
     _lastChangingElement = _changingElemSize;
   }
 
-  void _setToBlack(Uint8List buffer, int lineOffset, int bitNum, int numBits) {
-    int byteNum = lineOffset + (bitNum >> 3);
-    int shift = 7 - (bitNum & 7);
+  // void _setToBlack(Uint8List buffer, int lineOffset, int bitNum, int numBits) {
+  //   int byteNum = lineOffset + (bitNum >> 3);
+  //   int shift = 7 - (bitNum & 7);
 
-    // Set individual bits
-    while (numBits > 0 && byteNum < buffer.length) {
-      buffer[byteNum] |= (1 << shift);
-      shift--;
-      if (shift < 0) {
-        shift = 7;
-        byteNum++;
-      }
-      numBits--;
-    }
-  }
+  //   // Set individual bits
+  //   while (numBits > 0 && byteNum < buffer.length) {
+  //     buffer[byteNum] |= (1 << shift);
+  //     shift--;
+  //     if (shift < 0) {
+  //       shift = 7;
+  //       byteNum++;
+  //     }
+  //     numBits--;
+  //   }
+  // }
 
-  int _nextNBits(int bitsToGet) {
-    int l = _data.length - 1;
-    int bp = _bytePointer;
+  // int _nextNBits(int bitsToGet) {
+  //   int l = _data.length - 1;
+  //   int bp = _bytePointer;
 
-    int next, next2next;
+  //   int next, next2next;
 
-    if (bp < l) {
-      next = _data[bp + 1];
-    } else {
-      next = 0;
-    }
+  //   if (bp < l) {
+  //     next = _data[bp + 1];
+  //   } else {
+  //     next = 0;
+  //   }
 
-    if (bp + 1 < l) {
-      next2next = _data[bp + 2];
-    } else {
-      next2next = 0;
-    }
+  //   if (bp + 1 < l) {
+  //     next2next = _data[bp + 2];
+  //   } else {
+  //     next2next = 0;
+  //   }
 
-    int b = (_data[bp] & 0xff) << 16 | (next & 0xff) << 8 | (next2next & 0xff);
-    int shift = 24 - _bitPointer - bitsToGet;
-    int result = (b >> shift) & ((1 << bitsToGet) - 1);
+  //   int b = (_data[bp] & 0xff) << 16 | (next & 0xff) << 8 | (next2next & 0xff);
+  //   int shift = 24 - _bitPointer - bitsToGet;
+  //   int result = (b >> shift) & ((1 << bitsToGet) - 1);
 
-    _bitPointer += bitsToGet;
-    if (_bitPointer >= 8) {
-      _bytePointer += _bitPointer >> 3;
-      _bitPointer &= 7;
-    }
+  //   _bitPointer += bitsToGet;
+  //   if (_bitPointer >= 8) {
+  //     _bytePointer += _bitPointer >> 3;
+  //     _bitPointer &= 7;
+  //   }
 
-    return result;
-  }
+  //   return result;
+  // }
 
-  void _updatePointer(int bitsToMoveBack) {
-    _bitPointer -= bitsToMoveBack;
-    while (_bitPointer < 0) {
-      _bytePointer--;
-      _bitPointer += 8;
-    }
-  }
+  // void _updatePointer(int bitsToMoveBack) {
+  //   _bitPointer -= bitsToMoveBack;
+  //   while (_bitPointer < 0) {
+  //     _bytePointer--;
+  //     _bitPointer += 8;
+  //   }
+  // }
 }

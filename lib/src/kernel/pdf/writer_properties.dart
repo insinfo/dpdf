@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'pdf_version.dart';
+import 'encryption_constants.dart';
 
 /// Compression level constants for PDF streams.
 class CompressionConstants {
@@ -58,6 +61,13 @@ class WriterProperties {
 
   /// The ID entry that represents a change in a document.
   String? modifiedDocumentId;
+
+  // Encryption properties
+  Uint8List? userPassword;
+  Uint8List? ownerPassword;
+  int permissions = 0;
+  int encryptionAlgorithm = EncryptionConstants.standardEncryption40;
+  bool isStandardEncryptionUsed = false;
 
   /// Creates default writer properties.
   WriterProperties();
@@ -123,6 +133,14 @@ class WriterProperties {
     return this;
   }
 
-  // TODO: Add encryption support (SetStandardEncryption, SetPublicKeyEncryption)
-  // when crypto module is implemented
+  /// Sets standard encryption.
+  WriterProperties setStandardEncryption(Uint8List? userPassword,
+      Uint8List? ownerPassword, int permissions, int encryptionAlgorithm) {
+    this.userPassword = userPassword;
+    this.ownerPassword = ownerPassword;
+    this.permissions = permissions;
+    this.encryptionAlgorithm = encryptionAlgorithm;
+    isStandardEncryptionUsed = true;
+    return this;
+  }
 }

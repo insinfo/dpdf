@@ -1,3 +1,4 @@
+import 'pdf_document.dart';
 import 'pdf_name.dart';
 import 'pdf_pages.dart';
 import 'pdf_page.dart';
@@ -50,12 +51,11 @@ class PdfPagesTree {
     return page;
   }
 
-  Future<void> addPage(PdfPage page) async {
+  Future<void> addPage(PdfPage page, PdfDocument document) async {
     if (_root == null) {
       _root = PdfPages(0);
       await _root!.init();
-      _root!.getPdfObject().makeIndirect(
-          _catalog.getPdfObject().getIndirectReference()!.getDocument()!);
+      _root!.getPdfObject().makeIndirect(document);
       _catalog.getPdfObject().put(PdfName.pages, _root!.getPdfObject());
       _parents.add(_root!);
     }

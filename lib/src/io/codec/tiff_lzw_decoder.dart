@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import '../exceptions/io_exception.dart';
 
 /// LZW decoder for TIFF images.
-///
+/// TODO concluir e otimizar
 /// This class performs LZW decompression for TIFF image data.
 /// Based on Sun Microsystems' TIFFLZWDecompressor.
 class TIFFLZWDecoder {

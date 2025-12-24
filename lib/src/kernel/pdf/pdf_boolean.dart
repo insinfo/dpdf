@@ -1,18 +1,28 @@
+import 'dart:typed_data';
+
 import 'pdf_object.dart';
+import 'pdf_primitive_object.dart';
 
 /// Represents a PDF boolean object.
-class PdfBoolean extends PdfObject {
+class PdfBoolean extends PdfPrimitiveObject {
   /// Singleton for true.
   static final PdfBoolean pdfTrue = PdfBoolean._internal(true);
 
   /// Singleton for false.
   static final PdfBoolean pdfFalse = PdfBoolean._internal(false);
 
+  static final Uint8List _trueBytes =
+      Uint8List.fromList([116, 114, 117, 101]); // 'true'
+  static final Uint8List _falseBytes =
+      Uint8List.fromList([102, 97, 108, 115, 101]); // 'false'
+
   /// The boolean value.
   final bool _value;
 
   /// Private constructor for singletons.
-  PdfBoolean._internal(this._value);
+  PdfBoolean._internal(this._value) {
+    setContent(_value ? _trueBytes : _falseBytes);
+  }
 
   /// Creates a PdfBoolean with the given value.
   ///
@@ -36,6 +46,11 @@ class PdfBoolean extends PdfObject {
 
   /// Gets the boolean value.
   bool getValue() => _value;
+
+  @override
+  void generateContent() {
+    setContent(_value ? _trueBytes : _falseBytes);
+  }
 
   @override
   String toString() {

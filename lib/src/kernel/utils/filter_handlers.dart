@@ -51,12 +51,12 @@ class FilterHandlers {
   /// Returns the decoded bytes.
   static Future<Uint8List> decodeBytes(
       Uint8List bytes, PdfDictionary streamDict) async {
-    final filterObj = await streamDict.get(PdfName.filter);
+    final filterObj = await streamDict.get(PdfName.filter, true);
     if (filterObj == null) {
       return bytes;
     }
 
-    final decodeParmsObj = await streamDict.get(PdfName.decodeParms);
+    final decodeParmsObj = await streamDict.get(PdfName.decodeParms, true);
 
     // Single filter
     if (filterObj is PdfName) {

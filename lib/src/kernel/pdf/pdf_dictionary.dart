@@ -72,8 +72,10 @@ class PdfDictionary extends PdfObject {
   ///
   /// If [asDirect] is true and the value is an indirect reference,
   /// attempts to resolve it. If the reference cannot be resolved,
-  /// returns the reference itself.
-  Future<PdfObject?> get(PdfName key, [bool asDirect = true]) async {
+  /// returns the reference itself. By default the raw object (including
+  /// indirect references) is returned to allow callers to decide when
+  /// dereferencing is appropriate.
+  Future<PdfObject?> get(PdfName key, [bool asDirect = false]) async {
     if (_map == null) return null;
     final obj = _map![key];
     if (asDirect &&

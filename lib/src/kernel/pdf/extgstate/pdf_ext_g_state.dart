@@ -64,25 +64,25 @@ class PdfExtGState extends PdfObjectWrapper<PdfDictionary> {
       await getPdfObject().getAsArray(PdfName.fontG); // /Font
 
   Future<PdfObject?> getBlackGenerationFunction() async =>
-      await getPdfObject().get(PdfName.bg);
+      await getPdfObject().get(PdfName.bg, true);
 
   Future<PdfObject?> getBlackGenerationFunction2() async =>
-      await getPdfObject().get(PdfName.bg2);
+      await getPdfObject().get(PdfName.bg2, true);
 
   Future<PdfObject?> getUndercolorRemovalFunction() async =>
-      await getPdfObject().get(PdfName.ucr);
+      await getPdfObject().get(PdfName.ucr, true);
 
   Future<PdfObject?> getUndercolorRemovalFunction2() async =>
-      await getPdfObject().get(PdfName.ucr2);
+      await getPdfObject().get(PdfName.ucr2, true);
 
   Future<PdfObject?> getTransferFunction() async =>
-      await getPdfObject().get(PdfName.tr);
+      await getPdfObject().get(PdfName.tr, true);
 
   Future<PdfObject?> getTransferFunction2() async =>
-      await getPdfObject().get(PdfName.tr2);
+      await getPdfObject().get(PdfName.tr2, true);
 
   Future<PdfObject?> getHalftone() async =>
-      await getPdfObject().get(PdfName.ht);
+      await getPdfObject().get(PdfName.ht, true);
 
   Future<double?> getFlatnessTolerance() async =>
       await getPdfObject().getAsFloat(PdfName.fl);
@@ -94,10 +94,10 @@ class PdfExtGState extends PdfObjectWrapper<PdfDictionary> {
       await getPdfObject().getAsBool(PdfName.sa);
 
   Future<PdfObject?> getBlendMode() async =>
-      await getPdfObject().get(PdfName.bm);
+      await getPdfObject().get(PdfName.bm, true);
 
   Future<PdfObject?> getSoftMask() async =>
-      await getPdfObject().get(PdfName.smaskG); // SMask
+      await getPdfObject().get(PdfName.smaskG, true); // SMask
 
   Future<double?> getStrokeOpacity() async =>
       await getPdfObject().getAsFloat(PdfName.caUppercase); // CA

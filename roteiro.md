@@ -490,9 +490,9 @@ dependencies:
 | Módulo | Arquivos Portados | Total Estimado | Progresso |
 |--------|-------------------|----------------|-----------|
 | commons | 16 | ~30 | 55% |
-| io | 32 | ~50 | 64% |
-| kernel | 33 | ~150 | 22% |
-| layout | 25 | ~80 | 30% |
+| io | 36 | ~50 | 72% |
+| kernel | 37 | ~150 | 25% |
+| layout | 31 | ~80 | 39% |
 | forms | 0 | ~40 | 0% |
 | sign | 0 | ~30 | 0% |
 

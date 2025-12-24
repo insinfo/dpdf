@@ -133,11 +133,17 @@ commons/
   - ✅ StringUtil
   - ✅ MathematicUtil
   - ✅ JavaCollectionsUtil
-- [ ] **1.1.4** Portar `datastructures/`
-  - SingletonList
-  - NullUnlimitedList
-- [ ] **1.1.5** Portar `logs/` - Constantes de mensagens
-- [ ] **1.1.6** Portar `actions/` - Sistema de eventos
+- [x] **1.1.4** Portar `datastructures/`
+  - ✅ ISimpleList
+  - ✅ NullUnlimitedList
+  - ✅ SimpleArrayList
+  - ✅ BiMap
+  - ✅ Tuple2, Tuple3
+- [x] **1.1.5** Portar `logs/` - Constantes de mensagens
+  - ✅ CommonsLogMessageConstant
+- [x] **1.1.6** Portar `actions/` - Sistema de eventos
+  - ✅ EventManager, IEvent, IEventHandler
+  - ✅ ProductNameConstant, NamespaceConstant
 - [ ] **1.1.7** Adaptar sistema de logging para Dart
 - [ ] **1.1.8** Interface para criptografia (via `pointycastle` package)
 
@@ -196,14 +202,17 @@ io/
   - [ ] TrueTypeFont
   - [ ] OpenTypeFont
   - [ ] FontCache
-- [ ] **1.2.5** Portar `image/` - Leitura de imagens
-  - [ ] ImageData
-  - [ ] PngImageHelper
-  - [ ] JpegImageParser
+- [x] **1.2.5** Portar `image/` - Leitura de imagens (Parcial)
+  - ✅ ImageData base
+  - ✅ PngImageHelper
+  - ✅ JpegImageHelper
   - [ ] BmpImageHelper
   - [ ] TiffImageHelper
-- [ ] **1.2.6** Portar `colors/` - Definições de cores
-- [ ] **1.2.7** Portar `exceptions/` e `logs/`
+- [x] **1.2.6** Portar `colors/` - Definições de cores
+  - ✅ IccProfile
+- [x] **1.2.7** Portar `exceptions/` e `logs/`
+  - ✅ IoLogMessageConstant
+  - ✅ IoException, IoExceptionMessageConstant
 
 ---
 
@@ -283,7 +292,7 @@ kernel/pdf/
 
 - [x] **2.3.1** Portar `PdfXrefTable`
 - [x] **2.3.2** Portar `PdfOutputStream`
-- [ ] **2.3.3** Portar `ReaderProperties` e `WriterProperties`
+- [x] **2.3.3** Portar `ReaderProperties` e `WriterProperties`
 - [x] **2.3.4** Portar `PdfReader` ⭐
 - [x] **2.3.5** Portar `PdfWriter`
 
@@ -480,9 +489,9 @@ dependencies:
 
 | Módulo | Arquivos Portados | Total Estimado | Progresso |
 |--------|-------------------|----------------|-----------|
-| commons | 8 | ~30 | 25% |
-| io | 17 | ~50 | 35% |
-| kernel | 30 | ~150 | 20% |
+| commons | 16 | ~30 | 55% |
+| io | 32 | ~50 | 64% |
+| kernel | 33 | ~150 | 22% |
 | layout | 25 | ~80 | 30% |
 | forms | 0 | ~40 | 0% |
 | sign | 0 | ~30 | 0% |
@@ -501,9 +510,28 @@ dependencies:
 - ✅ `mathematic_util.dart` - Arredondamento "away from zero"
 - ✅ `java_collections_util.dart` - Utilitários de coleções Java-like
 
+#### commons/datastructures/
+- ✅ `i_simple_list.dart` - Interface de lista simples
+- ✅ `null_unlimited_list.dart` - Lista esparsa com suporte a null
+- ✅ `simple_array_list.dart` - ArrayList portável
+- ✅ `bi_map.dart` - Mapa bidirecional
+- ✅ `tuple.dart` - Tuple2 e Tuple3
+
+#### commons/logs/
+- ✅ `commons_log_message_constant.dart` - Constantes de mensagens de log
+
+#### commons/actions/
+- ✅ `event_manager.dart` - Sistema de eventos (IEvent, IEventHandler, EventManager)
+
 #### io/exceptions/
 - ✅ `io_exception.dart` - Exceção de I/O
 - ✅ `io_exception_message_constant.dart` - Constantes de mensagens
+
+#### io/logs/
+- ✅ `io_log_message_constant.dart` - Constantes de log para I/O
+
+#### io/colors/
+- ✅ `icc_profile.dart` - Perfis ICC para gerenciamento de cores
 
 #### io/source/
 - ✅ `i_random_access_source.dart` - Interface de acesso aleatório
@@ -515,12 +543,26 @@ dependencies:
 - ✅ `random_access_file_or_array.dart` - Leitor unificado
 - ✅ `pdf_tokenizer.dart` - Tokenizador PDF ⭐
 
+#### io/image/
+- ✅ `image_data.dart` - Classe base de dados de imagem
+- ✅ `raw_image_data.dart` - Dados de imagem raw com CCITT
+- ✅ `bmp_image_data.dart` - Dados de imagem BMP
+- ✅ `tiff_image_data.dart` - Dados de imagem TIFF multi-página
+- ✅ `gif_image_data.dart` - Dados de imagem GIF multi-frame
+- ✅ `png_image_data.dart` - Dados de imagem PNG
+- ✅ `jpeg_image_data.dart` - Dados de imagem JPEG
+- ✅ `image_type_detector.dart` - Detecção de tipo por magic bytes
+- ✅ `jpeg_image_helper.dart` - Helper para JPEG
+- ✅ `png_image_helper.dart` - Helper para PNG
+
 #### io/codec/
 - ✅ `bit_file.dart` - Escritor de bits para LZW
 - ✅ `lzw_string_table.dart` - Tabela de strings LZW
 - ✅ `lzw_compressor.dart` - Compressor LZW (TIFF/GIF)
 - ✅ `tiff_lzw_decoder.dart` - Decodificador LZW TIFF
 - ✅ `png_writer.dart` - Escritor de imagens PNG
+- ✅ `tiff_constants.dart` - Constantes TIFF (tags, compressão, fotométrica)
+- ✅ `tiff_writer.dart` - Escritor de imagens TIFF com IFD
 
 #### kernel/pdf/
 - ✅ `pdf_object.dart` - Classe base e PdfIndirectReference (Async)
@@ -545,6 +587,8 @@ dependencies:
 - ✅ `pdf_resources.dart` - Recursos PDF (Async)
 - ✅ `pdf_version.dart` - Versão do PDF
 - ✅ `pdf_object_wrapper.dart` - Wrapper para objetos PDF
+- ✅ `writer_properties.dart` - Propriedades de escrita PDF
+- ✅ `reader_properties.dart` - Propriedades de leitura PDF
 
 #### kernel/geom/
 - ✅ `rectangle.dart` - Geometria de retângulo
@@ -556,6 +600,9 @@ dependencies:
 
 #### kernel/utils/
 - ✅ `filter_handlers.dart` - Decodificadores de filtros (FlateDecode, LZW, ASCII85, etc.)
+
+#### kernel/logs/
+- ✅ `kernel_log_message_constant.dart` - Constantes de log para kernel
 
 #### kernel/geom/
 - ✅ `rectangle.dart` - Geometria de retângulo

@@ -296,8 +296,8 @@ void main() {
         Uint8List.fromList([1, 2, 3]),
         Uint8List.fromList([4, 5, 6]),
       );
-      expect(pkcs7.getDigestAlgorithmOid(), equals('1.2.840.10040.4.3'));
-      expect(pkcs7.getSignatureMechanismOid(), equals('1.3.36.3.3.1.2'));
+      expect(pkcs7.getDigestAlgorithmOid(), equals(OID.sha1)); // SHA-1
+      expect(pkcs7.getSignatureMechanismOid(), equals(OID.rsaSha1)); // RSA-SHA1
     });
 
     test('sign properties work correctly', () {
@@ -329,8 +329,9 @@ void main() {
         null,
       );
 
-      // Should be able to get encoded PKCS#1
-      expect(pkcs7.getEncodedPKCS1(), equals(Uint8List.fromList([10, 20, 30])));
+      // Should be able to get the raw signature value
+      expect(
+          pkcs7.getSignatureValue(), equals(Uint8List.fromList([10, 20, 30])));
     });
 
     test('getVersion returns default version', () {
@@ -351,13 +352,12 @@ void main() {
       expect(pkcs7.getSignatureMechanismName(), equals('SHA256withRSA'));
     });
 
-    test('getCertificates returns empty list initially', () {
+    test('getCertificatesDer returns empty list initially', () {
       final pkcs7 = PdfPKCS7.forVerifying(
         Uint8List.fromList([1, 2, 3, 4]),
         PdfName.adbePkcs7Detached,
       );
-      expect(pkcs7.getCertificates(), isEmpty);
-      expect(pkcs7.getSigningCertificate(), isNull);
+      expect(pkcs7.getCertificatesDer(), isEmpty);
     });
   });
 

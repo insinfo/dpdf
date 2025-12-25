@@ -256,6 +256,7 @@ class PdfName extends PdfPrimitiveObject {
   static final PdfName form = PdfName.intern('Form');
   // Resources
   static final PdfName bBox = PdfName.intern('BBox');
+  static final PdfName matrix = PdfName.intern('Matrix');
 
   // Image / Stream
   static final PdfName decodeParms = PdfName.intern('DecodeParms');

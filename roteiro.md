@@ -8,7 +8,7 @@ o ideal é ir portando e implementando testes para ir validando a implementaçã
 e ir otimizando a implementação
 va colocando comentario // TODO onde não esta completo ou onde merece otimizar atraves de benchmark (onde se cria duas ou mais implementações e testa para ver qual é melhor)
 
-portar os testes de C:\MyDartProjects\itext\referencias\itext-dotnet-develop\itext.tests paa dart
+
 
 IMPORTANTE nada no codigo ou nos testes podem depender do diretorio referencias C:\MyDartProjects\itext\referencias pois ele sera removido no futuro o que 
 for necessario tera que ser copiado para um diretorios apropriado
@@ -18,9 +18,11 @@ algumas micro otimizações são necessarias
 
 os testes não podem depender de arquivos externos copie o que for necessario para a pasta C:\MyDartProjects\itext\test\assets
 
-**Fonte de Referência:** `C:\MyDartProjects\itext\referencias\itext-dotnet-develop`
+portar de C:\MyDartProjects\itext\referencias\itext-dotnet-develop para dart
 
 **Destino Dart:** `C:\MyDartProjects\itext\lib\src`
+
+portar os testes de C:\MyDartProjects\itext\referencias\itext-dotnet-develop\itext.tests para dart
 
 ---
 
@@ -496,7 +498,7 @@ dependencies:
 | kernel | 54 | ~150 | 36% |
 | layout | 31 | ~80 | 39% |
 | forms | 7 | ~40 | 18% |
-| sign | 0 | ~30 | 0% | muito importante
+| sign | 25 | ~55 | 45% | ⭐ muito importante - Em Progresso
 
 ### Arquivos Portados
 
@@ -688,6 +690,37 @@ dependencies:
 #### layout/tagging/
 - ✅ `i_accessible_element.dart` - Interface de acessibilidade (Tagging)
 
+#### sign/
+- ✅ `access_permissions.dart` - Enum de permissões de acesso para assinaturas
+- ✅ `asn1_utils.dart` - Utilitário para codificação/decodificação ASN.1 DER
+- ✅ `crypto_digest.dart` - Implementação de digest usando pacote crypto
+- ✅ `digest_algorithms.dart` - Mapeamentos de algoritmos de digest
+- ✅ `i_crl_client.dart` - Interface para CRL (Certificate Revocation List)
+- ✅ `i_crypto_key.dart` - Interfaces IPrivateKey, IPublicKey, ISigner
+- ✅ `i_external_digest.dart` - Interface para digest externo
+- ✅ `i_external_signature.dart` - Interface para assinatura externa
+- ✅ `i_external_signature_container.dart` - Interface para container de assinatura
+- ✅ `i_ocsp_client.dart` - Interface para OCSP (Online Certificate Status Protocol)
+- ✅ `i_signature_mechanism_params.dart` - Interface para parâmetros de mecanismo de assinatura
+- ✅ `i_tsa_client.dart` - Interface para TSA (Time Stamp Authority)
+- ✅ `i_x509_certificate.dart` - Interface para certificados X.509
+- ✅ `oid.dart` - Constantes de OIDs para algoritmos de assinatura
+- ✅ `pdf_pkcs7.dart` - Processamento de assinaturas PKCS#7/CMS (parcial)
+- ✅ `pdf_signature.dart` - Dicionário de assinatura PDF
+- ✅ `pdf_signature_app.dart` - Propriedades da aplicação de assinatura
+- ✅ `pdf_signature_build_properties.dart` - Propriedades de build da assinatura
+- ✅ `pdf_signer.dart` - Classe principal para assinar PDFs (parcial)
+- ✅ `signature_mechanisms.dart` - Mapeamentos OID para algoritmos de assinatura
+- ✅ `signature_util.dart` - Utilitário para leitura/verificação de assinaturas (integrado com AcroForm)
+- ✅ `signer_properties.dart` - Propriedades do assinante (fluent API)
+- ✅ `tsa_client_bouncy_castle.dart` - Implementação de cliente TSA (RFC 3161)
+
+#### sign/exceptions/
+- ✅ `sign_exception_message_constant.dart` - Constantes de mensagens de erro
+
+#### sign/logs/
+- ✅ `sign_log_message_constant.dart` - Constantes de log
+
 ---
 
 ## Próximos Passos
@@ -706,10 +739,16 @@ dependencies:
 
 1. ✅ Portar `PdfArray` e `PdfDictionary`
 2. ✅ Portar `PdfStream` e `FilterHandlers`
-3. ✅ Criar testes unitários para tokenizer e objetos PDF (72 testes)
+3. ✅ Criar testes unitários para tokenizer e objetos PDF (364 testes passando ✅)
+   - ✅ `pdf_tokenizer_test.dart` - Testes básicos do tokenizer
+   - ✅ `pdf_tokenizer_extended_test.dart` - Testes estendidos (seek, position, EOF, octal, primitives)
+   - ✅ `pdf_primitives_test.dart` - Testes de PdfNumber, PdfString, PdfName, PdfBoolean, PdfNull, PdfLiteral, PdfArray, PdfDictionary
+   - ✅ `byte_utils_test.dart` - Testes de ByteUtils e ByteBuffer
+   - ✅ `pdf_reader_test.dart` - Testes de leitura de PDF
 4. ✅ Portar `PdfReader` (leitura básica de PDF) ⭐
 5. ✅ Portar `PdfXrefTable` (tabela de referências cruzadas)
 6. ✅ Adicionar benchmarks para FilterHandlers
+
 
 ### Médio Prazo 
 

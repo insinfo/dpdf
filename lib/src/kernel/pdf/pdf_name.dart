@@ -367,4 +367,30 @@ class PdfName extends PdfPrimitiveObject {
 
   static final PdfName dv = PdfName.intern('DV'); // Default Value
   static final PdfName opt = PdfName.intern('Opt');
+
+  // Signature-related names
+  static final PdfName byteRange = PdfName.intern('ByteRange');
+  static final PdfName cert = PdfName.intern('Cert');
+  static final PdfName name = PdfName.intern('Name');
+  static final PdfName location = PdfName.intern('Location');
+  static final PdfName reason = PdfName.intern('Reason');
+  static final PdfName contactInfo = PdfName.intern('ContactInfo');
+  static final PdfName propBuild = PdfName.intern('Prop_Build');
+  static final PdfName app = PdfName.intern('App');
+  static final PdfName subFilter = PdfName.intern('SubFilter');
+  static final PdfName adbePkcs7Detached =
+      PdfName.intern('adbe.pkcs7.detached');
+  static final PdfName adbePkcs7Sha1 = PdfName.intern('adbe.pkcs7.sha1');
+  static final PdfName adbeX509RsaSha1 = PdfName.intern('adbe.x509.rsa_sha1');
+  static final PdfName etsiCadesDetached =
+      PdfName.intern('ETSI.CAdES.detached');
+  static final PdfName etsiRfc3161 = PdfName.intern('ETSI.RFC3161');
+  static final PdfName docTimeStamp = PdfName.intern('DocTimeStamp');
+  static final PdfName reference = PdfName.intern('Reference');
+  static final PdfName transformMethod = PdfName.intern('TransformMethod');
+  static final PdfName transformParams = PdfName.intern('TransformParams');
+  static final PdfName docMDP = PdfName.intern('DocMDP');
+  static final PdfName ur = PdfName.intern('UR');
+  static final PdfName ur3 = PdfName.intern('UR3');
+  static final PdfName fieldMDP = PdfName.intern('FieldMDP');
 }

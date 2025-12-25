@@ -706,6 +706,23 @@ class PdfTokenizer {
     return decodeStringContent(content, 0, content.length - 1, hexWriting);
   }
 
+  /// Convenience method matching C# API - decodes from start of array.
+  /// This is a convenience overload for [decodeStringContent] with full array.
+  static Uint8List decodeStringContent2(Uint8List content, bool hexWriting) {
+    return decodeStringContent(content, 0, content.length - 1, hexWriting);
+  }
+
+  /// Convenience method for range-based decoding matching C# API.
+  /// Decodes string content from [from] to [to] (exclusive end).
+  static Uint8List decodeStringContentRange(
+    Uint8List content,
+    int from,
+    int to,
+    bool hexWriting,
+  ) {
+    return decodeStringContent(content, from, to - 1, hexWriting);
+  }
+
   /// Checks if a character is whitespace.
   ///
   /// Whitespace: 0 (null), 9 (tab), 10 (LF), 12 (FF), 13 (CR), 32 (space)

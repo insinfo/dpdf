@@ -1,0 +1,650 @@
+{
+  "source_repository": "https://github.com/insinfo/insinfo_dart_pdf",
+  "source_head": "2e684f2d898718ff3c0cffae6ab2c5c814e479ed",
+  "scope": "Behavioral migration inventory; lexical counts are not passing test counts. No engine source copied. API adaptation authorized.",
+  "reference_summary": {
+    "test_dart_files": 89,
+    "test_declarations": 545,
+    "public_export_directives": 162,
+    "shown_or_declared_symbols": 296,
+    "files_with_save_sync": 25,
+    "files_with_merge_sync": 25,
+    "files_with_dart_io": 39,
+    "files_with_conditional_skips": 16
+  },
+  "tests": [
+    {
+      "source": "test/actions/pdf_action_test.dart",
+      "sha256": "cf2f763ff1c376ccc8749da75ef3af574966dc015db30358a25359e58245238d",
+      "declared_test_count": 3,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/annotations/annotation_import_export_test.dart",
+      "sha256": "9a7a013fea84518dfbfafb69bcd15b82fe2ec23663a5a1c5527ed496db3d9f13",
+      "declared_test_count": 12,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/annotations/annotation_types_test.dart",
+      "sha256": "8f383d7b5b27bd41f306dce15555b4c25d81006fe09df41f8247899dcc93375e",
+      "declared_test_count": 13,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/annotations/pdf_annotation_test.dart",
+      "sha256": "ce9ea5addd7ec03d10369ced8d6ec10c9ee1826dbedbdf17246e01425cb14ec2",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/api_contract_test.dart",
+      "sha256": "aebe0bdd33e9e6fb8939091aa851e9b6b9d93ed21c11a4d44b324c327d3683d2",
+      "declared_test_count": 6,
+      "status": "partial_garbage_and_xref_only",
+      "adapted_test": "reader_garbage_contract_test.dart"
+    },
+    {
+      "source": "test/bks_keystore_test.dart",
+      "sha256": "5f2d267569bf4195ff6de121b221d26731c66a95846ae0516a944151929f810f",
+      "declared_test_count": 2,
+      "status": "adapted_behavior_with_synthetic_fixtures",
+      "adapted_test": "test/pki/bks_key_store_test.dart"
+    },
+    {
+      "source": "test/certificate_serial_test.dart",
+      "sha256": "a04ab8df402de2be02c48dce9111b66e986cce8205bc4a6c88e496bdabe6b1d0",
+      "declared_test_count": 6,
+      "status": "adapted",
+      "adapted_test": "certificate_serial_test.dart"
+    },
+    {
+      "source": "test/doc_assinado_icp_brasil_thais_signature_test.dart",
+      "sha256": "058fdec44fbfe0978ecc88a6fa157935a0a33aa72f7fde5537937ad61ec8334b",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/documento_assinado_erro_integration_test.dart",
+      "sha256": "3d2a46830d4a312fa318f49137283f289c11c0118edd17cf9d550ba0c0105489",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/etsi_policy_test.dart",
+      "sha256": "45a147d83ba26f706be167820aab352059bdf7973dc577fd08d30d626c5cfede",
+      "declared_test_count": 3,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/exporting/font_encoding_test.dart",
+      "sha256": "646753bd0984e0e9d5ccf2872135589c7c693dda1917d156c341da5fba54a8d3",
+      "declared_test_count": 9,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/exporting/text_extraction_corpus_test.dart",
+      "sha256": "942b55cb332a467bcef990b467b9bba33a866830bc41f19f97a6c39d328be2b2",
+      "declared_test_count": 14,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/exporting/text_extractor_test.dart",
+      "sha256": "f6992209b6a51dfae79faf0acf96dbccee196eaf866e09f48af3b3a7616cc3be",
+      "declared_test_count": 21,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/external_signature_test.dart",
+      "sha256": "36167ae7846c8e39e0647416d7ff60f09b4f285a9aff5535c446aa60ca266a75",
+      "declared_test_count": 1,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/forms/form_field_types_test.dart",
+      "sha256": "cf6aad4bd4818c74e4d807fba002c659696aa8f24dc399d9ad2ddbe1e9557323",
+      "declared_test_count": 20,
+      "status": "adapted_behavior_subset",
+      "adapted_test": [
+        "form_field_roundtrip_test.dart"
+      ]
+    },
+    {
+      "source": "test/govbr_integration_no_openssl_test.dart",
+      "sha256": "130ec5a51ea475acba140604f49bcc14ae1b32a74dec7c094ad9d692c7019cb7",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/govbr_integration_test.dart",
+      "sha256": "3c8805dda7d70c4528d9c4c43ee50350b82f2bf2f575f26a1583f4e0d44869d3",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/graphics/image_and_list_test.dart",
+      "sha256": "663d8ff2cbae5f1a950e6c6a15bf49b11720cf5a4655fd20620cd870c21c3d68",
+      "declared_test_count": 11,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/graphics/pdf_color_test.dart",
+      "sha256": "fca5a41d1ca24e483a607c934cbed29dd4e62500d86b083770526d76ed77023b",
+      "declared_test_count": 5,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/graphics/pdf_graphics_test.dart",
+      "sha256": "eef60682e8b45defb2e8c4e6eed9e0b73d3242ad0efcd2e06f4ee8f0e8a40983",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/graphics/pdf_pen_test.dart",
+      "sha256": "c13a2881f18c6d3a089e36eaf74f9c34589355c98374a22a3ca10efa2940235d",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/graphics/pdf_text_test.dart",
+      "sha256": "676fb38d3bfb6976d14b475a92d74833ad6700374afef4d08c70277467328051",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/icp_brasil_compliance_test.dart",
+      "sha256": "504f5d568995d6b1fd3429296a8a1a83bc54f50113e4bf438f54ea2f0c0a55f8",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/icp_brasil_lpa_xml_test.dart",
+      "sha256": "3efeacd618427a10b8f02c2874f94135100723567d09ba00ad05dc2ebfda9e30",
+      "declared_test_count": 3,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/io/data_source_test.dart",
+      "sha256": "5fb93cc799d6612d800a67b2eb2339d73540c5c85a75ca91aa93274352ddcbd2",
+      "declared_test_count": 16,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/io/pdf_cross_table_test.dart",
+      "sha256": "a44972fab031a771027493e4ee407881ba73f2d95c76b9575484a4981d8db73d",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/io/pdf_lexer_test.dart",
+      "sha256": "e66efd7c5251da78161537504bc6f5a2fbcfa25130cf553bb131717cf57c149c",
+      "declared_test_count": 10,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/io/pdf_reader_test.dart",
+      "sha256": "4a05afdd3831b8e205958603a7664c55ae603e23c135e0ce1e849a0126edce7a",
+      "declared_test_count": 6,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/io/save_memory_test.dart",
+      "sha256": "fa8997a4ec811259a2a25f28755f0f01a033f56938a7cec6b422ec74e24cf4cc",
+      "declared_test_count": 7,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/io/xref_repair_scan_test.dart",
+      "sha256": "6b47b5a1e04cd1a888e828253dd5811aa2c6d5d41854cdd63e9d179853a18259",
+      "declared_test_count": 14,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/io/xref_repair_test.dart",
+      "sha256": "fdb3b63155e6a0aa0e1b0ec76bde3f1be88ced3cfd2e4eb34104b9d6ef23281c",
+      "declared_test_count": 15,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/ltv_integration_test.dart",
+      "sha256": "01540376ffdb9c498c3b91aea6abc0aa536d4bfca26bedf96da6562b643e1a18",
+      "declared_test_count": 1,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_annotations_test.dart",
+      "sha256": "be24d235ae773ed52493bca6973afe1a95fab1f027f97f94b57333a448367915",
+      "declared_test_count": 6,
+      "status": "partial_static_annotations_only",
+      "adapted_test": "merge_static_annotations_test.dart"
+    },
+    {
+      "source": "test/merging/merge_basic_test.dart",
+      "sha256": "abff312c057982d0a04e8c6e01c15518307bac56568827214a5e3a9149e6eb64",
+      "declared_test_count": 13,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_content_test.dart",
+      "sha256": "2962ce8c6e5f67d4eacb28ff85f97b6102a2eec7d6019d4ce813caaa447b0903",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_corpus_test.dart",
+      "sha256": "9d356317a3d7d22c84522a19b24bf38d487411d70c0663c47be5e1039d91b628",
+      "declared_test_count": 8,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_damaged_input_test.dart",
+      "sha256": "40f22a1fc0f3492cffd1b8e4c006481d6a3710ffb17d0bb16714f5fc54179ecd",
+      "declared_test_count": 11,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_edge_cases_test.dart",
+      "sha256": "946b2c3517530e1e1dfc2755f325ee12d5d345ea5e94e24d8ec45eee1169a425",
+      "declared_test_count": 12,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_fixtures.dart",
+      "sha256": "a285a751c08c26e33ed67c4af87f8550ba7beb0e52ca21fa049acda2751d0828",
+      "declared_test_count": 0,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_forms_test.dart",
+      "sha256": "2b3e1d5944248ccfd8f1feef2393d2991e9a95d746112c9505194c999b8c7979",
+      "declared_test_count": 7,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_layers_test.dart",
+      "sha256": "b06168a3e847d939fbf0cd54219cc2a8b993b6390bd5b993968893c893a233bc",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_no_signature_residue_test.dart",
+      "sha256": "a04c7c640846c8722c1a786cf53249b7f5eb46707282de54193016e26bf15ea6",
+      "declared_test_count": 5,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_outlines_test.dart",
+      "sha256": "6bdf17a5f2a78e853a5dfc9dcfce72f378402436f48f9030772d4e01a154ac5d",
+      "declared_test_count": 5,
+      "status": "adapted_explicit_local_destinations",
+      "adapted_test": [
+        "merge_outlines_test.dart"
+      ]
+    },
+    {
+      "source": "test/merging/merge_page_stamp_test.dart",
+      "sha256": "60eebeb98b91f088ed271723b9d90566f55af797d06fecd9570af93f53d28cc7",
+      "declared_test_count": 20,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_real_documents_test.dart",
+      "sha256": "d50f174d002c742725e14e89264ef56a2846ad82ea7b59911a627f7e84556737",
+      "declared_test_count": 10,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_roundtrip_test.dart",
+      "sha256": "3d66f5d88f3dde29da25a7a2598f9a87e06d03317deb3d0c3eef90cf1ad71365",
+      "declared_test_count": 5,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/merging/merge_sei_compatibility_test.dart",
+      "sha256": "e088c290fd6dc98db67487391c6d76543b585c6b9f9e52c4554c63463c8dd7a9",
+      "declared_test_count": 16,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/mixed_signers_test.dart",
+      "sha256": "3f5ec919a43e6413ec0e5b602a7b81ddf1c72906000e67cfc690fbcf0120442a",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pages/page_template_and_layer_test.dart",
+      "sha256": "1636a47cbd3080561eaf83f549717892ffe88418595fbe207ebfc9759cc490bb",
+      "declared_test_count": 12,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pages/pdf_page_test.dart",
+      "sha256": "a2dd676c19a9023f62694ab0834e6e55307bec9261b471b318a93b68849fe12b",
+      "declared_test_count": 3,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pdf_cms_signer_test.dart",
+      "sha256": "2ee26dd717962c5ba0dd788ce72d759c2e866b47ea983564aff50864a6fe8cce",
+      "declared_test_count": 7,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pdf_crypto_utils_test.dart",
+      "sha256": "47f350a7172dce13ece84f5af5cbf1e424e8edd3d76427e8cc1f37afb5a3f76e",
+      "declared_test_count": 1,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pdf_document/loaded_document_round_trip_test.dart",
+      "sha256": "52039442cfe519a81542f77caa1b14e4c93bb98d66a99e0921c10cc371b5692d",
+      "declared_test_count": 20,
+      "status": "partial_overlay_pages_metadata_and_fields",
+      "adapted_test": [
+        "loaded_page_overlay_test.dart",
+        "loaded_document_structure_test.dart",
+        "form_field_roundtrip_test.dart"
+      ]
+    },
+    {
+      "source": "test/pdf_document/pdf_document_test.dart",
+      "sha256": "75b94f98ca18e029fe5508aa0cbfbe4c0ec2c9b1c557a908f25c181f0fa849d9",
+      "declared_test_count": 6,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pdf_signature_adbe_pkcs7_sha1_test.dart",
+      "sha256": "022bcf528e9117030a57094114752905af7dcd61ab9fed6fe42aa54afeb36ca9",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pdf_signature_contents_reserve_test.dart",
+      "sha256": "3ef028e52377071dc3a719250d9bc3031aa0ed2dbed0ddc6dd78aa66e303e7ac",
+      "declared_test_count": 1,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pdf_signature_extractor_test.dart",
+      "sha256": "4da8c37b8e71f208e9f3c26f7a1fbe629ba4832ed4457673a1661c6ef6857ec5",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pdf_signature_info_test.dart",
+      "sha256": "c7d3054453d846471ad1a226d92f8347ee9349f07290c61462651a0cc6d0e128",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pdf_signature_validation_item_signer_info_test.dart",
+      "sha256": "de262cd3d9fc87368f34f564a72cc4f30b04bb55d64c6b46df2339925bae24c0",
+      "declared_test_count": 1,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pdf_signature_validator_test.dart",
+      "sha256": "54c716d2f7f9d653422b4f6d4f4f5e33f5302e6a3fe00dd166667ba8d319590e",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/performance/slow_pdf_test.dart",
+      "sha256": "4f5605dc4223bb85c963f2ee67eeb7f1f7ad5dde83739c971eb802bfc5d69e7e",
+      "declared_test_count": 1,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pki_builder_test.dart",
+      "sha256": "70fe246462cb169e302336f3783f1e2652b44f8eaaae19c26e5c6438e4b9ca8e",
+      "declared_test_count": 3,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pki_simulation/expanded_scenarios_test.dart",
+      "sha256": "781802db84d1f888b51164e0c2a56fe9dc8f0d0637eb3dc0106c993d254d7a82",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/pki_simulation/pki_simulation_test.dart",
+      "sha256": "0299c351dbdf4b1a4c5c976fcefa39cac93526d5bc4b6501c8d494f7006d1919",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/policy_engine_strict_digest_test.dart",
+      "sha256": "2354aec6f027ae3081b552f8645094f95fe4d92f4695ed2ace8400666d397f5a",
+      "declared_test_count": 3,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/policy_timestamp_integration_test.dart",
+      "sha256": "b45c84de40086805eef659810d2826acefd9ab7f58c2bf5e05962dfd5fa038f4",
+      "declared_test_count": 1,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/primitives/pdf_array_test.dart",
+      "sha256": "d5d519ee0bd0bd095df3d13484fc279ef1a71da6c7f949e15672f867ff0c22c0",
+      "declared_test_count": 6,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/primitives/pdf_boolean_test.dart",
+      "sha256": "9c8a4118faad4c1514be2d70bb38015935063006b10a23442b36de5e9780b4f4",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/primitives/pdf_dictionary_test.dart",
+      "sha256": "13984b1efd0eafa7bae1b671b28062b846f97462fb1b80cedf481b3c1fd44593",
+      "declared_test_count": 7,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/primitives/pdf_name_test.dart",
+      "sha256": "f7987de250b112734fa09d09193e8a7af2d8e263096ae4839787a281df79adf8",
+      "declared_test_count": 7,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/primitives/pdf_null_test.dart",
+      "sha256": "7563da29e31190992f086d34c1a27ddcbd55d27efd7636727aecdd03a5bb8b63",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/primitives/pdf_number_test.dart",
+      "sha256": "c431677d6cb68c17bb1a66174d8c3ec64179273f0a5bdf2b25421ba79de7c1aa",
+      "declared_test_count": 9,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/primitives/pdf_reference_holder_test.dart",
+      "sha256": "fe4f23992c3326000d35a47fb84f31ffdce15cad865315ce3732baba4ef50d59",
+      "declared_test_count": 2,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/primitives/pdf_reference_test.dart",
+      "sha256": "3fbae91ab07ee333c01bef437031da021e5bf9647718580b334f83c74eab2d2c",
+      "declared_test_count": 3,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/primitives/pdf_stream_test.dart",
+      "sha256": "f9696a06ef569a75fb03e92d4655af477d562dd968f8f56a3b9b6d07f744d669",
+      "declared_test_count": 5,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/primitives/pdf_string_test.dart",
+      "sha256": "ed431b9868984327d75e8cdf2f9bf65eefb4a3aea92495c2167c1d8a57099a20",
+      "declared_test_count": 3,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/security/certificate_signing_test.dart",
+      "sha256": "f54aba6850664a21cd7bde4a28888e591cfb7956be240fa33aeaf5f23dfe6b80",
+      "declared_test_count": 18,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/security/external_signing_assets_integration_test.dart",
+      "sha256": "12c3c05b3941affa71e7986e1e290fff28bd5fbcca58ba31c198493dceabc9d3",
+      "declared_test_count": 1,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/security/pdf_encryptor_test.dart",
+      "sha256": "2a0f8ce25dee8040052dc33dceff7c92e157316bff25d5d072b09f4f29795b0f",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/security/pdf_security_test.dart",
+      "sha256": "9d2415e0fe641a99d1fb810f0ab7b56e82725599d381691ab3eb8a4d6c74059c",
+      "declared_test_count": 4,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/security/pdf_signing_session_test.dart",
+      "sha256": "e714dd45cab9490ecd8379ea1860dc62a695ea3c751cdc2faddabbf635244e85",
+      "declared_test_count": 3,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/signature_candidate_validation_test.dart",
+      "sha256": "7eb936cf80a22f10cda391136946fe5132a81e90a886307e10055c65228fbaba",
+      "declared_test_count": 1,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/signature_provider_classification_integration_test.dart",
+      "sha256": "f886c72204ec8261ae7e5e69ef13a5776e9ce1abb69cc21a45c616b22ffe7191",
+      "declared_test_count": 3,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/structured_elements/pdf_grid_test.dart",
+      "sha256": "782f63a4c07c58213714114768f482a49d3f7a44eda5319f554253dfe648bf48",
+      "declared_test_count": 14,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/utils/pdf_comment_sanitizer_test.dart",
+      "sha256": "4d477bf48ba0ef00e22ab0a835fd0d24e729d5436af4a993f1d1a92ad25442a3",
+      "declared_test_count": 1,
+      "status": "adapted_with_synthetic_fixture",
+      "adapted_test": "pdf_comment_sanitizer_test.dart"
+    },
+    {
+      "source": "test/utils/pdf_percent_comments_test.dart",
+      "sha256": "0b6e433111388f45e05d0075de427e00c1919ff200559d52300a31d48c2bf38b",
+      "declared_test_count": 5,
+      "status": "adapted",
+      "adapted_test": "pdf_percent_comments_test.dart"
+    },
+    {
+      "source": "test/utils/pdf_quick_info_test.dart",
+      "sha256": "957bc692b828371b313afdcd44b556577e0ca0f0cc045ca9ff4f010de7e21acb",
+      "declared_test_count": 8,
+      "status": "adapted_with_async_header_option",
+      "adapted_test": [
+        "pdf_quick_info_test.dart"
+      ]
+    },
+    {
+      "source": "test/visto_24822_signature_compliance_test.dart",
+      "sha256": "1d8c18c7523b4fbc511f5385ad02912da602bd2b410d1ddacb2b38775cb8c8a4",
+      "declared_test_count": 1,
+      "status": "pending",
+      "adapted_test": null
+    },
+    {
+      "source": "test/x509_generator_test.dart",
+      "sha256": "fc4b7ba80552957aa995bfaaf92ef3ef1df601662d524fd3cd20b59cb1360514",
+      "declared_test_count": 3,
+      "status": "pending",
+      "adapted_test": null
+    }
+  ]
+}

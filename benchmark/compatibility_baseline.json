@@ -1,0 +1,117 @@
+{
+  "results": [
+    {
+      "engine": "pdfcraft",
+      "runtime": "3.6.2 (stable) (Wed Jan 29 01:20:39 2025 -0800) on \"windows_x64\"",
+      "os": "windows",
+      "warmup": 5,
+      "samples": 15,
+      "input_bytes": 2930,
+      "output_bytes": 10294,
+      "input_pages": 3,
+      "output_pages": 9,
+      "extracted_characters": 48,
+      "load_extract": {
+        "samples_us": [
+          1381,
+          2606,
+          1550,
+          1871,
+          1736,
+          2878,
+          3634,
+          2939,
+          4095,
+          3512,
+          2849,
+          2423,
+          2038,
+          1606,
+          2500
+        ],
+        "median_us": 2500,
+        "total_us": 37618
+      },
+      "merge": {
+        "samples_us": [
+          7660,
+          10721,
+          7098,
+          6001,
+          5767,
+          6948,
+          7121,
+          8250,
+          8698,
+          10705,
+          10640,
+          10785,
+          5990,
+          5634,
+          7930
+        ],
+        "median_us": 7660,
+        "total_us": 119948
+      },
+      "wall_total_us": 515211,
+      "timing_scope": "VM JIT; bytes read before timing; load includes extraction and checks; merge excludes output verification; wall includes warmup and verification"
+    },
+    {
+      "engine": "insinfo_dart_pdf",
+      "runtime": "3.6.2 (stable) (Wed Jan 29 01:20:39 2025 -0800) on \"windows_x64\"",
+      "os": "windows",
+      "warmup": 5,
+      "samples": 15,
+      "input_bytes": 2930,
+      "output_bytes": 8738,
+      "input_pages": 3,
+      "output_pages": 9,
+      "extracted_characters": 57,
+      "load_extract": {
+        "samples_us": [
+          6320,
+          5861,
+          5955,
+          4392,
+          4871,
+          5662,
+          4768,
+          4847,
+          4929,
+          4267,
+          3850,
+          5191,
+          5952,
+          4764,
+          5080
+        ],
+        "median_us": 4929,
+        "total_us": 76709
+      },
+      "merge": {
+        "samples_us": [
+          6206,
+          5023,
+          6069,
+          5221,
+          12313,
+          7808,
+          7953,
+          6297,
+          5141,
+          5006,
+          4607,
+          4201,
+          5371,
+          4920,
+          7267
+        ],
+        "median_us": 5371,
+        "total_us": 93403
+      },
+      "wall_total_us": 829681,
+      "timing_scope": "VM JIT; bytes read before timing; load includes extraction and checks; merge excludes output verification; wall includes warmup and verification"
+    }
+  ],
+  "limitations": "Single machine VM JIT run; small synthetic three-page fixture repeated three times. No performance target or broad workload generalization."
+}

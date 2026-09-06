@@ -50,6 +50,7 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
     if (document != null) {
       field.attachToDocument(document);
     }
+    await field.loadStyles();
     return field;
   }
 

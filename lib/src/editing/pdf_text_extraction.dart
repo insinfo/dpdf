@@ -20,6 +20,7 @@ import '../kernel/pdf/pdf_writer.dart';
 
 part 'pdf_text_positions.dart';
 part 'pdf_text_redaction.dart';
+part 'pdf_graphics_envelope.dart';
 
 /// Decodes PDF character codes for a selected font resource.
 /// A decoder must apply that font's Encoding/ToUnicode mapping.

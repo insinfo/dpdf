@@ -1,0 +1,1910 @@
+{
+  "retrieved_date": "2026-09-06",
+  "publisher": "Instituto Nacional de Tecnologia da Informação (ITI)",
+  "page_license_notice": "CC BY-ND 3.0 Unported, as displayed on the source pages; no MIT relicensing asserted.",
+  "hash_source": "https://acraiz.icpbrasil.gov.br/credenciadas/CertificadosAC-ICP-Brasil/hashsha512x.txt",
+  "archives": [
+    {
+      "name": "jks",
+      "url": "https://www.gov.br/iti/pt-br/assuntos/navegadores/java/keystore_icp_brasil-jks.zip",
+      "size": 211229,
+      "sha512": "a3c7081acd5c29e522bef2af62a665104f5647b1a6ac05ce9b714cf74925580740da1e3d2223bfb53a61b318f11b1cee2c8066db82732dbb149fcd5fe0386ddc",
+      "files": [
+        {
+          "path": "jks/keystore_ICP_Brasil.jks",
+          "sha256": "837d19bf5befe705ac01a93ab7697bf1baa7d280068ca161f32af0810bd9dd4c",
+          "size": 328339
+        }
+      ]
+    },
+    {
+      "name": "certificates",
+      "url": "https://acraiz.icpbrasil.gov.br/credenciadas/CertificadosAC-ICP-Brasil/ACcompactadox.zip",
+      "size": 624621,
+      "sha512": "48a9ed4bd1e2a81bf31e00b981501854b979cdee4eb402c8da658184ab6bd55f2522863ff1e7a97c18159dea73f21ae080f299613e2ef4413a548483b50b5b56",
+      "files": [
+        {
+          "path": "certificates/AC CertiSign.crt",
+          "sha256": "c8301f2394a2baa1c73211b8047ac380f449226839c2a337d1ce75e8ffbab912",
+          "size": 1490
+        },
+        {
+          "path": "certificates/AC-A-DIGIFORTE-RFB.crt",
+          "sha256": "25d4a0c3018c58c2996efc8d3be4e4a3481977368d30e963e6728a81b0126f47",
+          "size": 2435
+        },
+        {
+          "path": "certificates/AC-ACD-v5.crt",
+          "sha256": "98c0db4be77ee4386a0c8aa125aadb1e2475fac5893ec741622035634d98d8a5",
+          "size": 2500
+        },
+        {
+          "path": "certificates/AC-Certisign-ICP-Brasil-SSL-EV-G3.crt",
+          "sha256": "d36b7d21fb54bc6c0d610a8f93becf5b95d492a120b7a4f910a2c8461fd6758e",
+          "size": 3065
+        },
+        {
+          "path": "certificates/AC-Certisign-ICP-Brasil-SSL-EV-G4.crt",
+          "sha256": "7200a1ecbde3745f6c5d66bdc1ccdb92b759fcd362c6bda05bfb21cafc2640ca",
+          "size": 3073
+        },
+        {
+          "path": "certificates/AC-CERTISIGN-ICP-BRASIL-SSL-G2.crt",
+          "sha256": "9dd4c6b7b8367499bf4e4e41c6252606667a8a9020086cf2e6fab8f60cc61209",
+          "size": 2935
+        },
+        {
+          "path": "certificates/AC-DIGITAL-MAIS.crt",
+          "sha256": "0825b1f4c6a5b65d8031b684f4b414c1b6844afa7e868880eb2afe9aae25426d",
+          "size": 2240
+        },
+        {
+          "path": "certificates/AC-INFOCO-DIGITAL-v5.crt",
+          "sha256": "9cf927f528b1f288128e79e6d8b2ea5f09c63c7d0baf5b8704fad25d739ae8cb",
+          "size": 2516
+        },
+        {
+          "path": "certificates/AC-MRE-V1.crt",
+          "sha256": "31e3f5d698541d4726b5677d6a3d228a4dfab0f8e75c147a8f481af72a3eb55f",
+          "size": 1911
+        },
+        {
+          "path": "certificates/AC-PRIME-v5.crt",
+          "sha256": "a42aa80d495dc93b87e47d3fda07bdba3137fe4973219a5d8300fb98abaa9729",
+          "size": 2504
+        },
+        {
+          "path": "certificates/AC-PRODESP-RFB-v1.crt",
+          "sha256": "d455ccbd9f1fc4b5357bdb1d546d68142e2c0bac40984ae0707deebfa03d4aea",
+          "size": 2545
+        },
+        {
+          "path": "certificates/AC-PRODESP-SP-SSL.crt",
+          "sha256": "ee8e0f9b2f2399bdc59419d21c834a57f8d2f64077e56f4e739d0c25a8355a4d",
+          "size": 2939
+        },
+        {
+          "path": "certificates/AC-PRODESP-SP.crt",
+          "sha256": "8bdcd22c54623388e8136c429b9d6154afa1e025d3ea96e76391ebd4be9aaaeb",
+          "size": 2240
+        },
+        {
+          "path": "certificates/AC-QUALITYCERT-v5.crt",
+          "sha256": "7a9ae707beb8908dc88cfdc801f2c9b4ed66d37e85b03f6a2b7771edecafb6f5",
+          "size": 2512
+        },
+        {
+          "path": "certificates/AC-REDEBRASILv5.crt",
+          "sha256": "a22843430d023caf03036bf6a2d453016af60db2aa422ac52ae2d543c92e4dd1",
+          "size": 2512
+        },
+        {
+          "path": "certificates/AC-SERPRO-SSLv1-v10.crt",
+          "sha256": "0516cba429d2a48c49a71d9fb58ac03e14c38fbe4c92071d40a1bd656005e54a",
+          "size": 2492
+        },
+        {
+          "path": "certificates/AC-SOLUTI-CS-EV.crt",
+          "sha256": "2a6a148ea8fead0332213d19b764b3ba821970af274f9b9707dea1d340abb9f0",
+          "size": 2679
+        },
+        {
+          "path": "certificates/AC-SOLUTI-SSL-EV-G2.crt",
+          "sha256": "2bc0c257540a36c2e66d8129fcb3bafe8c3d780622b6a9f7b1abc9ecae5de01c",
+          "size": 2707
+        },
+        {
+          "path": "certificates/AC-SOLUTI-SSL-EV-G3.crt",
+          "sha256": "056819189155664834661d388a0d87ca304570e4fd82d3386890ae088b232df0",
+          "size": 2740
+        },
+        {
+          "path": "certificates/AC-SOLUTI-SSL-EV-G4.crt",
+          "sha256": "ea03818335e30379ae288007b52549b9d9a49f902987216c955d6122234e41ba",
+          "size": 2732
+        },
+        {
+          "path": "certificates/AC-SOLUTI-v5-G2.crt",
+          "sha256": "e3903d7144614eaed59c7c55b67a1d45c499fd2a3d77fdc7e33d207405fa8686",
+          "size": 2240
+        },
+        {
+          "path": "certificates/AC-SyngularID.crt",
+          "sha256": "152b249f77fc86b250500962b7533369535d583e042ca6cb4d32ebf0155c44be",
+          "size": 2240
+        },
+        {
+          "path": "certificates/AC-VALID-SSL-EV.crt",
+          "sha256": "b9d461be023eba0a4159f0c2088a7b0937b465f28e5e4609c489966122c124a9",
+          "size": 2752
+        },
+        {
+          "path": "certificates/AC_A_R_A_CERTIFICACAO_DIGITAL_v5.crt",
+          "sha256": "d9d20fdfaa679f29ab821b99a22619bcdfd9996cf0f9007132a2b44deb09ade2",
+          "size": 2533
+        },
+        {
+          "path": "certificates/AC_Boa_Vista_RFB.crt",
+          "sha256": "6786b8bbf4953d86023f8d240e2aaee247a286b29ee8f5c53a43001599f75f96",
+          "size": 2439
+        },
+        {
+          "path": "certificates/AC_BoaVista.crt",
+          "sha256": "a7146bfbad1af6783fe077b478b5d846a7e456c92b0da084c2f2b95f7ac352ba",
+          "size": 2224
+        },
+        {
+          "path": "certificates/AC_BoaVista_Certificadora.crt",
+          "sha256": "4f7d47a4b355e4003a3cd4ceaf416d2327a6e4d0e88a27e49fdad8cf9b49dafa",
+          "size": 2784
+        },
+        {
+          "path": "certificates/AC_BR_RFB_G2.crt",
+          "sha256": "ddba4f1752fc8fd1311123175b53c7767eaf854cd123fababca084d3f626f42c",
+          "size": 1659
+        },
+        {
+          "path": "certificates/AC_BR_RFB_G3.crt",
+          "sha256": "23330041e74b891188da02f60fdb201c1fe43544988561ee0fe5ec9491b5c221",
+          "size": 2431
+        },
+        {
+          "path": "certificates/AC_BR_RFB_G4.crt",
+          "sha256": "7eff456ff2865e9a38b742e0bae1aa0ba25f8aea5b1d5e8b588e2705c4b190f7",
+          "size": 2427
+        },
+        {
+          "path": "certificates/AC_CACB_RFB.crt",
+          "sha256": "d2a9ee02ace0fbb1fe1196d7ea0c36fcab270cc644d54baa40c4bd0124f00cf8",
+          "size": 2578
+        },
+        {
+          "path": "certificates/AC_CACB_RFB_G2.crt",
+          "sha256": "287a34daf2c4ce9363b522e71a584be64725e4a73918d57d07b02601a2ed6837",
+          "size": 2537
+        },
+        {
+          "path": "certificates/AC_Caixa.crt",
+          "sha256": "f02c610ad05d1256e4c613fe23e367fea385afe741a2215dd4a47c8c96e6fcfe",
+          "size": 1531
+        },
+        {
+          "path": "certificates/AC_Caixa_JUS_v1.crt",
+          "sha256": "7196674e0b8d0e612015be914bee1871fa0ca31b754740d48f6cd1ec9259d332",
+          "size": 1769
+        },
+        {
+          "path": "certificates/AC_Caixa_JUS_v2.crt",
+          "sha256": "cee33fcf664e277013d581fc72d6031df1aa64f4fe8750b2cc3dc6c1b43336f6",
+          "size": 2451
+        },
+        {
+          "path": "certificates/AC_Caixa_PF-1_v1.crt",
+          "sha256": "d8d1b6a0ff6a73d38811ae0b55414d3328860575fb0c6df374ec96d3f214745c",
+          "size": 1865
+        },
+        {
+          "path": "certificates/AC_CAIXA_PF_1v2.crt",
+          "sha256": "7a5be350065a08ca3cabddaaa9310e6e5577d781ab8ff9ef6d305873378e08cd",
+          "size": 2321
+        },
+        {
+          "path": "certificates/AC_Caixa_PF_v1.crt",
+          "sha256": "311d1c5131703518a01bfb9e934666d9b2def7be74d9d8e919db13f72ce87080",
+          "size": 1983
+        },
+        {
+          "path": "certificates/AC_Caixa_PF_v2.crt",
+          "sha256": "53939eb22c18f87d1b63c35084eb81e3197f8096e6b315c7ecfed9611d7f3e11",
+          "size": 2594
+        },
+        {
+          "path": "certificates/AC_Caixa_PJ-1_v1.crt",
+          "sha256": "f2927bd3ac500967057d1936940e80d2e298b5757b989df6ff75bf9ce9c0e93a",
+          "size": 1865
+        },
+        {
+          "path": "certificates/AC_CAIXA_PJ-SSL_v2.crt",
+          "sha256": "f107a5edad6927a549c7103ccb1103ae9cacbec9727b2e9c8f7c474c9d28d4e4",
+          "size": 2334
+        },
+        {
+          "path": "certificates/AC_CAIXA_PJ_1v2.crt",
+          "sha256": "8b4849dbcf0015c246f36d1f1f6b0143a46c9b55a3161559fc0e0dacaad90c74",
+          "size": 2321
+        },
+        {
+          "path": "certificates/AC_Caixa_PJ_v1.crt",
+          "sha256": "12ef79e35b66e05d3afb1a7c473e315faea7a3f6e889e91cc94237260f45f9e5",
+          "size": 1983
+        },
+        {
+          "path": "certificates/AC_Caixa_PJ_v2.crt",
+          "sha256": "c348c5a6f954dbda571c616de2d37887044cd0eae0f860d9b19db24939f35565",
+          "size": 2858
+        },
+        {
+          "path": "certificates/AC_Caixa_SPB.crt",
+          "sha256": "df0e48e9a75ef60c9264a76b9dc0ae7904fbf220fc6b1ed609888e254d3ccfc1",
+          "size": 2446
+        },
+        {
+          "path": "certificates/AC_Caixa_v1.crt",
+          "sha256": "917b0941a130778d613c07311f9f8f0497a2bc31594754c0e182da7c0e713a4f",
+          "size": 1529
+        },
+        {
+          "path": "certificates/AC_CAIXA_v2.crt",
+          "sha256": "b3ea3aebfa7e07dd2c1924a15cdee94b30755eb14848de643d53c5e3156286b2",
+          "size": 2224
+        },
+        {
+          "path": "certificates/AC_CCN_COMPANHIA_CERTIFICADORA_NACIONAL_v5.crt",
+          "sha256": "7f392e5815df2b1ddbc1903b42050277d6cc14801659c86b9120f17a6acf8604",
+          "size": 2565
+        },
+        {
+          "path": "certificates/AC_CERTBANK_v5.crt",
+          "sha256": "cb221aa0328fc39af3de56c456db5c05a121575c154c0288a47a3e51975bb15f",
+          "size": 2573
+        },
+        {
+          "path": "certificates/AC_CERTDATA_BRASIL.crt",
+          "sha256": "adf6bb8fa61393a87e4c2baef396884b8e26e0a1ce52e8b1eb83305a01a1f005",
+          "size": 2581
+        },
+        {
+          "path": "certificates/ac_certfacil_v5.crt",
+          "sha256": "99c49483f43b2175340e0e0f1523b4db435fc655cec455bd913bc3b1e368656f",
+          "size": 2508
+        },
+        {
+          "path": "certificates/AC_Certifica_Anapolis_v5.crt",
+          "sha256": "bab7617cf06669b2279ca4563ef423c7a8f9413b82d9a78946fb53463916ab10",
+          "size": 2520
+        },
+        {
+          "path": "certificates/AC_CERTIFICA_ANAPOLIS_v5_G2.crt",
+          "sha256": "2a5ebc4e6c6c23d59b6e67a0eaed624a159db9829798377f8306a336e0b6bd95",
+          "size": 2541
+        },
+        {
+          "path": "certificates/AC_CERTIFICA_MINAS_v5.crt",
+          "sha256": "d47ec8a15b110dd53758163e9fa95b86782ab80db56dfabcc76323efebd22f08",
+          "size": 2516
+        },
+        {
+          "path": "certificates/AC_CERTIPE_CD.crt",
+          "sha256": "85e0ff14f9f03c13d3325e3f295043bec165580c7b46aa587bcb67930aebe503",
+          "size": 2496
+        },
+        {
+          "path": "certificates/AC_CERTISIGN-JUS_CODESIGNING_G6.crt",
+          "sha256": "2d47d85d9d6273cf5c158a8c43767e4d3d0fdfb68f0e68b7a02fd0eb425654df",
+          "size": 2419
+        },
+        {
+          "path": "certificates/AC_CERTISIGN-JUS_G5.crt",
+          "sha256": "dfd22ae1a1828e9bd1467256415a4e8c891223e573f7f5f3fab8fc5b015c9e68",
+          "size": 2394
+        },
+        {
+          "path": "certificates/AC_CERTISIGN-JUS_G7.crt",
+          "sha256": "cc65265d76c4a4d0910d68857374a3650cc0963fc507f756b5ac0ebb5e230cf1",
+          "size": 2285
+        },
+        {
+          "path": "certificates/AC_CERTISIGN-JUS_SSL_G6.crt",
+          "sha256": "d4d6b400d9115b93d8a82f3a58b30efe3c836b41d4a89b2defed07b87f4a63d5",
+          "size": 2394
+        },
+        {
+          "path": "certificates/AC_Certisign_G3.crt",
+          "sha256": "cf4be2aef8eccd6bd0911ec89769385f7344b0fbb7ded61acfc318e387a93a4f",
+          "size": 1549
+        },
+        {
+          "path": "certificates/AC_Certisign_G6.crt",
+          "sha256": "1b4bf42dd84eb88f5ec719e08c36b2c3307fe1c8f9894af6ec1170bb19034cce",
+          "size": 2228
+        },
+        {
+          "path": "certificates/AC_Certisign_G7.crt",
+          "sha256": "606fc30b100c25e04db34a9a84026a46f13024293a27a8820559c21e7121a031",
+          "size": 2228
+        },
+        {
+          "path": "certificates/AC_Certisign_G8.crt",
+          "sha256": "5c7e4e9a86ada51745b358416845260227797920a1e92455fd0cc38a8683684a",
+          "size": 2240
+        },
+        {
+          "path": "certificates/AC_Certisign_ICP_Brasil_SSL_G5.crt",
+          "sha256": "175fa09d6d9fbb96a42b2d0a2dca4dd2546a4d2e1fb12281c178a4fbe8e99212",
+          "size": 3004
+        },
+        {
+          "path": "certificates/AC_CertiSign_JUS.crt",
+          "sha256": "97afa8567f098ebf1cd8365b6c40439caf15aa1583db20e61e0f552daf88278e",
+          "size": 1579
+        },
+        {
+          "path": "certificates/AC_Certisign_JUS_G2.crt",
+          "sha256": "8d7350c6554aab12c3de76b9309d4c4a225f349aaf3f9537df45f0980b606e8f",
+          "size": 2334
+        },
+        {
+          "path": "certificates/AC_Certisign_JUS_G3.crt",
+          "sha256": "31c3a09bd1ef241704fad68da8b07635357feb2c8098457a65b6ee7ad39ef334",
+          "size": 2455
+        },
+        {
+          "path": "certificates/AC_Certisign_JUS_G6.crt",
+          "sha256": "7cf0664d0a0280af4c25c5f5bd959e1018b256dac252e9ac4aa3f220083ee58d",
+          "size": 2394
+        },
+        {
+          "path": "certificates/AC_Certisign_Multipla_CodeSigning.crt",
+          "sha256": "c3fb4276a8af92dc8d72b702404b5e08e4a0a37174d66e3689b3c19f28039455",
+          "size": 2602
+        },
+        {
+          "path": "certificates/AC_Certisign_Multipla_G3.crt",
+          "sha256": "3fbb81f0c403f0afa8406d536b0f4098ae5a6f63f6a072f63952837e42435c5b",
+          "size": 2386
+        },
+        {
+          "path": "certificates/AC_Certisign_Multipla_G5.crt",
+          "sha256": "795b7e56b8c3e1a4f10cf4421ccef71725cf9e884ab7976a9bbd228825ff5712",
+          "size": 3069
+        },
+        {
+          "path": "certificates/AC_Certisign_Multipla_G6.crt",
+          "sha256": "b5f807769ea0d0a8117c54d3938e670e96e5561fd726e5239eec4f76c8c13b76",
+          "size": 3069
+        },
+        {
+          "path": "certificates/AC_Certisign_Multipla_G7.crt",
+          "sha256": "485253c8afa9b3bbbcbf37f1cdec3731d03670b7e0a16e075334c97bdb3a2c2f",
+          "size": 3220
+        },
+        {
+          "path": "certificates/AC_Certisign_Multipla_G8.crt",
+          "sha256": "0a2ebee6d743a697dc12f0fdec30ce8950562e410230a1575a73722d3638ccc6",
+          "size": 3098
+        },
+        {
+          "path": "certificates/AC_Certisign_Multipla_SSL.crt",
+          "sha256": "bf182201c0156eb2531cf5e12120c07349532e2c24a19567ff390a6cddb69a43",
+          "size": 2594
+        },
+        {
+          "path": "certificates/AC_Certisign_OM-BR.crt",
+          "sha256": "0abc603282bd56ca1b06436b56f73f1a5bb6a0b5e8ace50fc7092ea8028700ba",
+          "size": 1257
+        },
+        {
+          "path": "certificates/AC_Certisign_RFB_G3.crt",
+          "sha256": "c2335b763d5df6bfda678502caa199aea52fc05049a4cd42e50ef1e66fdd26f7",
+          "size": 1773
+        },
+        {
+          "path": "certificates/AC_Certisign_RFB_G4.crt",
+          "sha256": "225bb6a6d9a4e79b6808c0b739fa3a9837c75790aabf1898922440d45e354325",
+          "size": 2549
+        },
+        {
+          "path": "certificates/AC_Certisign_RFB_G5.crt",
+          "sha256": "4df669ab7d7cf6e79f2a4c81e97622ca98fdbc5f6e4078ae4c93364bd0c1d833",
+          "size": 2545
+        },
+        {
+          "path": "certificates/AC_Certisign_SPB_G3.crt",
+          "sha256": "5a71c93ecbc8e2923c27226867b7b29488a85dd5878b8a82b8358d3cfd7ca23e",
+          "size": 1675
+        },
+        {
+          "path": "certificates/AC_Certisign_SPB_G5.crt",
+          "sha256": "f07ee6b893be02efb811c14514b2370b39f957604a98124557ca25864df302f2",
+          "size": 2358
+        },
+        {
+          "path": "certificates/AC_Certisign_SPB_G6.crt",
+          "sha256": "c47021a2d683e2801ca929bf4da5542a717087560f6d89810064eebe0db18362",
+          "size": 2498
+        },
+        {
+          "path": "certificates/AC_Certisign_Tempo_G1.crt",
+          "sha256": "5324521b662a6868559d025d64bedd70f85e1d4405033110cc02dfcac89a357a",
+          "size": 2443
+        },
+        {
+          "path": "certificates/AC_Certisign_Tempo_G2.crt",
+          "sha256": "b96c54eec16b0fe848839a9a54a7be2006d45136eec3984199724ba4a0f5b7ea",
+          "size": 2590
+        },
+        {
+          "path": "certificates/AC_Certisign_Tempo_G3.crt",
+          "sha256": "3a4ce177047466011e8240d8f714733128b906c615fff389bb3cd325aba0d5c3",
+          "size": 2718
+        },
+        {
+          "path": "certificates/AC_CertiSign_V3.crt",
+          "sha256": "bde0838ba87329baa35977aef55fd96a3a07e1fc53142e1705dc71df11d8a1d3",
+          "size": 1533
+        },
+        {
+          "path": "certificates/AC_CERTMAIS_CD.crt",
+          "sha256": "35d86b8aa52ba394b9be303dbf48cc634e5ec269dc4616ecf31329b427c96ec4",
+          "size": 2500
+        },
+        {
+          "path": "certificates/AC_CNDL_RFB.crt",
+          "sha256": "8d5581a82928390f3801d9c29fa6414d6af338ed69ccb062539224515e149887",
+          "size": 2431
+        },
+        {
+          "path": "certificates/AC_CNDL_RFB_v2.crt",
+          "sha256": "c1a2367db00c46c0d211a7f374e4122417504ab38e64e73a2d7b480ffc2da346",
+          "size": 2435
+        },
+        {
+          "path": "certificates/AC_CNDL_RFB_v3.crt",
+          "sha256": "48e7b93de2bf0030ad5a3a96b3831f130c6f377b74b032cc5b7bc649e170d246",
+          "size": 2431
+        },
+        {
+          "path": "certificates/AC_CONSULTI_BRASIL_RFB.crt",
+          "sha256": "ff453d9ee60ad18ca2e0d94c08f3ec151cbe14b76ff9949c2815cde5be158055",
+          "size": 2443
+        },
+        {
+          "path": "certificates/AC_CONSULTI_RFB.crt",
+          "sha256": "1e270b21788853403e16641e627e25dba270addfec3c96635274e3421fbb9efb",
+          "size": 2482
+        },
+        {
+          "path": "certificates/AC_Defesa_v5.crt",
+          "sha256": "ab4ccb78708da9766b524d95eed37125f8d41d5e69a196afaa0e087bc1a6199f",
+          "size": 3065
+        },
+        {
+          "path": "certificates/AC_DIGISEC_v5.crt",
+          "sha256": "ce4b7242fd4838450f2c1b3e9dbbcb609a4464f54b860a90c24a83727731f56d",
+          "size": 2524
+        },
+        {
+          "path": "certificates/AC_Digital.crt",
+          "sha256": "21eeddeba6d1fe07810a4c5cf0c603cf96c315fab46699df41844cdae8862a18",
+          "size": 2886
+        },
+        {
+          "path": "certificates/AC_DIGITAL_MULTIPLA_G1.crt",
+          "sha256": "f8f99f87499f2557068ca844172d5b1b1312f390ae0d10760dbbbdd2ed898b53",
+          "size": 2500
+        },
+        {
+          "path": "certificates/AC_Digitalsign.crt",
+          "sha256": "ab836343a488d3719dd888ac332364fee56b4f96e56d57fdf65f74cddaddbcb2",
+          "size": 3176
+        },
+        {
+          "path": "certificates/AC_Digitalsign_ACP.crt",
+          "sha256": "103aa5772471563933523404f3b96dd975446502392aa81f586f31b22b520039",
+          "size": 2232
+        },
+        {
+          "path": "certificates/AC_DIGITALSIGN_ACP_G2.crt",
+          "sha256": "6009ef4aa27a86583035547f6059a3007973cef18bbe3edb2b8e06b57876acda",
+          "size": 2236
+        },
+        {
+          "path": "certificates/AC_DIGITALSIGN_ACP_G3.crt",
+          "sha256": "cb4ad3606296373120587021c7dc792bc510b333d1659a5370347d4e2aee54b8",
+          "size": 2248
+        },
+        {
+          "path": "certificates/AC_DIGITALSIGN_G2.crt",
+          "sha256": "5907c4fefab9d31fec655ecba0338e1fb7f67b2758eb18991cea848b83d64db9",
+          "size": 3138
+        },
+        {
+          "path": "certificates/AC_DIGITALSIGN_G3.crt",
+          "sha256": "d0f005f0f79c09e8da803343f4d0bfe3d9b2146e431727ce66ee56143ac2dcb1",
+          "size": 2634
+        },
+        {
+          "path": "certificates/AC_Digitalsign_RFB.crt",
+          "sha256": "ff425bc65268a940c9111ee0a4fd9db98776503bb46c12e77f62711103634928",
+          "size": 2545
+        },
+        {
+          "path": "certificates/AC_DIGITALSIGN_RFB_G2.crt",
+          "sha256": "37f4a83a5ec813b169e94d2121b6fe81e2b7f224ebf53f65372f6a764d8e1c7e",
+          "size": 2546
+        },
+        {
+          "path": "certificates/AC_DIGITALSIGN_RFB_G3.crt",
+          "sha256": "4b85ae760e35a8b687440468112ca170a7541f5daf6c33c9efffb71b44d58592",
+          "size": 2545
+        },
+        {
+          "path": "certificates/AC_DIGITALSIGN_SSL.crt",
+          "sha256": "04a05a1e85588fb204dc158af3e6013c48188772e41012b995938e12bccc4138",
+          "size": 2573
+        },
+        {
+          "path": "certificates/AC_DOCCLOUD_RFB.crt",
+          "sha256": "a64701bab9bb21363c981bd0da7506714b72aa279ebf2523875ee47d2bba4902",
+          "size": 2435
+        },
+        {
+          "path": "certificates/AC_DOCCLOUD_RFB_v2.crt",
+          "sha256": "cb83c51cba86f0c2963a0de73c48e6838465a794e62b5d88764b8878f03ef697",
+          "size": 2435
+        },
+        {
+          "path": "certificates/AC_EGBA_MULTIPLA.crt",
+          "sha256": "90b212cb711da0aa5bff53f320ecba9b48bcdcda8fbcf2a21babc27404fa22df",
+          "size": 2849
+        },
+        {
+          "path": "certificates/AC_EGBA_Multipla_G2.crt",
+          "sha256": "0e4cac383bab6d505dedea71722a0d9942f947d5336c056cf7ed9e3724bf80ec",
+          "size": 3006
+        },
+        {
+          "path": "certificates/AC_EGBA_RFB.crt",
+          "sha256": "081e98b48969c59bec55c29c7c927fdbac8a7e0f363a261a2f5a727d18c1c11f",
+          "size": 2574
+        },
+        {
+          "path": "certificates/AC_FCDL_SC_v5.crt",
+          "sha256": "c3d643168bebdc1fa1f05d566c9adaf7612a2553dc61f32af262bfbd6a4f6d5a",
+          "size": 2508
+        },
+        {
+          "path": "certificates/AC_FCDL_SC_v5_G2.crt",
+          "sha256": "cac80181b69cf858b74e7ddb2b76f92de12d81c35651c02292981b8a73cadc94",
+          "size": 2529
+        },
+        {
+          "path": "certificates/AC_Fenacon_Certisign_RFB_G2.crt",
+          "sha256": "47e99d5aef2f0ca17a32b8e2ae42d211ce8f3d8975c3e2dc3be98db3c6ce5f88",
+          "size": 1679
+        },
+        {
+          "path": "certificates/AC_Fenacon_Certisign_RFB_G3.crt",
+          "sha256": "2bf405ef421066b071bdd376b82173098eed4f44c821f2b3901273dbb3c84a91",
+          "size": 2455
+        },
+        {
+          "path": "certificates/AC_FENACOR_RFB.crt",
+          "sha256": "ad58b34ecfa6b19d7b8db06b4b8b2b6956c95460f66418bc7c2140a38728213f",
+          "size": 2646
+        },
+        {
+          "path": "certificates/AC_IMESP_RFB_G2.crt",
+          "sha256": "a7bf58c976e526b852545131f193294f63d987292129ed83f67dc2e30c4be0c7",
+          "size": 1789
+        },
+        {
+          "path": "certificates/AC_IMESP_RFB_G3_retirar_repositorio.crt",
+          "sha256": "d65c0d2b73a1c81ef39f925705c542fb325b168cdce10b489b595fb2ec8a790b",
+          "size": 2561
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial.crt",
+          "sha256": "c232e2d4587ae7a1eac4897f136c6121a6946b9c0245760c6049f4aa7697467c",
+          "size": 2256
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial_G2.crt",
+          "sha256": "1b6cabb6d00e065d529a1b8984afff78a0ee4c00ef21560f248c8a88a994795a",
+          "size": 2338
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial_G3.crt",
+          "sha256": "bebb28925391c8bd17f6558cd4a750de9db5acfc60a3265d15ff1d09b914461a",
+          "size": 3625
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial_G4.crt",
+          "sha256": "09896ffe53332bec4b4e40e7fc34dbce1e5b3f9c6e03db4ef1d3a3809d17d04d",
+          "size": 3250
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial_SP.crt",
+          "sha256": "ee2f74d92bb33a2e38f4f084666acef434eff0cd049017595e820279a7968f47",
+          "size": 1682
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial_SP_G2.crt",
+          "sha256": "a7c167096768bb4ecccdea58fddd45eab5acabc6e41ec0f38a945fde84aee109",
+          "size": 1476
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial_SP_G3.crt",
+          "sha256": "62e8ae54b2ac06113c8c831b87abcb5036cab30a4452b5cf92d8e5211ddf8019",
+          "size": 2244
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial_SP_G4.crt",
+          "sha256": "5b2e246d4f74f748276d09bc24719665eb0c680cb5321d061ac236790d5e06d6",
+          "size": 2260
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial_SP_RFB_G3.crt",
+          "sha256": "d65c0d2b73a1c81ef39f925705c542fb325b168cdce10b489b595fb2ec8a790b",
+          "size": 2561
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial_SP_RFB_G4.crt",
+          "sha256": "bf5013093a05a997a12b473dbf17dc927a77958ef44cbabdf655fd25ca1e4d4b",
+          "size": 2561
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial_SP_RFB_G5.crt",
+          "sha256": "65a511ea2f90d51858466ce5efe89a0bdea889b2d503c2bcee1393370e0a938e",
+          "size": 2557
+        },
+        {
+          "path": "certificates/AC_Imprensa_Oficial_SSL.crt",
+          "sha256": "2db01fe9a930c98d2c045953036bdec2009cda8ae313c580e14ee91b6ff15be8",
+          "size": 2672
+        },
+        {
+          "path": "certificates/AC_Instituto_Fenacom_RFB.crt",
+          "sha256": "bf6548d6a5b86b3fb446ce57a52a89cc737f75a886b2a050c601b8adcd2fe3d7",
+          "size": 1782
+        },
+        {
+          "path": "certificates/AC_Instituto_Fenacon.crt",
+          "sha256": "eaadfde8cd883a24040c26625df27a59ce1defff6960f37be520f06dda4f6a89",
+          "size": 2386
+        },
+        {
+          "path": "certificates/AC_Instituto_Fenacon_G2.crt",
+          "sha256": "230b89daa084069e075cfb971c2a8d051b216b77115bc5ef813b1fbd674e82f5",
+          "size": 3065
+        },
+        {
+          "path": "certificates/AC_Instituto_Fenacon_G3.crt",
+          "sha256": "eeb464adbb755803c57c72fd16d783ca252a23c34db162cf89348b7a1c9302b5",
+          "size": 3220
+        },
+        {
+          "path": "certificates/AC_Instituto_Fenacon_G4.crt",
+          "sha256": "39601b803a37041b3cda97508d56cf3029a451cafb38cb3f6ed7eca43829130a",
+          "size": 3239
+        },
+        {
+          "path": "certificates/AC_Instituto_Fenacon_RFB_G2.crt",
+          "sha256": "77019da66ab7c34c198047a42604ed0066fdb49c7b7722283165ec6e949ad965",
+          "size": 2561
+        },
+        {
+          "path": "certificates/AC_Instituto_Fenacon_RFB_G3.crt",
+          "sha256": "e90125fab99d465b0b81640c297c2c135d4cd8a577538020b433cf52b1f631b6",
+          "size": 2557
+        },
+        {
+          "path": "certificates/AC_INTERCERT_v5.crt",
+          "sha256": "bf8fd4b71f4f28c5a33cd4d6539cb798468331045d4df54191021a99dc569364",
+          "size": 2508
+        },
+        {
+          "path": "certificates/AC_JUS_v6.crt",
+          "sha256": "adcca4dfa81bedb3e7a2cd9093e44e07d12b6aedeefb73b3f1ae8b0c028c9df2",
+          "size": 2273
+        },
+        {
+          "path": "certificates/AC_LINK_CD.crt",
+          "sha256": "d8289eec959bc9322adc1ab593fe05b4b5a36550d3ad3ffaf97ce066fab287fd",
+          "size": 2492
+        },
+        {
+          "path": "certificates/AC_LINK_RFB.crt",
+          "sha256": "15b30aff800070cbbe7df1416a2f0da0f96ff0f732eb78136014c2367ddc977f",
+          "size": 2431
+        },
+        {
+          "path": "certificates/AC_LINK_RFB_v2.crt",
+          "sha256": "1e9a23434e7d676076a8f93e1b11a284e1cdeb214b4c42c81de054bb5969eef6",
+          "size": 2431
+        },
+        {
+          "path": "certificates/AC_MAXIMUS_TECNOLOGIA_E_EVENTOS_v5.crt",
+          "sha256": "9764276f287d2e51f5b7b638bbe4f8590c94a2e358661d49ef18f274e31ee9a4",
+          "size": 2537
+        },
+        {
+          "path": "certificates/AC_MAXIMUS_TECNOLOGIA_E_EVENTOS_v5_G2.crt",
+          "sha256": "59671d3ca4ba1709e2642b3ce23f429af65109980fb08667a307cdbbb861a7a2",
+          "size": 2557
+        },
+        {
+          "path": "certificates/AC_MRE.crt",
+          "sha256": "f0ade9c5305b8dd0e7ee33c8ae1f8a5e855b29ac07f98daf71825799f336777f",
+          "size": 1887
+        },
+        {
+          "path": "certificates/ac_mult_v5.crt",
+          "sha256": "1d2a99779c6a9cadde21c342ab8f274a9c66f23c3f352f2eef5515004a02cd77",
+          "size": 2504
+        },
+        {
+          "path": "certificates/AC_Notarial_RFB_G2.crt",
+          "sha256": "c9bb43f6cef717f5f7774e803dd7dba409ced82e33b4b94fffcd07b97de1c08f",
+          "size": 1667
+        },
+        {
+          "path": "certificates/AC_Notarial_RFB_G3.crt",
+          "sha256": "f8f97aaa7112279be7cc6e02590c372235c6f068a9a41b9b9af1229a7606cbdb",
+          "size": 2439
+        },
+        {
+          "path": "certificates/AC_Notarial_RFB_G4.crt",
+          "sha256": "e11dc7f56edfa6378598593bc4911e20433db4060ec039e0408b724ee4ecbc53",
+          "size": 2435
+        },
+        {
+          "path": "certificates/AC_Oab.crt",
+          "sha256": "6f7be3d970523db28f9cd5a80cffb83efb9d5749833ccbabaa4cf3251f621be9",
+          "size": 1647
+        },
+        {
+          "path": "certificates/AC_Oab_G2.crt",
+          "sha256": "b65c80156b9aef41879589a9fe5d7d02dd78dff29e7561d7723542539370d254",
+          "size": 2334
+        },
+        {
+          "path": "certificates/AC_OAB_G3.crt",
+          "sha256": "22505604b25576d032cf319352219dfeb776d5ea59676bd17ab430b96567c820",
+          "size": 2474
+        },
+        {
+          "path": "certificates/AC_OAB_G4.crt",
+          "sha256": "13447726a08c1787dcae17265661b392527d0180a6280d0cd63a57fc8fae1ce5",
+          "size": 2648
+        },
+        {
+          "path": "certificates/AC_Online_Brasil.crt",
+          "sha256": "ded490876e135c3755dacc442b8f5b9742121b1e3c983835dec58eb0d505eb7e",
+          "size": 2671
+        },
+        {
+          "path": "certificates/AC_Online_RFB.crt",
+          "sha256": "086cc44e6515334f943e9042c7b620eb403916acc126cdc39be458f233736783",
+          "size": 2435
+        },
+        {
+          "path": "certificates/AC_ONLINE_RFB_v5.crt",
+          "sha256": "d21b9373241524fec97336fc9f27879f39b0b13e63554cb14d9b565953c1c8dc",
+          "size": 2436
+        },
+        {
+          "path": "certificates/AC_ONLINEBRASIL_v5.crt",
+          "sha256": "67968337ac886e1140a1246d738bfc16a83cbdd25a3b4ab01a737451b0ad9258",
+          "size": 2585
+        },
+        {
+          "path": "certificates/AC_Petrobras_G2.crt",
+          "sha256": "c66b1de7b3a43d5f16b22534ff96e146f501abd3dd14e7273b6ba7c482d5c37e",
+          "size": 1850
+        },
+        {
+          "path": "certificates/AC_Petrobras_G3.crt",
+          "sha256": "8fd6661c3c160dc01e22e48e0954f1eee3c19a29cd6c2bb0654dffe176dfb433",
+          "size": 2533
+        },
+        {
+          "path": "certificates/AC_PETROBRAS_G4.crt",
+          "sha256": "3a181bd3f514a8b92cf6d26973a47f7e18dcdd3ff4d1314fb48ab768266ef767",
+          "size": 2824
+        },
+        {
+          "path": "certificates/AC_Prodemge_G2.crt",
+          "sha256": "e3cd706d2e4453133336efb48afe4f45b3ba4ac89dc4413d63d24ad6a21ab1f5",
+          "size": 2000
+        },
+        {
+          "path": "certificates/AC_Prodemge_G3.crt",
+          "sha256": "8a5a39e01541d7c7e850a1a887d4874d3d7b5a228ac4097f9a6fc9d5cd32077c",
+          "size": 2683
+        },
+        {
+          "path": "certificates/AC_PRODEMGE_G4.crt",
+          "sha256": "c897172b98de8efd3d635ce01964a823c2b18e3d04c033c081fba2e78ec54a19",
+          "size": 2828
+        },
+        {
+          "path": "certificates/AC_Prodemge_RFB.crt",
+          "sha256": "d822f287c5c4c7fb9af2da33412b7cad64cd5f784c6791211ab53242004c3e65",
+          "size": 2537
+        },
+        {
+          "path": "certificates/AC_Prodemge_RFB_G2.crt",
+          "sha256": "b07a060d1e20043f6a1e2635b5fc04df12154527494794e7fc88dca247dbe8e8",
+          "size": 1773
+        },
+        {
+          "path": "certificates/AC_Prodemge_RFB_G3.crt",
+          "sha256": "1470fb433301394b2f37b7aa001c0564f48329c222ce196ea296f0ecde2eeff5",
+          "size": 2545
+        },
+        {
+          "path": "certificates/AC_Prodemge_RFB_G4.crt",
+          "sha256": "a9258c8748813d1759574a123193bb5be339cc80e15bc50a71d0c894e0eb0dd9",
+          "size": 2541
+        },
+        {
+          "path": "certificates/AC_PRODESP_v1.crt",
+          "sha256": "84e6af2cbe1ee07efaa5cbb6de836ccc2caf2a1d5a7f7bff540c9064f8236414",
+          "size": 3109
+        },
+        {
+          "path": "certificates/AC_Prodest_RFB.crt",
+          "sha256": "8c196de17dd1b77a3e1bb3158843c0fccea2b87812c661ea86926322c9d61723",
+          "size": 1663
+        },
+        {
+          "path": "certificates/AC_Prodest_RFB_v2.crt",
+          "sha256": "58390dc3cb60161ffabb873e512040fdf8b54e56489fc77d861eb2d595a6440a",
+          "size": 2439
+        },
+        {
+          "path": "certificates/AC_REDE_BRASIL_v5_G2.crt",
+          "sha256": "307b93ebd6078df118a917140e3e19dbe620286763ebc949fe05592259ac7a28",
+          "size": 2533
+        },
+        {
+          "path": "certificates/AC_REDE_IDEIA_CD.crt",
+          "sha256": "8219df0b7f4b827b10e697e596ca8929e6e2b1dbb7a2ec66c412c9b2e9738483",
+          "size": 2500
+        },
+        {
+          "path": "certificates/AC_REDE_IDEIA_RFB.crt",
+          "sha256": "95ad29b4dee566d3ca9397adf51d4762a4c5b313e7de2cd4b5c663c11161ad70",
+          "size": 2435
+        },
+        {
+          "path": "certificates/AC_SAFEIDBRASIL.crt",
+          "sha256": "146159f4145dac83edc5677837da59af18ba1a541c750e389ae0eb916e52242b",
+          "size": 2590
+        },
+        {
+          "path": "certificates/AC_SAFETECH_CD.crt",
+          "sha256": "de6adc0924a11707eb276a2c930cc81120b26ffbe9e8d11d1defc37235a367b0",
+          "size": 2496
+        },
+        {
+          "path": "certificates/AC_SAFETECH_RFB_v5.crt",
+          "sha256": "f47545f34cf3fe011927fc5ed9605cf62e93c724d1cb1134a2f569af9b614af1",
+          "size": 2451
+        },
+        {
+          "path": "certificates/AC_SAFEWEB_CD.crt",
+          "sha256": "ec3e6c4fa34d75fae2341e14ce0ece978ed78cdfd72ef92f4c8cd0edb797f0cb",
+          "size": 2496
+        },
+        {
+          "path": "certificates/AC_SAFEWEB_CD_V12.crt",
+          "sha256": "d860934e2e31b7f44144682b70a27a3257198bafb9735bfb351c7580eaea3389",
+          "size": 2805
+        },
+        {
+          "path": "certificates/AC_Safeweb_RFB.crt",
+          "sha256": "523e2f8b32d335799c020e5a5e226932bc075b16a84a57852ac6cb282749b15f",
+          "size": 2435
+        },
+        {
+          "path": "certificates/AC_SAFEWEB_RFB_v5.crt",
+          "sha256": "946e26b4a7f203d08236e7acceb36d43122623a28554f51485ec7a890389ecc8",
+          "size": 2435
+        },
+        {
+          "path": "certificates/AC_SAFEWEB_TIMESTAMPING.crt",
+          "sha256": "9b7b02eb0e52bc20cd77ccfd072aa5a2e4d3fb33357db355ff9918b97ae4949f",
+          "size": 2512
+        },
+        {
+          "path": "certificates/AC_Safeweb_v12.crt",
+          "sha256": "d8594dbb2d8a8a5fd6342e2374ee63c566be856c3103fa77579d44e0166abd36",
+          "size": 2240
+        },
+        {
+          "path": "certificates/AC_Safeweb_v5.crt",
+          "sha256": "604d250f86bd1a6f3ecc3384d5d1afe4df29908437834ee99f8107e939a0ee34",
+          "size": 2224
+        },
+        {
+          "path": "certificates/AC_Secretaria_da_Receita_Federal_do_Brasil_v3.crt",
+          "sha256": "37e17bc22d657303738c0d5c67497099430dae37714b26c3b15e7fc20c724b3e",
+          "size": 2273
+        },
+        {
+          "path": "certificates/AC_Secretaria_da_Receita_Federal_do_Brasil_v4.crt",
+          "sha256": "5347dc3594255a4e57fd0ad31c13a8a021d132fc9ea35d321d7a0b159504aa98",
+          "size": 2273
+        },
+        {
+          "path": "certificates/AC_Secretaria_da_Receita_Federal_do_Brasil_v5.crt",
+          "sha256": "e12110bdba639416f77b5d72ec9411743b7130e05ab4e62fa86f3be13c43c384",
+          "size": 2285
+        },
+        {
+          "path": "certificates/AC_SEGURA_ID_v5.crt",
+          "sha256": "e767181f74546c9533a886337433c4b2f8ddcb91dc0a6e2ccb2b98badef5a2a7",
+          "size": 2529
+        },
+        {
+          "path": "certificates/AC_SEMPRE_CD.crt",
+          "sha256": "7486218dbd4da64eb07244aa72268ccce1bfc4f2f459785bba94a985bc223a5b",
+          "size": 2496
+        },
+        {
+          "path": "certificates/AC_SEMPRE_RFB_v2.crt",
+          "sha256": "bd2d3dd514cc95233c67875d38af7350d8c97197ec1c9712712426f7910a5673",
+          "size": 2435
+        },
+        {
+          "path": "certificates/AC_SENHA_DIGITAL_BRASIL.crt",
+          "sha256": "2e7a33a93029b0fb1704656eca461e4cdb3f7c6bfbe5f4468581b8f0a80fbaba",
+          "size": 2630
+        },
+        {
+          "path": "certificates/AC_Serasa_ACP.crt",
+          "sha256": "2f9dc454f8a64d710f30f338cc40246f18f2824bd64beebfe47aa4e84b437920",
+          "size": 1090
+        },
+        {
+          "path": "certificates/AC_Serasa_Autoridade_Certificadora_Principal.crt",
+          "sha256": "06184ea2395db4644af37243656c3cc8023c52fc35ef1155a383dbb955b306b0",
+          "size": 1090
+        },
+        {
+          "path": "certificates/AC_Serasa_JUS.crt",
+          "sha256": "38ecfd3f05c7aee19bf02ab2f26a54b8b1a69ab73f56eb9b74e0894b0dc0180c",
+          "size": 1576
+        },
+        {
+          "path": "certificates/AC_Serasa_JUS_v1.crt",
+          "sha256": "0ce072dab29b05d168282d5ea8775c244dda4e90ef951dc2cd8340b5b9255354",
+          "size": 2329
+        },
+        {
+          "path": "certificates/AC_Serasa_JUS_v2.crt",
+          "sha256": "16a0fc5980c36760891c6a7158d8f2be2287135168970dd952bd239d0f3a758e",
+          "size": 2642
+        },
+        {
+          "path": "certificates/AC_Serasa_JUS_v5.crt",
+          "sha256": "8b65077a359c7cff8aa009fef3ca7a1fa2222c3b916839032b61be510ffb9289",
+          "size": 2386
+        },
+        {
+          "path": "certificates/AC_Serasa_RFB.crt",
+          "sha256": "13aac78b79114694e993002f3afbef0b382597d28e7a59e91475e08cb85ec952",
+          "size": 1879
+        },
+        {
+          "path": "certificates/AC_Serasa_RFB_v2.crt",
+          "sha256": "9cbcce007c8d157dcdf47fa2beb1d0409886769a38f9516bfa9692bcd6588048",
+          "size": 2696
+        },
+        {
+          "path": "certificates/AC_Serasa_RFB_v5.crt",
+          "sha256": "0d729a801477a7e219dfeac7b0d9a8740871cae095dc8e1d0c45e7e6617b8a25",
+          "size": 2650
+        },
+        {
+          "path": "certificates/AC_Serpro_JUS_v3.crt",
+          "sha256": "5ea869e23c847e37975f4a5fa5202f5906c956c27621ca5aa98f3100c314d1ed",
+          "size": 1773
+        },
+        {
+          "path": "certificates/AC_Serpro_JUS_v4.crt",
+          "sha256": "5b43ddb2f3138946b4e882f12eafeb386c77240a3c71da0cf56aa048f130701e",
+          "size": 2451
+        },
+        {
+          "path": "certificates/AC_SERPRO_JUS_v5.crt",
+          "sha256": "a2f580b3268cd5eb12a07e2c4bd61a2b135c40a5c32d6dadc9d56c731bc73015",
+          "size": 2289
+        },
+        {
+          "path": "certificates/AC_Serpro_JUS_v5_erro_retirado_repositorio.crt",
+          "sha256": "8a0d46c9b527fedec0a717ba15d38e1f0fb7821fd37949e1e4cfb7f074c0b01e",
+          "size": 2289
+        },
+        {
+          "path": "certificates/AC_Serpro_RFB.crt",
+          "sha256": "91cd8678d02001caeb8acb1018c6eee43f11b5eb3d939cd7122c4cbe3d2c9853",
+          "size": 1692
+        },
+        {
+          "path": "certificates/AC_Serpro_RFB_v3.crt",
+          "sha256": "080a3eec00be4047383afccff0d18005d36bd19207d7a451ea568697beec844b",
+          "size": 2468
+        },
+        {
+          "path": "certificates/AC_Serpro_RFB_v4.crt",
+          "sha256": "d81dc32e6e83333f8d556ec8e33226879f64cc7e5d82214eb1e4d30a2e2cc1b6",
+          "size": 2468
+        },
+        {
+          "path": "certificates/AC_SIC_BRASIL.crt",
+          "sha256": "cbece8130f7d907a833628e177f497538021b07530fdf95a81a1fdd8a9dee713",
+          "size": 2618
+        },
+        {
+          "path": "certificates/AC_SIC_RFB.crt",
+          "sha256": "dc095155475df9a012bcea5c08f58f06e40b541575e6b9709fa36db0952e6b58",
+          "size": 2428
+        },
+        {
+          "path": "certificates/AC_SIG_BRASIL.crt",
+          "sha256": "f0d5eeb08adbdda194f5633f2df5e40162ea10caa30b056567e1e526de813aad",
+          "size": 2577
+        },
+        {
+          "path": "certificates/AC_Sincor_G2.crt",
+          "sha256": "7c23773195f35fcf6d3c613d71a7f84d2d824ae36c9894baf029b584ec4be25e",
+          "size": 2098
+        },
+        {
+          "path": "certificates/AC_Sincor_G3.crt",
+          "sha256": "50d53ca90fc54853ae384e52499611a8586139fce9138b736560b782b35cff2a",
+          "size": 2772
+        },
+        {
+          "path": "certificates/AC_SINCOR_G4.crt",
+          "sha256": "bd15bbc6f5c7a7378ccd66cb0a91bae0c4d310e0247d0bc1c66dc295d770114e",
+          "size": 2924
+        },
+        {
+          "path": "certificates/AC_SINCOR_G5.crt",
+          "sha256": "4d7bcc352c20048c1ae3dd2d4203d9e8d1d1f9c275d054351fb32d613ff575cf",
+          "size": 2800
+        },
+        {
+          "path": "certificates/AC_Sincor_RFB_G2.crt",
+          "sha256": "2d00679dd8b60c188aabc38ed4fa2d032c1226c6118448cd0bf8142e84394999",
+          "size": 1769
+        },
+        {
+          "path": "certificates/AC_Sincor_RFB_G4.crt",
+          "sha256": "4a13120e27054243d43148e791c1841b7cfb33b522f885139dd6b3fa3d4cf44a",
+          "size": 2545
+        },
+        {
+          "path": "certificates/AC_Sincor_RFB_G5.crt",
+          "sha256": "5595560141b96f79e848561a56fdf5c8f7165b800bd1d467a68d6086a6bff8f6",
+          "size": 2541
+        },
+        {
+          "path": "certificates/AC_Sincor_Rio_RFB_G1.crt",
+          "sha256": "fd9b2602a196d0f8dc6f4f5b2fb60d8ec1f5b1b3f62db2f3a9fbbaf9df03650b",
+          "size": 2549
+        },
+        {
+          "path": "certificates/AC_SINCOR_RIO_RFB_G2.crt",
+          "sha256": "48bec223315cb0a7a86556f02f2b31f82918c94051649d81559b0da1714b0e1c",
+          "size": 2545
+        },
+        {
+          "path": "certificates/AC_Solucao_Digital_Multipla.crt",
+          "sha256": "51fb18db32c838213f45b23e473f5b230ab3b3e5eb864ceac2f246baaada4584",
+          "size": 2610
+        },
+        {
+          "path": "certificates/AC_SOLUTI-JUS_CODESIGNING_v5.crt",
+          "sha256": "16bd85c9178a2fd01a836cd73255b8c2ffb67285ac5e616e1d0a7d14b4a3172e",
+          "size": 2504
+        },
+        {
+          "path": "certificates/AC_SOLUTI-JUS_SSL_v5.crt",
+          "sha256": "c477be990d738f85849a32598410867fb911803b961830d2981da095e7cb1f37",
+          "size": 2484
+        },
+        {
+          "path": "certificates/AC_SOLUTI-JUS_v5.crt",
+          "sha256": "db59732e0a721264d85f45c3fe48e4bb52fa2c9dbc594128c4af1624180ce81e",
+          "size": 2480
+        },
+        {
+          "path": "certificates/AC_Soluti.crt",
+          "sha256": "5c5d12652172f3fd28635bf8fdb116ca35d92cf9a281a44a37df7643bf265741",
+          "size": 2220
+        },
+        {
+          "path": "certificates/AC_Soluti_JUS_v1.crt",
+          "sha256": "c030b43e5a22c4fa25576c61f17a5388e68b84ab0e1d87c2d9ce8e44f6f80d3d",
+          "size": 2738
+        },
+        {
+          "path": "certificates/AC_SOLUTI_Multipla_CODESIGNING.crt",
+          "sha256": "6312b06da5d86677d16792d6da523319df90664bcc22ef8a85baf9c68a127bf6",
+          "size": 2699
+        },
+        {
+          "path": "certificates/AC_SOLUTI_Multipla_SSL.crt",
+          "sha256": "ba8dc24981dfcd6e12dd7f876791b74efeff55191f2713bbdb2833ce4bc579d6",
+          "size": 2687
+        },
+        {
+          "path": "certificates/AC_SOLUTI_Multipla_TIMESTAMPING.crt",
+          "sha256": "313dcc757e77d158aa7415e67db98ee36749cfa91175ba8eed3c0648b3f33e0a",
+          "size": 2602
+        },
+        {
+          "path": "certificates/AC_SOLUTI_Multipla_TIMESTAMPING_v5.crt",
+          "sha256": "0ccdf1c1db52d39c1b51a055b07bb350440eecad2cd681a22306865b7c9b0155",
+          "size": 2451
+        },
+        {
+          "path": "certificates/AC_Soluti_Multipla_v1.crt",
+          "sha256": "d38b38cf60ec986d76ae9dc8aa5dbe92696c3d7840e46acf0c2d0c0b40faba92",
+          "size": 2894
+        },
+        {
+          "path": "certificates/AC_SOLUTI_Multipla_v5.crt",
+          "sha256": "8d01ef2f5e067966e6faab359ab6485be29fff4c6565f0eece668d009a31cef7",
+          "size": 2516
+        },
+        {
+          "path": "certificates/AC_SOLUTI_Multipla_v5_G2.crt",
+          "sha256": "42aa2fc6b3a534126cfa9d5f99f5e77db816ea7f5d3a03a789f617fa792fda2a",
+          "size": 2537
+        },
+        {
+          "path": "certificates/AC_Soluti_OM-BR.crt",
+          "sha256": "9ee13b41a93c70b523802a36f56307fccd306b8a9bbe7d2125634d8b4dd34a5b",
+          "size": 1253
+        },
+        {
+          "path": "certificates/AC_Soluti_RFB.crt",
+          "sha256": "946cf24bf47b53cef5ba54592019979c4b7d8bb51aab02a566626d9d1a6b9dae",
+          "size": 2541
+        },
+        {
+          "path": "certificates/AC_SOLUTI_RFB_V5.crt",
+          "sha256": "dcf0f0719ce8cb37d47bbb06913140d456ac5afae6ece45e73b05cc7cf28c293",
+          "size": 2541
+        },
+        {
+          "path": "certificates/ac_soluti_spb_v5.crt",
+          "sha256": "9f00d5c3ec64edc3079ad73596e0c9f0a8378bd648a24a55fd5a61ca001c612b",
+          "size": 2325
+        },
+        {
+          "path": "certificates/AC_SOLUTI_v12.crt",
+          "sha256": "a3af70d506f0fbd23b92bd06bf95ea2cb8376e48a60ebd97ea31dcd55ba91e31",
+          "size": 2240
+        },
+        {
+          "path": "certificates/AC_Soluti_v5.crt",
+          "sha256": "d5e9797dfb7bf5496aba9e33cc023cd4c9fa964cece6413b1caaf95d9a46df3f",
+          "size": 2224
+        },
+        {
+          "path": "certificates/AC_SyngularID_Multipla.crt",
+          "sha256": "b3f5bab854939df4a87e3c9a05c95af477af8c0664af6afeae1e0402c5aaf3ef",
+          "size": 2598
+        },
+        {
+          "path": "certificates/AC_SyngularID_Multipla_v12.crt",
+          "sha256": "fd3ec97d678ccfd55d022f3ed3f5c88b264aea7188e28ef1a55b076409892ae6",
+          "size": 2984
+        },
+        {
+          "path": "certificates/AC_SyngularID_v12.crt",
+          "sha256": "f03edb7e8ebf1cf22eb2840b67480decbb44d850629a6c3430f274c72aa2deb3",
+          "size": 2244
+        },
+        {
+          "path": "certificates/AC_VALID-JUS_CODESIGNING_v5.crt",
+          "sha256": "aebd28d10a387a562d6649f75fe8c23139b258bac00644d055d455f578ed98d9",
+          "size": 2415
+        },
+        {
+          "path": "certificates/AC_VALID-JUS_SSL_v5.crt",
+          "sha256": "a3a925a335bd1aac8021595449e1dcbbfe56169d25d0250e67f64333ba65b062",
+          "size": 2390
+        },
+        {
+          "path": "certificates/AC_VALID-JUS_v5.crt",
+          "sha256": "cbd2c483ba6b95951e3fe4eb6b508a4e2ba1f691eb62b00b270e221657bc3d91",
+          "size": 2386
+        },
+        {
+          "path": "certificates/AC_VALID-JUS_v6.crt",
+          "sha256": "84526ba744010ff061b62fb3c1a14e55e5ec8fd2caa408bcfea3a6c5c35664b9",
+          "size": 2277
+        },
+        {
+          "path": "certificates/AC_Valid_Brasil.crt",
+          "sha256": "42e2bdc6fa28affd6ab66398bd4b46938847d265ca675bb327ef37db05c5f234",
+          "size": 2663
+        },
+        {
+          "path": "certificates/AC_VALID_BRASIL_CODESIGNING.crt",
+          "sha256": "76468316fbb09b0672dd3f2288ef082f6fbef3f3fc42af2cc986569d8bde812a",
+          "size": 2640
+        },
+        {
+          "path": "certificates/AC_VALID_BRASIL_SSL.crt",
+          "sha256": "09fa1329442886ade6b7748df890824168309d47c42ed4ad9c489cca8aa9a3bb",
+          "size": 2626
+        },
+        {
+          "path": "certificates/AC_VALID_BRASIL_V12.crt",
+          "sha256": "b822e7be87a3a08614aa98f228ec202e72c4cc3ceac45811c8fa49cb4d0cba1c",
+          "size": 2724
+        },
+        {
+          "path": "certificates/AC_VALID_BRASIL_v5.crt",
+          "sha256": "e2911b916e907349d78bce460fcd0ad271e26eddbfd86436db012d32bedec742",
+          "size": 2581
+        },
+        {
+          "path": "certificates/AC_Valid_JUS_v4.crt",
+          "sha256": "93c7f1f74e84b6e5174882d707acb27be48df11e5d88d46cfe575e96eebd9971",
+          "size": 2453
+        },
+        {
+          "path": "certificates/AC_Valid_PLUS.crt",
+          "sha256": "577f36118354b738472c8ee40a4eb7177685666c8700c451e3d6ec84aae5a410",
+          "size": 3459
+        },
+        {
+          "path": "certificates/AC_VALID_PLUS_CODESIGNING.crt",
+          "sha256": "f6e300a77e4305e7975d430006c0a87d603c13769061a26d697ac9cdf64490bb",
+          "size": 2636
+        },
+        {
+          "path": "certificates/AC_VALID_PLUS_SSL.crt",
+          "sha256": "e8ca424e74ef73cc37306c684711816a66c59a3ac06f3f2275ec0d437f8ade59",
+          "size": 2626
+        },
+        {
+          "path": "certificates/AC_VALID_PLUS_TIMESTAMPING.crt",
+          "sha256": "363f37dac54c9eef24c163f2ea4051384197806324c2eeebe83bf3219fe7cb73",
+          "size": 2640
+        },
+        {
+          "path": "certificates/AC_VALID_PLUS_v5.crt",
+          "sha256": "d766b4efb62758c9ed613e9a0ce6fe23afb91a5915736f809c59643fcf832e08",
+          "size": 3109
+        },
+        {
+          "path": "certificates/AC_Valid_RFB.crt",
+          "sha256": "19ce24acf60fd2a43fcbad8f8ca7f43b7bb0dcd1c820dbcd53b5d926a7d9b479",
+          "size": 2431
+        },
+        {
+          "path": "certificates/AC_VALID_RFB_v5.crt",
+          "sha256": "04eca41208b00f7c3032ed4ab48b45f451a8f80c2f57bd7fe293d9c58966eeb4",
+          "size": 2431
+        },
+        {
+          "path": "certificates/AC_Valid_SPB.crt",
+          "sha256": "d4ebefdb4597ac5ebf331ec5afde97d103632efc07c43ae28cd492b35b1cc3a2",
+          "size": 2508
+        },
+        {
+          "path": "certificates/AC_VALID_SPB_v5.crt",
+          "sha256": "ae507dc6403212d158baf50a5d2c62e044e3e76fcfaafd003fff4e3e94dd4a72",
+          "size": 2390
+        },
+        {
+          "path": "certificates/AC_VALID_V12.crt",
+          "sha256": "2c72357c51d1b84435847fe7e0066f7cef1e4d397daa58e829597fbcf3e482ad",
+          "size": 2236
+        },
+        {
+          "path": "certificates/AC_VALID_v5.crt",
+          "sha256": "36200a21f1041b5484aefe6fc6397e9c2add1d209cf3d9d528e95d81bb1be20b",
+          "size": 2224
+        },
+        {
+          "path": "certificates/AC_Validar_Multipla.crt",
+          "sha256": "594eaad4b41eeee6a5559c6a11e3a40c69ae0e8ab0d408c79e617dce65a37ab0",
+          "size": 2598
+        },
+        {
+          "path": "certificates/ACIMESP1n.crt",
+          "sha256": "b55abd8e363aa33ee23f0a1f17c5c0a21d1bc0fe6e8ee0fd024bb889a7a9fcc5",
+          "size": 1594
+        },
+        {
+          "path": "certificates/ACImprensaOficial_18072011.crt",
+          "sha256": "146638eda0fe8c9700fbb2fdd4b4b1f7fc6d2f92a3f34108151bf8f1fbeef85a",
+          "size": 1625
+        },
+        {
+          "path": "certificates/ACIMPRENSAOFICIALRFBSSL.crt",
+          "sha256": "28dba1bfb8b27f2f618522cfb9862a8da41320430ca84dfbd4f82b6256cd5ea5",
+          "size": 2561
+        },
+        {
+          "path": "certificates/ACSyngularIDMultipla0.crt",
+          "sha256": "e7a72af9e8c963363eedcd3e7cd11216105dad3b0d8d5379b3adb0fbdd21fd6b",
+          "size": 2598
+        },
+        {
+          "path": "certificates/Autoridade Certificadora da Presidencia da Republica v1.crt",
+          "sha256": "62fb44a07233daa46fc869613365ae02bff6cab3f1f861056c6b23cd29beddee",
+          "size": 1168
+        },
+        {
+          "path": "certificates/Autoridade Certificadora da Presidencia da Republica v2.crt",
+          "sha256": "d2580e75c0d31c7bcca5cf6aef329f04b3d1bbf20a50ccb01c6c6861fa3c65af",
+          "size": 1489
+        },
+        {
+          "path": "certificates/Autoridade__Certificadora_do_Serpro_v1.crt",
+          "sha256": "c7c504af9cd08afcefc5db1508c15e2671148233c0646520550d328997c82f85",
+          "size": 1148
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_ALTERNATIVE.crt",
+          "sha256": "126162c1e162dacddefafe0df88e201bd2395d6ddfeab65c2b1fcd8be0cbc56a",
+          "size": 2545
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_BRASIL_CERTEC.crt",
+          "sha256": "74ab46b2fb76f57626d5f9437daa7f6185871b7ba02c57deb6a7414dbad4d022",
+          "size": 2602
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Casa_da_Moeda_do_Brasil.crt",
+          "sha256": "0dfc6da1b0cb543e1c6ff6234ee1013456d0d405b87d6ba65c84c218cffb1c26",
+          "size": 1809
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Casa_da_Moeda_do_Brasil_v2.crt",
+          "sha256": "daa560aad1ed3713982e07334194f36c25431882d87ee27958f3a7f5ed445004",
+          "size": 2285
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Casa_da_Moeda_do_Brasil_v3.crt",
+          "sha256": "12e29c5375566f5ce212f1743ba6a598e84b2dfdda50415c1d62191827c99e72",
+          "size": 2581
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Justica.crt",
+          "sha256": "6860f87a383752ea0c17f15604da09638ae02341d4f095398f0018f8e3c947d3",
+          "size": 1525
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Justica_v3.crt",
+          "sha256": "ffb02760d44cdd57a79cd5dcc7d57d299878de6ab5902ee8626eab8efe8c830c",
+          "size": 1582
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Justica_v4.crt",
+          "sha256": "fe39ec00b4622fdcbc14d9957a231888ab06f0a53a0751427fcc6d44ec0036b0",
+          "size": 2260
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Justica_v5.crt",
+          "sha256": "dddaf7c7cdfe2b8985c3fd2fb8693ae8aae9172e8efa39b2630585f477971412",
+          "size": 2260
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Presidencia_da_Republica.crt",
+          "sha256": "09dc0caf0ed7bcbbdba198b9add84dd9310cbb061c2a6502a85d90f0ab643fc8",
+          "size": 1545
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Presidencia_da_Republica_2005.crt",
+          "sha256": "68c431028fbac5686415e622e3e022719c60d695192eba125eadf2a91897dddf",
+          "size": 1101
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Presidencia_da_Republica_v1.crt",
+          "sha256": "62fb44a07233daa46fc869613365ae02bff6cab3f1f861056c6b23cd29beddee",
+          "size": 1168
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Presidencia_da_Republica_v2.crt",
+          "sha256": "d2580e75c0d31c7bcca5cf6aef329f04b3d1bbf20a50ccb01c6c6861fa3c65af",
+          "size": 1489
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Presidencia_da_Republica_v3.crt",
+          "sha256": "60d2e78ccb98f2ae4790c583e6c752f9127d0269673e9e52096e04fa664910b9",
+          "size": 2285
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Presidencia_da_Republica_v4.crt",
+          "sha256": "10f8e54d639f08661e68ed2a3722f1ab3ebbfc801dc8a5812181685d41fe4080",
+          "size": 2480
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Presidencia_da_Republica_v5.crt",
+          "sha256": "2cc8ebec606ccdbfe36ef5deb8798adfdfbaed10c77f592c7f6a0cb03872a827",
+          "size": 2370
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Presidencia_da_Republica_v6.crt",
+          "sha256": "ca9a2a85587c647e4cd39c0df41bbe35436bdbb2f9c8e8db0ccad337ba2c4a7e",
+          "size": 2386
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Secretaria_da_Receita_Federal.crt",
+          "sha256": "c48cb676056e89623be0aa065d63dcc50e66b7be0daeae2db43b42b37fcaa52e",
+          "size": 1551
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_da_Secretaria_da_Receita_Federal_v1.crt",
+          "sha256": "522e5a6fd7f3fc4c4fbfcb3ec28cb54e188b5a2e61975b0cc56fafcc6f44c7ca",
+          "size": 1554
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_DIGITAL_CERTY.crt",
+          "sha256": "823eb3b40961db88f5cc9d5c638b45b1b867a64017812898a1122f03a3d943cb",
+          "size": 2602
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_Proderj.crt",
+          "sha256": "edb67291332bfa2475f5e17bec892aab8c82480f5d3866a8e5ce8ed5f0a9f5e8",
+          "size": 1570
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_Proderj_v2.crt",
+          "sha256": "9fe9f322b35113cbedef8a1967a557ac6e2b6cb647c1002281bea1c0a5ac436f",
+          "size": 2380
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_Serpro.crt",
+          "sha256": "d027b0c2dc30c5fc4880930370052663f34c8a556522f125f5ed5667651a58be",
+          "size": 1100
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_Serpro_Final_SSL.crt",
+          "sha256": "c7c1dbdbedb7d4c7731257d87f589f652060932db83e569323237ef33fe46f80",
+          "size": 2378
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_Serpro_Final_v1.crt",
+          "sha256": "d04aba6b48bcc0d6519b4065f8df1415345dca2e77ef9b5b3d7aad171adaa285",
+          "size": 1956
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_Serpro_Final_v2.crt",
+          "sha256": "3b0ee98a91b31320e6325c8ffd06ada31aa9a8a14ba631ff3df94ad3769d4ab1",
+          "size": 1860
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_Serpro_Final_v3.crt",
+          "sha256": "ce70f00d8b6e9590f46fa2297280c9bc1e89ab53af22ec66889a7aae989bd77f",
+          "size": 3044
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_Serpro_Final_v4.crt",
+          "sha256": "df1a46b6689cc40731b513347597bcc4d243c1b29108815b8e5f331d1cd46216",
+          "size": 3044
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_Serpro_Final_v5.crt",
+          "sha256": "573bc9d9fdffe2858bf5e1d96a1faceb2bc1dfba28c7f6f17d37b1452d14e21b",
+          "size": 2468
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_SERPRO_Final_v6.crt",
+          "sha256": "b6a9580dc24283f24331940d2795cd36f6f964980b4d2db8fc6b17c47f900041",
+          "size": 2679
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_SERPRO_RFB_SSL.crt",
+          "sha256": "c80b6ccbe3133ccb65e9723d2fd677372fa2fbd0c9f3fdada37f0949154761d7",
+          "size": 2358
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_do_Serpro_v1.crt",
+          "sha256": "c7c504af9cd08afcefc5db1508c15e2671148233c0646520550d328997c82f85",
+          "size": 1148
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_FECOMERCIO_MG_RFB.crt",
+          "sha256": "896ce2edcb57e440ab954090ba20a85efebec8f9ccdf44dd7330ed1f1461184e",
+          "size": 2484
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_IDFEDERAL.crt",
+          "sha256": "ec464ed5384f3a3c3545b9502044983a7b19b797aebbcc49c6cab9ab1b54cafe",
+          "size": 2557
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_INFOCOMEX.crt",
+          "sha256": "47aa571b7d7ae9553897e5dcc7d69dc27111de56505afa2acfc76d502b0c3d62",
+          "size": 2498
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_INVIA.crt",
+          "sha256": "c6a19a83e915af0d4bb734e3573253d8fa49ff0c7a4d64bfce74c255ac657b83",
+          "size": 2541
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_NACIONAL.crt",
+          "sha256": "ecc1c456d81a7a698a6b8fda97904acc5ea7ddf342e11a1de44b9b8543c95e53",
+          "size": 2545
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_PRIMECERT.crt",
+          "sha256": "1f5e0558e0c5c696adf8d47ce38959269a007e9b9fdb12645541fa7951d5ebb7",
+          "size": 2545
+        },
+        {
+          "path": "certificates/AUTORIDADE_CERTIFICADORA_PROCERTI.crt",
+          "sha256": "28bac74abfb21068187ff98dd9e84c7a9dbd7a7bc0a6cf625b229bd5895fb966",
+          "size": 2459
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_SDI.crt",
+          "sha256": "56166b9e6ef0a722b30fdb6eaa43eec5330e13d15b87e2831f18925120246092",
+          "size": 2537
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_SDI_v2.crt",
+          "sha256": "5841942f55fb2fc3d7b1335d5e254764519a8e5c9d40ad340f5499506f34b9e6",
+          "size": 2667
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_SEFAZCE.crt",
+          "sha256": "7372a9a3f50b6fa226984796aa8fb2ec5280c82919fbbc8c3a6c02bdddec1983",
+          "size": 2342
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_Serpro_v2.crt",
+          "sha256": "220331a5f90a9e7955cc91517238fcffef80d14c4fcf7000f7831580486fb5e6",
+          "size": 1489
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_Serpro_v3.crt",
+          "sha256": "adf63efeb5ae3dc771d671dc98166788967e41dfe88264cb5d89b004cade731f",
+          "size": 2256
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_Serpro_v4.crt",
+          "sha256": "ed1715aaace79d96311af89c838a365ff2cbf54b26d252a35974062b6c28aac3",
+          "size": 2256
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_SERPRO_v5.crt",
+          "sha256": "303ec2af0925c39fea55ec0e99d0ec83a9b9867123d21d89ec8f5d4c7b82c2b1",
+          "size": 2269
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_SERPRORFBv5.crt",
+          "sha256": "02da2a690ec5913196a0cc98224e63786c5a9a8720e2855f4fd31c93d39f4373",
+          "size": 2464
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_SIRIUS.crt",
+          "sha256": "af5be224d0465aeb1b78f1eefc798f7ab447784dea5789fbd9398f6f201e1d23",
+          "size": 2667
+        },
+        {
+          "path": "certificates/Autoridade_Certificadora_ZAPSIGN.crt",
+          "sha256": "e1c02dba18ddbc3494fc6b88ce611f261ede51f4f32d4abdbb120f4a7f2d81a8",
+          "size": 2667
+        },
+        {
+          "path": "certificates/Certificado_AC_Raiz.crt",
+          "sha256": "0f0cf6bc4967f4ddc45e807c9f2229c40815f1ccc038ca7522008fe812f4c347",
+          "size": 1696
+        },
+        {
+          "path": "certificates/ICP-Brasil.crt",
+          "sha256": "464767b259c25460008529beeb2d15e7742f95abe192cf514e8fe9c5d3b5e04f",
+          "size": 1623
+        },
+        {
+          "path": "certificates/ICP-Brasilv10.crt",
+          "sha256": "3b3ef39649ba13e10a99bc042cfc112723d8e0503326174f15ab89941a0f33e0",
+          "size": 2374
+        },
+        {
+          "path": "certificates/ICP-Brasilv11.crt",
+          "sha256": "1437394beb7eb04180a94c480319f432dc27ca9d6ebc036b73f10e2a17a7d7d8",
+          "size": 2374
+        },
+        {
+          "path": "certificates/ICP-Brasilv12.crt",
+          "sha256": "ce6c66c73e41b12881ea8a9b8cb7efef9a482ea012c3cd3b843667e37a7a145c",
+          "size": 2374
+        },
+        {
+          "path": "certificates/ICP-Brasilv13.crt",
+          "sha256": "da54711b5816a2487903c62de28402dca2eea21ccc4e977f1d2645486d84d30c",
+          "size": 1883
+        },
+        {
+          "path": "certificates/ICP-Brasilv2.crt",
+          "sha256": "d14e317cb9be6384c217a05863b254379987a5ec97fbd41d7a9876451099baba",
+          "size": 2358
+        },
+        {
+          "path": "certificates/ICP-Brasilv3.crt",
+          "sha256": "d9142592e8051ca03dbc0b80eb443fda8da51d2e3bc443084e36695beed517bf",
+          "size": 1310
+        },
+        {
+          "path": "certificates/ICP-Brasilv4.crt",
+          "sha256": "857ff3bf31628979e479c5bc0bdf3e706bcc7bafb7ddf0c1134fc21f1cfab141",
+          "size": 1870
+        },
+        {
+          "path": "certificates/ICP-Brasilv5.crt",
+          "sha256": "5bd85f219695dabe6cf3d4bd713d9bd8e41b2323194022acf1acd658daef148a",
+          "size": 2358
+        },
+        {
+          "path": "certificates/ICP-Brasilv6.crt",
+          "sha256": "a91e45782e58755dffc6621cb05c2342db74398ffc6e930b0b3a23325a3bfdfd",
+          "size": 1155
+        },
+        {
+          "path": "certificates/ICP-Brasilv7.crt",
+          "sha256": "4fe1d8599fc00f0b61b12391c98d97af36bcada115bd894f8755e01e212bc4be",
+          "size": 1220
+        },
+        {
+          "path": "certificates/Instituto_Nacional_de_Metrologia_Qualidade_e_Tecnologia_INMETRO.crt",
+          "sha256": "c691ada9a1b1783bf314882f1e6920f0f5bc08ca4ada8932e931a4d3dd2160ec",
+          "size": 1094
+        },
+        {
+          "path": "certificates/Secretaria_da_Receita_Federal_do_Brasil.crt",
+          "sha256": "22138680515e4aca94f02a55b097b9abebef15e3ba7a90ce780599d6c759081c",
+          "size": 1468
+        },
+        {
+          "path": "certificates/Serasa_Autoridade_Certificadora_Principal.crt",
+          "sha256": "35a260a55a39f9043fdc00626f847c2073bcf50e8e33f49d010a446fe31f127e",
+          "size": 1619
+        },
+        {
+          "path": "certificates/Serasa_Autoridade_Certificadora_Principal_v1.crt",
+          "sha256": "301c8862caa5952fa023e3791c1b1717cc75f797e8fce771cee9fa1be2386d67",
+          "size": 1590
+        },
+        {
+          "path": "certificates/Serasa_Autoridade_Certificadora_Principal_v2.crt",
+          "sha256": "6bb2269747019184c756d11ec90060430840a8a45baa9f4b2062276c664d4278",
+          "size": 2269
+        },
+        {
+          "path": "certificates/Serasa_Autoridade_Certificadora_Principal_v5.crt",
+          "sha256": "d9a194a3d58d046b6ce691ce338338565350e55000ce99ce73da1846331be607",
+          "size": 2269
+        },
+        {
+          "path": "certificates/Serasa_Autoridade_Certificadora_v2.crt",
+          "sha256": "ba3f59d6231194bf64906483d56df892a5ab9050ab928824c120e0d3a6afe40b",
+          "size": 2699
+        },
+        {
+          "path": "certificates/Serasa_CD_SSL_v5.crt",
+          "sha256": "cabe8868f8a440654ac001a9f4c2afae3fb72ad40064a313c1bacc582eb91179",
+          "size": 2967
+        },
+        {
+          "path": "certificates/Serasa_CD_v5.crt",
+          "sha256": "8205691374ca964d5a43b498977aa7696b4714277153d98f42ea95f4559c889b",
+          "size": 3548
+        },
+        {
+          "path": "certificates/Serasa_Certificadora_Digital_v2.crt",
+          "sha256": "669cac673c06b67e42ec37fca8b6fb2e28ff856beac477b512a1b3d361f78b5a",
+          "size": 3950
+        }
+      ]
+    }
+  ],
+  "jks_oracle": {
+    "tool": "OpenJDK keytool 25.0.2",
+    "entry_count": 175,
+    "sha256_certificates": [
+      "01335ad9a0f1701988f72e0ee93b001132959856a1423f872b753c68460dab50",
+      "01b43f7f46bad994bb30c339d5b2ee4f8a0178b2bf4d476fa97c768404080a19",
+      "04265991d40b9fe940d4e080ceb555170c37d331dcf8093bfd5cee5e14d9edb9",
+      "044f059b2d162320ba41d1b048fad3a8f817fc41444d6ec4a8b5cdd3a57af37f",
+      "066cacab9fccfb26e7fd8d1ad20a0f2d1a7c0c7f73b3b38dfbf17edbe57d2f6f",
+      "080cdb1bfc8f0e64d0516466ee5f49ae83ddab923dc3001f7e508b42ea34ac08",
+      "08fc942d5176e568acbef9c595f36a20de6acf9ea30c6f5fcedd48216ed5b070",
+      "0a5615dc389acf39d1cb32a034dd430c4ebe65fe1873faac9ce8857f9d4f247d",
+      "0c022fc1371afab87f8a10b6f87d50f5981c5487cc374177880a21536a784178",
+      "12764307145d35b9b49a58840736497029deb4bc46d87afe0326764bc3810bf0",
+      "138c195408aabd70daf6afd0fe75ff60c2793633f49ea01bc7fbb90b875f2297",
+      "1406710058180fa4081aab3f246f1702429c552a11fa3143b84c88cb3ab8e5e7",
+      "161b13851d3b5224d6f001c909539505830681384885e2f5c1af6a410500e492",
+      "17d1d4919e3b9d3b5d80b460ea769b3c3af42b4e96e862f1a43d316a7527cd7e",
+      "1df99eea3441412a790786fd6891f9303c0aceb7e4ad5c727836d3e5a9fb5a5f",
+      "1e36dcc28bc6fbdb23d5df49e55cfb6b27e29d99cc0d555226c2e1e07b838a23",
+      "20755aa36ed586de60da09014101eb589bc1b1ce4ae7278782be97830f23672f",
+      "2118d007109598023f9cdc7dcacabf4e5f4a7ba7d8d8a00118f588989c8f30ba",
+      "26a242f8d1d4b56f47481d7501a6aafc151c262204895dc08da2daa89bc8933f",
+      "27d1643ff97b4e80b23ffbd7cde72177f25327062b7acac3e9093c9f53005868",
+      "287f046480095871b20c714fc4bb2ae7e6ff05898c76dfe631e596811bfc9496",
+      "297371bff1594c210791d6b36d0c6f75afbc11b88bbe4b63465d0e97d006da19",
+      "2974393f5533dcdb56ad298236ce08bf6a8422857cb7d178a95cc4d197f59817",
+      "2b06a3fdae08ab1663699d2e5b31796f37667110bce765df08df18d03675194e",
+      "2bc067a88eae745d722e4329d6e3fba6bed3d14dd07eec22f9a057a334b48f71",
+      "2c7a8ad75458f7e2fe8d7f7884a585127e4f242bd5c3ebea499dacb630315e21",
+      "307171d7bd0fc96b9ec6b09dcb788b21e6951ce2f0911a48fada13ab7bccb8f4",
+      "30a997c193a13b3bfc51053cb255948be707b7fa1ede9568e32c8df1d9c47de9",
+      "3133e61b8b1ca0607dc323dd62b2d72bae114c8dae147df4b4003542e9f01a44",
+      "32fc6dc9b74a29abac47756a2a3c23a9352714cd8c452570b8aa973d640cf04c",
+      "336978ed70470d51cd65ca230a8680541671c6d7186a630255f068e7a9e71e11",
+      "34923090881c8e9c4d59daf7cac2eb36f42bac68690f90847b28e0da05660fbe",
+      "34afd324c54c54a2e94fdacb22b52bf4430fe00411bf1871ed81a692ada4b773",
+      "35330581e9224b72cb340fa44b8f57da79ac0a3c95160cbd4519ecc11bab5c12",
+      "3639771e7ecd0b0b579a7084ad43202c48cfb0bdd63d33e368ee213cb61483df",
+      "3743253d35ae0a0a84babca06ca0b4d3c2a7e42d2f8cf070fc6c2194e2c0ac97",
+      "37ba00eb866ed49726dc31798ed452ec58c14ea6e992d746b728a2e2ef9de275",
+      "37cc4f50599432929de11c5ebdb3a154b771671ed152e53937958880553ca827",
+      "39dce45ee25f4594bdeba99e45e73df5ff80c93fe8f22569d46d95ae698c50e6",
+      "3c56109e34da5e473559e26f2dc9db4b396e79ca1507c3994d10034f629c59d5",
+      "3f7be6ed5880be90a97502273f564456b0a6c95047e8eada87a1b2e9f2783da0",
+      "3fd6429b82030b1eaefacbe7c877e00a274439d921e7e3e017f59a85375b9892",
+      "408e1f561f964e955f338b941895e520d1c75a182c9163fa84ba94bb5c3da6e6",
+      "408eb48982301b89608826633b3d530975fa6621e2dcc77e3d838ee0197dd3ea",
+      "41aee78e09ed33ed838f7432493fd6bd3408eeb8f2c0b37dabf05b2310025f03",
+      "41b479294f819f5838367082581a0d66e6b67acf6521458910fb091709ff46c8",
+      "422001f772cc9d6e6cc5fe0035f2779977d5d99c0ce15857e52db7c92d3dc36f",
+      "424f89ecc158757d5bf225b120466411beac463112334cd133c80524fb218dba",
+      "44d87346d313416611ed55d69d1756a9c7f74241e74af3d9dd440726e986d7c0",
+      "46141cf3a91175430b44f336a837eee38a142b5315a74dce4d13184e9fae1255",
+      "465f8a6d027423b1546cc686728a1d354860e4ce2a8d422a452f98df3c47f7ee",
+      "46decfc8c13d810f4e9e2c52370961a6cff958252a60382a028ff009dcb01979",
+      "48e33502c111394103200a6fbb7d917bc02b9b2441545a230fb0b7fd3785df5e",
+      "48e7841baf1329afdf1a83d8822ec12fa4dee43da138cfadb3c56cb29c7d1b3f",
+      "4a83edc8346a3dc887fded4eb897e06ead2fb169fb4d0cdf0db56bb82c7b5c04",
+      "4c0edc7e602dcb316982d7f82514ca17532e5058285c37474341da421df4045c",
+      "4cc8475949709251fb91ae9fc94863e35b122dcea3670d19257c9b2d9e0cb8bf",
+      "4f41fb87ab2aba36ad13843a5f59258b6c9ba68b039efc7809c059161264ad0d",
+      "541514cc3289190fc5c18ffb4487a15043ffcbf114cb3024c52e709536589c4d",
+      "543b8b0ab442bf00999db644b14a793b4dc3d6749fe1488f462a08904c7637d5",
+      "558754e75fe998fae17fa541e35456d0ce5e64109ecb04d1e675de7919dd5f4c",
+      "55a489f60f785bebe042e99a69ac8ec33c9f17374cc4b766f604cf7079ea09ba",
+      "56658d1e25f21fecb83d4c492a73463138bfc6de152698a434638b2e68a81151",
+      "57bd58bca70f911b3138e5e60d8c38944c940b5849f24a40793c7c613e8b236b",
+      "5acb552f0d2088d12aef1ce3fb4ee9b9fa98bac07ca0206246585841c997a090",
+      "5bc816b252fd71cde92fb177356d2cefb3ee82a7ab977e5a55e696aa59ccef90",
+      "6117c39881680895531a25a5084be1861cf27d3aca43767dea8916685a036113",
+      "641da20e042a0f0fdf83f7452739dc471432d3fa417f410eb2e78f1e3103e645",
+      "642511549b34edb2f5062a9707a1c54548a4d1e0c3248b39c56cbca153708b64",
+      "643a6952838d2ab34963ffd120923f01ce3f5dfe322e26096d812040819ab54f",
+      "64e78f499939ead95af3cabed953edba0e33b2d7285e1831e2019ce23f3e3b20",
+      "65343be047cfdb1d84ca185cd0cc97a65bb1b539724c8f28d9aed3cb82dfdf8f",
+      "66d2e6206d826cbdd4c9dcae16cbfad20231b0f6b403b40fd6029c65793c8c65",
+      "68ee66d364050632821fde5a8265664fedb180baa65b0be0c1bc974cabbf6f94",
+      "692f652f1fb5593a1701284d97fc847ee5bf17793c1f3eb56db552c5ac685b32",
+      "69c9b9eb11ffafa9f3626b67bb5589a038e2c32b4aceb48d276b685ce046a3fa",
+      "69f391d3cad060672fe3833bab95070352b1ebd53c2a4eb6190da3b5815faf14",
+      "6d41e3193b432765cd6f0c40bedbbf16ed550ab3df18c51a8aa11d577ee2eef6",
+      "6df1ab759ee5958cf10e7fd32255a9d0f5429a0040b93d8310dd49d55d71d4b4",
+      "6dff7840fd529baa06c28d8999ab1d74d95cd7736a2e1dfc0e935a9b11e04b09",
+      "6e0bff069a26994c15de2c4888cc54af84882e5495b7fbf66be9ccffec7489f6",
+      "6ec2d9ca0b038e99f14648196d8368fa9edf68aef31062d779b29104af3abe89",
+      "6fa0127b16b56d93d9041da74084ec84fb6a1324eee5b8cdc4588b020f642482",
+      "7143f26c9bc783df57f41e066d0a6b80511666cc8399e4ed76dc2d2a9522f2a8",
+      "778dd0ef727edb74ae90d0612fa91b109f42f9752faba2ca654a4dca12421e5d",
+      "7b3a4be434dccfb19009d4835104a052a8ab64850145a48c625784e821e053ea",
+      "7cfaf77a82f5207ded3b12e24625dd2c20aa163606c13ee93167b75d30ebd0a7",
+      "7d4b0e33b897cbb23651baab55d4dfc75ec8f6bb2cbc284c6c35fa47c4db0b66",
+      "7d59e874faad8548b7ab4658db01e85d8201c9db3169dcb2f98d39e8137d2db6",
+      "801a159d4e717134e22c9b53efac6902bd75058ab5c0bbf2b4a7282f82544393",
+      "80e5bdc5ea02d066098a6a94acbf29868431006e0bfc6f32d600cdbb0a44f972",
+      "811ef0a4d237fcc38f9ba4f37dca35f8ea8f1ef00bdb711d1b90acaa526ce5cf",
+      "81f0890dc4c06155c8736a7e599ec1a070e2cefc161d46ed5a0af6fff6a320cd",
+      "8340083c2e39e6dc1db7aec1729c3568d2126a1786f0c1c553a893af704b3f4f",
+      "8606539037b8ff9d1eb2e8831312cbc667c824e9e5aa2dbb326172446f441e27",
+      "86d458365cfabffae4542ab98b99390f519ec9d831812b530045c412ae6eb5b6",
+      "88219fcbc3939aa0a9b3f98e67eb32936eca0f0c0d0d91fbce8a048c3fb76e16",
+      "88b3c1b2c26371d007713740ef4735fb05069aff2f1bbf90a0d2219978c7237d",
+      "8923c77ba2866bb17480fb2a035b683217abff27b7f455141535dbae54073301",
+      "8d8dcc33d5d22133639eadb7d24ad5c99dd94963b16ae52ffd7a19c9ac2e9e77",
+      "8e30f7f0b678ca1440a94a5be416bed9ae5aff7f0f2e08d4bbe28af2c8eb8660",
+      "8e8f60fd420fc03859cd0d134e8cfdef5b871f71e11615af22592bf8dca25fd2",
+      "925862b2baa67d33390fe4ff7ce6f58c425201ac0346fb9b86fe59d5c2c43af3",
+      "928815242aa5ba0324f6e969a67cade023388decfd6c9a7a4018090db7e0a70d",
+      "94ebd763dcd39a858748d1433854f7d472b1dd47ddd27043236f83802faaf1ab",
+      "9699d2c03365c8a1cdc0c3b420b16755f2a7cfd581ca7767f751c9f3774d3bea",
+      "98c4101a3208b59712655b250b520bc2b5ecfb5c964f42a473d4c3821f92c5a9",
+      "99ad65f6e92b830f4ab878cf6d6dd49ca28b2be0dcd9e430020c4054dc689357",
+      "9c2299a27df45a50a7d85dfb18366e199d6677a66f6a27476029bd257e0f0097",
+      "9f4a9c50c168dba3e99b9909af817ca426f165ad5da3d66db42653bb339c7dd6",
+      "9fd456e4c617047b95f57dc7ff4482a0550c07308896f7b7ca46a9f4b099385f",
+      "a1646bcc36a7f56c7cf51cb046ee1aef46fc62a9f2c65902a51ca5c62da6e89d",
+      "a50b367ed610583c922b10aa2a6285c5898e1a61f9d0bad360368f6fa2e6a3bd",
+      "a517e77e9f362c6af120cf64f130d026d8064a595ede6c0caa3dc08559b85f56",
+      "a58e08559827da8607c444879530ac0cd1efd51e89ed18862fd4a1f1422a5eae",
+      "a5f034e2b84c10f9d57555984f8a22571fd01b032d7bce6ed6d2c85e46094384",
+      "a662265119e95e01b257a5aefac4b8e1c09725d8e59081b7785522f33b1a150f",
+      "a8926532136f0a2671ba0c15cedb7a768a136990fc14174bf15b15d028605056",
+      "a9b2f6467ee2d778c6f64d2ce59a4166a5d264302173e22340ed0aa04fe1967e",
+      "a9c0a24d692735dfdd4c1c6d8e1caccab301933889a9888af283f9f0c651d0ad",
+      "acfafa8684de4a3df15e5c8f35b30f4cd5d0d999c260788ce00f2d360ef65abb",
+      "ad0788306436e95724980583c810ad112a1a8ef0f048a574059b79a98fa1ddb2",
+      "ad960d6a51af58e1ec09ee05e6df827a7718379cabf0a5529de4b01c122908c0",
+      "ade74944cb0d06d466d8f0d4a1bed8e5e962aa799876f63a50f5aeb88490483a",
+      "af9185dae914df58880df5322474719a501bff277ca024ff84674ff8ed89f13a",
+      "b1e93a025411fed62316e99953d61446f1bc3c205f7d8a746c4d8149c24959ab",
+      "b33c7791cb4cf4d287e8b9d9a70e2e229cb8114ed794f68501cf44116580f134",
+      "b5c8c963b2acd8464124acd189e13ed8f49483faddc0926eb469d0718326a5e4",
+      "bbdc7e24ce9a6f0ef7f63947d46831829531df73e71cb3df4b94deaecdf2962f",
+      "bd567bb5abd082f04d1fbafe0facc8f141345631f99e6cf537d4ff7fb2727d77",
+      "bd7e29bdecff589bd8fbf6ab2e7b67af57866cb82e4ab65f5016c73c9b7c2d78",
+      "c0b14b86c5c9f3276bdce4bc8f6df4c448c22709d7ee70922ebebdd1f70895a3",
+      "c210da2fdd8004ddacdf0502d1bfb3baefbccb055909635a2f974aae5e1832da",
+      "c2224cdf6a64b7303ffc1b2fd76b7a779ef1c01a80c8b83765e26bb0a105c0cd",
+      "c2a4dec225fb2c940ca5465aabd6742b9de9466c2530f069acd06d24852d7a4e",
+      "c5c6c559e5cfdbfe6cbc3b84ce64df6464f9c3eafa13a8fc366381d4d33579b4",
+      "c6e7eeb6f3e89b690205f1066c257fb714d885229ff89ec2798964ca8a167b80",
+      "c747659dbcefcdce3a1cb6b63ead065ceb1beaf7c0a20081d0a1bd885adac634",
+      "c7a8c891431df21d862b1ce626190451e96ab83138455c8dfaeee34a8b4b3db1",
+      "c88f8369aea9bcf3df322a9590ad3bff1bd0950dc0b1b32d514dd34751be5fa2",
+      "c98b8c986c6e46386fb8b1190e1c993fcd71c996e30ff110ed757fb9c56c3e7e",
+      "c9bd3a441486a6207d2109ee12d24e02b0e909f8c2deb709014a2f03f2f32e49",
+      "caa53fc6091c6951887c976e378f6ef89aa6377c55d97b6475422b71ed7e9b17",
+      "cc261d62a24f27da25cfea4b5a78586dc8a3b65dbb37a620d9cb03b34e74fc6e",
+      "cc7c467933f0ddb6f94e869d10d02cec3edcde55eea5bf970d969b067555f870",
+      "cea3dcc425b766bfddf651d9bebe950b7ba129b143e66daa87885f18611d4249",
+      "d3109d5bb1cd529cd9714bad78d164031a90dd9ee395c6bb8fab531ca51994d6",
+      "d4e68bdb73c0ff9160a8dbec971f640a7a0f71145100a6c6c94b187577ae575f",
+      "d55ea4e2a2f3a12868a46b6c527f5b12c982057cb65c055a3481045a32d45267",
+      "d7c450633dfe0aa9be40939c8fc83bcef9adb181b182be73c925e783bfb7919b",
+      "d8478e37ce19c690cf657381e68fe600e4e1a042536830f06847e03e554c4b01",
+      "d97522fa422f3c24dca6d3eefbfb17ae3a38c87c040f2f6f5aa0c07a2a8431e7",
+      "d99aca784642d0f35b459eb062a39ff4bc3d2083338a7d5e5c16c29f5bbdd490",
+      "dc606ccb14acad5bab0a0137e87551c4ad6596a62d10f3138edb4ad29d481b94",
+      "dfc41f014f87246a9846f3b342eeaed21d20bf11baf2f87a81d7821a38cac8fa",
+      "e4c03634bfb8140aecc38eb87125e1e94a91a5438c25eb3e63fe2a05f9c7e54d",
+      "e4f8c8383ec5c82535da991f0a0145988401201e907116238ed23fc2b1cc37e4",
+      "e51966d3698bf7c9f003f1790789b779e670661ebb1f5b5ba218fda3e8252347",
+      "e5afdcc630ef0042d6fa93524d3a4678d59c08caefee0c55fe23e171849028fb",
+      "e5c7e6d559ad25adbc66daeca7e9d97bbdd5d8acbb021a455b27b4033f79fffb",
+      "e78ba5c40fdf78415e08e8ba759b5cacb0d0faeeb18e7b09f9b8df528a4c73e5",
+      "e8433949434fac5388dc75b261578ca2b524c17a35e9ef82a0a47697631ada76",
+      "e9c0c998e32ce0bae781698dfd6b72f69700a0aa0fdf9789b353d0bf97ef5472",
+      "ed64b83902b2286301143cd2c33a19d53ff58d4fca1375cebc29f6809cba4a6a",
+      "ee933126a9d74ff47614a41f571450e639748da2a6846260b4c20c17c3b0261d",
+      "ee93335f03d59890da917b364ea905a77ce1cbf36c8d43da48b7adb56e5ec64e",
+      "f212b7695b9190ed1ad9923cd405aad439d0578948a4f9e588ea799be26ddfbd",
+      "f2b90985d0bb905d7bfbeaea84eedcda5b8a6817ed8b2cfcf528443c31fc5af9",
+      "f3da57309d1d966d9971c67f348d56984b49c68a15098199e21c2ad27128604a",
+      "f5dba49351500b1b9b4bb8e8e613057d5e6f0bbf56b5ef24fae5a11e1964a405",
+      "f7641df15120ad6895f93430d5d7a2272dcb500239d5e623fec4c2692215f34f",
+      "f817e14d535a6b31e838bbb33d78c09a7e38434dc6f9651a55808422ee81ab00",
+      "f834cba03d07ba6c65cae4098b39ba601ec20accabc439b6793df0a0319c4f02",
+      "fe7ae1eef13e8ecf01f2838afd1925d1c8470a10594ae7f2d352a24f548ad7a6",
+      "fffd61fb8c91526508ba37101764ee9d7822ab67795bfcab2f410585195c6349"
+    ]
+  }
+}

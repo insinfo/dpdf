@@ -288,7 +288,7 @@ class CraftPdfTokenizer {
     seek(0);
     final str = await readString(1024);
     final idx = str.indexOf('%PDF-');
-    if (idx != 0) {
+    if (idx != 0 || str.length < 8) {
       throw IoException(CraftIoExceptionMessageConstant.pdfHeaderNotFound);
     }
     return str.substring(idx + 1, idx + 8);
@@ -304,23 +304,27 @@ class CraftPdfTokenizer {
     }
   }
 
-  /// Gets the position of startxref.
+  /// Finds the newest marker directly in bytes, including the first block.
   Future<int> getStartxref() async {
-    const arrLength = 1024;
-    final fileLength = await _file.length();
-    var pos = fileLength - arrLength;
-    if (pos < 1) {
-      pos = 1;
-    }
-    while (pos > 0) {
-      seek(pos);
-      final str = await readString(arrLength);
-      final idx = str.lastIndexOf('startxref');
-      if (idx >= 0) {
-        return pos + idx;
+    final input = _file.createView();
+    const marker = <int>[115, 116, 97, 114, 116, 120, 114, 101, 102];
+    var end = input.length();
+    while (end > 0) {
+      final start = end > 65536 ? end - 65536 : 0;
+      final bytes = Uint8List(end - start);
+      input.seek(start);
+      input.readFully(bytes);
+      for (var offset = bytes.length - marker.length; offset >= 0; offset--) {
+        if (bytes[offset] != marker[0]) continue;
+        var index = 1;
+        while (
+            index < marker.length && bytes[offset + index] == marker[index]) {
+          index++;
+        }
+        if (index == marker.length) return start + offset;
       }
-      // 9 = "startxref".length
-      pos = pos - arrLength + 9;
+      if (start == 0) break;
+      end = start + marker.length - 1;
     }
     throw IoException(CraftIoExceptionMessageConstant.pdfStartxrefNotFound);
   }

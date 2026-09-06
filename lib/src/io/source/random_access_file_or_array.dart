@@ -1,19 +1,40 @@
 import '../../platform/int64.dart';
+import 'pdf_byte_source.dart';
 import 'dart:typed_data';
 import '../../platform/io.dart';
 
 class CraftRandomAccessFileOrArray {
-  final Uint8List _data;
+  final PdfByteSource _source;
+  final bool _ownsSource;
   int _position = 0;
   int? _back;
 
-  CraftRandomAccessFileOrArray(Uint8List data) : _data = data;
+  CraftRandomAccessFileOrArray(Uint8List data)
+      : _source = PdfMemorySource(data),
+        _ownsSource = true;
+
+  CraftRandomAccessFileOrArray.fromSource(this._source,
+      {bool ownsSource = true})
+      : _ownsSource = ownsSource;
 
   factory CraftRandomAccessFileOrArray.fromFile(File file) {
     return CraftRandomAccessFileOrArray(file.readAsBytesSync());
   }
 
-  Uint8List getBytes() => _data;
+  /// Explicit materialization. Streaming reader paths use positional reads.
+  Uint8List getBytes() {
+    if (_source is PdfMemorySource) return _source.bytes;
+    final bytes = Uint8List(_source.length);
+    var offset = 0;
+    while (offset < bytes.length) {
+      final count =
+          _source.readInto(offset, bytes, offset, bytes.length - offset);
+      if (count <= 0)
+        throw FormatException('Input ended while materializing bytes.');
+      offset += count;
+    }
+    return bytes;
+  }
 
   void readFully(Uint8List bytes) {
     readFullyInto(bytes, 0, bytes.length);
@@ -43,15 +64,18 @@ class CraftRandomAccessFileOrArray {
     }
 
     if (len > 0) {
-      int remaining = _data.length - _position;
+      int remaining = _source.length - _position;
       int toRead = len < remaining ? len : remaining;
       if (toRead <= 0) return count == 0 ? -1 : count;
 
-      for (int i = 0; i < toRead; i++) {
-        buffer[offset + i] = _data[_position + i];
-      }
-      _position += toRead;
-      count += toRead;
+      final target = buffer is Uint8List ? buffer : Uint8List(toRead);
+      final received = _source.readInto(
+          _position, target, buffer is Uint8List ? offset : 0, toRead);
+      if (received <= 0) return count == 0 ? -1 : count;
+      if (buffer is! Uint8List)
+        buffer.setRange(offset, offset + received, target);
+      _position += received;
+      count += received;
     }
     return count;
   }
@@ -65,7 +89,7 @@ class CraftRandomAccessFileOrArray {
     return count;
   }
 
-  int length() => _data.length;
+  int length() => _source.length;
 
   void seek(int pos) {
     _position = pos;
@@ -86,8 +110,8 @@ class CraftRandomAccessFileOrArray {
       _back = null;
       return b;
     }
-    if (_position >= _data.length) return -1;
-    return _data[_position++];
+    if (_position >= _source.length) return -1;
+    return _source.byteAt(_position++);
   }
 
   int readByte() {
@@ -119,15 +143,15 @@ class CraftRandomAccessFileOrArray {
 
   void skipBytes(int n) {
     if (n <= 0) return;
-    int remaining = _data.length - _position;
+    int remaining = _source.length - _position;
     if (n > remaining) n = remaining;
     _position += n;
     _back = null;
   }
 
   String readString(int length, String encoding) {
-    List<int> buf = List.filled(length, 0);
-    readFully(Uint8List.fromList(buf)); // Wait, readFully takes Uint8List
+    final buf = Uint8List(length);
+    readFully(buf); // Wait, readFully takes Uint8List
     // Or just readBuffer
     // readBuffer(buf);
     // Actually I can just read bytes.
@@ -170,12 +194,12 @@ class CraftRandomAccessFileOrArray {
 
   int peek() {
     if (_back != null) return _back!;
-    if (_position >= _data.length) return -1;
-    return _data[_position];
+    if (_position >= _source.length) return -1;
+    return _source.byteAt(_position);
   }
 
   CraftRandomAccessFileOrArray createView() {
-    return CraftRandomAccessFileOrArray(_data);
+    return CraftRandomAccessFileOrArray.fromSource(_source, ownsSource: false);
   }
 
   String? readLine() {
@@ -215,7 +239,7 @@ class CraftRandomAccessFileOrArray {
   }
 
   void close() {
-    // No-op
+    if (_ownsSource) _source.close();
   }
 
   int readUnsignedShortLE() {

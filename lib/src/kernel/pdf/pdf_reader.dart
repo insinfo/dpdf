@@ -2,6 +2,8 @@ import '../../platform/io.dart';
 import 'dart:typed_data';
 
 import '../../io/source/random_access_file_or_array.dart';
+import '../../io/source/pdf_byte_source.dart';
+import '../../io/source/pdf_file_source.dart';
 import '../../io/source/pdf_tokenizer.dart';
 import '../exceptions/pdf_exception.dart';
 import '../exceptions/kernel_exception_message_constant.dart';
@@ -34,6 +36,10 @@ class CraftPdfReader {
   bool _rebuiltXref = false;
   bool _xrefStm = false;
   bool _encrypted = false;
+  bool _recovering = false;
+  int _objectDepth = 0;
+  final Map<int, int> _recoveredStreamLengths = {};
+  int _recoveryBoundaryStart = 0;
   CraftReaderProperties properties;
   CraftPdfEncryption? _encryption;
 
@@ -41,8 +47,21 @@ class CraftPdfReader {
       : _tokens = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes)),
         properties = properties ?? CraftReaderProperties();
 
+  CraftPdfReader.fromSource(PdfByteSource source,
+      [CraftReaderProperties? properties])
+      : _tokens =
+            CraftPdfTokenizer(CraftRandomAccessFileOrArray.fromSource(source)),
+        properties = properties ?? CraftReaderProperties();
+
   static Future<CraftPdfReader> fromFile(String path,
       [CraftReaderProperties? properties]) async {
+    if (properties?.readFileInBlocks == true) {
+      return CraftPdfReader.fromSource(
+          PdfFileSource.open(path,
+              blockSize: properties!.fileBlockSize,
+              maxBlocks: properties.fileCacheBlocks),
+          properties);
+    }
     final file = File(path);
     final bytes = await file.readAsBytes();
     return CraftPdfReader.fromBytes(bytes, properties);
@@ -86,9 +105,261 @@ class CraftPdfReader {
 
   Future<void> read() async {
     await _readHeader();
-    await _readXref();
+    try {
+      await _readXref();
+    } on Exception {
+      if (properties.recoveryMode == PdfRecoveryMode.strict) rethrow;
+      _recovering = true;
+      try {
+        await _recoverCrossReferences();
+      } finally {
+        _recovering = false;
+      }
+    }
     _xref.markReadingCompleted();
     await _checkEncryption();
+  }
+
+  /// Reconstructs physical objects and indexes unencrypted object streams.
+  /// A missing stream length requires a delimiter heuristic: an embedded
+  /// endstream/endobj pair is inherently ambiguous in a damaged PDF.
+  Future<void> _recoverCrossReferences() async {
+    final file = _tokens.getSafeFile();
+    if (properties.recoveryScanLimit <= 0 ||
+        file.length() > properties.recoveryScanLimit ||
+        properties.recoveryObjectLimit <= 0) {
+      throw FormatException('PDF recovery exceeds its configured scan limits.');
+    }
+    _recoveredStreamLengths.clear();
+    _xref.clearAllReferences();
+    _trailer = null;
+    _xrefStm = false;
+    _tokens.seek(0);
+    // Consume the header comment so the first object never receives offset zero.
+    await _tokens.nextToken();
+    int? trailerPosition;
+    int? catalogNumber;
+    final objectStreams = <(int, int)>[];
+    final definitionOffsets = <int, int>{};
+    var recovered = 0;
+    while (_tokens.getPosition() < file.length()) {
+      final position = _tokens.getPosition();
+      await _tokens.nextValidToken();
+      if (_tokens.getTokenType() == TokenType.endOfFile) break;
+      if (_tokens.getTokenType() == TokenType.other &&
+          _tokens.getStringValue() == 'trailer') {
+        trailerPosition = _tokens.getPosition();
+        await _tokens.nextValidToken();
+        if (_tokens.getTokenType() != TokenType.startDic) {
+          throw FormatException('Recovery found a malformed trailer.');
+        }
+        await _readDictionary();
+        continue;
+      }
+      if (_tokens.getTokenType() != TokenType.obj) continue;
+      final number = _tokens.getObjNr();
+      final generation = _tokens.getGenNr();
+      if (number <= 0 ||
+          number > properties.recoveryObjectLimit ||
+          generation < 0 ||
+          generation > 65535 ||
+          ++recovered > properties.recoveryObjectLimit) {
+        throw FormatException(
+            'Recovery object identifier or count is invalid.');
+      }
+      definitionOffsets[number] = position;
+      _xref.add(CraftPdfIndirectReference(number, generation)
+        ..setOffset(position)
+        ..setReader(this)
+        ..setDocument(document));
+      final dictionaryPosition = _tokens.getPosition();
+      await _tokens.nextValidToken();
+      if (_tokens.getTokenType() != TokenType.startDic) continue;
+      final dictionary = await _readDictionary();
+      final type = await dictionary.get(CraftPdfName.type, false);
+      if (type == CraftPdfName.catalog) catalogNumber = number;
+      if (type == CraftPdfName.objStm) objectStreams.add((number, position));
+      if (type == CraftPdfName.xref) trailerPosition = dictionaryPosition;
+      final afterDictionary = _tokens.getPosition();
+      await _tokens.nextValidToken();
+      if (_tokens.getTokenType() == TokenType.other &&
+          _tokens.getStringValue() == 'stream') {
+        var dataStart = _tokens.getPosition();
+        file.seek(dataStart);
+        final first = file.read();
+        if (first == 13) {
+          if (file.read() != 10) file.seek(file.getPosition() - 1);
+        } else if (first != 10) {
+          throw FormatException('Recovery stream has no line separator.');
+        }
+        dataStart = file.getPosition();
+        final length = await dictionary.get(CraftPdfName.length, false);
+        int? end;
+        if (properties.recoveryMode == PdfRecoveryMode.skipStreams &&
+            length is CraftPdfNumber &&
+            length.intValue() >= 0) {
+          final candidate = dataStart + length.intValue();
+          if (candidate < file.length()) end = _recoveryStreamEnd(candidate);
+        }
+        if (end == null) {
+          for (var candidate = dataStart;
+              candidate < file.length();
+              candidate++) {
+            file.seek(candidate);
+            if (file.read() != 101) continue;
+            end = _recoveryStreamEnd(candidate, exact: true);
+            if (end != null) break;
+          }
+        }
+        if (end == null) {
+          throw FormatException(
+              'Recovery could not locate the stream boundary.');
+        }
+        _recoveredStreamLengths[dataStart] = _recoveryBoundaryStart - dataStart;
+        _tokens.seek(end);
+      } else {
+        _tokens.seek(afterDictionary);
+      }
+    }
+    if (recovered == 0) throw FormatException('Recovery found no PDF objects.');
+    if (trailerPosition != null) {
+      _tokens.seek(trailerPosition);
+      await _tokens.nextValidToken();
+      _trailer = await _readDictionary();
+    } else {
+      _trailer = CraftPdfDictionary();
+    }
+    final encryption = await _trailer!.get(CraftPdfName.encrypt, false);
+    if (encryption != null && encryption is! CraftPdfNull) {
+      throw UnsupportedError(
+          'Cross-reference recovery of encrypted PDFs is not supported.');
+    }
+    final compressedNumbers = <int>[];
+    for (final (streamNumber, physicalOffset) in objectStreams) {
+      if (definitionOffsets[streamNumber] != physicalOffset) continue;
+      final stream = await readObject(streamNumber);
+      if (stream is! CraftPdfStream) {
+        throw FormatException('Recovered object stream is not a stream.');
+      }
+      final decoded = await stream.getBytes();
+      final first = await stream.integerEntry(CraftPdfName.first);
+      final count = await stream.integerEntry(CraftPdfName.n);
+      if (decoded == null ||
+          first == null ||
+          count == null ||
+          first < 0 ||
+          first > decoded.length ||
+          count < 0 ||
+          count > properties.recoveryObjectLimit ||
+          decoded.length >
+              (properties.memoryLimit ?? properties.recoveryScanLimit)) {
+        throw FormatException(
+            'Recovered object stream exceeds its structural limits.');
+      }
+      final header = CraftPdfTokenizer(CraftRandomAccessFileOrArray(decoded));
+      final seen = <int>{};
+      for (var index = 0; index < count; index++) {
+        await header.nextToken();
+        if (header.getTokenType() != TokenType.number) {
+          throw FormatException(
+              'Object stream header requires an object identifier.');
+        }
+        final number = header.getIntValue();
+        await header.nextToken();
+        if (header.getTokenType() != TokenType.number) {
+          throw FormatException(
+              'Object stream header requires a relative offset.');
+        }
+        final offset = header.getIntValue();
+        if (number <= 0 ||
+            number > properties.recoveryObjectLimit ||
+            number == streamNumber ||
+            ++recovered > properties.recoveryObjectLimit ||
+            !seen.add(number) ||
+            offset < 0 ||
+            first + offset >= decoded.length ||
+            header.getPosition() > first) {
+          throw FormatException(
+              'Object stream header contains an invalid entry.');
+        }
+        if ((definitionOffsets[number] ?? -1) > physicalOffset) continue;
+        definitionOffsets[number] = physicalOffset;
+        _xref.add(CraftPdfIndirectReference(number, 0)
+          ..setObjStreamNumber(streamNumber)
+          ..setIndex(index)
+          ..setReader(this)
+          ..setDocument(document));
+        compressedNumbers.add(number);
+      }
+      await header.close();
+    }
+    // Re-read trailer references now that compressed targets are indexed.
+    if (trailerPosition != null) {
+      _tokens.seek(trailerPosition);
+      await _tokens.nextValidToken();
+      _trailer = await _readDictionary();
+    }
+    if (await rootCatalog() == null) {
+      for (final number in compressedNumbers.reversed) {
+        final object = await readObject(number);
+        if (object is CraftPdfDictionary &&
+            await object.get(CraftPdfName.type, false) ==
+                CraftPdfName.catalog) {
+          catalogNumber = number;
+          break;
+        }
+      }
+    }
+    if (await rootCatalog() == null && catalogNumber != null) {
+      final reference = _xref.get(catalogNumber)!;
+      final object = await readObject(catalogNumber);
+      if (object is CraftPdfDictionary &&
+          await object.get(CraftPdfName.type, false) == CraftPdfName.catalog) {
+        _trailer!.put(CraftPdfName.root, reference);
+      }
+    }
+    if (await rootCatalog() == null) {
+      throw FormatException('Recovery could not locate a usable PDF catalog.');
+    }
+    _trailer!.put(CraftPdfName.size, CraftPdfNumber(_xref.size().toDouble()));
+    _lastXref = 0;
+    _rebuiltXref = true;
+  }
+
+  int? _recoveryStreamEnd(int position, {bool exact = false}) {
+    final file = _tokens.getSafeFile();
+    bool whitespace(int byte) => const [0, 9, 10, 12, 13, 32].contains(byte);
+    file.seek(position);
+    if (!exact) {
+      while (file.getPosition() < file.length()) {
+        final byte = file.read();
+        if (!whitespace(byte)) {
+          file.seek(file.getPosition() - 1);
+          break;
+        }
+      }
+    } else if (position > 0) {
+      file.seek(position - 1);
+      if (!whitespace(file.read())) return null;
+    }
+    final boundary = file.getPosition();
+    for (final byte in 'endstream'.codeUnits) {
+      if (file.read() != byte) return null;
+    }
+    var next = file.read();
+    if (!whitespace(next)) return null;
+    while (whitespace(next)) {
+      next = file.read();
+    }
+    if (next != 101) return null;
+    for (final byte in 'ndobj'.codeUnits) {
+      if (file.read() != byte) return null;
+    }
+    final end = file.getPosition();
+    next = file.read();
+    if (next != -1 && !whitespace(next) && next != 37) return null;
+    _recoveryBoundaryStart = boundary;
+    return end;
   }
 
   Future<void> _readHeader() async {
@@ -108,6 +379,7 @@ class CraftPdfReader {
           .pdfStartxrefIsNotFollowedByANumber);
     }
     _lastXref = _tokens.getIntValue();
+    _validateXrefPosition(_lastXref);
     _tokens.seek(_lastXref);
 
     // Track visited xref positions to prevent infinite loops (cyclic references)
@@ -115,8 +387,7 @@ class CraftPdfReader {
 
     try {
       await _readXrefSectionWithCycleCheck(_lastXref, visitedXrefPositions);
-    } catch (e) {
-      _rebuiltXref = true;
+    } on Exception catch (e) {
       throw CraftPdfException('Failed to read xref: $e');
     }
   }
@@ -124,6 +395,7 @@ class CraftPdfReader {
   /// Reads xref section with cycle detection to prevent infinite loops
   Future<void> _readXrefSectionWithCycleCheck(
       int position, Set<int> visitedPositions) async {
+    _validateXrefPosition(position);
     // Check for cyclic reference
     if (visitedPositions.contains(position)) {
       return; // Cyclic reference detected, stop recursion
@@ -144,7 +416,15 @@ class CraftPdfReader {
     }
   }
 
+  void _validateXrefPosition(int position) {
+    if (position < 0 || position >= _tokens.getSafeFile().length()) {
+      throw FormatException(
+          'Cross-reference offset lies outside the PDF bytes: $position');
+    }
+  }
+
   Future<void> _readXrefSection([int? position]) async {
+    _validateXrefPosition(position ?? _lastXref);
     _tokens.seek(position ?? _lastXref);
     if (!await _tokens.nextToken()) {
       throw CraftPdfException(
@@ -190,7 +470,9 @@ class CraftPdfReader {
         final entryType = _tokens.getStringValue();
         final existing = _xref.get(objNr);
         if (existing != null &&
-            (existing.getOffset() > 0 || existing.isFree())) {
+            (existing.getOffset() > 0 ||
+                existing.getObjStreamNumber() > 0 ||
+                existing.isFree())) {
           continue;
         }
         final ref = CraftPdfIndirectReference(objNr, gen);
@@ -247,7 +529,9 @@ class CraftPdfReader {
         final entryType = _tokens.getStringValue();
         final existing = _xref.get(objNr);
         if (existing != null &&
-            (existing.getOffset() > 0 || existing.isFree())) {
+            (existing.getOffset() > 0 ||
+                existing.getObjStreamNumber() > 0 ||
+                existing.isFree())) {
           continue;
         }
         final ref = CraftPdfIndirectReference(objNr, gen);
@@ -258,8 +542,13 @@ class CraftPdfReader {
       }
     }
     await _tokens.nextValidToken();
-    _trailer = await _readDictionary();
-    final prev = await _trailer!.integerEntry(CraftPdfName.prev);
+    final sectionTrailer = await _readDictionary();
+    if (_trailer == null) {
+      _trailer = sectionTrailer;
+    } else {
+      await _trailer!.mergeDifferent(sectionTrailer);
+    }
+    final prev = await sectionTrailer.integerEntry(CraftPdfName.prev);
     if (prev != null) {
       await _readXrefSectionWithCycleCheck(prev, visitedPositions);
     }
@@ -269,7 +558,11 @@ class CraftPdfReader {
     await _tokens.nextValidToken();
     await _tokens.nextValidToken();
     final streamDict = await _readDictionary();
-    _trailer = streamDict;
+    if (_trailer == null) {
+      _trailer = streamDict;
+    } else {
+      await _trailer!.mergeDifferent(streamDict);
+    }
     final size = await streamDict.integerEntry(CraftPdfName.size);
     final wArray = await streamDict.arrayEntry(CraftPdfName.w);
     final w1 = (await wArray!.numberEntry(0))?.intValue() ?? 0;
@@ -310,7 +603,9 @@ class CraftPdfReader {
         byteOffset += w3;
         final existing = _xref.get(objNum);
         if (existing != null &&
-            (existing.getOffset() > 0 || existing.isFree())) {
+            (existing.getOffset() > 0 ||
+                existing.getObjStreamNumber() > 0 ||
+                existing.isFree())) {
           continue;
         }
         final ref = CraftPdfIndirectReference(objNum);
@@ -333,6 +628,7 @@ class CraftPdfReader {
     }
     final prev = await streamDict.integerEntry(CraftPdfName.prev);
     if (prev != null) {
+      _validateXrefPosition(prev);
       _tokens.seek(prev);
       await _readXrefSection();
     }
@@ -343,7 +639,11 @@ class CraftPdfReader {
     await _tokens.nextValidToken();
     await _tokens.nextValidToken();
     final streamDict = await _readDictionary();
-    _trailer = streamDict;
+    if (_trailer == null) {
+      _trailer = streamDict;
+    } else {
+      await _trailer!.mergeDifferent(streamDict);
+    }
     final size = await streamDict.integerEntry(CraftPdfName.size);
     final wArray = await streamDict.arrayEntry(CraftPdfName.w);
     final w1 = (await wArray!.numberEntry(0))?.intValue() ?? 0;
@@ -385,7 +685,9 @@ class CraftPdfReader {
         byteOffset += w3;
         final existing = _xref.get(objNum);
         if (existing != null &&
-            (existing.getOffset() > 0 || existing.isFree())) {
+            (existing.getOffset() > 0 ||
+                existing.getObjStreamNumber() > 0 ||
+                existing.isFree())) {
           continue;
         }
         final ref = CraftPdfIndirectReference(objNum);
@@ -447,6 +749,10 @@ class CraftPdfReader {
     while (true) {
       await tokens.nextValidToken();
       if (tokens.getTokenType() == TokenType.endDic) break;
+      if (tokens.getTokenType() != TokenType.name) {
+        throw FormatException(
+            'PDF dictionary requires a name key and a closing delimiter.');
+      }
       final key = CraftPdfName.fromBytes(tokens.getByteContent());
       await tokens.nextValidToken();
       dict.put(key, await _readObject(tokenizer: tokens));
@@ -460,12 +766,28 @@ class CraftPdfReader {
     while (true) {
       await tokens.nextValidToken();
       if (tokens.getTokenType() == TokenType.endArray) break;
+      if (tokens.getTokenType() == TokenType.endOfFile) {
+        throw FormatException('PDF array has no closing delimiter.');
+      }
       arr.add(await _readObject(tokenizer: tokens));
     }
     return arr;
   }
 
   Future<CraftPdfObject> _readObject({CraftPdfTokenizer? tokenizer}) async {
+    if (_objectDepth >= 128) {
+      throw FormatException('PDF object nesting exceeds the supported depth.');
+    }
+    _objectDepth++;
+    try {
+      return await _readObjectValue(tokenizer: tokenizer);
+    } finally {
+      _objectDepth--;
+    }
+  }
+
+  Future<CraftPdfObject> _readObjectValue(
+      {CraftPdfTokenizer? tokenizer}) async {
     final tokens = tokenizer ?? _tokens;
     switch (tokens.getTokenType()) {
       case TokenType.startDic:
@@ -490,8 +812,14 @@ class CraftPdfReader {
         return CraftPdfName.fromBytes(tokens.getByteContent());
       case TokenType.ref:
         final objNr = tokens.getObjNr();
+        if (objNr < 0 ||
+            (_recovering && objNr > properties.recoveryObjectLimit)) {
+          throw FormatException(
+              'PDF reference identifier exceeds recovery limits.');
+        }
         var ref = _xref.get(objNr);
-        if (ref != null && ref.isFree()) {
+        if (ref != null &&
+            (ref.isFree() || ref.generationNumber() != tokens.getGenNr())) {
           _logger.logWarning(CraftIoLogMessageConstant.invalidIndirectReference
               .replaceAll("{0}", objNr.toString())
               .replaceAll("{1}", tokens.getGenNr().toString()));
@@ -518,12 +846,6 @@ class CraftPdfReader {
   Future<CraftPdfStream> _readStream(CraftPdfDictionary dict,
       {CraftPdfTokenizer? tokenizer}) async {
     final tokens = tokenizer ?? _tokens;
-    final lengthObj = await dict.numberEntry(CraftPdfName.length);
-    if (lengthObj == null) {
-      throw CraftPdfException("Stream length not found");
-    }
-    int length = lengthObj.intValue();
-
     var ch = await tokens.read();
     if (ch == 0x0D) {
       ch = await tokens.read();
@@ -531,6 +853,21 @@ class CraftPdfReader {
     } else if (ch != 0x0A) {
       tokens.backOnePosition(ch);
     }
+
+    final dataPosition = tokens.getPosition();
+    final repairedLength = identical(tokens, _tokens)
+        ? _recoveredStreamLengths[dataPosition]
+        : null;
+    final length = repairedLength ??
+        (await dict.numberEntry(CraftPdfName.length))?.intValue();
+    if (length == null) throw CraftPdfException('Stream length not found');
+    if (length < 0 || length > tokens.getSafeFile().length() - dataPosition) {
+      throw FormatException('Stream length exceeds the available PDF data.');
+    }
+    if (repairedLength != null) {
+      dict.put(CraftPdfName.length, CraftPdfNumber(length.toDouble()));
+    }
+    tokens.seek(dataPosition);
 
     final bytes = Uint8List(length);
     for (int i = 0; i < length; i++) {
@@ -559,13 +896,28 @@ class CraftPdfReader {
       if (streamRef != null) {
         final streamObj = await readObject(streamRef.objNr);
         if (streamObj is CraftPdfStream) {
-          return await _readObjectFromStream(streamObj, ref);
+          final object = await _readObjectFromStream(streamObj, ref);
+          if (object != null) {
+            ref.setDocument(document);
+            ref.setReader(this);
+            ref.assignTargetObject(object);
+            object.setIndirectReference(ref);
+          }
+          return object;
         }
       }
     }
 
+    if (ref.getOffset() <= 0) return null;
+    _validateXrefPosition(ref.getOffset());
     _tokens.seek(ref.getOffset());
     await _tokens.nextValidToken();
+    if (_tokens.getTokenType() != TokenType.obj ||
+        _tokens.getObjNr() != objNr ||
+        _tokens.getGenNr() != ref.generationNumber()) {
+      throw FormatException(
+          'Cross-reference entry does not match its object header.');
+    }
     await _tokens.nextValidToken();
     final obj = await _readObject();
 

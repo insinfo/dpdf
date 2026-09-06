@@ -91,53 +91,43 @@ class CraftPdfDate {
     return sb.toString();
   }
 
-  /// Decodes a PDF date string to DateTime.
-  static DateTime decode(String s) {
-    if (s.startsWith('D:')) {
-      s = s.substring(2);
+  /// Explicit offsets are returned as UTC instants. An absent timezone keeps
+  /// local-time semantics because the input does not identify a UTC offset.
+  static DateTime decode(String value) {
+    final match = RegExp(
+            r"^(?:D:)?([0-9]{4})((?:[0-9]{2}){0,5})(Z(?:00'00'?)?|[+-][0-9]{2}(?:'?[0-9]{2}'?)?)?$")
+        .firstMatch(value);
+    if (match == null) throw FormatException('Malformed PDF date.', value);
+    final year = int.parse(match.group(1)!);
+    final fields = match.group(2)!;
+    int field(int index, int fallback) => fields.length >= (index + 1) * 2
+        ? int.parse(fields.substring(index * 2, index * 2 + 2))
+        : fallback;
+    final month = field(0, 1),
+        day = field(1, 1),
+        hour = field(2, 0),
+        minute = field(3, 0),
+        second = field(4, 0);
+    final wall = DateTime.utc(year, month, day, hour, minute, second);
+    if (wall.year != year ||
+        wall.month != month ||
+        wall.day != day ||
+        wall.hour != hour ||
+        wall.minute != minute ||
+        wall.second != second) {
+      throw FormatException('PDF date contains an out-of-range field.', value);
     }
-
-    int year = int.parse(s.substring(0, 4));
-    int month = 1, day = 1, hour = 0, minute = 0, second = 0;
-    int offsetHour = 0, offsetMinute = 0;
-    String? variation;
-
-    if (s.length >= 6) {
-      month = int.parse(s.substring(4, 6));
-      if (s.length >= 8) {
-        day = int.parse(s.substring(6, 8));
-        if (s.length >= 10) {
-          hour = int.parse(s.substring(8, 10));
-          if (s.length >= 12) {
-            minute = int.parse(s.substring(10, 12));
-            if (s.length >= 14) {
-              second = int.parse(s.substring(12, 14));
-            }
-          }
-        }
-      }
+    final zone = match.group(3);
+    if (zone == null) return DateTime(year, month, day, hour, minute, second);
+    if (zone.startsWith('Z')) return wall;
+    final digits = zone.substring(1).replaceAll("'", '');
+    final hours = int.parse(digits.substring(0, 2));
+    final minutes = digits.length == 4 ? int.parse(digits.substring(2)) : 0;
+    if (hours > 23 || minutes > 59) {
+      throw FormatException('PDF date contains an invalid UTC offset.', value);
     }
-
-    var d = DateTime(year, month, day, hour, minute, second);
-    if (s.length <= 14) return d;
-
-    variation = s[14];
-    if (variation == 'Z') return d.toLocal();
-
-    if (s.length >= 17) {
-      offsetHour = int.parse(s.substring(15, 17));
-      if (s.length >= 20) {
-        offsetMinute = int.parse(s.substring(18, 20));
-      }
-    }
-
-    final offset = Duration(hours: offsetHour, minutes: offsetMinute);
-    if (variation == '-') {
-      d = d.add(offset);
-    } else {
-      d = d.subtract(offset);
-    }
-    return d.toLocal();
+    final offset = Duration(hours: hours, minutes: minutes);
+    return zone.startsWith('-') ? wall.add(offset) : wall.subtract(offset);
   }
 
   static String _generateStringByDateTime(DateTime d) {

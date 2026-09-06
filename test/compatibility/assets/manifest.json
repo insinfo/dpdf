@@ -1,0 +1,31 @@
+{
+  "assets": [
+    {
+      "file": "generated_doc_mdp_allow_signatures.pdf",
+      "sha256": "6239b37a18880f4f4ac3b683dd0bdfbbdbe5b6ca440ebd40aa4a78201268bbaa",
+      "source": "C:/MyDartProjects/insinfo_dart_pdf/test/assets/generated_doc_mdp_allow_signatures.pdf",
+      "generator": "scripts/generate_doc_mdp_allow_signatures_test_pdf.dart",
+      "authorization": "User explicitly authorized copying their synthetic test assets into this project.",
+      "license": "No separate license declaration found; no MIT relicensing asserted.",
+      "content_review": "Synthetic test text only; generated_three_pages contains Contract page 1, Contract page 2, Contract page 3."
+    },
+    {
+      "file": "generated_policy_mandated_timestamp_missing.pdf",
+      "sha256": "ce77db6c4826cf1b4b30a6dad5e2d092ca354641df40cb48121f8b4c424d479b",
+      "source": "C:/MyDartProjects/insinfo_dart_pdf/test/assets/generated_policy_mandated_timestamp_missing.pdf",
+      "generator": "scripts/generate_policy_mandated_timestamp_missing_pdf.dart",
+      "authorization": "User explicitly authorized copying their synthetic test assets into this project.",
+      "license": "No separate license declaration found; no MIT relicensing asserted.",
+      "content_review": "Synthetic test text only; generated_three_pages contains Contract page 1, Contract page 2, Contract page 3."
+    },
+    {
+      "file": "generated_three_pages.pdf",
+      "sha256": "a610deae59bf8ec40a6306afee11d1ff6e2ab67e4b8f4b8f4206deda171e2ff1",
+      "source": "C:/MyDartProjects/insinfo_dart_pdf/test/assets/generated_three_pages.pdf",
+      "generator": null,
+      "authorization": "User explicitly authorized copying their synthetic test assets into this project.",
+      "license": "No separate license declaration found; no MIT relicensing asserted.",
+      "content_review": "Synthetic test text only; generated_three_pages contains Contract page 1, Contract page 2, Contract page 3."
+    }
+  ]
+}

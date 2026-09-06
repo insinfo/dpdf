@@ -6,6 +6,7 @@ import 'package:pdfcraft/src/kernel/pdf/stamping_properties.dart';
 
 import '../kernel/pdf/pdf_document.dart';
 import '../kernel/pdf/pdf_reader.dart';
+import '../kernel/pdf/reader_properties.dart';
 import '../kernel/pdf/pdf_writer.dart';
 import '../kernel/pdf/writer_properties.dart';
 import '../kernel/pdf/pdf_name.dart';
@@ -33,6 +34,10 @@ import '../forms/fields/pdf_form_creator.dart';
 import '../forms/fields/pdf_signature_form_field.dart';
 import 'simple_signature_appearance.dart';
 
+/// Incremental mode preserves previous revisions; fullRewrite creates a new
+/// document revision chain and does not preserve earlier signature integrity.
+enum PdfSigningMode { incremental, fullRewrite }
+
 /// Coordinates signature configuration and its visual representation.
 class CraftPdfSigner {
   CraftPdfDocument? _document;
@@ -56,40 +61,48 @@ class CraftPdfSigner {
   /// @param outputStream the sink to write the signed document to
   /// @param properties properties for the signing document
   CraftPdfSigner(CraftPdfReader reader, IOSink outputStream,
-      {CraftWriterProperties? properties}) {
+      {CraftWriterProperties? properties,
+      PdfRepairedSaveMode repairedSaveMode = PdfRepairedSaveMode.reject,
+      PdfSigningMode mode = PdfSigningMode.incremental}) {
     _originalOS = outputStream;
     properties ??= CraftWriterProperties();
-    _initDocument(reader, properties);
+    _initDocument(reader, properties, repairedSaveMode, mode);
   }
 
   factory CraftPdfSigner.fromBytes(Uint8List bytes, IOSink outputStream,
-      {CraftWriterProperties? properties}) {
-    return CraftPdfSigner(CraftPdfReader.fromBytes(bytes), outputStream,
-        properties: properties);
+      {CraftWriterProperties? properties,
+      CraftReaderProperties? readerProperties,
+      PdfRepairedSaveMode repairedSaveMode = PdfRepairedSaveMode.reject,
+      PdfSigningMode mode = PdfSigningMode.incremental}) {
+    return CraftPdfSigner(
+        CraftPdfReader.fromBytes(bytes, readerProperties), outputStream,
+        properties: properties, repairedSaveMode: repairedSaveMode, mode: mode);
   }
 
   /// Collects a signed revision in memory on VM, JavaScript and WebAssembly.
   factory CraftPdfSigner.fromBytesBuilder(Uint8List bytes, BytesBuilder output,
-      {CraftWriterProperties? properties}) {
+      {CraftWriterProperties? properties,
+      CraftReaderProperties? readerProperties,
+      PdfRepairedSaveMode repairedSaveMode = PdfRepairedSaveMode.reject,
+      PdfSigningMode mode = PdfSigningMode.incremental}) {
     return CraftPdfSigner.fromBytes(bytes, _BytesBuilderSink(output),
-        properties: properties);
+        properties: properties,
+        readerProperties: readerProperties,
+        repairedSaveMode: repairedSaveMode,
+        mode: mode);
   }
 
-  void _initDocument(CraftPdfReader reader, CraftWriterProperties properties) {
+  void _initDocument(CraftPdfReader reader, CraftWriterProperties properties,
+      PdfRepairedSaveMode repairedSaveMode, PdfSigningMode mode) {
     _tempBuilder = BytesBuilder();
-
-    // Copy original bytes
-    // Essential for append mode and correct offset calculations
-    final originalBytes = reader.getOriginalBytes();
-    if (originalBytes != null) {
-      _tempBuilder!.add(originalBytes);
-    }
 
     _tempSink = _BytesBuilderSink(_tempBuilder!);
 
     // Use append mode for signing - essential for multiple signatures
     // Each signature creates a new PDF revision incrementally
-    final stampingProperties = CraftStampingProperties()..useAppendMode();
+    final stampingProperties = CraftStampingProperties()
+      ..repairedSaveMode = repairedSaveMode;
+    if (mode == PdfSigningMode.incremental) stampingProperties.useAppendMode();
 
     _document = CraftPdfDocument(
         reader: reader,

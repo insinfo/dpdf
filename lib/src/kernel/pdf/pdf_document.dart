@@ -87,6 +87,8 @@ class CraftPdfDocument {
 
   /// Stamping properties.
   final CraftStampingProperties? _properties;
+  bool _rewriteAfterRecovery = false;
+  bool get wasRepaired => _reader?.rebuiltXref ?? false;
 
   /// Original document ID.
   CraftPdfString? _originalDocumentId;
@@ -185,7 +187,7 @@ class CraftPdfDocument {
         _catalog!.pdfRepresentation().attachToDocument(this);
         documentDetailsSync().addCreationDate();
       }
-      documentDetailsSync().addModDate();
+      if (_reader == null) documentDetailsSync().addModDate();
 
       // Initialize trailer
       if (_trailer == null) {
@@ -238,6 +240,15 @@ class CraftPdfDocument {
     if (_reader == null) return;
 
     await _reader!.read();
+    if (_writer != null &&
+        _reader!.rebuiltXref &&
+        (_properties?.usesIncrementalRevision() ?? false)) {
+      if (_properties!.repairedSaveMode == PdfRepairedSaveMode.reject) {
+        throw FormatException(
+            'A reconstructed cross-reference table requires an explicit full rewrite before signing or incremental editing.');
+      }
+      _rewriteAfterRecovery = true;
+    }
 
     // Get catalog from reader's trailer
     final catalogDict = await _reader!.rootCatalog();
@@ -256,6 +267,22 @@ class CraftPdfDocument {
 
     // Get trailer from reader
     _trailer = _reader!.trailer;
+
+    // Bind edits to the actual information object, not a constructor-time
+    // placeholder that is absent from the input cross-reference table.
+    if (_writer != null) {
+      final pending = _info?.pdfRepresentation();
+      final stored = await _trailer?.dictionaryEntry(CraftPdfName.info) ??
+          CraftPdfDictionary();
+      if (pending != null && !identical(pending, stored)) {
+        for (final entry in await pending.entrySet()) {
+          stored.put(entry.key, entry.value);
+        }
+      }
+      stored.attachToDocument(this);
+      _info = CraftPdfDocumentInfo(stored)..addModDate();
+      _trailer?.put(CraftPdfName.info, stored);
+    }
 
     // Load Document IDs
     final idArray = await _trailer?.arrayEntry(CraftPdfName.id);
@@ -742,7 +769,8 @@ class CraftPdfDocument {
 
   /// Returns true if the document is opened in append mode.
   bool usesIncrementalRevision() =>
-      _properties?.usesIncrementalRevision() ?? false;
+      !_rewriteAfterRecovery &&
+      (_properties?.usesIncrementalRevision() ?? false);
 
   /// Gets the stamping properties for this document.
   CraftStampingProperties? revisionOptions() => _properties;
@@ -1192,6 +1220,7 @@ class CraftPdfDocument {
     } finally {
       _closed = true;
       _isClosing = false;
+      await _reader?.close();
     }
   }
 
@@ -1263,7 +1292,9 @@ class CraftPdfDocument {
     }
 
     // Write all objects from xref table
-    for (final ref in xrefTable.references) {
+    for (var index = 1; index < xrefTable.size(); index++) {
+      final ref = xrefTable.get(index);
+      if (ref == null) continue;
       if (!ref.isFree() && !ref.checkState(CraftPdfObject.flushed)) {
         final obj = await ref.targetObject();
         if (obj != null) {
@@ -1282,6 +1313,8 @@ class CraftPdfDocument {
 
     // Build trailer
     final trailer = fileTrailer(); // Ensure trailer exists
+    trailer.remove(CraftPdfName.prev);
+    trailer.remove(CraftPdfName.xrefStm);
     // Size is updated below if XRefStream is used
     trailer.put(CraftPdfName.root, catalog.pdfRepresentation());
 
@@ -1335,23 +1368,50 @@ class CraftPdfDocument {
 
     // 1. Write original PDF bytes first - ONLY if writer position is 0
     // (i.e., original bytes haven't been pre-added by PdfSigner)
-    final originalBytes = reader.getOriginalBytes();
-    if (originalBytes != null && writer.getPosition() == 0) {
-      writer.writeBytes(originalBytes);
+    if (writer.getPosition() == 0) {
+      final input = reader.getSafeFile();
+      while (input.getPosition() < input.length()) {
+        final remaining = input.length() - input.getPosition();
+        final chunk = Uint8List(remaining < 262144 ? remaining : 262144);
+        input.readFully(chunk);
+        writer.writeBytes(chunk);
+      }
     }
 
     // 2. Get the previous xref position from the original document
     final prevXref = reader.getLastXrefPosition();
 
-    // 3. Write only MODIFIED objects
-    for (final ref in xrefTable.references) {
-      // Check if info is modified
-      if (_info != null && _info!.pdfRepresentation().hasChanges()) {
-        // Info will be picked up by checking modified refs?
-        // Actually we need to make sure info is flushed if modified.
-        // But for now, simple loop over refs.
-      }
+    // Materialize newly registered font dictionaries before serializing their
+    // references. The append path otherwise writes only /Type /Font, omitting
+    // subtype, encoding and widths populated by the font's flush lifecycle.
+    await writeRegisteredTypefaces();
 
+    // Prepare XMP updates before collecting the revision objects.
+    if (await metadataPayload() != null) {
+      final cat = rootCatalog().pdfRepresentation();
+      var xmpStream = await cat.streamEntry(CraftPdfName.metadata);
+
+      if (xmpStream != null && xmpStream.indirectHandle() != null) {
+        xmpStream.setData(_xmpMetadataBytes!);
+        if (!xmpStream.hasChanges()) {
+          xmpStream.markChanged();
+        }
+      } else {
+        xmpStream = CraftPdfStream();
+        xmpStream.setData(_xmpMetadataBytes!);
+        xmpStream.put(CraftPdfName.type, CraftPdfName.metadata);
+        xmpStream.put(CraftPdfName.subtype, CraftPdfName.xml);
+        xmpStream.attachToDocument(this);
+        cat.put(CraftPdfName.metadata, xmpStream);
+        cat.markChanged();
+      }
+    }
+
+    // Serialization may discover nested streams and allocate new references.
+    // Traverse the live object-number range so those objects enter this revision.
+    for (var index = 1; index < xrefTable.size(); index++) {
+      final ref = xrefTable.get(index);
+      if (ref == null) continue;
       final isNew = ref.inputReader() == null;
       final shouldWrite = !ref.isFree() &&
           !ref.checkState(CraftPdfObject.flushed) &&
@@ -1398,26 +1458,6 @@ class CraftPdfDocument {
     idArray.add(initialDocumentIdentifier());
     idArray.add(revisionIdentifier());
     trailer.put(CraftPdfName.id, idArray);
-
-    // Update XMP Metadata in Append Mode
-    if (await metadataPayload() != null) {
-      final cat = rootCatalog().pdfRepresentation();
-      var xmpStream = await cat.streamEntry(CraftPdfName.metadata);
-
-      if (xmpStream != null && xmpStream.indirectHandle() != null) {
-        xmpStream.setData(_xmpMetadataBytes!);
-        if (!xmpStream.hasChanges()) {
-          xmpStream.markChanged();
-        }
-      } else {
-        xmpStream = CraftPdfStream();
-        xmpStream.setData(_xmpMetadataBytes!);
-        xmpStream.put(CraftPdfName.type, CraftPdfName.metadata);
-        xmpStream.put(CraftPdfName.subtype, CraftPdfName.xml);
-        xmpStream.attachToDocument(this);
-        cat.put(CraftPdfName.metadata, xmpStream);
-      }
-    }
 
     await writer.writeTrailer(trailer, startxref);
     writer.writeEOF();

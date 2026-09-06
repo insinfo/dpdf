@@ -501,6 +501,8 @@ class CraftPdfPKCS7 {
               digestName == 'SHA1')) {
         return false;
       }
+      if (_filterSubtype == CraftPdfName.adbePkcs7Sha1 &&
+          !_legacyContentMatches()) return false;
       if (_encapMessageContent != null) {
         if (!_receivedContent) return false;
         if (_filterSubtype == CraftPdfName.adbePkcs7Sha1) {
@@ -962,6 +964,17 @@ class CraftPdfPKCS7 {
     return ASN1Utils.createSequence(elements);
   }
 
+  bool _legacyContentMatches() {
+    final content = _encapMessageContent;
+    return _receivedContent &&
+        content != null &&
+        content.length == 20 &&
+        _arraysEqual(
+            CraftDigestAlgorithms.digestBytes(
+                _verificationContent.toBytes(), 'SHA1'),
+            content);
+  }
+
   /// Verifies the message digest.
   ///
   /// @return true if the digest matches
@@ -973,8 +986,12 @@ class CraftPdfPKCS7 {
       return false;
     }
 
-    final calculatedDigest =
-        _calculatedContentDigest ??= _currentContentDigest();
+    if (_filterSubtype == CraftPdfName.adbePkcs7Sha1 &&
+        !_legacyContentMatches()) return false;
+    final content = _encapMessageContent;
+    final calculatedDigest = content == null
+        ? (_calculatedContentDigest ??= _currentContentDigest())
+        : CraftDigestAlgorithms.digestBytes(content, getDigestAlgorithmName());
 
     if (calculatedDigest.length != _digestAttr!.length) {
       return false;

@@ -68,7 +68,9 @@ class CraftPdfAcroForm extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   Future<void> addField(CraftPdfFormField field, [CraftPdfPage? page]) async {
     await _addFieldInternal(field);
     if (page != null) {
-      await _defineWidgetPageAndAddToIt(page, field.pdfRepresentation());
+      for (final widget in await field.getWidgets()) {
+        await _defineWidgetPageAndAddToIt(page, widget.pdfRepresentation());
+      }
     }
   }
 

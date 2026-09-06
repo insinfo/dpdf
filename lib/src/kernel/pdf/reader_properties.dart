@@ -1,5 +1,8 @@
 import 'dart:typed_data';
 
+/// Optional recovery when the declared cross-reference sections cannot be read.
+enum PdfRecoveryMode { strict, scan, skipStreams }
+
 /// Properties for configuring PDF document reading.
 ///
 /// Use this class to configure various options when reading PDF documents,
@@ -13,6 +16,18 @@ import 'dart:typed_data';
 ///   .setPassword(utf8.encode('secretPassword'));
 /// ```
 class CraftReaderProperties {
+  /// Opt-in bounded file cache for CraftPdfReader.fromFile on the VM.
+  bool readFileInBlocks = false;
+  int fileBlockSize = 262144;
+  int fileCacheBlocks = 32;
+  PdfRecoveryMode recoveryMode = PdfRecoveryMode.strict;
+
+  /// Maximum input bytes examined by recovery (default 256 MiB).
+  int recoveryScanLimit = 256 * 1024 * 1024;
+
+  /// Bounds object identifiers and recovered object count.
+  int recoveryObjectLimit = 1000000;
+
   /// The password for encrypted documents.
   Uint8List? password;
 
@@ -25,9 +40,15 @@ class CraftReaderProperties {
 
   /// Creates a copy of another ReaderProperties.
   CraftReaderProperties.from(CraftReaderProperties other)
-      : password =
+      : readFileInBlocks = other.readFileInBlocks,
+        fileBlockSize = other.fileBlockSize,
+        fileCacheBlocks = other.fileCacheBlocks,
+        password =
             other.password != null ? Uint8List.fromList(other.password!) : null,
-        memoryLimit = other.memoryLimit;
+        memoryLimit = other.memoryLimit,
+        recoveryMode = other.recoveryMode,
+        recoveryScanLimit = other.recoveryScanLimit,
+        recoveryObjectLimit = other.recoveryObjectLimit;
 
   /// Defines the password for encrypted documents.
   ///

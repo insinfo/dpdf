@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'keystore_smoke.dart' as keystores;
+import 'package:pdfcraft/src/kernel/pdf/pdf_date.dart';
 import 'dart:typed_data';
 
 import 'package:pdfcraft/pdfcraft.dart';
@@ -13,6 +15,17 @@ import 'package:pdfcraft/src/sign/signature_util.dart';
 
 /// Portable integration check. No filesystem or browser DOM is required.
 Future<void> main() async {
+  keystores.main();
+  if (CraftPdfDate.decode("D:20260827143000-03'00'") !=
+      DateTime.utc(2026, 8, 27, 17, 30)) {
+    throw StateError('PDF date lost its declared UTC offset');
+  }
+  final marker = Uint8List(2048)..setRange(0, 9, ascii.encode('startxref'));
+  if (await CraftPdfTokenizer(CraftRandomAccessFileOrArray(marker))
+          .getStartxref() !=
+      0) {
+    throw StateError('Reverse marker search skipped the first bytes');
+  }
   _checkCodecs();
   final text = CraftPdfEncodings.convertToString(
       Uint8List.fromList([0x80, 0xa0]), CraftPdfEncodings.PDF_DOC_ENCODING);
@@ -74,9 +87,47 @@ Future<void> main() async {
       await CraftPdfDocument.open(CraftPdfReader.fromBytes(merged));
   if (combined.pageTotal() != 2) throw StateError('Page assembly failed');
   await combined.close();
+  await _checkCompatibility(edited);
+  await _checkRecoveryAndFlatten(edited);
   await _checkSigning(edited);
   print(
       'PDFCraft $pdfcraftRuntime: codecs, creation, multifont editing, extraction, merge and RSA signing OK');
+}
+
+Future<void> _checkCompatibility(Uint8List input) async {
+  final output = BytesBuilder();
+  final document = CraftPdfDocument(
+      reader: CraftPdfReader.fromBytes(input),
+      writer: CraftPdfWriter.fromBytesBuilder(output),
+      properties: CraftStampingProperties().useAppendMode());
+  await document.load();
+  final page = (await document.pageAt(1))!;
+  final overlay = await PdfPageOverlay.create(page);
+  overlay.beginText();
+  await overlay.setFontAndSize(
+      await CraftPdfFontFactory.createFont('Helvetica'), 12);
+  overlay.moveText(20, 40).showText('WEB OVERLAY').endText();
+  (await document.documentDetails()).setTitle('Revisão 世界');
+  await document.close();
+  final bytes = output.takeBytes();
+  final quick = await PdfQuickInfo.fromBytes(bytes);
+  if (quick.pageCount != 1 || quick.hasDocMdp)
+    throw StateError('Quick inspection failed');
+  final reopened = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+  try {
+    final title = await (await reopened.documentDetails())
+        .pdfRepresentation()
+        .stringEntry(CraftPdfName.title);
+    if (title?.decodeMappingText() != 'Revisão 世界') {
+      throw StateError(
+          'Incremental metadata update was lost: ${title?.decodeMappingText()}');
+    }
+    final text = await PdfTextExtraction.fromPage((await reopened.pageAt(1))!);
+    if (!text.contains('WEB OVERLAY'))
+      throw StateError('Incremental overlay was lost: $text');
+  } finally {
+    await reopened.close();
+  }
 }
 
 void _checkCodecs() {
@@ -187,4 +238,25 @@ Future<void> _checkFormExtraction() async {
   } finally {
     await reopened.close();
   }
+}
+
+Future<void> _checkRecoveryAndFlatten(Uint8List input) async {
+  final broken = Uint8List.fromList(latin1.encode(latin1
+      .decode(input)
+      .replaceFirst(RegExp(r'startxref\s+\d+'), 'startxref\n99999999')));
+  final options = CraftReaderProperties()
+    ..recoveryMode = PdfRecoveryMode.skipStreams;
+  final recovered = await CraftPdfDocument.open(
+      CraftPdfReader.fromSource(PdfMemorySource(broken), options));
+  if (!recovered.wasRepaired || recovered.pageTotal() != 1)
+    throw StateError('Optional recovery failed');
+  await recovered.close();
+  final flattened = await PdfPageAssembly.merge(
+      [PdfPageSelection(broken, readerProperties: options)],
+      mode: PdfMergeMode.flatten);
+  final reopened =
+      await CraftPdfDocument.open(CraftPdfReader.fromBytes(flattened));
+  if ((await PdfTextExtraction.fromPage((await reopened.pageAt(1))!)).isEmpty)
+    throw StateError('Flatten lost page content');
+  await reopened.close();
 }

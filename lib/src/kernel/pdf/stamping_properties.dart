@@ -1,11 +1,15 @@
 import 'document_properties.dart';
 
+/// A rebuilt xref cannot be used as the previous incremental revision.
+enum PdfRepairedSaveMode { reject, fullRewrite }
+
 /// Class with additional properties for [PdfDocument] processing in stamping mode.
 ///
 /// Needs to be passed at document initialization.
 /// See [PageFlushingHelper] documentation to find more information about modes
 /// of document processing.
 class CraftStampingProperties extends CraftDocumentProperties {
+  PdfRepairedSaveMode repairedSaveMode = PdfRepairedSaveMode.reject;
   bool _appendMode = false;
   bool _preserveEncryption = false;
   bool _disableMac = false;
@@ -16,6 +20,7 @@ class CraftStampingProperties extends CraftDocumentProperties {
   /// Creates a copy of class instance.
   CraftStampingProperties.copy(CraftStampingProperties other)
       : super.copy(other) {
+    repairedSaveMode = other.repairedSaveMode;
     _appendMode = other._appendMode;
     _preserveEncryption = other._preserveEncryption;
     _disableMac = other._disableMac;

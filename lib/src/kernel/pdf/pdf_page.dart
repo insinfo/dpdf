@@ -41,6 +41,14 @@ class CraftPdfPage extends CraftPdfObjectWrapper<CraftPdfDictionary> {
     return _resources!;
   }
 
+  /// Installs a page-local resource dictionary and refreshes the cached wrapper.
+  void replaceResourceDirectory(CraftPdfResources resources) {
+    _resources = resources;
+    pdfRepresentation()
+        .put(CraftPdfName.resources, resources.pdfRepresentation());
+    pdfRepresentation().markChanged();
+  }
+
   CraftPdfPages? get parentPages => _parentPages;
   set parentPages(CraftPdfPages? value) => _parentPages = value;
 
@@ -55,6 +63,7 @@ class CraftPdfPage extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// Sets the media box for this page.
   void setMediaBounds(CraftRectangle rect) {
     pdfRepresentation().put(CraftPdfName.mediaBox, rect.toPdfArray());
+    pdfRepresentation().markChanged();
   }
 
   /// Gets the crop box for this page.
@@ -70,6 +79,7 @@ class CraftPdfPage extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// Sets the crop box for this page.
   void setCropBounds(CraftRectangle rect) {
     pdfRepresentation().put(CraftPdfName.cropBox, rect.toPdfArray());
+    pdfRepresentation().markChanged();
   }
 
   /// Gets the rotation for this page.
@@ -82,6 +92,7 @@ class CraftPdfPage extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   void setRotationDegrees(int rotate) {
     pdfRepresentation()
         .put(CraftPdfName.rotate, CraftPdfNumber.fromInt(rotate));
+    pdfRepresentation().markChanged();
   }
 
   /// Gets the content stream at the specified index.

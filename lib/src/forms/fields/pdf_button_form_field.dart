@@ -43,6 +43,7 @@ class CraftPdfButtonFormField extends CraftPdfFormField {
       String value) async {
     CraftPdfWidgetAnnotation widget = CraftPdfWidgetAnnotation.fromRect(rect);
     widget.put(CraftPdfName.as, CraftPdfName(value));
+    widget.pdfRepresentation().attachToDocument(document);
 
     await group.addKid(widget);
 
@@ -96,9 +97,7 @@ class CraftPdfButtonFormField extends CraftPdfFormField {
       CraftPdfObject? valueObj =
           await pdfRepresentation().get(CraftPdfName.v, true);
 
-      if (appearanceState != null &&
-          valueObj is CraftPdfName &&
-          appearanceState != valueObj) {
+      if (appearanceState != null && appearanceState != valueObj) {
         kid.pdfRepresentation().put(CraftPdfName.as, CraftPdfName("Off"));
       }
 

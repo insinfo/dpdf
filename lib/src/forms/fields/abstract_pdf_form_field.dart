@@ -28,13 +28,13 @@ abstract class CraftAbstractPdfFormField
   double _fontSize = -1;
   CraftColor? _color;
   CraftPdfFormField? _parent;
+  Future<void>? _styleLoading;
 
   CraftAbstractPdfFormField(CraftPdfDictionary pdfObject) : super(pdfObject) {
     if (requiresIndirectStorage()) {
       CraftPdfObjectWrapper.markObjectAsIndirect(pdfObject);
     }
     setForbidRelease();
-    _retrieveStyles();
   }
 
   @override
@@ -70,7 +70,11 @@ abstract class CraftAbstractPdfFormField
   double getFontSize() => _fontSize;
   CraftColor? getColor() => _color;
 
-  void _retrieveStyles() async {
+  /// Loads appearance attributes explicitly, without starting background reads
+  /// from a synchronous constructor. Async field factories await this method.
+  Future<void> loadStyles() => _styleLoading ??= _retrieveStyles();
+
+  Future<void> _retrieveStyles() async {
     final da = await getDefaultAppearance();
     if (da != null) {
       final fontData = await _splitDAelements(da.getValue());

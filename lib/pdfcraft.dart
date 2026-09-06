@@ -4,6 +4,10 @@
 library pdfcraft;
 
 export 'src/editing/pdf_page_assembly.dart';
+export 'src/editing/pdf_page_overlay.dart';
+export 'src/compatibility/pdf_percent_comments.dart';
+export 'src/compatibility/certificate_serial.dart';
+export 'src/compatibility/pdf_quick_info.dart';
 export 'src/editing/pdf_text_extraction.dart';
 export 'src/editing/pdf_unicode_cmap.dart';
 export 'src/editing/pdf_simple_encoding.dart';
@@ -62,3 +66,19 @@ export 'src/kernel/utils/filter_handlers.dart';
 export 'src/kernel/xmp/xmp_meta.dart';
 export 'src/kernel/xmp/xmp_const.dart';
 export 'src/kernel/xmp/pdf_const.dart';
+
+export 'src/forms/pdf_acro_form.dart';
+export 'src/forms/fields/pdf_form_field.dart';
+export 'src/forms/fields/pdf_text_form_field.dart';
+export 'src/forms/fields/pdf_button_form_field.dart';
+export 'src/forms/fields/pdf_choice_form_field.dart';
+export 'src/forms/fields/pdf_signature_form_field.dart';
+export 'src/kernel/pdf/annot/pdf_annotation.dart';
+export 'src/kernel/pdf/annot/pdf_widget_annotation.dart';
+
+export 'src/pki/jks_key_store.dart';
+export 'src/pki/bks_key_store.dart';
+
+export 'src/io/source/pdf_byte_source.dart';
+export 'src/io/source/pdf_file_source.dart';
+export 'src/kernel/pdf/reader_properties.dart';

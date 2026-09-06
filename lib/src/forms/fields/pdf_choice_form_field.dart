@@ -111,14 +111,25 @@ class CraftPdfChoiceFormField extends CraftPdfFormField {
     List<String?> optionsNames = await _optionsToUnicodeNames();
 
     for (String element in optionValues) {
-      int index = optionsNames.indexOf(element);
+      int index = -1;
+      // Prefer exported values; display labels remain accepted for compatibility.
+      for (var candidate = 0; candidate < options.size(); candidate++) {
+        final option = await options.get(candidate);
+        final exported = option is CraftPdfArray ? await option.get(0) : option;
+        if (exported is CraftPdfString &&
+            exported.decodeMappingText() == element) {
+          index = candidate;
+          break;
+        }
+      }
+      if (index == -1) index = optionsNames.indexOf(element);
       if (index != -1) {
         indices.add(CraftPdfNumber(index.toDouble()));
         CraftPdfObject? optByIndex = await options.get(index);
         if (optByIndex is CraftPdfString) {
           values.add(optByIndex);
         } else if (optByIndex is CraftPdfArray) {
-          CraftPdfObject? val = await optByIndex.get(1);
+          CraftPdfObject? val = await optByIndex.get(0);
           if (val != null) {
             values.add(val);
           }

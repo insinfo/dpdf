@@ -1,0 +1,63 @@
+/// Standard structure element roles as defined by PDF specification.
+/// These roles are used for accessibility tagging in PDF documents.
+class StandardRoles {
+  StandardRoles._();
+
+  static const String annot = 'Annot';
+  static const String art = 'Art';
+  static const String artifact = 'Artifact';
+  static const String aside = 'Aside';
+  static const String bibEntry = 'BibEntry';
+  static const String blockQuote = 'BlockQuote';
+  static const String caption = 'Caption';
+  static const String code = 'Code';
+  static const String div = 'Div';
+  static const String document = 'Document';
+  static const String documentFragment = 'DocumentFragment';
+  static const String em = 'Em';
+  static const String feNote = 'FENote';
+  static const String figure = 'Figure';
+  static const String form = 'Form';
+  static const String formula = 'Formula';
+  static const String h = 'H';
+  static const String h1 = 'H1';
+  static const String h2 = 'H2';
+  static const String h3 = 'H3';
+  static const String h4 = 'H4';
+  static const String h5 = 'H5';
+  static const String h6 = 'H6';
+  static const String index = 'Index';
+  static const String l = 'L';
+  static const String lbl = 'Lbl';
+  static const String lBody = 'LBody';
+  static const String li = 'LI';
+  static const String link = 'Link';
+  static const String nonStruct = 'NonStruct';
+  static const String note = 'Note';
+  static const String p = 'P';
+  static const String part = 'Part';
+  static const String private = 'Private';
+  static const String quote = 'Quote';
+  static const String rb = 'RB';
+  static const String reference = 'Reference';
+  static const String rp = 'RP';
+  static const String rt = 'RT';
+  static const String ruby = 'Ruby';
+  static const String sect = 'Sect';
+  static const String span = 'Span';
+  static const String strong = 'Strong';
+  static const String sub = 'Sub';
+  static const String table = 'Table';
+  static const String tBody = 'TBody';
+  static const String td = 'TD';
+  static const String tFoot = 'TFoot';
+  static const String th = 'TH';
+  static const String tHead = 'THead';
+  static const String title = 'Title';
+  static const String toc = 'TOC';
+  static const String toci = 'TOCI';
+  static const String tr = 'TR';
+  static const String warichu = 'Warichu';
+  static const String wp = 'WP';
+  static const String wt = 'WT';
+}

@@ -1,0 +1,1 @@
+responda sempre em portugues

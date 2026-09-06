@@ -1,14 +1,14 @@
-import 'package:dpdf/src/layout/i_property_container.dart';
-import 'package:dpdf/src/layout/properties/property.dart';
-import 'package:dpdf/src/layout/properties/unit_value.dart';
-import 'package:dpdf/src/layout/properties/vertical_alignment.dart';
-import 'package:dpdf/src/layout/properties/text_alignment.dart';
-import 'package:dpdf/src/layout/properties/horizontal_alignment.dart';
-import 'package:dpdf/src/layout/properties/layout_position.dart';
-import 'package:dpdf/src/kernel/colors/device_gray.dart';
+import 'package:pdfcraft/src/layout/property_container.dart';
+import 'package:pdfcraft/src/layout/properties/property.dart';
+import 'package:pdfcraft/src/layout/properties/unit_value.dart';
+import 'package:pdfcraft/src/layout/properties/vertical_alignment.dart';
+import 'package:pdfcraft/src/layout/properties/text_alignment.dart';
+import 'package:pdfcraft/src/layout/properties/horizontal_alignment.dart';
+import 'package:pdfcraft/src/layout/properties/layout_position.dart';
+import 'package:pdfcraft/src/kernel/colors/device_gray.dart';
 
-abstract class ElementPropertyContainer<T extends IPropertyContainer>
-    implements IPropertyContainer {
+abstract class CraftElementPropertyContainer<T extends CraftPropertyContainer>
+    implements CraftPropertyContainer {
   final Map<int, Object?> properties = {};
 
   @override
@@ -38,12 +38,12 @@ abstract class ElementPropertyContainer<T extends IPropertyContainer>
 
   @override
   D? getDefaultProperty<D>(int property) {
-    if (property == Property.FONT_SIZE) {
-      return UnitValue.createPointValue(12.0) as D;
-    } else if (property == Property.FONT_COLOR) {
-      return DeviceGray.BLACK as D;
-    } else if (property == Property.STROKE_COLOR) {
-      return DeviceGray.BLACK as D;
+    if (property == CraftProperty.FONT_SIZE) {
+      return CraftUnitValue.createPointValue(12.0) as D;
+    } else if (property == CraftProperty.FONT_COLOR) {
+      return CraftDeviceGray.BLACK as D;
+    } else if (property == CraftProperty.STROKE_COLOR) {
+      return CraftDeviceGray.BLACK as D;
     }
     return null;
   }
@@ -55,42 +55,47 @@ abstract class ElementPropertyContainer<T extends IPropertyContainer>
 
   // Fluent setters
   T setFontSize(double fontSize) {
-    setProperty(Property.FONT_SIZE, UnitValue.createPointValue(fontSize));
+    setProperty(
+        CraftProperty.FONT_SIZE, CraftUnitValue.createPointValue(fontSize));
     return this as T;
   }
 
   T setFont(Object? font) {
-    setProperty(Property.FONT, font);
+    setProperty(CraftProperty.FONT, font);
     return this as T;
   }
 
   T setWidth(double width) {
-    setProperty(Property.WIDTH, UnitValue.createPointValue(width));
+    setProperty(CraftProperty.WIDTH, CraftUnitValue.createPointValue(width));
     return this as T;
   }
 
   T setHeight(double height) {
-    setProperty(Property.HEIGHT, UnitValue.createPointValue(height));
+    setProperty(CraftProperty.HEIGHT, CraftUnitValue.createPointValue(height));
     return this as T;
   }
 
   T setMarginTop(double margin) {
-    setProperty(Property.MARGIN_TOP, UnitValue.createPointValue(margin));
+    setProperty(
+        CraftProperty.MARGIN_TOP, CraftUnitValue.createPointValue(margin));
     return this as T;
   }
 
   T setMarginBottom(double margin) {
-    setProperty(Property.MARGIN_BOTTOM, UnitValue.createPointValue(margin));
+    setProperty(
+        CraftProperty.MARGIN_BOTTOM, CraftUnitValue.createPointValue(margin));
     return this as T;
   }
 
   T setMarginLeft(double margin) {
-    setProperty(Property.MARGIN_LEFT, UnitValue.createPointValue(margin));
+    setProperty(
+        CraftProperty.MARGIN_LEFT, CraftUnitValue.createPointValue(margin));
     return this as T;
   }
 
   T setMarginRight(double margin) {
-    setProperty(Property.MARGIN_RIGHT, UnitValue.createPointValue(margin));
+    setProperty(
+        CraftProperty.MARGIN_RIGHT, CraftUnitValue.createPointValue(margin));
     return this as T;
   }
 
@@ -111,22 +116,26 @@ abstract class ElementPropertyContainer<T extends IPropertyContainer>
   }
 
   T setPaddingTop(double padding) {
-    setProperty(Property.PADDING_TOP, UnitValue.createPointValue(padding));
+    setProperty(
+        CraftProperty.PADDING_TOP, CraftUnitValue.createPointValue(padding));
     return this as T;
   }
 
   T setPaddingBottom(double padding) {
-    setProperty(Property.PADDING_BOTTOM, UnitValue.createPointValue(padding));
+    setProperty(
+        CraftProperty.PADDING_BOTTOM, CraftUnitValue.createPointValue(padding));
     return this as T;
   }
 
   T setPaddingLeft(double padding) {
-    setProperty(Property.PADDING_LEFT, UnitValue.createPointValue(padding));
+    setProperty(
+        CraftProperty.PADDING_LEFT, CraftUnitValue.createPointValue(padding));
     return this as T;
   }
 
   T setPaddingRight(double padding) {
-    setProperty(Property.PADDING_RIGHT, UnitValue.createPointValue(padding));
+    setProperty(
+        CraftProperty.PADDING_RIGHT, CraftUnitValue.createPointValue(padding));
     return this as T;
   }
 
@@ -146,66 +155,70 @@ abstract class ElementPropertyContainer<T extends IPropertyContainer>
     return this as T;
   }
 
-  T setVerticalAlignment(VerticalAlignment alignment) {
-    setProperty(Property.VERTICAL_ALIGNMENT, alignment);
+  T setVerticalAlignment(CraftVerticalAlignment alignment) {
+    setProperty(CraftProperty.VERTICAL_ALIGNMENT, alignment);
     return this as T;
   }
 
   T setSpacingRatio(double ratio) {
-    setProperty(Property.SPACING_RATIO, ratio);
+    setProperty(CraftProperty.SPACING_RATIO, ratio);
     return this as T;
   }
 
   T setKeepTogether(bool keepTogether) {
-    setProperty(Property.KEEP_TOGETHER, keepTogether);
+    setProperty(CraftProperty.KEEP_TOGETHER, keepTogether);
     return this as T;
   }
 
   T setRotationAngle(double angle) {
-    setProperty(Property.ROTATION_ANGLE, angle);
+    setProperty(CraftProperty.ROTATION_ANGLE, angle);
     return this as T;
   }
 
   T setMaxHeight(double height) {
-    setProperty(Property.MAX_HEIGHT, UnitValue.createPointValue(height));
+    setProperty(
+        CraftProperty.MAX_HEIGHT, CraftUnitValue.createPointValue(height));
     return this as T;
   }
 
   T setMinHeight(double height) {
-    setProperty(Property.MIN_HEIGHT, UnitValue.createPointValue(height));
+    setProperty(
+        CraftProperty.MIN_HEIGHT, CraftUnitValue.createPointValue(height));
     return this as T;
   }
 
   T setMaxWidth(double width) {
-    setProperty(Property.MAX_WIDTH, UnitValue.createPointValue(width));
+    setProperty(
+        CraftProperty.MAX_WIDTH, CraftUnitValue.createPointValue(width));
     return this as T;
   }
 
   T setMinWidth(double width) {
-    setProperty(Property.MIN_WIDTH, UnitValue.createPointValue(width));
+    setProperty(
+        CraftProperty.MIN_WIDTH, CraftUnitValue.createPointValue(width));
     return this as T;
   }
 
-  T setTextAlignment(TextAlignment alignment) {
-    setProperty(Property.TEXT_ALIGNMENT, alignment);
+  T setTextAlignment(CraftTextAlignment alignment) {
+    setProperty(CraftProperty.TEXT_ALIGNMENT, alignment);
     return this as T;
   }
 
-  T setHorizontalAlignment(HorizontalAlignment alignment) {
-    setProperty(Property.HORIZONTAL_ALIGNMENT, alignment);
+  T setHorizontalAlignment(CraftHorizontalAlignment alignment) {
+    setProperty(CraftProperty.HORIZONTAL_ALIGNMENT, alignment);
     return this as T;
   }
 
   T setFixedPosition(int pageNumber, double left, double bottom, double width) {
-    setProperty(Property.PAGE_NUMBER, pageNumber);
+    setProperty(CraftProperty.PAGE_NUMBER, pageNumber);
     return setFixedPositionInternal(left, bottom, width);
   }
 
   T setFixedPositionInternal(double left, double bottom, double width) {
-    setProperty(Property.LEFT, UnitValue.createPointValue(left));
-    setProperty(Property.BOTTOM, UnitValue.createPointValue(bottom));
-    setProperty(Property.WIDTH, UnitValue.createPointValue(width));
-    setProperty(Property.POSITION, LayoutPosition.FIXED);
+    setProperty(CraftProperty.LEFT, CraftUnitValue.createPointValue(left));
+    setProperty(CraftProperty.BOTTOM, CraftUnitValue.createPointValue(bottom));
+    setProperty(CraftProperty.WIDTH, CraftUnitValue.createPointValue(width));
+    setProperty(CraftProperty.POSITION, CraftLayoutPosition.FIXED);
     return this as T;
   }
 }

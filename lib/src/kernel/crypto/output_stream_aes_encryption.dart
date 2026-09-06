@@ -1,28 +1,29 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/kernel/crypto/aes_cipher.dart';
-import 'package:dpdf/src/kernel/crypto/iv_generator.dart';
-import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
-import 'package:dpdf/src/kernel/exceptions/kernel_exception_message_constant.dart';
-import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
+import 'package:pdfcraft/src/kernel/crypto/aes_cipher.dart';
+import 'package:pdfcraft/src/kernel/crypto/iv_generator.dart';
+import 'package:pdfcraft/src/kernel/crypto/output_stream_encryption.dart';
+import 'package:pdfcraft/src/kernel/exceptions/kernel_exception_message_constant.dart';
+import 'package:pdfcraft/src/kernel/exceptions/pdf_exception.dart';
 
 /// AES encryption output stream.
-class OutputStreamAesEncryption extends OutputStreamEncryption {
-  late AESCipher _cipher;
+class CraftOutputStreamAesEncryption extends CraftOutputStreamEncryption {
+  late CraftAESCipher _cipher;
   bool _finished = false;
 
-  OutputStreamAesEncryption(dynamic output, Uint8List key,
+  CraftOutputStreamAesEncryption(dynamic output, Uint8List key,
       [int off = 0, int? len])
       : super(output) {
-    final iv = IVGenerator.getIV();
+    final iv = CraftIVGenerator.getIV();
     final nkey =
         Uint8List.fromList(key.sublist(off, off + (len ?? (key.length - off))));
-    _cipher = AESCipher(true, nkey, iv);
+    _cipher = CraftAESCipher(true, nkey, iv);
 
     try {
       _writeToOutput(iv);
     } catch (e) {
-      throw PdfException(KernelExceptionMessageConstant.unknownPdfException,
+      throw CraftPdfException(
+          CraftKernelExceptionMessageConstant.unknownPdfException,
           cause: e);
     }
   }

@@ -1,20 +1,20 @@
 import 'dart:math' as math;
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/kernel/geom/vector.dart';
-import 'package:dpdf/src/layout/properties/unit_value.dart';
-import 'package:dpdf/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
-import 'package:dpdf/src/styledxmlparser/css/util/css_types_validation_utils.dart';
-import 'package:dpdf/src/svg/exceptions/svg_exception_message_constant.dart';
-import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
-import 'package:dpdf/src/svg/svg_constants.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/kernel/geom/vector.dart';
+import 'package:pdfcraft/src/layout/properties/unit_value.dart';
+import 'package:pdfcraft/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
+import 'package:pdfcraft/src/styledxmlparser/css/util/css_types_validation_utils.dart';
+import 'package:pdfcraft/src/svg/exceptions/svg_exception_message_constant.dart';
+import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
+import 'package:pdfcraft/src/svg/svg_constants.dart';
 
-class SvgCoordinateUtils {
-  SvgCoordinateUtils._();
+class CraftSvgCoordinateUtils {
+  CraftSvgCoordinateUtils._();
 
   static List<String> makeRelativeOperatorCoordinatesAbsolute(
       List<String> relativeCoordinates, List<double> currentCoordinates) {
     if (relativeCoordinates.length % currentCoordinates.length != 0) {
-      throw ArgumentError(SvgExceptionMessageConstant
+      throw ArgumentError(CraftSvgExceptionMessageConstant
           .COORDINATE_ARRAY_LENGTH_MUST_BY_DIVISIBLE_BY_CURRENT_COORDINATES_ARRAY_LENGTH);
     }
     List<String> absoluteOperators =
@@ -30,7 +30,7 @@ class SvgCoordinateUtils {
   }
 
   static double calculateAngleBetweenTwoVectors(
-      Vector vectorA, Vector vectorB) {
+      CraftVector vectorA, CraftVector vectorB) {
     return math
         .acos(vectorA.dot(vectorB) / (vectorA.length() * vectorB.length()));
   }
@@ -38,12 +38,13 @@ class SvgCoordinateUtils {
   static double getCoordinateForUserSpaceOnUse(String attributeValue,
       double defaultValue, double start, double length, double em, double rem) {
     double absoluteValue;
-    UnitValue? unitValue =
-        CssDimensionParsingUtils.parseLengthValueToPt(attributeValue, em, rem);
+    CraftUnitValue? unitValue =
+        CraftCssDimensionParsingUtils.parseLengthValueToPt(
+            attributeValue, em, rem);
     if (unitValue == null) {
       absoluteValue = defaultValue;
     } else {
-      if (unitValue.getUnitType() == UnitValue.PERCENT) {
+      if (unitValue.getUnitType() == CraftUnitValue.PERCENT) {
         absoluteValue = start + (length * unitValue.getValue() / 100);
       } else {
         absoluteValue = unitValue.getValue();
@@ -54,26 +55,24 @@ class SvgCoordinateUtils {
 
   static double getCoordinateForObjectBoundingBox(
       String attributeValue, double defaultValue) {
-    if (CssTypesValidationUtils.isPercentageValue(attributeValue)) {
-      return CssDimensionParsingUtils.parseRelativeValue(attributeValue, 1);
-    }
-    if (CssTypesValidationUtils.isNumber(attributeValue) ||
-        CssTypesValidationUtils.isMetricValue(attributeValue) ||
-        CssTypesValidationUtils.isRelativeValue(attributeValue)) {
-      int unitsPosition =
-          CssDimensionParsingUtils.determinePositionBetweenValueAndUnit(
-              attributeValue);
-      if (unitsPosition > 0) {
-        return double.parse(attributeValue.substring(0, unitsPosition));
-      } else if (unitsPosition == 0 && attributeValue.isNotEmpty) {
-        return double.tryParse(attributeValue) ?? defaultValue;
-      }
-    }
-    return defaultValue;
+    final normalized = attributeValue.trim();
+    final accepted = <bool Function(String)>[
+      CraftCssTypesValidationUtils.isPercentageValue,
+      CraftCssTypesValidationUtils.isNumber,
+      CraftCssTypesValidationUtils.isMetricValue,
+      CraftCssTypesValidationUtils.isRelativeValue,
+    ].any((validate) => validate(normalized));
+    if (!accepted) return defaultValue;
+    final numeric = RegExp(r'^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?')
+        .firstMatch(normalized);
+    final amount = double.tryParse(numeric?.group(0) ?? '');
+    return amount == null
+        ? defaultValue
+        : amount / (normalized.endsWith('%') ? 100 : 1);
   }
 
-  static double calculateNormalizedDiagonalLength(SvgDrawContext context) {
-    Rectangle? viewPort = context.getCurrentViewPort();
+  static double calculateNormalizedDiagonalLength(CraftSvgDrawContext context) {
+    CraftRectangle? viewPort = context.getCurrentViewPort();
     if (viewPort == null) return 0.0;
     double viewPortHeight = viewPort.getHeight();
     double viewPortWidth = viewPort.getWidth();
@@ -82,8 +81,8 @@ class SvgCoordinateUtils {
         math.sqrt(2);
   }
 
-  static Rectangle applyViewBox(Rectangle viewBox, Rectangle currentViewPort,
-      String? align, String? meetOrSlice) {
+  static CraftRectangle applyViewBox(CraftRectangle viewBox,
+      CraftRectangle currentViewPort, String? align, String? meetOrSlice) {
     if (align == null ||
         (meetOrSlice != null &&
             meetOrSlice != SvgValues.MEET &&
@@ -104,8 +103,11 @@ class SvgCoordinateUtils {
       scaleHeight = scale;
     }
 
-    Rectangle appliedViewBox = Rectangle(viewBox.getX(), viewBox.getY(),
-        viewBox.getWidth() * scaleWidth, viewBox.getHeight() * scaleHeight);
+    CraftRectangle appliedViewBox = CraftRectangle(
+        viewBox.getX(),
+        viewBox.getY(),
+        viewBox.getWidth() * scaleWidth,
+        viewBox.getHeight() * scaleHeight);
 
     double minXOffset =
         currentViewPort.getX() - (appliedViewBox.getX() * scaleWidth);
@@ -168,8 +170,8 @@ class SvgCoordinateUtils {
     return appliedViewBox;
   }
 
-  static double _getScaleWidthHeight(
-      Rectangle viewBox, Rectangle currentViewPort, String? meetOrSlice) {
+  static double _getScaleWidthHeight(CraftRectangle viewBox,
+      CraftRectangle currentViewPort, String? meetOrSlice) {
     double scaleWidth = currentViewPort.getWidth() / viewBox.getWidth();
     double scaleHeight = currentViewPort.getHeight() / viewBox.getHeight();
     if (meetOrSlice?.toLowerCase() == SvgValues.SLICE.toLowerCase()) {
@@ -179,8 +181,8 @@ class SvgCoordinateUtils {
           meetOrSlice.toLowerCase() == SvgValues.MEET.toLowerCase()) {
         return math.min(scaleWidth, scaleHeight);
       } else {
-        throw StateError(
-            SvgExceptionMessageConstant.MEET_OR_SLICE_ARGUMENT_IS_INCORRECT);
+        throw StateError(CraftSvgExceptionMessageConstant
+            .MEET_OR_SLICE_ARGUMENT_IS_INCORRECT);
       }
     }
   }

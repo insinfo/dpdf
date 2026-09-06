@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 /// Bit writer for LZW compression.
 /// Handles bit-level output with optional GIF block counting.
-class BitFile {
+class CraftBitFile {
   final BytesBuilder _output;
   final bool _blocks;
   final Uint8List _buffer;
@@ -12,7 +12,7 @@ class BitFile {
   /// Creates a BitFile for bit-level output.
   ///
   /// [blocks] - If true, includes GIF-style block counts in output.
-  BitFile(this._output, this._blocks)
+  CraftBitFile(this._output, this._blocks)
       : _buffer = Uint8List(256),
         _index = 0,
         _bitsLeft = 8;

@@ -1,171 +1,91 @@
 import 'byte_matrix.dart';
-import 'qr_code.dart';
 
-class MaskUtil {
-  /// Apply mask penalty rule 1 and return the penalty.
-  static int applyMaskPenaltyRule1(ByteMatrix matrix) {
-    return _applyMaskPenaltyRule1Internal(matrix, true) +
-        _applyMaskPenaltyRule1Internal(matrix, false);
+/// Scores completed QR module grids and evaluates the eight QR mask formulas.
+class CraftMaskUtil {
+  static Iterable<List<int>> _scanLines(CraftByteMatrix grid) sync* {
+    yield* grid.getArray();
+    for (var column = 0; column < grid.getWidth(); column++) {
+      yield List.generate(grid.getHeight(), (row) => grid.get(column, row));
+    }
   }
 
-  /// Apply mask penalty rule 2 and return the penalty.
-  static int applyMaskPenaltyRule2(ByteMatrix matrix) {
-    int penalty = 0;
-    List<List<int>> array = matrix.getArray();
-    int width = matrix.getWidth();
-    int height = matrix.getHeight();
-    for (int y = 0; y < height - 1; ++y) {
-      for (int x = 0; x < width - 1; ++x) {
-        int value = array[y][x];
-        if (value == array[y][x + 1] &&
-            value == array[y + 1][x] &&
-            value == array[y + 1][x + 1]) {
-          penalty += 3;
+  /// A monochrome run of length n >= 5 contributes n - 2.
+  static int repeatedRunPenalty(CraftByteMatrix matrix) {
+    var score = 0;
+    for (final line in _scanLines(matrix)) {
+      var start = 0;
+      while (start < line.length) {
+        var end = start + 1;
+        while (end < line.length && line[end] == line[start]) {
+          end++;
         }
+        final length = end - start;
+        if (length >= 5) score += length - 2;
+        start = end;
       }
     }
-    return penalty;
+    return score;
   }
 
-  /// Apply mask penalty rule 3 and return the penalty.
-  static int applyMaskPenaltyRule3(ByteMatrix matrix) {
-    int penalty = 0;
-    List<List<int>> array = matrix.getArray();
-    int width = matrix.getWidth();
-    int height = matrix.getHeight();
-    for (int y = 0; y < height; ++y) {
-      for (int x = 0; x < width; ++x) {
-        if (x + 6 < width &&
-            array[y][x] == 1 &&
-            array[y][x + 1] == 0 &&
-            array[y][x + 2] == 1 &&
-            array[y][x + 3] == 1 &&
-            array[y][x + 4] == 1 &&
-            array[y][x + 5] == 0 &&
-            array[y][x + 6] == 1 &&
-            ((x + 10 < width &&
-                    array[y][x + 7] == 0 &&
-                    array[y][x + 8] == 0 &&
-                    array[y][x + 9] == 0 &&
-                    array[y][x + 10] == 0) ||
-                (x - 4 >= 0 &&
-                    array[y][x - 1] == 0 &&
-                    array[y][x - 2] == 0 &&
-                    array[y][x - 3] == 0 &&
-                    array[y][x - 4] == 0))) {
-          penalty += 40;
-        }
-        if (y + 6 < height &&
-            array[y][x] == 1 &&
-            array[y + 1][x] == 0 &&
-            array[y + 2][x] == 1 &&
-            array[y + 3][x] == 1 &&
-            array[y + 4][x] == 1 &&
-            array[y + 5][x] == 0 &&
-            array[y + 6][x] == 1 &&
-            ((y + 10 < height &&
-                    array[y + 7][x] == 0 &&
-                    array[y + 8][x] == 0 &&
-                    array[y + 9][x] == 0 &&
-                    array[y + 10][x] == 0) ||
-                (y - 4 >= 0 &&
-                    array[y - 1][x] == 0 &&
-                    array[y - 2][x] == 0 &&
-                    array[y - 3][x] == 0 &&
-                    array[y - 4][x] == 0))) {
-          penalty += 40;
-        }
+  /// Every uniform 2-by-2 square contributes three, including overlaps.
+  static int uniformSquarePenalty(CraftByteMatrix matrix) {
+    var squares = 0;
+    for (var row = 1; row < matrix.getHeight(); row++) {
+      for (var column = 1; column < matrix.getWidth(); column++) {
+        final corners = {
+          matrix.get(column - 1, row - 1),
+          matrix.get(column, row - 1),
+          matrix.get(column - 1, row),
+          matrix.get(column, row),
+        };
+        if (corners.length == 1) squares++;
       }
     }
-    return penalty;
+    return squares * 3;
   }
 
-  /// Apply mask penalty rule 4 and return the penalty.
-  static int applyMaskPenaltyRule4(ByteMatrix matrix) {
-    int numDarkCells = 0;
-    List<List<int>> array = matrix.getArray();
-    int width = matrix.getWidth();
-    int height = matrix.getHeight();
-    for (int y = 0; y < height; ++y) {
-      for (int x = 0; x < width; ++x) {
-        if (array[y][x] == 1) {
-          numDarkCells += 1;
-        }
+  /// Finder-like 1011101 cores need four light modules on either side.
+  /// A core contributes once even when both sides provide that separation.
+  static int finderPatternPenalty(CraftByteMatrix matrix) {
+    var occurrences = 0;
+    for (final line in _scanLines(matrix)) {
+      var window = 0;
+      for (var end = 0; end < line.length; end++) {
+        window = ((window << 1) | line[end]) & 127;
+        if (end < 6 || window != 93) continue;
+        final start = end - 6;
+        bool lightSpan(int first) =>
+            first >= 0 &&
+            first + 4 <= line.length &&
+            line.skip(first).take(4).every((module) => module == 0);
+        if (lightSpan(start - 4) || lightSpan(end + 1)) occurrences++;
       }
     }
-    int numTotalCells = matrix.getHeight() * matrix.getWidth();
-    double darkRatio = numDarkCells / numTotalCells;
-    return (darkRatio * 100 - 50).abs().toInt() ~/ 5 * 10;
+    return occurrences * 40;
   }
 
-  /// Return the mask bit for "getMaskPattern" at "x" and "y".
-  static bool getDataMaskBit(int maskPattern, int x, int y) {
-    if (!QRCode.isValidMaskPattern(maskPattern)) {
-      throw ArgumentError("Invalid mask pattern");
-    }
-    int intermediate;
-    int temp;
-    switch (maskPattern) {
-      case 0:
-        intermediate = (y + x) & 0x1;
-        break;
-      case 1:
-        intermediate = y & 0x1;
-        break;
-      case 2:
-        intermediate = x % 3;
-        break;
-      case 3:
-        intermediate = (y + x) % 3;
-        break;
-      case 4:
-        intermediate = ((y >> 1) + (x ~/ 3)) & 0x1;
-        break;
-      case 5:
-        temp = y * x;
-        intermediate = (temp & 0x1) + (temp % 3);
-        break;
-      case 6:
-        temp = y * x;
-        intermediate = (((temp & 0x1) + (temp % 3)) & 0x1);
-        break;
-      case 7:
-        temp = y * x;
-        intermediate = (((temp % 3) + ((y + x) & 0x1)) & 0x1);
-        break;
-      default:
-        throw ArgumentError("Invalid mask pattern: $maskPattern");
-    }
-    return intermediate == 0;
+  /// Each complete five percentage points away from half dark costs ten.
+  static int darkBalancePenalty(CraftByteMatrix matrix) {
+    final area = matrix.getWidth() * matrix.getHeight();
+    if (area == 0) return 0;
+    final dark = matrix.getArray().fold<int>(
+        0, (count, row) => count + row.where((value) => value == 1).length);
+    return ((2 * dark - area).abs() * 10 ~/ area) * 10;
   }
 
-  static int _applyMaskPenaltyRule1Internal(
-      ByteMatrix matrix, bool isHorizontal) {
-    int penalty = 0;
-    int numSameBitCells = 0;
-    int prevBit = -1;
-    int iLimit = isHorizontal ? matrix.getHeight() : matrix.getWidth();
-    int jLimit = isHorizontal ? matrix.getWidth() : matrix.getHeight();
-    List<List<int>> array = matrix.getArray();
-    for (int i = 0; i < iLimit; ++i) {
-      for (int j = 0; j < jLimit; ++j) {
-        int bit = isHorizontal ? array[i][j] : array[j][i];
-        if (bit == prevBit) {
-          numSameBitCells += 1;
-          if (numSameBitCells == 5) {
-            penalty += 3;
-          } else {
-            if (numSameBitCells > 5) {
-              penalty += 1;
-            }
-          }
-        } else {
-          numSameBitCells = 1;
-          prevBit = bit;
-        }
-      }
-      numSameBitCells = 0;
-    }
-    return penalty;
+  /// Coordinates use x for columns and y for rows, starting at zero.
+  static bool maskAppliesAt(int maskPattern, int x, int y) {
+    return switch (maskPattern) {
+      0 => (x + y).isEven,
+      1 => y.isEven,
+      2 => x % 3 == 0,
+      3 => (x + y) % 3 == 0,
+      4 => (y ~/ 2 + x ~/ 3).isEven,
+      5 => (x * y) % 2 + (x * y) % 3 == 0,
+      6 => ((x * y) % 2 + (x * y) % 3).isEven,
+      7 => ((x * y) % 3 + (x + y) % 2).isEven,
+      _ => throw RangeError.range(maskPattern, 0, 7, 'maskPattern',
+          'QR masking requires an index from zero through seven'),
+    };
   }
 }

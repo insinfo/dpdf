@@ -4,16 +4,17 @@ import '../pdf_name.dart';
 import 'pdf_struct_elem.dart';
 import 'pdf_mcr.dart';
 
-class PdfObjRef extends PdfObjectWrapper<PdfDictionary> implements IStructureNode {
-  final PdfStructElem parent;
+class CraftPdfObjRef extends CraftPdfObjectWrapper<CraftPdfDictionary>
+    implements CraftStructureNode {
+  final CraftPdfStructElem parent;
 
-  PdfObjRef(PdfDictionary pdfObject, this.parent) : super(pdfObject);
+  CraftPdfObjRef(CraftPdfDictionary pdfObject, this.parent) : super(pdfObject);
 
   @override
-  Future<PdfName?> getRole() async {
+  Future<CraftPdfName?> getRole() async {
     return parent.getRole();
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => false;
+  bool requiresIndirectStorage() => false;
 }

@@ -1,20 +1,20 @@
-import 'package:dpdf/src/layout/document.dart';
-import 'package:dpdf/src/layout/renderer/root_renderer.dart';
-import 'package:dpdf/src/layout/layout/layout_context.dart';
-import 'package:dpdf/src/layout/layout/layout_result.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_page.dart';
-import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:dpdf/src/layout/renderer/draw_context.dart';
-import 'package:dpdf/src/kernel/geom/page_size.dart';
+import 'package:pdfcraft/src/layout/document.dart';
+import 'package:pdfcraft/src/layout/renderer/root_renderer.dart';
+import 'package:pdfcraft/src/layout/layout/layout_context.dart';
+import 'package:pdfcraft/src/layout/layout/layout_result.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:pdfcraft/src/layout/layout/layout_area.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_page.dart';
+import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:pdfcraft/src/layout/renderer/draw_context.dart';
+import 'package:pdfcraft/src/kernel/geom/page_size.dart';
 
-class DocumentRenderer extends RootRenderer {
-  final Document document;
+class CraftDocumentRenderer extends CraftRootRenderer {
+  final CraftDocument document;
   int currentPageNumber = 0;
 
-  DocumentRenderer(this.document) : super(document);
+  CraftDocumentRenderer(this.document) : super(document);
 
   @override
   Future<void> close() async {
@@ -23,30 +23,31 @@ class DocumentRenderer extends RootRenderer {
   }
 
   @override
-  Future<void> addChild(IRenderer renderer) async {
+  Future<void> addChild(CraftRenderer renderer) async {
     renderer.setParent(this);
 
     // While we have content to place
-    IRenderer? currentRenderer = renderer;
+    CraftRenderer? currentRenderer = renderer;
     while (currentRenderer != null) {
       if (currentArea == null) {
         await updateCurrentArea(null);
       }
 
-      LayoutResult? result =
-          currentRenderer.layout(LayoutContext(currentArea!));
+      CraftLayoutResult? result =
+          currentRenderer.layout(CraftLayoutContext(currentArea!));
 
       if (result != null) {
-        if (result.getStatus() == LayoutResult.FULL) {
+        if (result.getStatus() == CraftLayoutResult.FULL) {
           if (result.getOccupiedArea() != null) {
             await _draw(currentRenderer, result.getOccupiedArea()!.getBBox());
             if (currentArea != null && result.getOccupiedArea() != null) {
-              currentArea!.getBBox().setHeight(currentArea!.getBBox().getHeight() -
-                  result.getOccupiedArea()!.getBBox().getHeight());
+              currentArea!.getBBox().setHeight(
+                  currentArea!.getBBox().getHeight() -
+                      result.getOccupiedArea()!.getBBox().getHeight());
             }
           }
           currentRenderer = null; // Done
-        } else if (result.getStatus() == LayoutResult.PARTIAL) {
+        } else if (result.getStatus() == CraftLayoutResult.PARTIAL) {
           if (result.getSplitRenderer() != null &&
               result.getOccupiedArea() != null) {
             await _draw(result.getSplitRenderer()!,
@@ -73,37 +74,40 @@ class DocumentRenderer extends RootRenderer {
   }
 
   @override
-  Future<LayoutArea?> updateCurrentArea(LayoutResult? overflowResult) async {
-    PdfPage page = await document.pdfDocument.addNewPage(PageSize.A4);
+  Future<CraftLayoutArea?> updateCurrentArea(
+      CraftLayoutResult? overflowResult) async {
+    CraftPdfPage page =
+        await document.pdfDocument.appendBlankPage(CraftPageSize.A4);
     currentPageNumber++;
-    Rectangle pageSize = await page.getMediaBox();
+    CraftRectangle pageSize = await page.mediaBounds();
     // simplified margins
-    Rectangle usable =
-        Rectangle(36, 36, pageSize.getWidth() - 72, pageSize.getHeight() - 72);
-    currentArea = LayoutArea(currentPageNumber, usable);
+    CraftRectangle usable = CraftRectangle(
+        36, 36, pageSize.getWidth() - 72, pageSize.getHeight() - 72);
+    currentArea = CraftLayoutArea(currentPageNumber, usable);
     return currentArea;
   }
 
   @override
-  Future<void> flushSingleRenderer(IRenderer resultRenderer) async {
+  Future<void> flushSingleRenderer(CraftRenderer resultRenderer) async {
     if (resultRenderer.getOccupiedArea() != null) {
       await _draw(resultRenderer, resultRenderer.getOccupiedArea()!.getBBox(),
-          resultRenderer.getOccupiedArea()!.getPageNumber());
+          resultRenderer.getOccupiedArea()!.pageOrdinal());
     }
   }
 
-  Future<void> _draw(IRenderer renderer, Rectangle areaBox,
+  Future<void> _draw(CraftRenderer renderer, CraftRectangle areaBox,
       [int? pageNumber]) async {
     int pNum = pageNumber ?? currentPageNumber;
-    PdfPage? page = await document.pdfDocument.getPage(pNum);
+    CraftPdfPage? page = await document.pdfDocument.pageAt(pNum);
     if (page != null) {
-      PdfCanvas canvas = await PdfCanvas.fromPage(page);
-      await renderer.draw(DrawContext(document.pdfDocument, canvas));
+      CraftPdfCanvas canvas = await CraftPdfCanvas.fromPage(page);
+      await renderer.draw(CraftDrawContext(document.pdfDocument, canvas));
     }
   }
 
   @override
-  LayoutResult? layout(LayoutContext layoutContext) {
-    return LayoutResult(LayoutResult.FULL, layoutContext.getArea(), null, null);
+  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
+    return CraftLayoutResult(
+        CraftLayoutResult.FULL, layoutContext.getArea(), null, null);
   }
 }

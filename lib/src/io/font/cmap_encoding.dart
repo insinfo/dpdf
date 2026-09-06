@@ -6,7 +6,7 @@ import 'cmap/cmap_parser.dart';
 import 'cmap/cmap_location_from_bytes.dart';
 import 'cjk_resource_loader.dart';
 
-class CMapEncoding {
+class CraftCMapEncoding {
   static final List<Uint8List> _identityHVCodeSpaceRanges = [
     Uint8List.fromList([0, 0]),
     Uint8List.fromList([255, 255])
@@ -16,31 +16,31 @@ class CMapEncoding {
   String? uniMap;
   bool _isDirect = false;
 
-  late CMapCidToCodepoint _cid2Code;
-  late CMapCodepointToCid _code2Cid;
+  late CraftCMapCidToCodepoint _cid2Code;
+  late CraftCMapCodepointToCid _code2Cid;
   List<Uint8List> codeSpaceRanges = _identityHVCodeSpaceRanges;
 
-  CMapEncoding(this.cmap) {
+  CraftCMapEncoding(this.cmap) {
     if (cmap == "Identity-H" || cmap == "Identity-V") {
       _isDirect = true;
       codeSpaceRanges = _identityHVCodeSpaceRanges;
     } else {
       _isDirect = false;
-      _cid2Code = CjkResourceLoader.getCidToCodepointCmapSync(cmap);
+      _cid2Code = CraftCjkResourceLoader.getCidToCodepointCmapSync(cmap);
       _code2Cid = getCodeToCidCmapSync(cmap, _cid2Code);
       codeSpaceRanges = _cid2Code.getCodeSpaceRanges();
     }
   }
 
-  CMapEncoding.withUniMap(this.cmap, this.uniMap) {
+  CraftCMapEncoding.withUniMap(this.cmap, this.uniMap) {
     if (cmap == "Identity-H" || cmap == "Identity-V") {
       _isDirect = true;
       codeSpaceRanges = _identityHVCodeSpaceRanges;
     } else {
       _isDirect = false;
-      _cid2Code = CjkResourceLoader.getCidToCodepointCmapSync(cmap);
+      _cid2Code = CraftCjkResourceLoader.getCidToCodepointCmapSync(cmap);
       if (uniMap != null) {
-        _code2Cid = CjkResourceLoader.getCodepointToCidCmapSync(uniMap!);
+        _code2Cid = CraftCjkResourceLoader.getCodepointToCidCmapSync(uniMap!);
       } else {
         _code2Cid = getCodeToCidCmapSync(cmap, _cid2Code);
       }
@@ -48,25 +48,26 @@ class CMapEncoding {
     }
   }
 
-  CMapEncoding.fromBytes(this.cmap, Uint8List cmapBytes) {
-    _cid2Code = CMapCidToCodepoint();
+  CraftCMapEncoding.fromBytes(this.cmap, Uint8List cmapBytes) {
+    _cid2Code = CraftCMapCidToCodepoint();
     _isDirect = false;
-    CMapParser.parseCidSync(cmap, _cid2Code, CMapLocationFromBytes(cmapBytes));
-    _code2Cid = CMapCodepointToCid.fromReverseMap(_cid2Code);
+    CraftCMapParser.loadCidMappingsSync(
+        cmap, _cid2Code, CraftCMapLocationFromBytes(cmapBytes));
+    _code2Cid = CraftCMapCodepointToCid.fromReverseMap(_cid2Code);
     codeSpaceRanges = _cid2Code.getCodeSpaceRanges();
   }
 
-  static CMapCodepointToCid getCodeToCidCmapSync(
-      String cmap, CMapCidToCodepoint cid2Code) {
+  static CraftCMapCodepointToCid getCodeToCidCmapSync(
+      String cmap, CraftCMapCidToCodepoint cid2Code) {
     // If it's a known CJK CMap, we might have a predefined UniMap for it.
     //  tries to load a predefined map first.
-    CMapUniCid cp2cid = CjkResourceLoader.getUni2CidCmapSync(cmap);
+    CraftCMapUniCid cp2cid = CraftCjkResourceLoader.getUni2CidCmapSync(cmap);
     if (cp2cid.map.isEmpty()) {
       // If not found, fall back to reversing
-      return CMapCodepointToCid.fromReverseMap(cid2Code);
+      return CraftCMapCodepointToCid.fromReverseMap(cid2Code);
     }
     // Need to convert CMapUniCid to CMapCodepointToCid or just use map.
-    CMapCodepointToCid res = CMapCodepointToCid();
+    CraftCMapCodepointToCid res = CraftCMapCodepointToCid();
     res.map.clear();
     res.map = cp2cid.map.clone();
     return res;
@@ -127,9 +128,10 @@ class CMapEncoding {
 
   List<Uint8List> getCodeSpaceRanges() => codeSpaceRanges;
 
-  String getRegistry() =>
-      _isDirect ? "Adobe" : _cid2Code.getRegistry() ?? "Adobe";
-  String getOrdering() =>
-      _isDirect ? "Identity" : _cid2Code.getOrdering() ?? "Unknown";
-  int getSupplement() => _isDirect ? 0 : _cid2Code.getSupplement();
+  String characterRegistry() =>
+      _isDirect ? "Adobe" : _cid2Code.characterRegistry() ?? "Adobe";
+  String characterCollection() =>
+      _isDirect ? "Identity" : _cid2Code.characterCollection() ?? "Unknown";
+  int collectionSupplement() =>
+      _isDirect ? 0 : _cid2Code.collectionSupplement();
 }

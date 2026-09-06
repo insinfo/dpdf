@@ -4,7 +4,7 @@ import 'dart:math' as math;
 /// transformations such as translation, scaling, rotation, and shearing.
 ///
 /// This is a special case of a 3x3 Matrix.
-class AffineTransform {
+class CraftAffineTransform {
   // Transform type constants
   static const int typeIdentity = 0;
   static const int typeTranslation = 1;
@@ -30,14 +30,14 @@ class AffineTransform {
   int _type = typeIdentity;
 
   /// Creates an identity AffineTransform.
-  AffineTransform() {
+  CraftAffineTransform() {
     _type = typeIdentity;
     m00 = m11 = 1.0;
     m10 = m01 = m02 = m12 = 0.0;
   }
 
   /// Creates a copy of another AffineTransform.
-  AffineTransform.copy(AffineTransform t)
+  CraftAffineTransform.copy(CraftAffineTransform t)
       : _type = t._type,
         m00 = t.m00,
         m10 = t.m10,
@@ -47,12 +47,12 @@ class AffineTransform {
         m12 = t.m12;
 
   /// Creates an AffineTransform with the specified values.
-  AffineTransform.fromValues(
+  CraftAffineTransform.fromValues(
       this.m00, this.m10, this.m01, this.m11, this.m02, this.m12)
       : _type = _typeUnknown;
 
   /// Creates an AffineTransform from a list of values.
-  AffineTransform.fromList(List<double> matrix) : _type = _typeUnknown {
+  CraftAffineTransform.fromList(List<double> matrix) : _type = _typeUnknown {
     m00 = matrix[0];
     m10 = matrix[1];
     m01 = matrix[2];
@@ -66,37 +66,34 @@ class AffineTransform {
   /// Returns the matrix as a list [m00, m10, m01, m11, m02, m12].
   List<double> get matrix => [m00, m10, m01, m11, m02, m12];
 
-  /// Gets the transformation type.
+  /// Classifies the current coefficients, including direct public-field changes.
   int getTransformType() {
-    if (_type != _typeUnknown) return _type;
-
-    int type = 0;
-    if (m00 * m01 + m10 * m11 != 0.0) {
-      type |= typeGeneralTransform;
-      return type;
+    final columns = [
+      [m00, m10],
+      [m01, m11]
+    ];
+    final perpendicular =
+        List.generate(2, (axis) => columns[0][axis] * columns[1][axis])
+                .reduce((a, b) => a + b) ==
+            0;
+    if (!perpendicular) return typeGeneralTransform;
+    var result = (m02 == 0 && m12 == 0) ? typeIdentity : typeTranslation;
+    final diagonal = m01 == 0 && m10 == 0;
+    if (diagonal && m00 == 1 && m11 == 1) return result;
+    final lengths = columns
+        .map((column) =>
+            column.map((value) => value * value).reduce((a, b) => a + b))
+        .toList();
+    if (lengths[0] != lengths[1]) {
+      result |= typeGeneralScale;
+    } else if (lengths.first != 1) {
+      result |= typeUniformScale;
     }
-    if (m02 != 0.0 || m12 != 0.0) {
-      type |= typeTranslation;
-    } else if (m00 == 1.0 && m11 == 1.0 && m01 == 0.0 && m10 == 0.0) {
-      return typeIdentity;
-    }
-    if (m00 * m11 - m01 * m10 < 0.0) {
-      type |= typeFlip;
-    }
-    double dx = m00 * m00 + m10 * m10;
-    double dy = m01 * m01 + m11 * m11;
-    if (dx != dy) {
-      type |= typeGeneralScale;
-    } else if (dx != 1.0) {
-      type |= typeUniformScale;
-    }
-    if ((m00 == 0.0 && m11 == 0.0) ||
-        (m10 == 0.0 && m01 == 0.0 && (m00 < 0.0 || m11 < 0.0))) {
-      type |= typeQuadrantRotation;
-    } else if (m01 != 0.0 || m10 != 0.0) {
-      type |= typeGeneralRotation;
-    }
-    return type;
+    if (determinant < 0) result |= typeFlip;
+    final quarterTurn =
+        (m00 == 0 && m11 == 0) || (diagonal && (m00 < 0 || m11 < 0));
+    if (quarterTurn) return result | typeQuadrantRotation;
+    return diagonal ? result : result | typeGeneralRotation;
   }
 
   /// Gets the scale factor of the x-axis.
@@ -136,7 +133,7 @@ class AffineTransform {
   }
 
   /// Copies values from another transform.
-  void setTransformFrom(AffineTransform t) {
+  void setTransformFrom(CraftAffineTransform t) {
     _type = t._type;
     setTransform(t.m00, t.m10, t.m01, t.m11, t.m02, t.m12);
   }
@@ -201,95 +198,102 @@ class AffineTransform {
   }
 
   /// Creates a translation transform.
-  static AffineTransform getTranslateInstance(double mx, double my) {
-    final t = AffineTransform();
+  static CraftAffineTransform getTranslateInstance(double mx, double my) {
+    final t = CraftAffineTransform();
     t.setToTranslation(mx, my);
     return t;
   }
 
   /// Creates a scale transform.
-  static AffineTransform getScaleInstance(double scx, double scy) {
-    final t = AffineTransform();
+  static CraftAffineTransform getScaleInstance(double scx, double scy) {
+    final t = CraftAffineTransform();
     t.setToScale(scx, scy);
     return t;
   }
 
   /// Creates a shear transform.
-  static AffineTransform getShearInstance(double shx, double shy) {
-    final t = AffineTransform();
+  static CraftAffineTransform getShearInstance(double shx, double shy) {
+    final t = CraftAffineTransform();
     t.setToShear(shx, shy);
     return t;
   }
 
   /// Creates a rotation transform.
-  static AffineTransform getRotateInstance(double angle) {
-    final t = AffineTransform();
+  static CraftAffineTransform getRotateInstance(double angle) {
+    final t = CraftAffineTransform();
     t.setToRotation(angle);
     return t;
   }
 
   /// Creates a rotation transform around a point.
-  static AffineTransform getRotateInstanceAround(
+  static CraftAffineTransform getRotateInstanceAround(
       double angle, double x, double y) {
-    final t = AffineTransform();
+    final t = CraftAffineTransform();
     t.setToRotationAround(angle, x, y);
     return t;
   }
 
   /// Applies translation.
   void translate(double mx, double my) {
-    concatenate(AffineTransform.getTranslateInstance(mx, my));
+    concatenate(CraftAffineTransform.getTranslateInstance(mx, my));
   }
 
   /// Applies scaling.
   void scale(double scx, double scy) {
-    concatenate(AffineTransform.getScaleInstance(scx, scy));
+    concatenate(CraftAffineTransform.getScaleInstance(scx, scy));
   }
 
   /// Applies shearing.
   void shear(double shx, double shy) {
-    concatenate(AffineTransform.getShearInstance(shx, shy));
+    concatenate(CraftAffineTransform.getShearInstance(shx, shy));
   }
 
   /// Applies rotation.
   void rotate(double angle) {
-    concatenate(AffineTransform.getRotateInstance(angle));
+    concatenate(CraftAffineTransform.getRotateInstance(angle));
   }
 
   /// Applies rotation around a point.
   void rotateAround(double angle, double px, double py) {
-    concatenate(AffineTransform.getRotateInstanceAround(angle, px, py));
+    concatenate(CraftAffineTransform.getRotateInstanceAround(angle, px, py));
   }
 
-  /// Multiplies two transforms.
-  AffineTransform _multiply(AffineTransform t1, AffineTransform t2) {
-    return AffineTransform.fromValues(
-      t1.m00 * t2.m00 + t1.m10 * t2.m01,
-      t1.m00 * t2.m10 + t1.m10 * t2.m11,
-      t1.m01 * t2.m00 + t1.m11 * t2.m01,
-      t1.m01 * t2.m10 + t1.m11 * t2.m11,
-      t1.m02 * t2.m00 + t1.m12 * t2.m01 + t2.m02,
-      t1.m02 * t2.m10 + t1.m12 * t2.m11 + t2.m12,
-    );
+  /// Composes column-major affine coefficients without reducing double precision.
+  /// The first mapping runs before the second mapping.
+  static CraftAffineTransform _compose(
+      CraftAffineTransform first, CraftAffineTransform second) {
+    // Snapshot both operands so composition also works when they are identical.
+    final input = first.matrix;
+    final output = second.matrix;
+    final coefficients = List<double>.filled(6, 0);
+    for (var column = 0; column < 3; column++) {
+      for (var row = 0; row < 2; row++) {
+        var entry = input[column * 2] * output[row];
+        entry += input[column * 2 + 1] * output[row + 2];
+        if (column == 2) entry += output[row + 4];
+        coefficients[column * 2 + row] = entry;
+      }
+    }
+    return CraftAffineTransform.fromList(coefficients);
   }
 
-  /// Concatenates transform (this = t * this).
-  void concatenate(AffineTransform t) {
-    setTransformFrom(_multiply(t, this));
+  /// Applies [t] before this mapping (column-vector matrix product: this * t).
+  void concatenate(CraftAffineTransform t) {
+    setTransformFrom(_compose(t, this));
   }
 
-  /// Pre-concatenates transform (this = this * t).
-  void preConcatenate(AffineTransform t) {
-    setTransformFrom(_multiply(this, t));
+  /// Applies [t] after this mapping (column-vector matrix product: t * this).
+  void preConcatenate(CraftAffineTransform t) {
+    setTransformFrom(_compose(this, t));
   }
 
   /// Creates the inverse transform.
-  AffineTransform createInverse() {
+  CraftAffineTransform createInverse() {
     double det = determinant;
     if (det.abs() < _zero) {
       throw StateError('Determinant is zero, cannot invert transformation');
     }
-    return AffineTransform.fromValues(
+    return CraftAffineTransform.fromValues(
       m11 / det,
       -m10 / det,
       -m01 / det,
@@ -352,7 +356,7 @@ class AffineTransform {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! AffineTransform) return false;
+    if (other is! CraftAffineTransform) return false;
     return m00 == other.m00 &&
         m10 == other.m10 &&
         m01 == other.m01 &&

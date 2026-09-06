@@ -2,7 +2,7 @@ import '../kernel/geom/rectangle.dart';
 import 'access_permissions.dart';
 
 /// Properties to be used in signing operations.
-class SignerProperties {
+class CraftSignerProperties {
   /// This string could be used to create the SignatureFieldAppearance instance
   /// which will be used for signing since its ID will be ignored anyway.
   static const String ignoredId = '';
@@ -14,18 +14,18 @@ class SignerProperties {
   AccessPermissions _certificationLevel;
   String? _fieldName;
   int _pageNumber;
-  Rectangle _pageRect;
+  CraftRectangle _pageRect;
   String _signatureCreator;
   String _contact;
   String _reason;
   String _location;
 
   /// Create instance of SignerProperties.
-  SignerProperties()
+  CraftSignerProperties()
       : _signDate = DateTime.now(),
         _certificationLevel = AccessPermissions.unspecified,
         _pageNumber = 1,
-        _pageRect = Rectangle(0, 0, 0, 0),
+        _pageRect = CraftRectangle(0, 0, 0, 0),
         _signatureCreator = '',
         _contact = '',
         _reason = '',
@@ -40,7 +40,7 @@ class SignerProperties {
   ///
   /// @param signDate the signature date
   /// @return this instance to support fluent interface
-  SignerProperties setClaimedSignDate(DateTime signDate) {
+  CraftSignerProperties setClaimedSignDate(DateTime signDate) {
     _signDate = signDate;
     return this;
   }
@@ -60,7 +60,8 @@ class SignerProperties {
   /// @param accessPermissions AccessPermissions enum which specifies
   ///        which certification level shall be used
   /// @return this instance to support fluent interface
-  SignerProperties setCertificationLevel(AccessPermissions accessPermissions) {
+  CraftSignerProperties setCertificationLevel(
+      AccessPermissions accessPermissions) {
     _certificationLevel = accessPermissions;
     return this;
   }
@@ -77,25 +78,25 @@ class SignerProperties {
   ///
   /// @param fieldName the name indicating the field to be signed
   /// @return this instance to support fluent interface
-  SignerProperties setFieldName(String? fieldName) {
+  CraftSignerProperties setFieldName(String? fieldName) {
     if (fieldName != null) {
       _fieldName = fieldName;
     }
     return this;
   }
 
-  /// Provides the page number of the signature field which this signature
+  /// Reports the page containing the field that this signature
   /// appearance is associated with.
   ///
   /// @return the page number of the signature field
-  int getPageNumber() => _pageNumber;
+  int pageOrdinal() => _pageNumber;
 
-  /// Sets the page number of the signature field which this signature
+  /// Selects the page containing the field that this signature
   /// appearance is associated with.
   ///
   /// @param pageNumber the page number of the signature field
   /// @return this instance to support fluent interface
-  SignerProperties setPageNumber(int pageNumber) {
+  CraftSignerProperties setPageNumber(int pageNumber) {
     _pageNumber = pageNumber;
     return this;
   }
@@ -105,7 +106,7 @@ class SignerProperties {
   ///
   /// @return the rectangle that represent the position and dimension of the
   ///         signature field in the page
-  Rectangle getPageRect() => _pageRect;
+  CraftRectangle getPageRect() => _pageRect;
 
   /// Sets the rectangle that represent the position and dimension of the
   /// signature field in the page.
@@ -113,7 +114,7 @@ class SignerProperties {
   /// @param pageRect the rectangle that represents the position and dimension
   ///        of the signature field in the page
   /// @return this instance to support fluent interface
-  SignerProperties setPageRect(Rectangle pageRect) {
+  CraftSignerProperties setPageRect(CraftRectangle pageRect) {
     _pageRect = pageRect;
     return this;
   }
@@ -126,11 +127,11 @@ class SignerProperties {
   /// @return the signature creator
   String getSignatureCreator() => _signatureCreator;
 
-  /// Sets the name of the application used to create the signature.
+  /// Records the signing application's name.
   ///
-  /// @param signatureCreator A new name of the application signing a document.
+  /// @param signatureCreator application label for the signature
   /// @return this instance to support fluent interface.
-  SignerProperties setSignatureCreator(String signatureCreator) {
+  CraftSignerProperties setSignatureCreator(String signatureCreator) {
     _signatureCreator = signatureCreator;
     return this;
   }
@@ -144,7 +145,7 @@ class SignerProperties {
   ///
   /// @param contact a new signing contact
   /// @return this instance to support fluent interface
-  SignerProperties setContact(String contact) {
+  CraftSignerProperties setContact(String contact) {
     _contact = contact;
     return this;
   }
@@ -158,7 +159,7 @@ class SignerProperties {
   ///
   /// @param reason a new signing reason
   /// @return this instance to support fluent interface
-  SignerProperties setReason(String reason) {
+  CraftSignerProperties setReason(String reason) {
     _reason = reason;
     return this;
   }
@@ -172,7 +173,7 @@ class SignerProperties {
   ///
   /// @param location a new signing location
   /// @return this instance to support fluent interface
-  SignerProperties setLocation(String location) {
+  CraftSignerProperties setLocation(String location) {
     _location = location;
     return this;
   }

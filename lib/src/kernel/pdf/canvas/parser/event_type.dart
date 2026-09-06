@@ -1,5 +1,5 @@
 /// Types of events that can occur during content stream parsing.
-enum EventType {
+enum CraftEventType {
   /// Invoked when a text block is entered.
   beginTextBlock,
 

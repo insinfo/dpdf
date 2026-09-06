@@ -1,5 +1,5 @@
+import 'linear_symbol_painter.dart';
 import 'dart:typed_data';
-import 'dart:math' as math;
 
 import '../kernel/colors/color.dart';
 import '../kernel/font/pdf_font.dart';
@@ -16,7 +16,7 @@ import 'barcode_1d.dart';
 /// The Code 39 specification defines 43 characters, consisting of uppercase letters (A through Z), numeric digits (0
 /// through 9) and a number of special characters (-, ., $, /, +, %, and space). An additional character (denoted '*') is
 /// used for both start and stop delimiters. Each character is composed of nine elements: five bars and four spaces.
-class Barcode39 extends Barcode1D {
+class CraftBarcode39 extends CraftBarcode1D {
   /// The bars to generate the code.
   static const List<List<int>> BARS = [
     [0, 0, 0, 1, 1, 0, 1, 0, 0],
@@ -84,16 +84,17 @@ class Barcode39 extends Barcode1D {
   /// To generate the font the [PdfDocument.getDefaultFont] will be implicitly called.
   /// If you want to use this barcode in PDF/A documents, please consider using
   /// [Barcode39](PdfDocument document, PdfFont font).
-  factory Barcode39(PdfDocument document, [PdfFont? font]) {
-    final resolvedFont = font ?? document.getDefaultFont();
+  factory CraftBarcode39(CraftPdfDocument document, [CraftPdfFont? font]) {
+    final resolvedFont = font ?? document.defaultTypeface();
     if (resolvedFont == null) {
       throw ArgumentError(
           'Could not create default font for barcode. Please provide a font explicitly.');
     }
-    return Barcode39._internal(document, resolvedFont);
+    return CraftBarcode39._internal(document, resolvedFont);
   }
 
-  Barcode39._internal(PdfDocument document, PdfFont font) : super(document) {
+  CraftBarcode39._internal(CraftPdfDocument document, CraftPdfFont font)
+      : super(document) {
     this.x = 0.8;
     this.n = 2;
     this.font = font;
@@ -170,125 +171,30 @@ class Barcode39 extends Barcode1D {
     return CHARS[chk % 43];
   }
 
-  @override
-  Rectangle getBarcodeSize() {
-    double fontX = 0;
-    double fontY = 0;
-    String fCode = code;
-    if (extended) {
-      fCode = getCode39Ex(code);
-    }
-    if (font != null) {
-      if (baseline > 0) {
-        fontY = baseline - getDescender();
-      } else {
-        fontY = -baseline + size;
-      }
-      String fullCode = code;
-      if (generateChecksum && checksumText) {
-        fullCode += getChecksum(fCode);
-      }
-      if (startStopText) {
-        fullCode = "*" + fullCode + "*";
-      }
-      fontX = font!.getWidthPoint(altText != null ? altText! : fullCode, size);
-    }
-    int len = fCode.length + 2;
-    if (generateChecksum) {
-      ++len;
-    }
-    double fullWidth = len * (6 * x + 3 * x * n) + (len - 1) * x;
-    fullWidth = math.max(fullWidth, fontX);
-    double fullHeight = barHeight + fontY;
-    return Rectangle(0, 0, fullWidth, fullHeight);
+  (List<double>, String) _visualData() {
+    final encoded = extended ? getCode39Ex(code) : code;
+    final check = generateChecksum ? getChecksum(encoded) : '';
+    var label = code + (checksumText ? check : '');
+    if (startStopText) label = '*$label*';
+    return (
+      getBarsCode39(encoded + check)
+          .map((run) => x * (run == 0 ? 1 : n))
+          .toList(),
+      altText ?? label
+    );
   }
 
   @override
-  Future<Rectangle> placeBarcode(
-      PdfCanvas canvas, Color? barColor, Color? textColor) async {
-    String fullCode = code;
-    double fontX = 0;
-    String bCode = code;
-    if (extended) {
-      bCode = getCode39Ex(code);
-    }
-    if (font != null) {
-      if (generateChecksum && checksumText) {
-        fullCode += getChecksum(bCode);
-      }
-      if (startStopText) {
-        fullCode = "*" + fullCode + "*";
-      }
-      fullCode = altText != null ? altText! : fullCode;
-      fontX = font!.getWidthPoint(fullCode, size);
-    }
-    if (generateChecksum) {
-      bCode += getChecksum(bCode);
-    }
-    int len = bCode.length + 2;
-    double fullWidth = len * (6 * x + 3 * x * n) + (len - 1) * x;
-    double barStartX = 0;
-    double textStartX = 0;
-    switch (textAlignment) {
-      case Barcode1D.ALIGN_LEFT:
-        {
-          break;
-        }
+  CraftRectangle getBarcodeSize() {
+    final (runs, label) = _visualData();
+    return measureLinearSymbol(this, runs, label);
+  }
 
-      case Barcode1D.ALIGN_RIGHT:
-        {
-          if (fontX > fullWidth) {
-            barStartX = fontX - fullWidth;
-          } else {
-            textStartX = fullWidth - fontX;
-          }
-          break;
-        }
-
-      default:
-        {
-          if (fontX > fullWidth) {
-            barStartX = (fontX - fullWidth) / 2;
-          } else {
-            textStartX = (fullWidth - fontX) / 2;
-          }
-          break;
-        }
-    }
-    double barStartY = 0;
-    double textStartY = 0;
-    if (font != null) {
-      if (baseline <= 0) {
-        textStartY = barHeight - baseline;
-      } else {
-        textStartY = -getDescender();
-        barStartY = textStartY + baseline;
-      }
-    }
-    Uint8List bars = getBarsCode39(bCode);
-    bool print = true;
-    if (barColor != null) {
-      canvas.setFillColor(barColor);
-    }
-    for (int k = 0; k < bars.length; ++k) {
-      double w = (bars[k] == 0 ? x : x * n);
-      if (print) {
-        canvas.rectangle(barStartX, barStartY, w - inkSpreading, barHeight);
-      }
-      print = !print;
-      barStartX += w;
-    }
-    canvas.fill();
-    if (font != null) {
-      if (textColor != null) {
-        canvas.setFillColor(textColor);
-      }
-      canvas.beginText();
-      await canvas.setFontAndSize(font!, size);
-      canvas.setTextMatrixSimple(textStartX, textStartY);
-      canvas.showText(fullCode);
-      canvas.endText();
-    }
-    return getBarcodeSize();
+  @override
+  Future<CraftRectangle> placeBarcode(CraftPdfCanvas canvas,
+      CraftColor? barColor, CraftColor? textColor) async {
+    final (runs, label) = _visualData();
+    await drawLinearSymbol(this, canvas, runs, label, barColor, textColor);
+    return measureLinearSymbol(this, runs, label);
   }
 }

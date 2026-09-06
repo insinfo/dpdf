@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 /// Helper class for array operations.
-class ArrayUtil {
-  ArrayUtil._();
+class CraftArrayUtil {
+  CraftArrayUtil._();
 
   /// Shortens byte array to specified length.
   static Uint8List shortenArray(Uint8List src, int length) {

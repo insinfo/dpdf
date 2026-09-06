@@ -1,25 +1,26 @@
 import 'dart:typed_data';
 
-import 'package:pointycastle/export.dart';
+import 'aes_cbc_core.dart';
 
-/// AES cipher implementation using PointyCastle.
+/// AES cipher implementation using the SDK-only FIPS 197 core.
 /// Supports CBC mode and optional PKCS7 padding.
-class AESCipher {
-  final BlockCipher _cipher;
+class CraftAESCipher {
+  final AesCbcCore _cipher;
   final bool _encrypt;
   final bool _usePadding;
   final Uint8List _buffer = Uint8List(16);
   int _bufferPtr = 0;
 
-  AESCipher(bool encrypt, Uint8List key, Uint8List iv, {bool usePadding = true})
-      : _cipher = CBCBlockCipher(AESEngine()),
+  CraftAESCipher(bool encrypt, Uint8List key, Uint8List iv,
+      {bool usePadding = true})
+      : _cipher = AesCbcCore(encrypt, key, iv),
         _encrypt = encrypt,
-        _usePadding = usePadding {
-    _cipher.init(encrypt, ParametersWithIV(KeyParameter(key), iv));
-  }
+        _usePadding = usePadding {}
 
   /// Processes chunks of data.
   Uint8List update(Uint8List input, int inputOffset, int inputLen) {
+    RangeError.checkValidRange(
+        inputOffset, inputOffset + inputLen, input.length);
     int remaining = inputLen;
     int currentOffset = inputOffset;
     final out = <int>[];
@@ -73,6 +74,9 @@ class AESCipher {
         throw Exception("Decryption error: last block incomplete");
       }
 
+      if (!_usePadding && _bufferPtr != 0 && _bufferPtr != 16) {
+        throw FormatException('Incomplete AES block');
+      }
       if (_bufferPtr > 0) {
         final blockOut = Uint8List(16);
         _cipher.processBlock(_buffer, 0, blockOut, 0);
@@ -82,6 +86,10 @@ class AESCipher {
           int paddingValue = blockOut[15];
           if (paddingValue < 1 || paddingValue > 16) {
             throw Exception("Decryption error: invalid padding");
+          }
+          for (var i = 16 - paddingValue; i < 16; i++) {
+            if (blockOut[i] != paddingValue)
+              throw FormatException('Invalid AES padding');
           }
           out.addAll(blockOut.sublist(0, 16 - paddingValue));
         } else {
@@ -95,6 +103,7 @@ class AESCipher {
 
   /// Utility to process a whole block directly (mimics 's ProcessBlock)
   Uint8List processBlock(Uint8List input, int offset, int length) {
+    RangeError.checkValidRange(offset, offset + length, input.length);
     if (length % 16 != 0) {
       throw Exception(
           "ProcessBlock error: input length must be multiple of 16");

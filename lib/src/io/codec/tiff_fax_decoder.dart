@@ -3,7 +3,7 @@ import '../exceptions/io_exception.dart';
 import '../exceptions/io_exception_message_constant.dart';
 
 /// Decodes TIFF FAX compressed data (CCITT Group 3 and Group 4).
-class TIFFFaxDecoder {
+class CraftTIFFFaxDecoder {
   int _bitPointer = 0;
   int _bytePointer = 0;
   Uint8List? _data;
@@ -1707,108 +1707,28 @@ class TIFFFaxDecoder {
     390
   ];
 
-  static const List<int> _twoDCodes = [
-    80,
-    88,
-    23,
-    71,
-    30,
-    30,
-    62,
-    62,
-    4,
-    4,
-    4,
-    4,
-    4,
-    4,
-    4,
-    4,
-    11,
-    11,
-    11,
-    11,
-    11,
-    11,
-    11,
-    11,
-    11,
-    11,
-    11,
-    11,
-    11,
-    11,
-    11,
-    11,
-    35,
-    35,
-    35,
-    35,
-    35,
-    35,
-    35,
-    35,
-    35,
-    35,
-    35,
-    35,
-    35,
-    35,
-    35,
-    35,
-    51,
-    51,
-    51,
-    51,
-    51,
-    51,
-    51,
-    51,
-    51,
-    51,
-    51,
-    51,
-    51,
-    51,
-    51,
-    51,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41,
-    41
-  ];
+  static final List<int> _twoDCodes = List<int>.generate(128, (lookahead) {
+    final word = lookahead.toRadixString(2).padLeft(7, '0');
+    const modes = <String, int>{
+      '1': 5,
+      '011': 6,
+      '010': 4,
+      '001': 1,
+      '0001': 0,
+      '000011': 7,
+      '000010': 3,
+      '0000011': 8,
+      '0000010': 2,
+    };
+    for (final entry in modes.entries) {
+      if (word.startsWith(entry.key))
+        return (entry.value << 3) | entry.key.length;
+    }
+    return lookahead == 1 ? 88 : 80;
+  }, growable: false);
 
   /// Creates a TIFFFaxDecoder.
-  TIFFFaxDecoder(this._fillOrder, this._w, this._h) {
+  CraftTIFFFaxDecoder(this._fillOrder, this._w, this._h) {
     _prevChangingElems = List<int>.filled(2 * _w, 0);
     _currChangingElems = List<int>.filled(2 * _w, 0);
   }
@@ -1877,7 +1797,7 @@ class TIFFFaxDecoder {
         if (_bitPointer > 0) {
           int bitsLeft = 8 - _bitPointer;
           if (_nextNBits(bitsLeft) != 0) {
-            throw IoException(IoExceptionMessageConstant
+            throw IoException(CraftIoExceptionMessageConstant
                 .expectedTrailingZeroBitsForByteAlignedLines);
           }
         }
@@ -1939,43 +1859,40 @@ class TIFFFaxDecoder {
             } else {
               if (code == 11) {
                 if (_nextLesserThan8Bits(3) != 7) {
-                  throw IoException(IoExceptionMessageConstant
+                  throw IoException(CraftIoExceptionMessageConstant
                       .invalidCodeEncounteredWhileDecoding2dGroup4CompressedData);
                 }
-                // EOF logic simplified
-                bool exit = false;
-                int zeros = 0;
-                while (!exit) {
-                  while (_nextLesserThan8Bits(1) != 1) {
-                    zeros++;
+                // Uncompressed extension words encode a white run followed
+                // by one black sample, or an exit and the next coding color.
+                while (true) {
+                  var whiteRun = 0;
+                  while (_nextLesserThan8Bits(1) == 0) {
+                    whiteRun++;
+                    if (whiteRun > _w - bitOffset + 6) {
+                      throw IoException(
+                          'Fax literal run exceeds the scanline.');
+                    }
                   }
-                  if (zeros > 5) {
-                    // Exit code
-                    zeros = zeros - 6;
-                    if (!isWhite && (zeros > 0)) {
-                      cce[currIndex++] = bitOffset;
-                    }
-                    bitOffset += zeros;
-                    if (zeros > 0) {
-                      isWhite = true;
-                    }
-                    if (_nextLesserThan8Bits(1) == 0) {
-                      if (!isWhite) cce[currIndex++] = bitOffset;
-                      isWhite = true;
-                    } else {
-                      if (isWhite) cce[currIndex++] = bitOffset;
-                      isWhite = false;
-                    }
-                    exit = true;
-                  } else if (zeros == 5) {
+                  final leaving = whiteRun >= 6;
+                  final whites = leaving ? whiteRun - 6 : whiteRun;
+                  if (whites > 0) {
                     if (!isWhite) cce[currIndex++] = bitOffset;
-                    bitOffset += zeros;
                     isWhite = true;
-                  } else {
-                    bitOffset += zeros;
-                    cce[currIndex++] = bitOffset;
-                    _setToBlack(buffer, lineOffset, bitOffset, 1);
-                    ++bitOffset;
+                    bitOffset += whites;
+                  }
+                  if (leaving) {
+                    final nextWhite = _nextLesserThan8Bits(1) == 0;
+                    if (isWhite != nextWhite) cce[currIndex++] = bitOffset;
+                    isWhite = nextWhite;
+                    break;
+                  }
+                  if (whiteRun < 5) {
+                    if (bitOffset >= _w) {
+                      throw IoException(
+                          'Fax literal pixel exceeds the scanline.');
+                    }
+                    if (isWhite) cce[currIndex++] = bitOffset;
+                    _setToBlack(buffer, lineOffset, bitOffset++, 1);
                     isWhite = false;
                   }
                 }
@@ -2028,34 +1945,14 @@ class TIFFFaxDecoder {
 
   void _setToBlack(
       Uint8List buffer, int lineOffset, int bitOffset, int numBits) {
-    int bitNum = 8 * lineOffset + bitOffset;
-    int lastBit = bitNum + numBits;
-    int byteNum = bitNum >> 3;
-
-    int shift = bitNum & 0x7;
-    if (shift > 0) {
-      int maskVal = 1 << (7 - shift);
-      int val = buffer[byteNum];
-      while (maskVal > 0 && bitNum < lastBit) {
-        val |= maskVal;
-        maskVal >>= 1;
-        ++bitNum;
+    final begin = lineOffset * 8 + bitOffset;
+    final limit = begin + numBits;
+    for (var byte = begin ~/ 8; byte * 8 < limit; byte++) {
+      final first = begin > byte * 8 ? begin - byte * 8 : 0;
+      final last = limit < (byte + 1) * 8 ? limit - byte * 8 : 8;
+      if (byte < buffer.length) {
+        buffer[byte] |= ((1 << (last - first)) - 1) << (8 - last);
       }
-      buffer[byteNum] = val; // Store back modified value
-    }
-
-    byteNum = bitNum >> 3;
-    while (bitNum < lastBit - 7) {
-      buffer[byteNum++] = 0xFF;
-      bitNum += 8;
-    }
-
-    while (bitNum < lastBit) {
-      byteNum = bitNum >> 3;
-      if (byteNum < buffer.length) {
-        buffer[byteNum] = buffer[byteNum] | (1 << (7 - (bitNum & 0x7)));
-      }
-      ++bitNum;
     }
   }
 

@@ -5,84 +5,89 @@ import '../../geom/rectangle.dart';
 import '../action/pdf_action.dart';
 import 'pdf_annotation.dart';
 
-class PdfWidgetAnnotation extends PdfAnnotation {
+class CraftPdfWidgetAnnotation extends CraftPdfAnnotation {
   static const int hidden = 1;
   static const int visibleButDoesNotPrint = 2;
   static const int hiddenButPrintable = 3;
   static const int visible = 4;
 
-  PdfWidgetAnnotation(PdfDictionary pdfObject) : super(pdfObject);
+  CraftPdfWidgetAnnotation(CraftPdfDictionary pdfObject) : super(pdfObject);
 
-  PdfWidgetAnnotation.fromRect(Rectangle rect) : super.fromRect(rect) {
-    put(PdfName.subtype, PdfName.widget);
+  CraftPdfWidgetAnnotation.fromRect(CraftRectangle rect)
+      : super.fromRect(rect) {
+    put(CraftPdfName.subtype, CraftPdfName.widget);
   }
 
   @override
-  PdfName getSubtype() {
-    return PdfName.widget;
+  CraftPdfName getSubtype() {
+    return CraftPdfName.widget;
   }
 
-  PdfWidgetAnnotation setVisibility(int visibility) {
+  CraftPdfWidgetAnnotation setVisibility(int visibility) {
     switch (visibility) {
       case hidden:
-        put(PdfName.f,
-            PdfNumber.fromInt(PdfAnnotation.print | PdfAnnotation.hidden));
+        put(
+            CraftPdfName.f,
+            CraftPdfNumber.fromInt(
+                CraftPdfAnnotation.print | CraftPdfAnnotation.hidden));
         break;
       case visibleButDoesNotPrint:
         // Visible (no Hidden/NoView) and No Print
-        put(PdfName.f, PdfNumber.fromInt(0));
+        put(CraftPdfName.f, CraftPdfNumber.fromInt(0));
         break;
       case hiddenButPrintable:
-        put(PdfName.f,
-            PdfNumber.fromInt(PdfAnnotation.print | PdfAnnotation.noView));
+        put(
+            CraftPdfName.f,
+            CraftPdfNumber.fromInt(
+                CraftPdfAnnotation.print | CraftPdfAnnotation.noView));
         break;
       case visible:
       default:
-        put(PdfName.f, PdfNumber.fromInt(PdfAnnotation.print));
+        put(CraftPdfName.f, CraftPdfNumber.fromInt(CraftPdfAnnotation.print));
         break;
     }
     return this;
   }
 
-  PdfWidgetAnnotation setAction(PdfAction action) {
-    put(PdfName.a, action.getPdfObject());
+  CraftPdfWidgetAnnotation setAction(CraftPdfAction action) {
+    put(CraftPdfName.a, action.pdfRepresentation());
     return this;
   }
 
-  Future<PdfWidgetAnnotation> setAdditionalAction(
-      PdfName key, PdfAction action) async {
-    await PdfAction.setAdditionalAction(this, key, action);
+  Future<CraftPdfWidgetAnnotation> setAdditionalAction(
+      CraftPdfName key, CraftPdfAction action) async {
+    await CraftPdfAction.setAdditionalAction(this, key, action);
     return this;
   }
 
   /// Sets the parent dictionary.
-  PdfWidgetAnnotation setParent(PdfDictionary parent) {
-    put(PdfName.parent, parent);
+  CraftPdfWidgetAnnotation setParent(CraftPdfDictionary parent) {
+    put(CraftPdfName.parent, parent);
     return this;
   }
 
   /// Gets the parent dictionary.
-  Future<PdfDictionary?> getParent() async {
-    return await getPdfObject().getAsDictionary(PdfName.parent);
+  Future<CraftPdfDictionary?> getParent() async {
+    return await pdfRepresentation().dictionaryEntry(CraftPdfName.parent);
   }
 
   /// Sets the highlight mode.
   ///
   /// [mode] can be [highlightNone], [highlightInvert], [highlightOutline], or [highlightPush].
-  PdfWidgetAnnotation setHighlightMode(PdfName mode) {
-    put(PdfName.intern('H'), mode);
+  CraftPdfWidgetAnnotation setHighlightMode(CraftPdfName mode) {
+    put(CraftPdfName.intern('H'), mode);
     return this;
   }
 
   /// Gets the highlight mode.
-  Future<PdfName?> getHighlightMode() async {
-    return await getPdfObject().getAsName(PdfName.intern('H'));
+  Future<CraftPdfName?> getHighlightMode() async {
+    return await pdfRepresentation().nameEntry(CraftPdfName.intern('H'));
   }
 
   // Highlight modes
-  static final PdfName highlightNone = PdfName.intern('N');
-  static final PdfName highlightInvert = PdfName.intern('I');
-  static final PdfName highlightOutline = PdfName.intern('O');
-  static final PdfName highlightPush = PdfName.intern('P');
-  static final PdfName highlightToggle = PdfName.intern('T');
+  static final CraftPdfName highlightNone = CraftPdfName.intern('N');
+  static final CraftPdfName highlightInvert = CraftPdfName.intern('I');
+  static final CraftPdfName highlightOutline = CraftPdfName.intern('O');
+  static final CraftPdfName highlightPush = CraftPdfName.intern('P');
+  static final CraftPdfName highlightToggle = CraftPdfName.intern('T');
 }

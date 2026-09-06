@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import '../pdf_encodings.dart';
 import 'cmap_object.dart';
 
-abstract class AbstractCMap {
+abstract class CraftAbstractCMap {
   String? cmapName;
   String? registry;
   String? ordering;
@@ -14,98 +14,135 @@ abstract class AbstractCMap {
     this.cmapName = cmapName;
   }
 
-  String? getOrdering() => ordering;
+  String? characterCollection() => ordering;
 
-  void setOrdering(String ordering) {
+  void assignCharacterCollection(String ordering) {
     this.ordering = ordering;
   }
 
-  String? getRegistry() => registry;
+  String? characterRegistry() => registry;
 
-  void setRegistry(String registry) {
+  void assignCharacterRegistry(String registry) {
     this.registry = registry;
   }
 
-  int getSupplement() => supplement;
+  int collectionSupplement() => supplement;
 
-  void setSupplement(int supplement) {
+  void assignCollectionSupplement(int supplement) {
     this.supplement = supplement;
   }
 
-  void addChar(String mark, CMapObject code);
+  void registerMappedCode(String mark, CraftCMapObject code);
 
-  void addCodeSpaceRange(Uint8List low, Uint8List high) {}
+  void registerCodeInterval(Uint8List low, Uint8List high) {}
 
-  void addRange(String from, String to, CMapObject code) {
-    Uint8List a1 = decodeStringToByte(from);
-    Uint8List a2 = decodeStringToByte(to);
-    if (a1.length != a2.length || a1.isEmpty) {
-      throw ArgumentError("Invalid map.");
+  /// Expands a byte-code interval after validating its destination payload.
+  void expandMappingInterval(String from, String to, CraftCMapObject code) {
+    if (from.isEmpty ||
+        from.length != to.length ||
+        from.codeUnits.any((unit) => unit > 255) ||
+        to.codeUnits.any((unit) => unit > 255)) {
+      throw ArgumentError(
+          'Mapping endpoints must contain equally sized byte sequences.');
     }
-    Uint8List? sout;
-    if (code.isString()) {
-      sout = decodeStringToByte(code.toString());
+    final cursor = mappingCodeBytes(from);
+    final last = mappingCodeBytes(to);
+    BigInt unsignedValue(Uint8List bytes) => bytes.fold(
+        BigInt.zero, (value, byte) => (value << 8) + BigInt.from(byte));
+    final span = unsignedValue(last) - unsignedValue(cursor) + BigInt.one;
+    if (span <= BigInt.zero) {
+      throw ArgumentError('Mapping interval ends before its first code.');
     }
-    int start = byteArrayToInt(a1);
-    int end = byteArrayToInt(a2);
-    for (int k = start; k <= end; ++k) {
-      intToByteArray(k, a1);
-      String mark = PdfEncodings.convertToString(a1, null);
-      if (code.isArray()) {
-        List<CMapObject> codes = code.getValue() as List<CMapObject>;
-        addChar(mark, codes[k - start]);
-      } else {
-        if (code.isNumber()) {
-          int nn = (code.getValue() as int) + k - start;
-          addChar(mark, CMapObject(CMapObject.number, nn));
-        } else {
-          if (code.isString()) {
-            CMapObject s1 =
-                CMapObject(CMapObject.hexString, Uint8List.fromList(sout!));
-            addChar(mark, s1);
-            intToByteArray(byteArrayToInt(sout) + 1, sout);
-          }
-        }
+
+    final payload = code.getValue();
+    List<CraftCMapObject>? entries;
+    Uint8List? destination;
+    int? firstNumber;
+    if (code.isArray()) {
+      if (payload is! List<CraftCMapObject> ||
+          BigInt.from(payload.length) < span) {
+        throw ArgumentError(
+            'Mapping interval requires a destination for every code.');
       }
-    }
-  }
-
-  static Uint8List decodeStringToByte(String range) {
-    Uint8List bytes = Uint8List(range.length);
-    for (int i = 0; i < range.length; i++) {
-      bytes[i] = range.codeUnitAt(i) & 0xFF;
-    }
-    return bytes;
-  }
-
-  String toUnicodeString(String value, bool isHexWriting) {
-    Uint8List bytes = decodeStringToByte(value);
-    if (isHexWriting) {
-      return PdfEncodings.convertToString(
-          bytes, PdfEncodings.UNICODE_BIG_UNMARKED);
+      entries = payload;
+    } else if (code.isNumber() && payload is int) {
+      firstNumber = payload;
+    } else if (code.isString()) {
+      destination = mappingCodeBytes(code.toString());
+      if (destination.isEmpty) {
+        throw ArgumentError('Sequential text destinations cannot be empty.');
+      }
     } else {
-      if (bytes.length >= 2 && bytes[0] == 0xfe && bytes[1] == 0xff) {
-        return PdfEncodings.convertToString(bytes, PdfEncodings.UNICODE_BIG);
-      } else {
-        return PdfEncodings.convertToString(
-            bytes, PdfEncodings.PDF_DOC_ENCODING);
+      throw ArgumentError(
+          'Mapping destinations must be text, integers, or an array.');
+    }
+
+    var offset = 0;
+    while (true) {
+      final mapped = entries != null
+          ? entries[offset]
+          : destination != null
+              ? CraftCMapObject(
+                  CraftCMapObject.hexString, Uint8List.fromList(destination))
+              : CraftCMapObject(CraftCMapObject.number, firstNumber! + offset);
+      registerMappedCode(String.fromCharCodes(cursor), mapped);
+      if (_sameBytes(cursor, last)) break;
+      _advanceBytes(cursor);
+      if (destination != null) _advanceBytes(destination);
+      offset++;
+    }
+  }
+
+  static bool _sameBytes(Uint8List left, Uint8List right) {
+    for (var index = 0; index < left.length; index++) {
+      if (left[index] != right[index]) return false;
+    }
+    return true;
+  }
+
+  // Carry directly through the byte string, including destinations wider than
+  // a machine integer (for example, several UTF-16 code units).
+  static void _advanceBytes(Uint8List bytes) {
+    var position = bytes.length;
+    while (position > 0) {
+      position--;
+      if (bytes[position] != 255) {
+        bytes[position]++;
+        return;
       }
+      bytes[position] = 0;
     }
   }
 
-  static void intToByteArray(int n, Uint8List b) {
-    for (int k = b.length - 1; k >= 0; --k) {
-      b[k] = n & 0xFF;
-      n = n >> 8;
+  static Uint8List mappingCodeBytes(String range) =>
+      Uint8List.fromList(range.codeUnits);
+
+  String decodeMappingText(String value, bool isHexWriting) {
+    final bytes = mappingCodeBytes(value);
+    final hasBigEndianMarker =
+        String.fromCharCodes(bytes.take(2)) == '\u00fe\u00ff';
+    final String encoding;
+    if (isHexWriting) {
+      encoding = CraftPdfEncodings.UNICODE_BIG_UNMARKED;
+    } else if (hasBigEndianMarker) {
+      encoding = CraftPdfEncodings.UNICODE_BIG;
+    } else {
+      encoding = CraftPdfEncodings.PDF_DOC_ENCODING;
     }
+    return CraftPdfEncodings.convertToString(bytes, encoding);
   }
 
-  static int byteArrayToInt(Uint8List b) {
-    int n = 0;
-    for (int k = 0; k < b.length; ++k) {
-      n = n << 8;
-      n |= b[k] & 0xFF;
-    }
-    return n;
+  static void writeMappingInteger(int n, Uint8List b) {
+    final signedValue = BigInt.from(n);
+    final octetMask = BigInt.from(255);
+    b.setAll(
+        0,
+        Iterable<int>.generate(b.length, (position) {
+          final shift = (b.length - position - 1) * 8;
+          return ((signedValue >> shift) & octetMask).toInt();
+        }));
   }
+
+  static int readMappingInteger(Uint8List b) =>
+      b.fold<int>(0, (prefix, octet) => prefix * 256 + octet);
 }

@@ -1,4 +1,4 @@
-import 'dart:io';
+import '../../platform/io.dart';
 import 'dart:typed_data';
 
 import '../../io/source/random_access_file_or_array.dart';
@@ -13,9 +13,9 @@ import 'pdf_number.dart';
 import 'pdf_string.dart';
 import 'pdf_boolean.dart';
 import 'pdf_null.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_xref_table.dart';
-import 'package:dpdf/src/commons/_log_manager.dart';
-import 'package:dpdf/src/io/logs/io_log_message_constant.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_xref_table.dart';
+import 'package:pdfcraft/src/commons/pdfcraft_log_manager.dart';
+import 'package:pdfcraft/src/io/logs/io_log_message_constant.dart';
 import 'pdf_document.dart';
 import 'pdf_version.dart';
 import '../utils/filter_handlers.dart';
@@ -23,54 +23,54 @@ import 'reader_properties.dart';
 import 'pdf_encryption.dart';
 import 'pdf_stream.dart';
 
-class PdfReader {
+class CraftPdfReader {
   static final _logger = LogManager.getLoggerByName('PdfReader');
-  final PdfTokenizer _tokens;
-  PdfDocument? document;
-  final PdfXrefTable _xref = PdfXrefTable();
+  final CraftPdfTokenizer _tokens;
+  CraftPdfDocument? document;
+  final CraftPdfXrefTable _xref = CraftPdfXrefTable();
   String? _pdfVersion;
-  PdfDictionary? _trailer;
+  CraftPdfDictionary? _trailer;
   int _lastXref = 0;
   bool _rebuiltXref = false;
   bool _xrefStm = false;
   bool _encrypted = false;
-  ReaderProperties properties;
-  PdfEncryption? _encryption;
+  CraftReaderProperties properties;
+  CraftPdfEncryption? _encryption;
 
-  PdfReader.fromBytes(Uint8List bytes, [ReaderProperties? properties])
-      : _tokens = PdfTokenizer(RandomAccessFileOrArray(bytes)),
-        properties = properties ?? ReaderProperties();
+  CraftPdfReader.fromBytes(Uint8List bytes, [CraftReaderProperties? properties])
+      : _tokens = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes)),
+        properties = properties ?? CraftReaderProperties();
 
-  static Future<PdfReader> fromFile(String path,
-      [ReaderProperties? properties]) async {
+  static Future<CraftPdfReader> fromFile(String path,
+      [CraftReaderProperties? properties]) async {
     final file = File(path);
     final bytes = await file.readAsBytes();
-    return PdfReader.fromBytes(bytes, properties);
+    return CraftPdfReader.fromBytes(bytes, properties);
   }
 
-  void setDocument(PdfDocument doc) {
+  void setDocument(CraftPdfDocument doc) {
     document = doc;
   }
 
-  PdfVersion getPdfVersion() {
-    return PdfVersion.fromString(_pdfVersion ?? "1.7");
+  CraftPdfVersion getPdfVersion() {
+    return CraftPdfVersion.fromString(_pdfVersion ?? "1.7");
   }
 
   String? get pdfVersion => _pdfVersion;
-  PdfDictionary? get trailer => _trailer;
-  PdfDictionary? getTrailer() => _trailer;
-  PdfXrefTable get xref => _xref;
+  CraftPdfDictionary? get trailer => _trailer;
+  CraftPdfDictionary? fileTrailer() => _trailer;
+  CraftPdfXrefTable get xref => _xref;
   bool get rebuiltXref => _rebuiltXref;
   bool get xrefStm => _xrefStm;
   bool get encrypted => _encrypted;
   int get lastXref => _lastXref;
-  PdfEncryption? getEncryption() => _encryption;
+  CraftPdfEncryption? securityCodec() => _encryption;
 
   Future<void> close() async {
     await _tokens.close();
   }
 
-  RandomAccessFileOrArray getSafeFile() {
+  CraftRandomAccessFileOrArray getSafeFile() {
     return _tokens.getSafeFile();
   }
 
@@ -104,8 +104,8 @@ class PdfReader {
     await _tokens.nextValidToken();
     await _tokens.nextValidToken();
     if (_tokens.getTokenType() != TokenType.number) {
-      throw PdfException(
-          KernelExceptionMessageConstant.pdfStartxrefIsNotFollowedByANumber);
+      throw CraftPdfException(CraftKernelExceptionMessageConstant
+          .pdfStartxrefIsNotFollowedByANumber);
     }
     _lastXref = _tokens.getIntValue();
     _tokens.seek(_lastXref);
@@ -117,7 +117,7 @@ class PdfReader {
       await _readXrefSectionWithCycleCheck(_lastXref, visitedXrefPositions);
     } catch (e) {
       _rebuiltXref = true;
-      throw PdfException('Failed to read xref: $e');
+      throw CraftPdfException('Failed to read xref: $e');
     }
   }
 
@@ -132,9 +132,10 @@ class PdfReader {
 
     _tokens.seek(position);
     if (!await _tokens.nextToken()) {
-      throw PdfException(KernelExceptionMessageConstant.unexpectedEndOfFile);
+      throw CraftPdfException(
+          CraftKernelExceptionMessageConstant.unexpectedEndOfFile);
     }
-    if (_tokens.tokenValueEqualsTo(PdfTokenizer.xref)) {
+    if (_tokens.tokenValueEqualsTo(CraftPdfTokenizer.xref)) {
       await _readXrefTableWithCycleCheck(visitedPositions);
     } else {
       _xrefStm = true;
@@ -146,9 +147,10 @@ class PdfReader {
   Future<void> _readXrefSection([int? position]) async {
     _tokens.seek(position ?? _lastXref);
     if (!await _tokens.nextToken()) {
-      throw PdfException(KernelExceptionMessageConstant.unexpectedEndOfFile);
+      throw CraftPdfException(
+          CraftKernelExceptionMessageConstant.unexpectedEndOfFile);
     }
-    if (_tokens.tokenValueEqualsTo(PdfTokenizer.xref)) {
+    if (_tokens.tokenValueEqualsTo(CraftPdfTokenizer.xref)) {
       await _readXrefTable();
     } else {
       _xrefStm = true;
@@ -160,20 +162,21 @@ class PdfReader {
   Future<void> _readXrefTable() async {
     while (true) {
       if (!await _tokens.nextToken()) {
-        throw PdfException(KernelExceptionMessageConstant.unexpectedEndOfFile);
+        throw CraftPdfException(
+            CraftKernelExceptionMessageConstant.unexpectedEndOfFile);
       }
       if (_tokens.getTokenType() == TokenType.other &&
-          _tokens.tokenValueEqualsTo(PdfTokenizer.trailer)) {
+          _tokens.tokenValueEqualsTo(CraftPdfTokenizer.trailer)) {
         break;
       }
       if (_tokens.getTokenType() != TokenType.number) {
-        throw PdfException(KernelExceptionMessageConstant
+        throw CraftPdfException(CraftKernelExceptionMessageConstant
             .objectNumberOfTheFirstObjectInThisXrefSubsectionNotFound);
       }
       final firstObj = _tokens.getIntValue();
       if (!await _tokens.nextToken() ||
           _tokens.getTokenType() != TokenType.number) {
-        throw PdfException(KernelExceptionMessageConstant
+        throw CraftPdfException(CraftKernelExceptionMessageConstant
             .numberOfEntriesInThisXrefSubsectionNotFound);
       }
       final numEntries = _tokens.getIntValue();
@@ -190,10 +193,10 @@ class PdfReader {
             (existing.getOffset() > 0 || existing.isFree())) {
           continue;
         }
-        final ref = PdfIndirectReference(objNr, gen);
+        final ref = CraftPdfIndirectReference(objNr, gen);
         ref.setReader(this);
         ref.setOffset(offset);
-        if (entryType == 'f') ref.setState(PdfObject.free);
+        if (entryType == 'f') ref.setState(CraftPdfObject.free);
         _xref.add(ref);
       }
     }
@@ -205,8 +208,8 @@ class PdfReader {
       // Merge properties from older trailers that don't exist in the main one
       await _trailer!.mergeDifferent(sectionTrailer);
     }
-    
-    final prev = await sectionTrailer.getAsInt(PdfName.prev);
+
+    final prev = await sectionTrailer.integerEntry(CraftPdfName.prev);
     if (prev != null) {
       await _readXrefSection(prev);
     }
@@ -216,20 +219,21 @@ class PdfReader {
   Future<void> _readXrefTableWithCycleCheck(Set<int> visitedPositions) async {
     while (true) {
       if (!await _tokens.nextToken()) {
-        throw PdfException(KernelExceptionMessageConstant.unexpectedEndOfFile);
+        throw CraftPdfException(
+            CraftKernelExceptionMessageConstant.unexpectedEndOfFile);
       }
       if (_tokens.getTokenType() == TokenType.other &&
-          _tokens.tokenValueEqualsTo(PdfTokenizer.trailer)) {
+          _tokens.tokenValueEqualsTo(CraftPdfTokenizer.trailer)) {
         break;
       }
       if (_tokens.getTokenType() != TokenType.number) {
-        throw PdfException(KernelExceptionMessageConstant
+        throw CraftPdfException(CraftKernelExceptionMessageConstant
             .objectNumberOfTheFirstObjectInThisXrefSubsectionNotFound);
       }
       final firstObj = _tokens.getIntValue();
       if (!await _tokens.nextToken() ||
           _tokens.getTokenType() != TokenType.number) {
-        throw PdfException(KernelExceptionMessageConstant
+        throw CraftPdfException(CraftKernelExceptionMessageConstant
             .numberOfEntriesInThisXrefSubsectionNotFound);
       }
       final numEntries = _tokens.getIntValue();
@@ -246,16 +250,16 @@ class PdfReader {
             (existing.getOffset() > 0 || existing.isFree())) {
           continue;
         }
-        final ref = PdfIndirectReference(objNr, gen);
+        final ref = CraftPdfIndirectReference(objNr, gen);
         ref.setReader(this);
         ref.setOffset(offset);
-        if (entryType == 'f') ref.setState(PdfObject.free);
+        if (entryType == 'f') ref.setState(CraftPdfObject.free);
         _xref.add(ref);
       }
     }
     await _tokens.nextValidToken();
     _trailer = await _readDictionary();
-    final prev = await _trailer!.getAsInt(PdfName.prev);
+    final prev = await _trailer!.integerEntry(CraftPdfName.prev);
     if (prev != null) {
       await _readXrefSectionWithCycleCheck(prev, visitedPositions);
     }
@@ -266,16 +270,16 @@ class PdfReader {
     await _tokens.nextValidToken();
     final streamDict = await _readDictionary();
     _trailer = streamDict;
-    final size = await streamDict.getAsInt(PdfName.size);
-    final wArray = await streamDict.getAsArray(PdfName.w);
-    final w1 = (await wArray!.getAsNumber(0))?.intValue() ?? 0;
-    final w2 = (await wArray.getAsNumber(1))?.intValue() ?? 0;
-    final w3 = (await wArray.getAsNumber(2))?.intValue() ?? 0;
-    final indexArrayObj = await streamDict.getAsArray(PdfName.index);
+    final size = await streamDict.integerEntry(CraftPdfName.size);
+    final wArray = await streamDict.arrayEntry(CraftPdfName.w);
+    final w1 = (await wArray!.numberEntry(0))?.intValue() ?? 0;
+    final w2 = (await wArray.numberEntry(1))?.intValue() ?? 0;
+    final w3 = (await wArray.numberEntry(2))?.intValue() ?? 0;
+    final indexArrayObj = await streamDict.arrayEntry(CraftPdfName.index);
     List<int> xrefIndex =
         indexArrayObj != null ? await indexArrayObj.toIntArray() : [0, size!];
 
-    final streamLength = await streamDict.getAsInt(PdfName.length);
+    final streamLength = await streamDict.integerEntry(CraftPdfName.length);
     await _tokens.nextValidToken();
     var ch = await _tokens.read();
     if (ch == 0x0D) {
@@ -288,7 +292,8 @@ class PdfReader {
     for (var i = 0; i < streamLength; i++) {
       rawBytes[i] = await _tokens.read();
     }
-    final decodedBytes = await FilterHandlers.decodeBytes(rawBytes, streamDict);
+    final decodedBytes =
+        await CraftFilterHandlers.decodeBytes(rawBytes, streamDict);
     _xref.setCapacity(size!);
     var byteOffset = 0;
     for (var i = 0; i < xrefIndex.length; i += 2) {
@@ -308,11 +313,11 @@ class PdfReader {
             (existing.getOffset() > 0 || existing.isFree())) {
           continue;
         }
-        final ref = PdfIndirectReference(objNum);
+        final ref = CraftPdfIndirectReference(objNum);
         ref.setReader(this);
         switch (type) {
           case 0:
-            ref.setState(PdfObject.free);
+            ref.setState(CraftPdfObject.free);
             ref.setOffset(field2);
             break;
           case 1:
@@ -326,7 +331,7 @@ class PdfReader {
         _xref.add(ref);
       }
     }
-    final prev = await streamDict.getAsInt(PdfName.prev);
+    final prev = await streamDict.integerEntry(CraftPdfName.prev);
     if (prev != null) {
       _tokens.seek(prev);
       await _readXrefSection();
@@ -339,17 +344,17 @@ class PdfReader {
     await _tokens.nextValidToken();
     final streamDict = await _readDictionary();
     _trailer = streamDict;
-    final size = await streamDict.getAsInt(PdfName.size);
-    final wArray = await streamDict.getAsArray(PdfName.w);
-    final w1 = (await wArray!.getAsNumber(0))?.intValue() ?? 0;
-    final w2 = (await wArray.getAsNumber(1))?.intValue() ?? 0;
-    final w3 = (await wArray.getAsNumber(2))?.intValue() ?? 0;
-    
-    final indexArrayObj = await streamDict.getAsArray(PdfName.index);
+    final size = await streamDict.integerEntry(CraftPdfName.size);
+    final wArray = await streamDict.arrayEntry(CraftPdfName.w);
+    final w1 = (await wArray!.numberEntry(0))?.intValue() ?? 0;
+    final w2 = (await wArray.numberEntry(1))?.intValue() ?? 0;
+    final w3 = (await wArray.numberEntry(2))?.intValue() ?? 0;
+
+    final indexArrayObj = await streamDict.arrayEntry(CraftPdfName.index);
     List<int> xrefIndex =
         indexArrayObj != null ? await indexArrayObj.toIntArray() : [0, size!];
-    
-    final streamLength = await streamDict.getAsInt(PdfName.length);
+
+    final streamLength = await streamDict.integerEntry(CraftPdfName.length);
     await _tokens.nextValidToken();
     var ch = await _tokens.read();
     if (ch == 0x0D) {
@@ -362,7 +367,8 @@ class PdfReader {
     for (var i = 0; i < streamLength; i++) {
       rawBytes[i] = await _tokens.read();
     }
-    final decodedBytes = await FilterHandlers.decodeBytes(rawBytes, streamDict);
+    final decodedBytes =
+        await CraftFilterHandlers.decodeBytes(rawBytes, streamDict);
     _xref.setCapacity(size!);
     var byteOffset = 0;
     for (var i = 0; i < xrefIndex.length; i += 2) {
@@ -382,11 +388,11 @@ class PdfReader {
             (existing.getOffset() > 0 || existing.isFree())) {
           continue;
         }
-        final ref = PdfIndirectReference(objNum);
+        final ref = CraftPdfIndirectReference(objNum);
         ref.setReader(this);
         switch (type) {
           case 0:
-            ref.setState(PdfObject.free);
+            ref.setState(CraftPdfObject.free);
             ref.setOffset(field2);
             break;
           case 1:
@@ -400,7 +406,7 @@ class PdfReader {
         _xref.add(ref);
       }
     }
-    final prev = await streamDict.getAsInt(PdfName.prev);
+    final prev = await streamDict.integerEntry(CraftPdfName.prev);
     if (prev != null) {
       await _readXrefSectionWithCycleCheck(prev, visitedPositions);
     }
@@ -415,41 +421,42 @@ class PdfReader {
 
   Future<void> _checkEncryption() async {
     if (_trailer == null) return;
-    final encrypt = await _trailer!.get(PdfName.encrypt, true);
-    if (encrypt != null && encrypt is! PdfNull) {
+    final encrypt = await _trailer!.get(CraftPdfName.encrypt, true);
+    if (encrypt != null && encrypt is! CraftPdfNull) {
       _encrypted = true;
-      if (encrypt is PdfDictionary) {
-        final idArray = await _trailer!.getAsArray(PdfName.id);
+      if (encrypt is CraftPdfDictionary) {
+        final idArray = await _trailer!.arrayEntry(CraftPdfName.id);
         Uint8List? documentId;
         if (idArray != null && idArray.size() > 0) {
-          final idStr = await idArray.getAsString(0);
+          final idStr = await idArray.stringEntry(0);
           documentId = idStr?.getValueBytes();
         }
 
         final password = properties.password ?? Uint8List(0);
 
-        _encryption = await PdfEncryption.createFromDictionary(
+        _encryption = await CraftPdfEncryption.createFromDictionary(
             encrypt, password, documentId ?? Uint8List(0));
       }
     }
   }
 
-  Future<PdfDictionary> _readDictionary({PdfTokenizer? tokenizer}) async {
+  Future<CraftPdfDictionary> _readDictionary(
+      {CraftPdfTokenizer? tokenizer}) async {
     final tokens = tokenizer ?? _tokens;
-    final dict = PdfDictionary();
+    final dict = CraftPdfDictionary();
     while (true) {
       await tokens.nextValidToken();
       if (tokens.getTokenType() == TokenType.endDic) break;
-      final key = PdfName(tokens.getStringValue());
+      final key = CraftPdfName.fromBytes(tokens.getByteContent());
       await tokens.nextValidToken();
       dict.put(key, await _readObject(tokenizer: tokens));
     }
     return dict;
   }
 
-  Future<PdfArray> _readArray({PdfTokenizer? tokenizer}) async {
+  Future<CraftPdfArray> _readArray({CraftPdfTokenizer? tokenizer}) async {
     final tokens = tokenizer ?? _tokens;
-    final arr = PdfArray();
+    final arr = CraftPdfArray();
     while (true) {
       await tokens.nextValidToken();
       if (tokens.getTokenType() == TokenType.endArray) break;
@@ -458,7 +465,7 @@ class PdfReader {
     return arr;
   }
 
-  Future<PdfObject> _readObject({PdfTokenizer? tokenizer}) async {
+  Future<CraftPdfObject> _readObject({CraftPdfTokenizer? tokenizer}) async {
     final tokens = tokenizer ?? _tokens;
     switch (tokens.getTokenType()) {
       case TokenType.startDic:
@@ -475,23 +482,23 @@ class PdfReader {
       case TokenType.startArray:
         return await _readArray(tokenizer: tokens);
       case TokenType.number:
-        return PdfNumber.fromBytes(tokens.getByteContent());
+        return CraftPdfNumber.fromBytes(tokens.getByteContent());
       case TokenType.string:
-        return PdfString.fromBytes(
+        return CraftPdfString.fromBytes(
             tokens.getDecodedStringContent(), tokens.isHexString());
       case TokenType.name:
-        return PdfName(tokens.getStringValue());
+        return CraftPdfName.fromBytes(tokens.getByteContent());
       case TokenType.ref:
         final objNr = tokens.getObjNr();
         var ref = _xref.get(objNr);
         if (ref != null && ref.isFree()) {
-          _logger.logWarning(IoLogMessageConstant.invalidIndirectReference
+          _logger.logWarning(CraftIoLogMessageConstant.invalidIndirectReference
               .replaceAll("{0}", objNr.toString())
               .replaceAll("{1}", tokens.getGenNr().toString()));
-          return PdfNull();
+          return CraftPdfNull();
         }
         if (ref == null) {
-          ref = PdfIndirectReference(objNr, tokens.getGenNr());
+          ref = CraftPdfIndirectReference(objNr, tokens.getGenNr());
           _xref.add(ref);
         }
         ref.setDocument(document);
@@ -499,21 +506,21 @@ class PdfReader {
         return ref;
       case TokenType.other:
         final v = tokens.getStringValue();
-        if (v == 'null') return PdfNull();
-        if (v == 'true') return PdfBoolean(true);
-        if (v == 'false') return PdfBoolean(false);
-        return PdfNull();
+        if (v == 'null') return CraftPdfNull();
+        if (v == 'true') return CraftPdfBoolean(true);
+        if (v == 'false') return CraftPdfBoolean(false);
+        return CraftPdfNull();
       default:
-        return PdfNull();
+        return CraftPdfNull();
     }
   }
 
-  Future<PdfStream> _readStream(PdfDictionary dict,
-      {PdfTokenizer? tokenizer}) async {
+  Future<CraftPdfStream> _readStream(CraftPdfDictionary dict,
+      {CraftPdfTokenizer? tokenizer}) async {
     final tokens = tokenizer ?? _tokens;
-    final lengthObj = await dict.getAsNumber(PdfName.length);
+    final lengthObj = await dict.numberEntry(CraftPdfName.length);
     if (lengthObj == null) {
-      throw PdfException("Stream length not found");
+      throw CraftPdfException("Stream length not found");
     }
     int length = lengthObj.intValue();
 
@@ -531,11 +538,11 @@ class PdfReader {
     }
 
     await tokens.nextValidToken();
-    if (!tokens.tokenValueEqualsTo(PdfTokenizer.endStream)) {
-      throw PdfException("Stream did not end with 'endstream'");
+    if (!tokens.tokenValueEqualsTo(CraftPdfTokenizer.endStream)) {
+      throw CraftPdfException("Stream did not end with 'endstream'");
     }
 
-    final stream = PdfStream.withBytes(bytes);
+    final stream = CraftPdfStream.withBytes(bytes);
     final entries = await dict.entrySet();
     for (final entry in entries) {
       stream.put(entry.key, entry.value);
@@ -543,7 +550,7 @@ class PdfReader {
     return stream;
   }
 
-  Future<PdfObject?> readObject(int objNr) async {
+  Future<CraftPdfObject?> readObject(int objNr) async {
     final ref = _xref.get(objNr);
     if (ref == null || ref.isFree()) return null;
 
@@ -551,7 +558,7 @@ class PdfReader {
       final streamRef = _xref.get(ref.getObjStreamNumber());
       if (streamRef != null) {
         final streamObj = await readObject(streamRef.objNr);
-        if (streamObj is PdfStream) {
+        if (streamObj is CraftPdfStream) {
           return await _readObjectFromStream(streamObj, ref);
         }
       }
@@ -561,27 +568,27 @@ class PdfReader {
     await _tokens.nextValidToken();
     await _tokens.nextValidToken();
     final obj = await _readObject();
-    
+
     // Set indirect reference and document on the returned object
     ref.setDocument(document);
     ref.setReader(this);
-    ref.setRefersTo(obj);
+    ref.assignTargetObject(obj);
     obj.setIndirectReference(ref);
-    
+
     return obj;
   }
 
-  Future<PdfObject?> _readObjectFromStream(
-      PdfStream stream, PdfIndirectReference ref) async {
+  Future<CraftPdfObject?> _readObjectFromStream(
+      CraftPdfStream stream, CraftPdfIndirectReference ref) async {
     final bytes = await stream.getBytes();
     if (bytes == null) return null;
 
-    final firstObj = await stream.getAsNumber(PdfName.first);
-    final nObj = await stream.getAsNumber(PdfName.n);
+    final firstObj = await stream.numberEntry(CraftPdfName.first);
+    final nObj = await stream.numberEntry(CraftPdfName.n);
     final first = firstObj?.intValue() ?? 0;
     final n = nObj?.intValue() ?? 0;
 
-    final tokenizer = PdfTokenizer(RandomAccessFileOrArray(bytes));
+    final tokenizer = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
 
     int objOffset = -1;
     for (int k = 0; k < n; k++) {
@@ -604,28 +611,28 @@ class PdfReader {
     return await _readObject(tokenizer: tokenizer);
   }
 
-  Future<PdfDictionary?> getCatalog() async {
-    final rootRef = await _trailer?.get(PdfName.root, false);
-    if (rootRef is PdfIndirectReference) {
-      final obj = await readObject(rootRef.getObjNumber());
-      return obj is PdfDictionary ? obj : null;
+  Future<CraftPdfDictionary?> rootCatalog() async {
+    final rootRef = await _trailer?.get(CraftPdfName.root, false);
+    if (rootRef is CraftPdfIndirectReference) {
+      final obj = await readObject(rootRef.objectNumber());
+      return obj is CraftPdfDictionary ? obj : null;
     }
-    return rootRef is PdfDictionary ? rootRef : null;
+    return rootRef is CraftPdfDictionary ? rootRef : null;
   }
 
-  Future<PdfDictionary?> getInfo() async {
-    final infoRef = await _trailer?.get(PdfName.info, false);
-    if (infoRef is PdfIndirectReference) {
-      final obj = await readObject(infoRef.getObjNumber());
-      return obj is PdfDictionary ? obj : null;
+  Future<CraftPdfDictionary?> getInfo() async {
+    final infoRef = await _trailer?.get(CraftPdfName.info, false);
+    if (infoRef is CraftPdfIndirectReference) {
+      final obj = await readObject(infoRef.objectNumber());
+      return obj is CraftPdfDictionary ? obj : null;
     }
-    return infoRef is PdfDictionary ? infoRef : null;
+    return infoRef is CraftPdfDictionary ? infoRef : null;
   }
 
-  Future<int> getNumberOfPages() async {
-    final catalog = await getCatalog();
+  Future<int> pageTotal() async {
+    final catalog = await rootCatalog();
     if (catalog == null) return 0;
-    final pages = await catalog.getAsDictionary(PdfName.pages);
-    return await pages?.getAsInt(PdfName.count) ?? 0;
+    final pages = await catalog.dictionaryEntry(CraftPdfName.pages);
+    return await pages?.integerEntry(CraftPdfName.count) ?? 0;
   }
 }

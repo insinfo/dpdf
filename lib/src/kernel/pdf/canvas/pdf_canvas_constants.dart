@@ -1,10 +1,10 @@
-/// A container for constants defined in the PDF specification (ISO 32000-1).
-class PdfCanvasConstants {
-  PdfCanvasConstants._();
+/// Numeric constants for PDF graphics operations.
+class CraftPdfCanvasConstants {
+  CraftPdfCanvasConstants._();
 }
 
-/// The text rendering mode determines whether showing text causes glyph
-/// outlines to be stroked, filled, used as a clipping boundary, or some
+/// Text rendering selects whether glyph outlines are
+/// filled, stroked, incorporated into clipping, or a
 /// combination of the three.
 class TextRenderingMode {
   TextRenderingMode._();
@@ -34,7 +34,7 @@ class TextRenderingMode {
   static const int CLIP = 7;
 }
 
-/// The line cap style specifies the shape to be used at the ends of open
+/// Stroke caps control the terminal shape of open
 /// subpaths (and dashes, if any) when they are stroked.
 class LineCapStyle {
   LineCapStyle._();
@@ -42,25 +42,25 @@ class LineCapStyle {
   /// The stroke is squared of at the endpoint of the path.
   static const int BUTT = 0;
 
-  /// A semicircular arc with a diameter equal to the line width is drawn
+  /// A half-circle matching the stroke width is placed
   /// around the endpoint and filled in.
   static const int ROUND = 1;
 
-  /// The stroke continues beyond the endpoint of the path for a distance
+  /// The stroke extends beyond its endpoint by
   /// equal to half the line width and is squared off.
   static const int PROJECTING_SQUARE = 2;
 }
 
-/// The line join style specifies the shape to be used at the corners of
+/// Stroke joins control the junction between segments of
 /// paths that are stroked.
 class LineJoinStyle {
   LineJoinStyle._();
 
-  /// The outer edges of the strokes for the two segments are extended
+  /// The outside stroke edges of adjacent segments continue
   /// until they meet at an angle, as in a picture frame.
   static const int MITER = 0;
 
-  /// An arc of a circle with a diameter equal to the line width is drawn
+  /// A circular arc matching the stroke width is placed
   /// around the point where the two segments meet.
   static const int ROUND = 1;
 

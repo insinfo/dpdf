@@ -9,46 +9,47 @@ enum LockAction { all, include, exclude }
 
 enum LockPermissions { noChangesAllowed, formFilling, formFillingAndAnnotation }
 
-class PdfSigFieldLock extends PdfObjectWrapper<PdfDictionary> {
-  PdfSigFieldLock([PdfDictionary? dict]) : super(dict ?? PdfDictionary()) {
-    getPdfObject().put(PdfName.type, PdfName.sigFieldLock);
+class CraftPdfSigFieldLock extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+  CraftPdfSigFieldLock([CraftPdfDictionary? dict])
+      : super(dict ?? CraftPdfDictionary()) {
+    pdfRepresentation().put(CraftPdfName.type, CraftPdfName.sigFieldLock);
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => true;
+  bool requiresIndirectStorage() => true;
 
   void setDocumentPermissions(LockPermissions permissions) {
-    getPdfObject().put(PdfName.p, _getLockPermission(permissions));
+    pdfRepresentation().put(CraftPdfName.p, _getLockPermission(permissions));
   }
 
   void setFieldLock(LockAction action, List<String> fields) {
-    final fieldsArray = PdfArray();
+    final fieldsArray = CraftPdfArray();
     for (var field in fields) {
-      fieldsArray.add(PdfString(field));
+      fieldsArray.add(CraftPdfString(field));
     }
-    getPdfObject().put(PdfName.action, _getLockActionValue(action));
-    getPdfObject().put(PdfName.fields, fieldsArray);
+    pdfRepresentation().put(CraftPdfName.action, _getLockActionValue(action));
+    pdfRepresentation().put(CraftPdfName.fields, fieldsArray);
   }
 
-  static PdfName _getLockActionValue(LockAction action) {
+  static CraftPdfName _getLockActionValue(LockAction action) {
     switch (action) {
       case LockAction.all:
-        return PdfName.all;
+        return CraftPdfName.all;
       case LockAction.include:
-        return PdfName.include;
+        return CraftPdfName.include;
       case LockAction.exclude:
-        return PdfName.exclude;
+        return CraftPdfName.exclude;
     }
   }
 
-  static PdfNumber _getLockPermission(LockPermissions permissions) {
+  static CraftPdfNumber _getLockPermission(LockPermissions permissions) {
     switch (permissions) {
       case LockPermissions.noChangesAllowed:
-        return PdfNumber(1);
+        return CraftPdfNumber(1);
       case LockPermissions.formFilling:
-        return PdfNumber(2);
+        return CraftPdfNumber(2);
       case LockPermissions.formFillingAndAnnotation:
-        return PdfNumber(3);
+        return CraftPdfNumber(3);
     }
   }
 }

@@ -6,7 +6,7 @@ import 'byte_utils.dart';
 ///
 /// This class is used extensively in  for constructing PDF content
 /// and tokenizing PDF data.
-class ByteBuffer {
+class CraftByteBuffer {
   /// Hex digit bytes: 0-9, a-f.
   static final Uint8List _hexBytes = Uint8List.fromList([
     48, 49, 50, 51, 52, 53, 54, 55, 56, 57, // 0-9
@@ -20,10 +20,10 @@ class ByteBuffer {
   int _count = 0;
 
   /// Creates a ByteBuffer with default capacity (128).
-  ByteBuffer() : this.withCapacity(128);
+  CraftByteBuffer() : this.withCapacity(128);
 
   /// Creates a ByteBuffer with specified initial capacity.
-  ByteBuffer.withCapacity(int size)
+  CraftByteBuffer.withCapacity(int size)
       : _buffer = Uint8List(size < 1 ? 128 : size);
 
   /// Converts a hex character to its numeric value.
@@ -46,7 +46,7 @@ class ByteBuffer {
   }
 
   /// Appends a single byte to the buffer.
-  ByteBuffer append(int b) {
+  CraftByteBuffer append(int b) {
     final newCount = _count + 1;
     _ensureCapacity(newCount);
     _buffer[_count] = b & 0xFF;
@@ -55,7 +55,7 @@ class ByteBuffer {
   }
 
   /// Appends bytes from a list with offset and length.
-  ByteBuffer appendRange(List<int> b, int off, int len) {
+  CraftByteBuffer appendRange(List<int> b, int off, int len) {
     if (off < 0 ||
         off > b.length ||
         len < 0 ||
@@ -73,17 +73,17 @@ class ByteBuffer {
   }
 
   /// Appends all bytes from a list.
-  ByteBuffer appendBytes(List<int> b) {
+  CraftByteBuffer appendBytes(List<int> b) {
     return appendRange(b, 0, b.length);
   }
 
   /// Appends a string as ISO-8859-1 bytes.
-  ByteBuffer appendString(String str) {
-    return appendBytes(ByteUtils.getIsoBytes(str));
+  CraftByteBuffer appendString(String str) {
+    return appendBytes(CraftByteUtils.getIsoBytes(str));
   }
 
   /// Appends a byte as two hex digits.
-  ByteBuffer appendHex(int b) {
+  CraftByteBuffer appendHex(int b) {
     append(_hexBytes[(b >> 4) & 0x0f]);
     return append(_hexBytes[b & 0x0f]);
   }
@@ -112,7 +112,7 @@ class ByteBuffer {
   int capacity() => _buffer.length;
 
   /// Resets the buffer, setting size to 0.
-  ByteBuffer reset() {
+  CraftByteBuffer reset() {
     _count = 0;
     return this;
   }
@@ -148,7 +148,7 @@ class ByteBuffer {
   ///
   /// Sets byte at `capacity() - size() - 1` position.
   /// This is an internal method used for number formatting.
-  ByteBuffer prepend(int b) {
+  CraftByteBuffer prepend(int b) {
     _buffer[_buffer.length - _count - 1] = b & 0xFF;
     _count++;
     return this;
@@ -158,7 +158,7 @@ class ByteBuffer {
   ///
   /// Sets bytes from `capacity() - size() - b.length` position.
   /// This is an internal method used for number formatting.
-  ByteBuffer prependBytes(List<int> b) {
+  CraftByteBuffer prependBytes(List<int> b) {
     final start = _buffer.length - _count - b.length;
     for (var i = 0; i < b.length; i++) {
       _buffer[start + i] = b[i] & 0xFF;

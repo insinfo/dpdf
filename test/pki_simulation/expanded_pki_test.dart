@@ -3,17 +3,16 @@ import 'dart:typed_data';
 import 'dart:convert';
 
 import 'package:test/test.dart';
-import 'package:pointycastle/export.dart';
 
-import '../../lib/src/pki/pki_utils.dart';
+import 'package:pdfcraft/src/pki/pki_utils.dart';
 
-import 'package:dpdf/src/sign/pdf_signer.dart';
-import 'package:dpdf/src/sign/i_external_signature.dart';
-import 'package:dpdf/src/sign/i_signature_mechanism_params.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
-import 'package:dpdf/src/kernel/geom/page_size.dart';
+import 'package:pdfcraft/src/sign/pdf_signer.dart';
+import 'package:pdfcraft/src/sign/external_signature.dart';
+import 'package:pdfcraft/src/sign/signature_mechanism_params.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
+import 'package:pdfcraft/src/kernel/geom/page_size.dart';
 
 /// Simulates the Backend Service which handles keys, certificates and signing
 class SimulatedBackend {
@@ -39,7 +38,6 @@ class SimulatedBackend {
     final decryptedData =
         PkiUtils.processAesCbc(false, derivedKey, entry.iv, entry.data);
 
-    // Remove padding manually if needed, but PaddedBlockCipherImpl with PKCS7Padding should handle it?
     // PointyCastle's PaddedBlockCipherImpl handles unpadding on decryption.
 
     final pem = utf8.decode(decryptedData);
@@ -69,7 +67,7 @@ class _EncryptedKey {
   _EncryptedKey(this.data, this.salt, this.iv);
 }
 
-class TestExternalSignature implements IExternalSignature {
+class TestExternalSignature implements CraftExternalSignature {
   final RSAPrivateKey key;
   final String digestAlgorithm;
 
@@ -82,17 +80,14 @@ class TestExternalSignature implements IExternalSignature {
   String getSignatureAlgorithmName() => 'RSA';
 
   @override
-  ISignatureMechanismParams? getSignatureMechanismParameters() => null;
+  CraftSignatureMechanismParams? getSignatureMechanismParameters() => null;
 
   @override
   Future<Uint8List> sign(Uint8List message) async {
     final signer = Signer('${digestAlgorithm}/RSA');
     signer.init(true, PrivateKeyParameter<RSAPrivateKey>(key));
     final sig = signer.generateSignature(message);
-    if (sig is RSASignature) {
-      return sig.bytes;
-    }
-    throw Exception('Signing failed');
+    return sig.bytes;
   }
 }
 
@@ -174,10 +169,10 @@ void main() {
 
       // Verify signature 1 is readable
       try {
-        final rtmp = PdfReader.fromBytes(signedPdf1);
-        final dtmp = PdfDocument(reader: rtmp);
+        final rtmp = CraftPdfReader.fromBytes(signedPdf1);
+        final dtmp = CraftPdfDocument(reader: rtmp);
         await dtmp.load();
-        expect(dtmp.getPagesTree().getNumberOfPages(), greaterThan(0));
+        expect(dtmp.pageHierarchy().pageTotal(), greaterThan(0));
       } catch (e) {
         rethrow;
       }
@@ -194,9 +189,9 @@ void main() {
 
 Future<Uint8List> _createDummyPdf() async {
   final output = BytesBuilder();
-  final writer = PdfWriter(_IOSinkWrapper(output));
-  final pdf = PdfDocument(writer: writer);
-  await pdf.addNewPage(PageSize.A4);
+  final writer = CraftPdfWriter(_IOSinkWrapper(output));
+  final pdf = CraftPdfDocument(writer: writer);
+  await pdf.appendBlankPage(CraftPageSize.A4);
   await pdf.close();
   return output.toBytes();
 }
@@ -205,8 +200,8 @@ Future<Uint8List> _signPdf(Uint8List inputPdf, RSAPrivateKey privKey,
     List<Uint8List> chain, String fieldName) async {
   final output = BytesBuilder();
   final sink = _IOSinkWrapper(output);
-  final reader = PdfReader.fromBytes(inputPdf);
-  final signer = PdfSigner(reader, sink);
+  final reader = CraftPdfReader.fromBytes(inputPdf);
+  final signer = CraftPdfSigner(reader, sink);
 
   // Set different field name to avoid collision if append mode works/is used
   signer.setFieldName(fieldName);

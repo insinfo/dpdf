@@ -1,8 +1,8 @@
-import 'package:dpdf/src/layout/layout/min_max_width_layout_result.dart';
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
+import 'package:pdfcraft/src/layout/layout/min_max_width_layout_result.dart';
+import 'package:pdfcraft/src/layout/layout/layout_area.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
 
-class TextLayoutResult extends MinMaxWidthLayoutResult {
+class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
   bool wordHasBeenSplit = false;
   bool splitForcedByNewline = false;
   bool containsPossibleBreak = false;
@@ -11,9 +11,9 @@ class TextLayoutResult extends MinMaxWidthLayoutResult {
   double leftMinWidth = 0;
   double rightMinWidth = 0;
 
-  TextLayoutResult(int status, LayoutArea? occupiedArea,
-      IRenderer? splitRenderer, IRenderer? overflowRenderer,
-      [IRenderer? causeOfNothing])
+  CraftTextLayoutResult(int status, CraftLayoutArea? occupiedArea,
+      CraftRenderer? splitRenderer, CraftRenderer? overflowRenderer,
+      [CraftRenderer? causeOfNothing])
       : super(status, occupiedArea, splitRenderer, overflowRenderer,
             causeOfNothing);
 
@@ -21,7 +21,7 @@ class TextLayoutResult extends MinMaxWidthLayoutResult {
     return wordHasBeenSplit;
   }
 
-  TextLayoutResult setWordHasBeenSplit(bool wordHasBeenSplit) {
+  CraftTextLayoutResult setWordHasBeenSplit(bool wordHasBeenSplit) {
     this.wordHasBeenSplit = wordHasBeenSplit;
     return this;
   }
@@ -30,7 +30,7 @@ class TextLayoutResult extends MinMaxWidthLayoutResult {
     return splitForcedByNewline;
   }
 
-  TextLayoutResult setSplitForcedByNewline(bool splitForcedByNewline) {
+  CraftTextLayoutResult setSplitForcedByNewline(bool splitForcedByNewline) {
     this.splitForcedByNewline = splitForcedByNewline;
     return this;
   }
@@ -39,12 +39,12 @@ class TextLayoutResult extends MinMaxWidthLayoutResult {
     return containsPossibleBreak;
   }
 
-  TextLayoutResult setContainsPossibleBreak(bool containsPossibleBreak) {
+  CraftTextLayoutResult setContainsPossibleBreak(bool containsPossibleBreak) {
     this.containsPossibleBreak = containsPossibleBreak;
     return this;
   }
 
-  TextLayoutResult setStartsWithSplitCharacterWhiteSpace(
+  CraftTextLayoutResult setStartsWithSplitCharacterWhiteSpace(
       bool startsWithSplitCharacterWhiteSpace) {
     this.startsWithSplitCharacterWhiteSpace =
         startsWithSplitCharacterWhiteSpace;
@@ -55,7 +55,7 @@ class TextLayoutResult extends MinMaxWidthLayoutResult {
     return startsWithSplitCharacterWhiteSpace;
   }
 
-  TextLayoutResult setEndsWithSplitCharacter(bool endsWithSplitCharacter) {
+  CraftTextLayoutResult setEndsWithSplitCharacter(bool endsWithSplitCharacter) {
     this.endsWithSplitCharacter = endsWithSplitCharacter;
     return this;
   }
@@ -64,7 +64,7 @@ class TextLayoutResult extends MinMaxWidthLayoutResult {
     return endsWithSplitCharacter;
   }
 
-  TextLayoutResult setLeftMinWidth(double leftMinWidth) {
+  CraftTextLayoutResult setLeftMinWidth(double leftMinWidth) {
     this.leftMinWidth = leftMinWidth;
     return this;
   }
@@ -73,7 +73,7 @@ class TextLayoutResult extends MinMaxWidthLayoutResult {
     return leftMinWidth;
   }
 
-  TextLayoutResult setRightMinWidth(double rightMinWidth) {
+  CraftTextLayoutResult setRightMinWidth(double rightMinWidth) {
     this.rightMinWidth = rightMinWidth;
     return this;
   }

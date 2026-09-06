@@ -1,16 +1,16 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/exceptions/io_exception.dart';
-import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
-import 'package:dpdf/src/io/image/bmp_image_data.dart';
-import 'package:dpdf/src/io/image/image_data.dart';
-import 'package:dpdf/src/io/image/raw_image_helper.dart';
-import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
-import 'package:dpdf/src/io/font/pdf_encodings.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:pdfcraft/src/io/image/bmp_image_data.dart';
+import 'package:pdfcraft/src/io/image/image_data.dart';
+import 'package:pdfcraft/src/io/image/raw_image_helper.dart';
+import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
+import 'package:pdfcraft/src/io/font/pdf_encodings.dart';
 
-import 'package:dpdf/src/layout/properties/image_type.dart';
+import 'package:pdfcraft/src/layout/properties/image_type.dart';
 
-class BmpImageHelper {
+class CraftBmpImageHelper {
   // BMP Image types
   static const int version2_1bit = 0;
   static const int version2_4bit = 1;
@@ -41,8 +41,8 @@ class BmpImageHelper {
   static const int biBitfields = 3;
 
   /// Process the passed Image data as a BMP image.
-  static void processImage(ImageData image) {
-    if (image.getOriginalType() != ImageType.BMP) {
+  static void processImage(CraftImageData image) {
+    if (image.getOriginalType() != CraftImageType.BMP) {
       throw ArgumentError("BMP image expected");
     }
 
@@ -53,9 +53,9 @@ class BmpImageHelper {
         throw IoException("Image data is null");
       }
 
-      final bmp = BmpParameters(image as BmpImageData);
+      final bmp = BmpParameters(image as CraftBmpImageData);
       // Using RandomAccessFileOrArray instead of Stream for easier seeking and LE reading
-      final stream = RandomAccessFileOrArray(image.getData()!);
+      final stream = CraftRandomAccessFileOrArray(image.getData()!);
 
       image.imageSize = image.getData()!.length;
 
@@ -69,24 +69,24 @@ class BmpImageHelper {
         image.setDpi(dpiX, dpiY);
       }
 
-      RawImageHelper.updateImageAttributes(bmp.image, bmp.additional);
+      CraftRawImageHelper.updateImageAttributes(bmp.image, bmp.additional);
 
       stream.close();
     } catch (e) {
       if (e is IoException) rethrow;
-      throw IoException(IoExceptionMessageConstant.bmpImageException, e);
+      throw IoException(CraftIoExceptionMessageConstant.bmpImageException, e);
     }
   }
 
-  static void _process(BmpParameters bmp, RandomAccessFileOrArray stream) {
+  static void _process(BmpParameters bmp, CraftRandomAccessFileOrArray stream) {
     bmp.inputStream = stream;
     if (!bmp.image.isNoHeader()) {
       // Start File Header
       if (!(stream.readUnsignedByte() == 0x42 &&
           stream.readUnsignedByte() == 0x4D)) {
         // 'B' 'M'
-        throw IoException(
-            IoExceptionMessageConstant.invalidMagicValueForBmpFileMustBeBm);
+        throw IoException(CraftIoExceptionMessageConstant
+            .invalidMagicValueForBmpFileMustBeBm);
       }
       // Read file size
       bmp.bitmapFileSize = stream.readUnsignedIntLE();
@@ -276,7 +276,7 @@ class BmpImageHelper {
 
           default:
             throw IoException(
-                IoExceptionMessageConstant.invalidBmpFileCompression);
+                CraftIoExceptionMessageConstant.invalidBmpFileCompression);
         }
       } else if (size == 108) {
         // Windows 4.x BMP
@@ -410,7 +410,7 @@ class BmpImageHelper {
       case version2_24bit:
         Uint8List bdata = Uint8List(bmp.width * bmp.height * 3);
         _read24Bit(bdata, bmp);
-        RawImageHelper.updateRawImageParameters(
+        CraftRawImageHelper.updateRawImageParameters(
             bmp.image, bmp.width, bmp.height, 3, 8, bdata);
         return true;
       case version3_1bit:
@@ -423,7 +423,7 @@ class BmpImageHelper {
           _readRle4(bmp);
         } else {
           throw IoException(
-              IoExceptionMessageConstant.invalidBmpFileCompression);
+              CraftIoExceptionMessageConstant.invalidBmpFileCompression);
         }
         return true;
       case version3_8bit:
@@ -433,13 +433,13 @@ class BmpImageHelper {
           _readRle8(bmp);
         } else {
           throw IoException(
-              IoExceptionMessageConstant.invalidBmpFileCompression);
+              CraftIoExceptionMessageConstant.invalidBmpFileCompression);
         }
         return true;
       case version3_24bit:
         Uint8List bdata = Uint8List(bmp.width * bmp.height * 3);
         _read24Bit(bdata, bmp);
-        RawImageHelper.updateRawImageParameters(
+        CraftRawImageHelper.updateRawImageParameters(
             bmp.image, bmp.width, bmp.height, 3, 8, bdata);
         return true;
       case version3_nt_16bit:
@@ -458,7 +458,7 @@ class BmpImageHelper {
           _readRle4(bmp);
         } else {
           throw IoException(
-              IoExceptionMessageConstant.invalidBmpFileCompression);
+              CraftIoExceptionMessageConstant.invalidBmpFileCompression);
         }
         return true;
       case version4_8bit:
@@ -468,7 +468,7 @@ class BmpImageHelper {
           _readRle8(bmp);
         } else {
           throw IoException(
-              IoExceptionMessageConstant.invalidBmpFileCompression);
+              CraftIoExceptionMessageConstant.invalidBmpFileCompression);
         }
         return true;
       case version4_16bit:
@@ -477,7 +477,7 @@ class BmpImageHelper {
       case version4_24bit:
         Uint8List bdata = Uint8List(bmp.width * bmp.height * 3);
         _read24Bit(bdata, bmp);
-        RawImageHelper.updateRawImageParameters(
+        CraftRawImageHelper.updateRawImageParameters(
             bmp.image, bmp.width, bmp.height, 3, 8, bdata);
         return true;
       case version4_32bit:
@@ -487,224 +487,59 @@ class BmpImageHelper {
     return false;
   }
 
-  static void _read1Bit(int paletteEntries, BmpParameters bmp) {
-    int bytesPerScanline = (bmp.width / 8.0).ceil();
-    int padding = 0;
-    int remainder = bytesPerScanline % 4;
-    if (remainder != 0) {
-      padding = 4 - remainder;
+  // Read each stored row once into its final visual position. BMP rows occupy
+  // a multiple of four bytes; packed sample bytes themselves have no padding.
+  static Uint8List _rasterRows(BmpParameters bmp, int sampleBits) {
+    final payload = (bmp.width * sampleBits + 7) ~/ 8;
+    final storage = ((payload + 3) ~/ 4) * 4;
+    final row = Uint8List(storage);
+    final raster = Uint8List(payload * bmp.height);
+    for (var stored = 0; stored < bmp.height; stored++) {
+      bmp.inputStream!.readFully(row);
+      final visual = bmp.isBottomUp ? bmp.height - stored - 1 : stored;
+      raster.setRange(visual * payload, (visual + 1) * payload, row);
     }
-    int imSize = (bytesPerScanline + padding) * bmp.height;
-    Uint8List values = Uint8List(imSize);
-    bmp.inputStream!.readFully(values);
-
-    Uint8List bdata = Uint8List((bmp.width + 7) ~/ 8 * bmp.height);
-
-    if (bmp.isBottomUp) {
-      for (int i = 0; i < bmp.height; i++) {
-        // Array.Copy(values, imSize - (i + 1) * (bytesPerScanline + padding), bdata, i * bytesPerScanline, bytesPerScanline)
-        int srcPos = imSize - (i + 1) * (bytesPerScanline + padding);
-        int dstPos = i * bytesPerScanline;
-        for (int k = 0; k < bytesPerScanline; k++) {
-          bdata[dstPos + k] = values[srcPos + k];
-        }
-      }
-    } else {
-      for (int i = 0; i < bmp.height; i++) {
-        int srcPos = i * (bytesPerScanline + padding);
-        int dstPos = i * bytesPerScanline;
-        for (int k = 0; k < bytesPerScanline; k++) {
-          bdata[dstPos + k] = values[srcPos + k];
-        }
-      }
-    }
-    _indexedModel(bdata, 1, paletteEntries, bmp);
+    return raster;
   }
 
-  static void _read4Bit(int paletteEntries, BmpParameters bmp) {
-    int bytesPerScanline = (bmp.width / 2.0).ceil();
-    int padding = 0;
-    int remainder = bytesPerScanline % 4;
-    if (remainder != 0) {
-      padding = 4 - remainder;
-    }
-    int imSize = (bytesPerScanline + padding) * bmp.height;
-    Uint8List values = Uint8List(imSize);
-    bmp.inputStream!.readFully(values);
+  static void _read1Bit(int paletteEntries, BmpParameters bmp) =>
+      _indexedModel(_rasterRows(bmp, 1), 1, paletteEntries, bmp);
 
-    Uint8List bdata = Uint8List((bmp.width + 1) ~/ 2 * bmp.height);
+  static void _read4Bit(int paletteEntries, BmpParameters bmp) =>
+      _indexedModel(_rasterRows(bmp, 4), 4, paletteEntries, bmp);
 
-    if (bmp.isBottomUp) {
-      for (int i = 0; i < bmp.height; i++) {
-        int srcPos = imSize - (i + 1) * (bytesPerScanline + padding);
-        int dstPos = i * bytesPerScanline;
-        for (int k = 0; k < bytesPerScanline; k++) {
-          bdata[dstPos + k] = values[srcPos + k];
-        }
-      }
-    } else {
-      for (int i = 0; i < bmp.height; i++) {
-        int srcPos = i * (bytesPerScanline + padding);
-        int dstPos = i * bytesPerScanline;
-        for (int k = 0; k < bytesPerScanline; k++) {
-          bdata[dstPos + k] = values[srcPos + k];
-        }
-      }
-    }
-    _indexedModel(bdata, 4, paletteEntries, bmp);
-  }
-
-  static void _read8Bit(int paletteEntries, BmpParameters bmp) {
-    int padding = 0;
-    int bitsPerScanline = bmp.width * 8;
-    if (bitsPerScanline % 32 != 0) {
-      padding = (bitsPerScanline / 32 + 1).floor() * 32 - bitsPerScanline;
-      padding = (padding / 8.0).ceil();
-    }
-    int imSize = (bmp.width + padding) * bmp.height;
-    Uint8List values = Uint8List(imSize);
-    bmp.inputStream!.readFully(values);
-
-    Uint8List bdata = Uint8List(bmp.width * bmp.height);
-
-    if (bmp.isBottomUp) {
-      for (int i = 0; i < bmp.height; i++) {
-        int srcPos = imSize - (i + 1) * (bmp.width + padding);
-        int dstPos = i * bmp.width;
-        for (int k = 0; k < bmp.width; k++) {
-          bdata[dstPos + k] = values[srcPos + k];
-        }
-      }
-    } else {
-      for (int i = 0; i < bmp.height; i++) {
-        int srcPos = i * (bmp.width + padding);
-        int dstPos = i * bmp.width;
-        for (int k = 0; k < bmp.width; k++) {
-          bdata[dstPos + k] = values[srcPos + k];
-        }
-      }
-    }
-    _indexedModel(bdata, 8, paletteEntries, bmp);
-  }
+  static void _read8Bit(int paletteEntries, BmpParameters bmp) =>
+      _indexedModel(_rasterRows(bmp, 8), 8, paletteEntries, bmp);
 
   static void _read24Bit(Uint8List bdata, BmpParameters bmp) {
-    int padding = 0;
-    int bitsPerScanline = bmp.width * 24;
-    if (bitsPerScanline % 32 != 0) {
-      padding = (bitsPerScanline / 32 + 1).floor() * 32 - bitsPerScanline;
-      padding = (padding / 8.0).ceil();
-    }
-    int imSize = ((bmp.width * 3 + 3) ~/ 4) * 4 * bmp.height;
-    Uint8List values = Uint8List(imSize);
-    // readFully usually reads all.
-    // If we need partial reads handle loop. But readFully handles it.
-    // C# code breaks if r < 0, but readFully throws or handles EOF.
-    bmp.inputStream!.readFully(values);
-
-    int l = 0;
-    int count;
-    if (bmp.isBottomUp) {
-      int max = bmp.width * bmp.height * 3 - 1;
-      count = -padding;
-      for (int i = 0; i < bmp.height; i++) {
-        l = max - (i + 1) * bmp.width * 3 + 1;
-        count += padding;
-        for (int j = 0; j < bmp.width; j++) {
-          bdata[l + 2] = values[count++];
-          bdata[l + 1] = values[count++];
-          bdata[l] = values[count++];
-          l += 3;
-        }
-      }
-    } else {
-      count = -padding;
-      for (int i = 0; i < bmp.height; i++) {
-        count += padding;
-        for (int j = 0; j < bmp.width; j++) {
-          bdata[l + 2] = values[count++];
-          bdata[l + 1] = values[count++];
-          bdata[l] = values[count++];
-          l += 3;
-        }
-      }
+    final stored = _rasterRows(bmp, 24);
+    for (var offset = 0; offset < stored.length; offset += 3) {
+      bdata[offset] = stored[offset + 2];
+      bdata[offset + 1] = stored[offset + 1];
+      bdata[offset + 2] = stored[offset];
     }
   }
 
   static void _read1632Bit(bool is32, BmpParameters bmp) {
-    int redMask = _findMask(bmp.redMask);
-    int redShift = _findShift(bmp.redMask);
-    int redFactor = redMask + 1;
-    int greenMask = _findMask(bmp.greenMask);
-    int greenShift = _findShift(bmp.greenMask);
-    int greenFactor = greenMask + 1;
-    int blueMask = _findMask(bmp.blueMask);
-    int blueShift = _findShift(bmp.blueMask);
-    int blueFactor = blueMask + 1;
-
-    Uint8List bdata = Uint8List(bmp.width * bmp.height * 3);
-    int padding = 0;
-    if (!is32) {
-      int bitsPerScanline = bmp.width * 16;
-      if (bitsPerScanline % 32 != 0) {
-        padding = (bitsPerScanline / 32 + 1).floor() * 32 - bitsPerScanline;
-        padding = (padding / 8.0).ceil();
+    final bytes = _rasterRows(bmp, is32 ? 32 : 16);
+    final samples = ByteData.sublistView(bytes);
+    final pixelBytes = is32 ? 4 : 2;
+    final rgb = Uint8List(bmp.width * bmp.height * 3);
+    final channels = [bmp.redMask, bmp.greenMask, bmp.blueMask];
+    final shifts = channels.map(_findShift).toList();
+    final masks = channels.map(_findMask).toList();
+    for (var pixel = 0; pixel < bmp.width * bmp.height; pixel++) {
+      final offset = pixel * pixelBytes;
+      final value = is32
+          ? samples.getUint32(offset, Endian.little)
+          : samples.getUint16(offset, Endian.little);
+      for (var channel = 0; channel < 3; channel++) {
+        final component = (value >>> shifts[channel]) & masks[channel];
+        rgb[pixel * 3 + channel] = component * 256 ~/ (masks[channel] + 1);
       }
     }
-
-    int imSize = bmp.imageSize;
-    if (imSize == 0) {
-      imSize = (bmp.bitmapFileSize - bmp.bitmapOffset);
-    }
-
-    int l = 0;
-    int v;
-    if (bmp.isBottomUp) {
-      for (int i = bmp.height - 1; i >= 0; --i) {
-        l = bmp.width * 3 * i;
-        for (int j = 0; j < bmp.width; j++) {
-          if (is32) {
-            v = bmp.inputStream!
-                .readIntLE(); // DWord is usually unsigned but readIntLE is signed.
-            // Mask logic works nicely with signed/unsigned if we treat as uint.
-            // Dart int is 64-bit so reading 32-bit int fits.
-          } else {
-            v = bmp.inputStream!.readUnsignedShortLE();
-          }
-
-          int r = (((v >> redShift) & redMask) * 256) ~/ redFactor;
-          int g = (((v >> greenShift) & greenMask) * 256) ~/ greenFactor;
-          int b = (((v >> blueShift) & blueMask) * 256) ~/ blueFactor;
-
-          bdata[l++] = r;
-          bdata[l++] = g;
-          bdata[l++] = b;
-        }
-        for (int m = 0; m < padding; m++) {
-          bmp.inputStream!.read();
-        }
-      }
-    } else {
-      for (int i = 0; i < bmp.height; i++) {
-        for (int j = 0; j < bmp.width; j++) {
-          if (is32) {
-            v = bmp.inputStream!.readIntLE();
-          } else {
-            v = bmp.inputStream!.readUnsignedShortLE();
-          }
-          int r = (((v >> redShift) & redMask) * 256) ~/ redFactor;
-          int g = (((v >> greenShift) & greenMask) * 256) ~/ greenFactor;
-          int b = (((v >> blueShift) & blueMask) * 256) ~/ blueFactor;
-          bdata[l++] = r;
-          bdata[l++] = g;
-          bdata[l++] = b;
-        }
-        for (int m = 0; m < padding; m++) {
-          bmp.inputStream!.read();
-        }
-      }
-    }
-    RawImageHelper.updateRawImageParameters(
-        bmp.image, bmp.width, bmp.height, 3, 8, bdata);
+    CraftRawImageHelper.updateRawImageParameters(
+        bmp.image, bmp.width, bmp.height, 3, 8, rgb);
   }
 
   static void _readRle8(BmpParameters bmp) {
@@ -716,19 +551,6 @@ class BmpImageHelper {
     bmp.inputStream!.readFully(values);
     Uint8List val = _decodeRle(true, values, bmp);
 
-    imSize = bmp.width * bmp.height;
-    if (bmp.isBottomUp) {
-      Uint8List temp = Uint8List(val.length);
-      int bytesPerScanline = bmp.width;
-      for (int i = 0; i < bmp.height; i++) {
-        int srcPos = imSize - (i + 1) * bytesPerScanline;
-        int dstPos = i * bytesPerScanline;
-        for (int k = 0; k < bytesPerScanline; k++) {
-          temp[dstPos + k] = val[srcPos + k];
-        }
-      }
-      val = temp;
-    }
     _indexedModel(val, 8, 4, bmp);
   }
 
@@ -741,116 +563,70 @@ class BmpImageHelper {
     bmp.inputStream!.readFully(values);
     Uint8List val = _decodeRle(false, values, bmp);
 
-    if (bmp.isBottomUp) {
-      Uint8List inverted = val;
-      val = Uint8List(bmp.width * bmp.height);
-      int l = 0;
-      int index;
-      int lineEnd;
-      for (int i = bmp.height - 1; i >= 0; i--) {
-        index = i * bmp.width;
-        lineEnd = l + bmp.width;
-        while (l != lineEnd) {
-          val[l++] = inverted[index++];
-        }
-      }
-    }
-
-    int stride = (bmp.width + 1) ~/ 2;
-    Uint8List bdata = Uint8List(stride * bmp.height);
-    int ptr = 0;
-    int sh = 0;
-    for (int h = 0; h < bmp.height; ++h) {
-      for (int w = 0; w < bmp.width; ++w) {
-        if ((w & 1) == 0) {
-          bdata[sh + w ~/ 2] = (val[ptr++] << 4);
-        } else {
-          bdata[sh + w ~/ 2] = bdata[sh + w ~/ 2] | (val[ptr++] & 0x0f);
-        }
-      }
-      sh += stride;
+    final rowBytes = (bmp.width + 1) ~/ 2;
+    final bdata = Uint8List(rowBytes * bmp.height);
+    for (var packed = 0; packed < bdata.length; packed++) {
+      final row = packed ~/ rowBytes;
+      final column = (packed % rowBytes) * 2;
+      final source = row * bmp.width + column;
+      final low = column + 1 < bmp.width ? val[source + 1] : 0;
+      bdata[packed] = (val[source] << 4) | (low & 15);
     }
     _indexedModel(bdata, 4, 4, bmp);
   }
 
   static Uint8List _decodeRle(bool is8, Uint8List values, BmpParameters bmp) {
-    Uint8List val = Uint8List(bmp.width * bmp.height);
-    try {
-      int ptr = 0;
-      int x = 0;
-      int q = 0;
-      for (int y = 0; y < bmp.height && ptr < values.length;) {
-        int count = values[ptr++] & 0xff;
-        if (count != 0) {
-          // encoded mode
-          int bt = values[ptr++] & 0xff;
-          if (is8) {
-            for (int i = count; i != 0; --i) {
-              val[q++] = bt;
-            }
-          } else {
-            for (int i = 0; i < count; ++i) {
-              val[q++] = ((i & 1) == 1 ? bt & 0x0f : (bt >> 4) & 0x0f);
-            }
-          }
-          x += count;
+    final pixels = Uint8List(bmp.width * bmp.height);
+    var cursor = 0, column = 0, row = 0;
+    int take() {
+      if (cursor == values.length)
+        throw IoException('BMP run data is incomplete.');
+      return values[cursor++];
+    }
+
+    while (cursor < values.length && row < bmp.height) {
+      final run = take();
+      final command = take();
+      if (run == 0 && command < 3) {
+        if (command == 1) return pixels;
+        if (command == 0) {
+          row++;
+          column = 0;
         } else {
-          // escape mode
-          count = values[ptr++] & 0xff;
-          if (count == 1) {
-            break;
-          }
-          switch (count) {
-            case 0:
-              x = 0;
-              ++y;
-              q = y * bmp.width;
-              break;
-            case 2:
-              // delta mode
-              x += values[ptr++] & 0xff;
-              y += values[ptr++] & 0xff;
-              q = y * bmp.width + x;
-              break;
-            default:
-              // absolute mode
-              if (is8) {
-                for (int i = count; i != 0; --i) {
-                  val[q++] = values[ptr++] & 0xff;
-                }
-              } else {
-                int bt = 0;
-                for (int i = 0; i < count; ++i) {
-                  if ((i & 1) == 0) {
-                    bt = values[ptr++] & 0xff;
-                  }
-                  val[q++] = ((i & 1) == 1 ? bt & 0x0f : (bt >> 4) & 0x0f);
-                }
-              }
-              x += count;
-              // read pad byte
-              if (is8) {
-                if ((count & 1) == 1) {
-                  ++ptr;
-                }
-              } else {
-                if ((count & 3) == 1 || (count & 3) == 2) {
-                  ++ptr;
-                }
-              }
-              break;
+          column += take();
+          row += take();
+          if (column > bmp.width || row >= bmp.height) {
+            throw IoException('BMP run displacement exceeds the raster.');
           }
         }
+        continue;
       }
-    } catch (e) {
-      // Ignore
+      final length = run == 0 ? command : run;
+      if (column + length > bmp.width) {
+        throw IoException('BMP run crosses a scanline boundary.');
+      }
+      final literalBytes = is8 ? length : (length + 1) ~/ 2;
+      final start = cursor;
+      if (run == 0 &&
+          values.length - cursor < literalBytes + (literalBytes % 2)) {
+        throw IoException('BMP literal run or alignment byte is incomplete.');
+      }
+      for (var sample = 0; sample < length; sample++) {
+        final packed =
+            run == 0 ? values[start + (is8 ? sample : sample ~/ 2)] : command;
+        final index = is8 ? packed : (packed >> (sample.isEven ? 4 : 0)) & 15;
+        final targetRow = bmp.isBottomUp ? bmp.height - row - 1 : row;
+        pixels[targetRow * bmp.width + column + sample] = index;
+      }
+      column += length;
+      if (run == 0) cursor += literalBytes + (literalBytes % 2);
     }
-    return val;
+    return pixels;
   }
 
   static void _indexedModel(
       Uint8List bdata, int bpc, int paletteEntries, BmpParameters bmp) {
-    RawImageHelper.updateRawImageParameters(
+    CraftRawImageHelper.updateRawImageParameters(
         bmp.image, bmp.width, bmp.height, 1, bpc, bdata);
 
     List<Object> colorSpace = List.filled(4, "");
@@ -859,7 +635,7 @@ class BmpImageHelper {
     Uint8List np = _getPalette(paletteEntries, bmp);
     int len = np.length;
     colorSpace[2] = (len ~/ 3) - 1;
-    colorSpace[3] = PdfEncodings.convertToString(np, null);
+    colorSpace[3] = CraftPdfEncodings.convertToString(np, null);
 
     bmp.additional ??= {};
     bmp.additional!["ColorSpace"] = colorSpace;
@@ -905,11 +681,11 @@ class BmpImageHelper {
 }
 
 class BmpParameters {
-  BmpImageData image;
+  CraftBmpImageData image;
   int width = 0;
   int height = 0;
   Map<String, Object>? additional;
-  RandomAccessFileOrArray? inputStream;
+  CraftRandomAccessFileOrArray? inputStream;
   int bitmapFileSize = 0;
   int bitmapOffset = 0;
   int compression = 0;

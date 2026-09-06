@@ -1,11 +1,11 @@
-import 'package:dpdf/src/kernel/pdf/pdf_object_wrapper.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_object_wrapper.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
 
-abstract class PdfXObject extends PdfObjectWrapper<PdfStream> {
-  PdfXObject(PdfStream pdfObject) : super(pdfObject);
+abstract class CraftPdfXObject extends CraftPdfObjectWrapper<CraftPdfStream> {
+  CraftPdfXObject(CraftPdfStream pdfObject) : super(pdfObject);
 
   @override
-  bool isWrappedObjectMustBeIndirect() => true;
+  bool requiresIndirectStorage() => true;
 
   double getWidth();
   double getHeight();

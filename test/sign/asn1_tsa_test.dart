@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:dpdf/src/sign/asn1_utils.dart';
-import 'package:dpdf/src/sign/tsa_client_bouncy_castle.dart';
-import 'package:dpdf/src/sign/digest_algorithms.dart';
-import 'package:dpdf/src/sign/oid.dart';
+import 'package:pdfcraft/src/sign/asn1_utils.dart';
+import 'package:pdfcraft/src/sign/timestamp_client.dart';
+import 'package:pdfcraft/src/sign/digest_algorithms.dart';
+import 'package:pdfcraft/src/sign/oid.dart';
 
 void main() {
   group('ASN1Utils Encoding', () {
@@ -58,7 +58,7 @@ void main() {
     });
 
     test('createOID encodes SHA-256 OID', () {
-      final result = ASN1Utils.createOID(OID.sha256);
+      final result = ASN1Utils.createOID(CraftOID.sha256);
       expect(result[0], equals(0x06)); // OID tag
       expect(result.length, greaterThan(2));
     });
@@ -167,9 +167,9 @@ void main() {
     });
   });
 
-  group('TSAClientBouncyCastle', () {
+  group('TimestampClient', () {
     test('constructor sets properties correctly', () {
-      final client = TSAClientBouncyCastle(
+      final client = TimestampClient(
         'http://timestamp.example.com',
         digestAlgorithm: 'SHA-256',
         tokenSizeEstimate: 4096,
@@ -181,13 +181,13 @@ void main() {
     });
 
     test('setTokenSizeEstimate updates estimate', () {
-      final client = TSAClientBouncyCastle('http://example.com');
+      final client = TimestampClient('http://example.com');
       client.setTokenSizeEstimate(8192);
       expect(client.getTokenSizeEstimate(), equals(8192));
     });
 
     test('getMessageDigest returns working digest', () {
-      final client = TSAClientBouncyCastle('http://example.com');
+      final client = TimestampClient('http://example.com');
       final digest = client.getMessageDigest();
       digest.update(Uint8List.fromList([1, 2, 3]));
       final result = digest.digest();
@@ -195,8 +195,8 @@ void main() {
     });
 
     test('buildTimeStampRequest creates valid ASN.1', () {
-      final client = TSAClientBouncyCastle('http://example.com');
-      final imprint = DigestAlgorithms.digestBytes(
+      final client = TimestampClient('http://example.com');
+      final imprint = CraftDigestAlgorithms.digestBytes(
         Uint8List.fromList([1, 2, 3, 4, 5]),
         'SHA-256',
       );
@@ -210,12 +210,12 @@ void main() {
     });
 
     test('getAuthorizationHeader returns null without credentials', () {
-      final client = TSAClientBouncyCastle('http://example.com');
+      final client = TimestampClient('http://example.com');
       expect(client.getAuthorizationHeader(), isNull);
     });
 
     test('getAuthorizationHeader returns Basic auth with credentials', () {
-      final client = TSAClientBouncyCastle(
+      final client = TimestampClient(
         'http://example.com',
         username: 'user',
         password: 'pass',
@@ -225,7 +225,7 @@ void main() {
     });
 
     test('getTimeStampToken throws UnimplementedError', () {
-      final client = TSAClientBouncyCastle('http://example.com');
+      final client = TimestampClient('http://example.com');
       expect(
         () async => await client.getTimeStampToken(Uint8List(32)),
         throwsUnimplementedError,

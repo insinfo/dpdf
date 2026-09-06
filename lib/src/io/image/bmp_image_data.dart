@@ -1,16 +1,16 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/image/raw_image_data.dart';
-import 'package:dpdf/src/layout/properties/image_type.dart';
+import 'package:pdfcraft/src/io/image/raw_image_data.dart';
+import 'package:pdfcraft/src/layout/properties/image_type.dart';
 
-class BmpImageData extends RawImageData {
+class CraftBmpImageData extends CraftRawImageData {
   final bool noHeader;
 
-  BmpImageData.fromUrl(Uri url, {this.noHeader = false})
-      : super.fromUrl(url, ImageType.BMP);
+  CraftBmpImageData.fromUrl(Uri url, {this.noHeader = false})
+      : super.fromUrl(url, CraftImageType.BMP);
 
-  BmpImageData.fromBytes(Uint8List bytes, {this.noHeader = false})
-      : super.fromBytes(bytes, ImageType.BMP);
+  CraftBmpImageData.fromBytes(Uint8List bytes, {this.noHeader = false})
+      : super.fromBytes(bytes, CraftImageType.BMP);
 
   bool isNoHeader() => noHeader;
 }

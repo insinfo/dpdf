@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'dart:math' as math;
 
 /// This class implements an array of unsigned bytes.
-class ByteArray {
+class CraftByteArray {
   static const int INITIAL_SIZE = 32;
 
   Uint8List? _bytes;
@@ -11,7 +11,7 @@ class ByteArray {
   /// Creates a new ByteArray instance.
   ///
   /// [arg] can be int (size) or Uint8List (bytes) or List<int>.
-  ByteArray([dynamic arg]) {
+  CraftByteArray([dynamic arg]) {
     if (arg == null) {
       _bytes = null;
       _size = 0;
@@ -55,7 +55,7 @@ class ByteArray {
 
   /// Append a byte to the end of the array.
   ///
-  /// Append a byte to the end of the array. If the array is too small, it's capacity is doubled.
+  /// Adds one byte, allocating additional backing storage when necessary.
   /// [value] - byte to append.
   void appendByte(int value) {
     if (_size == 0 || _size >= _bytes!.length) {
@@ -66,7 +66,7 @@ class ByteArray {
     _size++;
   }
 
-  /// Increase the capacity of the array to "capacity" if the current capacity is smaller
+  /// Ensures storage for at least the requested number of bytes.
   ///
   /// [capacity] - the new capacity
   void reserve(int capacity) {

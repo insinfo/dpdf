@@ -1,7 +1,7 @@
 /// Helper class for internal usage only.
 
-class MessageFormatUtil {
-  MessageFormatUtil._();
+class CraftMessageFormatUtil {
+  CraftMessageFormatUtil._();
 
   /// Formats a pattern string with the provided arguments.
   ///

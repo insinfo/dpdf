@@ -1,20 +1,20 @@
-import 'package:dpdf/src/layout/renderer/abstract_renderer.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
-import 'package:dpdf/src/layout/element/i_element.dart';
-import 'package:dpdf/src/layout/layout/layout_context.dart';
-import 'package:dpdf/src/layout/layout/layout_result.dart';
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/layout/renderer/draw_context.dart';
-import 'package:dpdf/src/layout/properties/property.dart';
-import 'package:dpdf/src/layout/borders/border.dart';
-import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
+import 'package:pdfcraft/src/layout/renderer/abstract_renderer.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:pdfcraft/src/layout/element/element.dart';
+import 'package:pdfcraft/src/layout/layout/layout_context.dart';
+import 'package:pdfcraft/src/layout/layout/layout_result.dart';
+import 'package:pdfcraft/src/layout/layout/layout_area.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/layout/renderer/draw_context.dart';
+import 'package:pdfcraft/src/layout/properties/property.dart';
+import 'package:pdfcraft/src/layout/borders/border.dart';
+import 'package:pdfcraft/src/layout/minmaxwidth/min_max_width.dart';
 
-class BlockRenderer extends AbstractRenderer {
-  BlockRenderer(IElement modelElement) : super(modelElement);
+class CraftBlockRenderer extends CraftAbstractRenderer {
+  CraftBlockRenderer(CraftElement modelElement) : super(modelElement);
 
   @override
-  MinMaxWidth? getMinMaxWidth() {
+  CraftMinMaxWidth? getMinMaxWidth() {
     // Box properties
     double additionalWidth = 0;
 
@@ -26,38 +26,38 @@ class BlockRenderer extends AbstractRenderer {
     double minW = 0;
     double maxW = 0;
 
-    for (IRenderer child in childRenderers) {
-      MinMaxWidth? childMMW = child.getMinMaxWidth();
+    for (CraftRenderer child in childRenderers) {
+      CraftMinMaxWidth? childMMW = child.getMinMaxWidth();
       if (childMMW != null) {
         if (childMMW.getMinWidth() > minW) minW = childMMW.getMinWidth();
         if (childMMW.getMaxWidth() > maxW) maxW = childMMW.getMaxWidth();
       }
     }
-    return MinMaxWidth.full(minW, maxW, additionalWidth);
+    return CraftMinMaxWidth.full(minW, maxW, additionalWidth);
   }
 
   @override
-  LayoutResult? layout(LayoutContext layoutContext) {
-    LayoutArea area = layoutContext.getArea();
-    Rectangle parentBox = area.getBBox().clone();
+  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
+    CraftLayoutArea area = layoutContext.getArea();
+    CraftRectangle parentBox = area.getBBox().clone();
     double parentWidth = parentBox.getWidth();
 
     // Box Model Properties
-    double mt = getResolvedProperty(Property.MARGIN_TOP, parentWidth);
-    double mb = getResolvedProperty(Property.MARGIN_BOTTOM, parentWidth);
-    double ml = getResolvedProperty(Property.MARGIN_LEFT, parentWidth);
-    double mr = getResolvedProperty(Property.MARGIN_RIGHT, parentWidth);
+    double mt = getResolvedProperty(CraftProperty.MARGIN_TOP, parentWidth);
+    double mb = getResolvedProperty(CraftProperty.MARGIN_BOTTOM, parentWidth);
+    double ml = getResolvedProperty(CraftProperty.MARGIN_LEFT, parentWidth);
+    double mr = getResolvedProperty(CraftProperty.MARGIN_RIGHT, parentWidth);
 
-    double pt = getResolvedProperty(Property.PADDING_TOP, parentWidth);
-    double pb = getResolvedProperty(Property.PADDING_BOTTOM, parentWidth);
-    double pl = getResolvedProperty(Property.PADDING_LEFT, parentWidth);
-    double pr = getResolvedProperty(Property.PADDING_RIGHT, parentWidth);
+    double pt = getResolvedProperty(CraftProperty.PADDING_TOP, parentWidth);
+    double pb = getResolvedProperty(CraftProperty.PADDING_BOTTOM, parentWidth);
+    double pl = getResolvedProperty(CraftProperty.PADDING_LEFT, parentWidth);
+    double pr = getResolvedProperty(CraftProperty.PADDING_RIGHT, parentWidth);
 
     // Borders
-    Border? btBorder = getProperty(Property.BORDER_TOP);
-    Border? bbBorder = getProperty(Property.BORDER_BOTTOM);
-    Border? blBorder = getProperty(Property.BORDER_LEFT);
-    Border? brBorder = getProperty(Property.BORDER_RIGHT);
+    CraftBorder? btBorder = getProperty(CraftProperty.BORDER_TOP);
+    CraftBorder? bbBorder = getProperty(CraftProperty.BORDER_BOTTOM);
+    CraftBorder? blBorder = getProperty(CraftProperty.BORDER_LEFT);
+    CraftBorder? brBorder = getProperty(CraftProperty.BORDER_RIGHT);
 
     double bt = btBorder?.width ?? 0;
     double bb = bbBorder?.width ?? 0;
@@ -71,10 +71,10 @@ class BlockRenderer extends AbstractRenderer {
     // Initialize occupied area
     // The occupied area usually includes margins.
     // We start assuming we take 0 height.
-    occupiedArea = LayoutArea(
-        area.getPageNumber(),
-        Rectangle(parentBox.getX(), parentBox.getY() + parentBox.getHeight(),
-            parentWidth, 0));
+    occupiedArea = CraftLayoutArea(
+        area.pageOrdinal(),
+        CraftRectangle(parentBox.getX(),
+            parentBox.getY() + parentBox.getHeight(), parentWidth, 0));
 
     // Vertical cursor relative to parentBox top (moving downwards usually, but Y coordinate in PDF is bottom-up)
     // parentBox.getY() + parentBox.getHeight() is the TOP Y.
@@ -93,7 +93,7 @@ class BlockRenderer extends AbstractRenderer {
     double availableHeight = parentBox.getHeight() - topOffset - bottomOffset;
 
     for (int i = 0; i < childRenderers.length; i++) {
-      IRenderer child = childRenderers[i];
+      CraftRenderer child = childRenderers[i];
 
       // Child available area
       // X is shifted by ml + bl + pl
@@ -104,16 +104,16 @@ class BlockRenderer extends AbstractRenderer {
       double childAvailableHeight = availableHeight;
       if (childAvailableHeight < 0) childAvailableHeight = 0;
 
-      LayoutArea childArea = LayoutArea(
-          area.getPageNumber(),
-          Rectangle(childX, curY - childAvailableHeight, contentWidth,
+      CraftLayoutArea childArea = CraftLayoutArea(
+          area.pageOrdinal(),
+          CraftRectangle(childX, curY - childAvailableHeight, contentWidth,
               childAvailableHeight));
 
-      LayoutResult? result = child.layout(LayoutContext(childArea));
+      CraftLayoutResult? result = child.layout(CraftLayoutContext(childArea));
 
       if (result != null) {
-        if (result.getStatus() == LayoutResult.FULL) {
-          Rectangle? childOccupied = result.getOccupiedArea()?.getBBox();
+        if (result.getStatus() == CraftLayoutResult.FULL) {
+          CraftRectangle? childOccupied = result.getOccupiedArea()?.getBBox();
           if (childOccupied != null) {
             double childHeight = childOccupied.getHeight();
 
@@ -121,18 +121,19 @@ class BlockRenderer extends AbstractRenderer {
             availableHeight -= childHeight;
             curY -= childHeight;
 
-            if (child is AbstractRenderer) {
+            if (child is CraftAbstractRenderer) {
               child.occupiedArea = result.getOccupiedArea();
             }
           }
-        } else if (result.getStatus() == LayoutResult.PARTIAL) {
+        } else if (result.getStatus() == CraftLayoutResult.PARTIAL) {
           // Handle split
-          if (child is AbstractRenderer) {
+          if (child is CraftAbstractRenderer) {
             child.occupiedArea = result.getOccupiedArea();
           }
 
           // Create split renderer for 'this'
-          BlockRenderer splitRenderer = BlockRenderer(modelElement as IElement);
+          CraftBlockRenderer splitRenderer =
+              CraftBlockRenderer(modelElement as CraftElement);
           // Split renderer needs to know it's a split.
           // We should probably copy properties, etc. (AbstractRenderer does not strictly enforce copy, but logic should)
           // For now simpler logic.
@@ -143,8 +144,8 @@ class BlockRenderer extends AbstractRenderer {
           }
 
           // Overflow
-          BlockRenderer overflowRenderer =
-              BlockRenderer(modelElement as IElement);
+          CraftBlockRenderer overflowRenderer =
+              CraftBlockRenderer(modelElement as CraftElement);
           if (result.getOverflowRenderer() != null) {
             overflowRenderer.childRenderers.add(result.getOverflowRenderer()!);
           }
@@ -164,8 +165,8 @@ class BlockRenderer extends AbstractRenderer {
 
           splitRenderer.occupiedArea = occupiedArea;
 
-          return LayoutResult(LayoutResult.PARTIAL, occupiedArea, splitRenderer,
-              overflowRenderer);
+          return CraftLayoutResult(CraftLayoutResult.PARTIAL, occupiedArea,
+              splitRenderer, overflowRenderer);
         } else {
           // NOTHING logic
           // If first child returns NOTHING, we might be unable to fit anything.
@@ -173,12 +174,12 @@ class BlockRenderer extends AbstractRenderer {
 
           if (i > 0) {
             // Return PARTIAL with what we have
-            BlockRenderer splitRenderer =
-                BlockRenderer(modelElement as IElement);
+            CraftBlockRenderer splitRenderer =
+                CraftBlockRenderer(modelElement as CraftElement);
             splitRenderer.childRenderers.addAll(childRenderers.sublist(0, i));
 
-            BlockRenderer overflowRenderer =
-                BlockRenderer(modelElement as IElement);
+            CraftBlockRenderer overflowRenderer =
+                CraftBlockRenderer(modelElement as CraftElement);
             overflowRenderer.childRenderers.addAll(childRenderers.sublist(i));
 
             occupiedArea!.getBBox().setHeight(currentHeightUsed);
@@ -186,15 +187,15 @@ class BlockRenderer extends AbstractRenderer {
                 parentBox.getY() + parentBox.getHeight() - currentHeightUsed);
             splitRenderer.occupiedArea = occupiedArea;
 
-            return LayoutResult(LayoutResult.PARTIAL, occupiedArea,
+            return CraftLayoutResult(CraftLayoutResult.PARTIAL, occupiedArea,
                 splitRenderer, overflowRenderer);
           } else {
             // Nothing fits at all
-            BlockRenderer overflowRenderer =
-                BlockRenderer(modelElement as IElement);
+            CraftBlockRenderer overflowRenderer =
+                CraftBlockRenderer(modelElement as CraftElement);
             overflowRenderer.childRenderers.addAll(childRenderers);
-            return LayoutResult(
-                LayoutResult.NOTHING, null, null, overflowRenderer);
+            return CraftLayoutResult(
+                CraftLayoutResult.NOTHING, null, null, overflowRenderer);
           }
         }
       }
@@ -207,11 +208,11 @@ class BlockRenderer extends AbstractRenderer {
         .getBBox()
         .setY(parentBox.getY() + parentBox.getHeight() - currentHeightUsed);
 
-    return LayoutResult(LayoutResult.FULL, occupiedArea, null, null);
+    return CraftLayoutResult(CraftLayoutResult.FULL, occupiedArea, null, null);
   }
 
   @override
-  Future<void> draw(DrawContext drawContext) async {
+  Future<void> draw(CraftDrawContext drawContext) async {
     // Draw background/borders here if needed
     await super.draw(drawContext);
   }

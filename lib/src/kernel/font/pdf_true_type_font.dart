@@ -1,50 +1,52 @@
 import 'dart:typed_data';
-import 'package:dpdf/src/io/font/font_encoding.dart';
-import 'package:dpdf/src/io/font/true_type_font.dart';
-import 'package:dpdf/src/io/font/otf/glyph.dart';
-import 'package:dpdf/src/io/font/font_names.dart';
-import 'package:dpdf/src/kernel/font/pdf_font.dart';
-import 'package:dpdf/src/kernel/font/pdf_simple_font.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:pdfcraft/src/io/font/font_encoding.dart';
+import 'package:pdfcraft/src/io/font/true_type_font.dart';
+import 'package:pdfcraft/src/io/font/otf/glyph.dart';
+import 'package:pdfcraft/src/io/font/font_names.dart';
+import 'package:pdfcraft/src/kernel/font/pdf_font.dart';
+import 'package:pdfcraft/src/kernel/font/pdf_simple_font.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
 
-class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
-  PdfTrueTypeFont(TrueTypeFont ttf, [String? encoding, bool embedded = false])
+class CraftPdfTrueTypeFont extends CraftPdfSimpleFont<CraftTrueTypeFont> {
+  CraftPdfTrueTypeFont(CraftTrueTypeFont ttf,
+      [String? encoding, bool embedded = false])
       : super() {
     setFontProgram(ttf);
     this.embedded = embedded;
 
-    FontNames fontNames = ttf.getFontNames();
+    CraftFontNames fontNames = ttf.getFontNames();
     if (embedded && !fontNames.isAllowEmbedding()) {
       throw Exception(
           "Font ${fontNames.getFontName()} cannot be embedded due to licensing restrictions.");
     }
 
     if ((encoding == null || encoding.isEmpty) && ttf.getIsFontSpecific()) {
-      encoding = FontEncoding.FONT_SPECIFIC;
+      encoding = CraftFontEncoding.FONT_SPECIFIC;
     }
 
     if (encoding != null &&
-        encoding.toLowerCase() == FontEncoding.FONT_SPECIFIC.toLowerCase()) {
-      fontEncoding = FontEncoding.createFontSpecificEncoding();
+        encoding.toLowerCase() ==
+            CraftFontEncoding.FONT_SPECIFIC.toLowerCase()) {
+      fontEncoding = CraftFontEncoding.createFontSpecificEncoding();
     } else {
       fontEncoding =
-          FontEncoding.createFontEncoding(encoding ?? "WinAnsiEncoding");
+          CraftFontEncoding.createFontEncoding(encoding ?? "WinAnsiEncoding");
     }
   }
 
-  PdfTrueTypeFont.fromDictionary(PdfDictionary fontDictionary)
+  CraftPdfTrueTypeFont.fromDictionary(CraftPdfDictionary fontDictionary)
       : super(fontDictionary) {
     newFont = false;
   }
 
   @override
-  Glyph? getGlyph(int unicode) {
+  CraftGlyph? getGlyph(int unicode) {
     if (fontEncoding != null && fontEncoding!.canEncode(unicode)) {
-      Glyph? glyph = getFontProgram()!.getGlyph(unicode); 
+      CraftGlyph? glyph = getFontProgram()!.getGlyph(unicode);
       return glyph;
     }
     return null;
@@ -67,17 +69,17 @@ class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
 
   @override
   Future<void> flush() async {
-    if (isFlushed()) return;
+    if (hasBeenWritten()) return;
     ensureUnderlyingObjectHasIndirectReference();
     if (newFont) {
-      PdfName subtype;
+      CraftPdfName subtype;
       String fontName;
-      if ((getFontProgram() as TrueTypeFont).isCff()) {
-        subtype = PdfName.type1;
+      if ((getFontProgram() as CraftTrueTypeFont).isCff()) {
+        subtype = CraftPdfName.type1;
         fontName = getFontProgram()!.getFontNames().getFontName()!;
       } else {
-        subtype = PdfName.trueType;
-        fontName = PdfFont.updateSubsetPrefix(
+        subtype = CraftPdfName.trueType;
+        fontName = CraftPdfFont.updateSubsetPrefix(
             getFontProgram()!.getFontNames().getFontName()!, subset, embedded);
       }
       await flushFontData(fontName, subtype);
@@ -86,27 +88,27 @@ class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
   }
 
   @override
-  Future<void> addFontStream(PdfDictionary fontDescriptor) async {
+  Future<void> addFontStream(CraftPdfDictionary fontDescriptor) async {
     if (embedded) {
-      PdfName fontFileName;
-      PdfStream? fontStream;
+      CraftPdfName fontFileName;
+      CraftPdfStream? fontStream;
 
-      TrueTypeFont ttf = getFontProgram() as TrueTypeFont;
+      CraftTrueTypeFont ttf = getFontProgram() as CraftTrueTypeFont;
       if (ttf.isCff()) {
-        fontFileName = PdfName.fontFile3;
+        fontFileName = CraftPdfName.fontFile3;
         Uint8List? fontStreamBytes = ttf.readCffFont();
         if (fontStreamBytes != null) {
           fontStream =
               getPdfFontStream(fontStreamBytes, [fontStreamBytes.length]);
-          fontStream!.put(PdfName.subtype, PdfName("Type1C"));
+          fontStream!.put(CraftPdfName.subtype, CraftPdfName("Type1C"));
         }
       } else {
-        fontFileName = PdfName.fontFile2;
+        fontFileName = CraftPdfName.fontFile2;
         Set<int> glyphs = {};
         for (int k = 0; k < usedGlyphs.length; k++) {
           if (usedGlyphs[k] != 0) {
             int uni = fontEncoding!.getUnicode(k);
-            Glyph? glyph =
+            CraftGlyph? glyph =
                 (uni > -1) ? ttf.getGlyph(uni) : ttf.getGlyphByCode(k);
             if (glyph != null) {
               glyphs.add(glyph.getCode());
@@ -130,7 +132,7 @@ class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
 
       if (fontStream != null) {
         fontDescriptor.put(fontFileName, fontStream);
-        if (fontStream.getIndirectReference() != null) {
+        if (fontStream.indirectHandle() != null) {
           await fontStream.flush();
         }
       }
@@ -138,20 +140,23 @@ class PdfTrueTypeFont extends PdfSimpleFont<TrueTypeFont> {
   }
 
   @override
-  PdfDictionary getFontDescriptor(String fontName) {
-    PdfDictionary fd = PdfDictionary();
-    fd.put(PdfName.type, PdfName.fontDescriptor);
-    fd.put(PdfName.fontName, PdfName(fontName));
+  CraftPdfDictionary getFontDescriptor(String fontName) {
+    CraftPdfDictionary fd = CraftPdfDictionary();
+    fd.put(CraftPdfName.type, CraftPdfName.fontDescriptor);
+    fd.put(CraftPdfName.fontName, CraftPdfName(fontName));
 
     final metrics = getFontProgram()!.getFontMetrics();
-    fd.put(
-        PdfName.flags, PdfNumber(getFontProgram()!.getPdfFontFlags().toDouble()));
-    fd.put(PdfName.fontBBox, PdfArray.fromInts(metrics.getBbox()));
-    fd.put(PdfName.italicAngle, PdfNumber(metrics.getItalicAngle()));
-    fd.put(PdfName.ascent, PdfNumber(metrics.getTypoAscender().toDouble()));
-    fd.put(PdfName.descent, PdfNumber(metrics.getTypoDescender().toDouble()));
-    fd.put(PdfName.capHeight, PdfNumber(metrics.getCapHeight().toDouble()));
-    fd.put(PdfName.stemV, PdfNumber(80));
+    fd.put(CraftPdfName.flags,
+        CraftPdfNumber(getFontProgram()!.getPdfFontFlags().toDouble()));
+    fd.put(CraftPdfName.fontBBox, CraftPdfArray.fromInts(metrics.getBbox()));
+    fd.put(CraftPdfName.italicAngle, CraftPdfNumber(metrics.getItalicAngle()));
+    fd.put(CraftPdfName.ascent,
+        CraftPdfNumber(metrics.getTypoAscender().toDouble()));
+    fd.put(CraftPdfName.descent,
+        CraftPdfNumber(metrics.getTypoDescender().toDouble()));
+    fd.put(CraftPdfName.capHeight,
+        CraftPdfNumber(metrics.getCapHeight().toDouble()));
+    fd.put(CraftPdfName.stemV, CraftPdfNumber(80));
 
     return fd;
   }

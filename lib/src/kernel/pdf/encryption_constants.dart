@@ -1,23 +1,23 @@
 /// Encryption constants for .
-class EncryptionConstants {
-  EncryptionConstants._();
+class CraftEncryptionConstants {
+  CraftEncryptionConstants._();
 
-  /// Type of encryption. RC4 encryption algorithm will be used with the key length of 40 bits.
+  /// Selects RC4 with a 40-bit key.
   static const int standardEncryption40 = 0;
 
-  /// Type of encryption. RC4 encryption algorithm will be used with the key length of 128 bits.
+  /// Selects RC4 with a 128-bit key.
   static const int standardEncryption128 = 1;
 
-  /// Type of encryption. AES encryption algorithm will be used with the key length of 128 bits.
+  /// Selects AES with a 128-bit key.
   static const int encryptionAes128 = 2;
 
-  /// Type of encryption. AES encryption algorithm will be used with the key length of 256 bits.
+  /// Selects AES with a 256-bit key.
   static const int encryptionAes256 = 3;
 
   /// Type of encryption. Advanced Encryption Standard-Galois/Counter Mode (AES-GCM) encryption algorithm.
   static const int encryptionAesGcm = 4;
 
-  /// Add this to the mode to keep the metadata in clear text.
+  /// Keeps document metadata outside encryption.
   static const int doNotEncryptMetadata = 8;
 
   /// Add this to the mode to encrypt only the embedded files.
@@ -47,6 +47,6 @@ class EncryptionConstants {
   /// The operation is permitted when the document is opened with the user password.
   static const int allowDegradedPrinting = 4;
 
-  /// Mask to separate the encryption type from the encryption mode.
+  /// Extracts the cipher selection from the combined options.
   static const int encryptionMask = 7;
 }

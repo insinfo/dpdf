@@ -1,18 +1,19 @@
 import 'dart:io';
 
-import 'package:dpdf/src/kernel/pdf/filespec/pdf_file_spec.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
+import 'package:pdfcraft/src/kernel/pdf/filespec/pdf_file_spec.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
 import 'package:test/test.dart';
 
 void main() {
+  setUpAll(() => Directory('test/tmp').createSync(recursive: true));
   group('PdfDocument Features Tests', () {
     late String outputPath;
-    late PdfDocument pdfDoc;
+    late CraftPdfDocument pdfDoc;
 
     setUp(() async {
       outputPath = 'test/tmp/pdf_document_features_test.pdf';
@@ -20,36 +21,38 @@ void main() {
       if (await file.exists()) {
         await file.delete();
       }
-      final writer = PdfWriter.toFile(outputPath);
-      pdfDoc = PdfDocument.fromWriter(writer);
-      await pdfDoc.addNewPage(); // Add one page
+      final writer = CraftPdfWriter.toFile(outputPath);
+      pdfDoc = CraftPdfDocument.fromWriter(writer);
+      await pdfDoc.appendBlankPage(); // Add one page
     });
 
     tearDown(() async {
-      if (!pdfDoc.isClosed()) {
+      if (!pdfDoc.lifecycleClosed()) {
         await pdfDoc.close();
       }
     });
 
     test('addFileAttachment adds entry to EmbeddedFiles in Catalog', () async {
-      final fsDict = PdfDictionary();
+      final fsDict = CraftPdfDictionary();
       // Minimal dictionary for FileSpec
-      final fs = PdfFileSpec(fsDict);
-      await pdfDoc.addFileAttachment('TestAttachment', fs);
+      final fs = CraftPdfFileSpec(fsDict);
+      await pdfDoc.registerAttachment('TestAttachment', fs);
 
-      final catalog = pdfDoc.getCatalog();
-      final names = await catalog.getPdfObject().getAsDictionary(PdfName.names);
+      final catalog = pdfDoc.rootCatalog();
+      final names =
+          await catalog.pdfRepresentation().dictionaryEntry(CraftPdfName.names);
       expect(names, isNotNull);
-      final embeddedFiles = await names!.getAsDictionary(PdfName.embeddedFiles);
+      final embeddedFiles =
+          await names!.dictionaryEntry(CraftPdfName.embeddedFiles);
       expect(embeddedFiles, isNotNull);
 
       // Verify key presence logic
-      final namesArr = await embeddedFiles!.getAsArray(PdfName.names);
+      final namesArr = await embeddedFiles!.arrayEntry(CraftPdfName.names);
       expect(namesArr, isNotNull);
       bool found = false;
       for (int i = 0; i < namesArr!.size(); i++) {
         final item = await namesArr.get(i);
-        if (item is PdfString && item.getValue() == 'TestAttachment') {
+        if (item is CraftPdfString && item.getValue() == 'TestAttachment') {
           found = true;
           break;
         }
@@ -58,22 +61,23 @@ void main() {
     });
 
     test('addNamedDestination adds entry to Dests in Catalog', () async {
-      final destValue = PdfArray.fromList([PdfName('Fit')]);
-      await pdfDoc.addNamedDestination('MyDest', destValue);
+      final destValue = CraftPdfArray.fromList([CraftPdfName('Fit')]);
+      await pdfDoc.registerDestination('MyDest', destValue);
 
-      final catalog = pdfDoc.getCatalog();
-      final names = await catalog.getPdfObject().getAsDictionary(PdfName.names);
+      final catalog = pdfDoc.rootCatalog();
+      final names =
+          await catalog.pdfRepresentation().dictionaryEntry(CraftPdfName.names);
       expect(names, isNotNull);
-      final dests = await names!.getAsDictionary(PdfName.dests);
+      final dests = await names!.dictionaryEntry(CraftPdfName.dests);
       expect(dests, isNotNull);
 
       // Verify key presence
-      final namesArr = await dests!.getAsArray(PdfName.names);
+      final namesArr = await dests!.arrayEntry(CraftPdfName.names);
       expect(namesArr, isNotNull);
       bool found = false;
       for (int i = 0; i < namesArr!.size(); i++) {
         final item = await namesArr.get(i);
-        if (item is PdfString && item.getValue() == 'MyDest') {
+        if (item is CraftPdfString && item.getValue() == 'MyDest') {
           found = true;
           break;
         }
@@ -82,28 +86,28 @@ void main() {
     });
 
     test('removePageAt cleans up (basic check)', () async {
-      await pdfDoc.addNewPage(); // Page 2
-      expect(pdfDoc.getNumberOfPages(), 2);
+      await pdfDoc.appendBlankPage(); // Page 2
+      expect(pdfDoc.pageTotal(), 2);
 
-      await pdfDoc.removePageAt(2);
-      expect(pdfDoc.getNumberOfPages(), 1);
+      await pdfDoc.deletePageAt(2);
+      expect(pdfDoc.pageTotal(), 1);
       // We can't easily check if outlines/widgets were removed without mocking,
       // but we verify no crash happens.
     });
 
     test('hasOutlines returns false initially', () {
-      expect(pdfDoc.hasOutlines(), isFalse);
+      expect(pdfDoc.containsOutlineTree(), isFalse);
     });
 
     test('initializeOutlines creates root outline', () {
-      expect(pdfDoc.hasOutlines(), isFalse);
-      pdfDoc.initializeOutlines();
-      expect(pdfDoc.hasOutlines(), isTrue);
+      expect(pdfDoc.containsOutlineTree(), isFalse);
+      pdfDoc.initializeOutlineTree();
+      expect(pdfDoc.containsOutlineTree(), isTrue);
     });
 
     test('addOutline adds nested outlines', () async {
-      pdfDoc.initializeOutlines();
-      final root = await pdfDoc.getOutlines(false);
+      pdfDoc.initializeOutlineTree();
+      final root = await pdfDoc.outlineTree(false);
       expect(root, isNotNull);
 
       final chapter1 = await root!.addOutline('Chapter 1');

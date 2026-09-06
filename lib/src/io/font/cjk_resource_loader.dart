@@ -1,4 +1,4 @@
-import 'dart:io';
+import '../../platform/io.dart';
 import '../../commons/utils/properties.dart';
 import '../util/int_hashtable.dart';
 import '../util/string_tokenizer.dart';
@@ -11,7 +11,7 @@ import 'cmap/cmap_cid_to_codepoint.dart';
 import 'cmap/cmap_codepoint_to_cid.dart';
 
 /// This class is responsible for loading and handling CJK fonts and CMaps.
-class CjkResourceLoader {
+class CraftCjkResourceLoader {
   static final Map<String, Map<String, dynamic>> allCidFonts = {};
   static final Map<String, Set<String>> registryNames = {};
 
@@ -21,10 +21,10 @@ class CjkResourceLoader {
   static const String W_PROP = "W";
   static const String W2_PROP = "W2";
 
-  static CMapLocationResource cmapLocation = CMapLocationResource();
+  static CraftCMapLocationResource cmapLocation = CraftCMapLocationResource();
   static bool _loaded = false;
 
-  CjkResourceLoader._();
+  CraftCjkResourceLoader._();
 
   static Future<void> init() async {
     if (_loaded) return;
@@ -92,8 +92,8 @@ class CjkResourceLoader {
     return fontProperties;
   }
 
-  static IntHashtable createMetric(String s) {
-    final h = IntHashtable();
+  static CraftIntHashtable createMetric(String s) {
+    final h = CraftIntHashtable();
     final tk = StringTokenizer(s);
     while (tk.hasMoreTokens()) {
       try {
@@ -108,21 +108,21 @@ class CjkResourceLoader {
     return h;
   }
 
-  static Future<CMapCidUni> getCid2UniCmap(String cmap) async {
+  static Future<CraftCMapCidUni> getCid2UniCmap(String cmap) async {
     await init();
-    final cidUni = CMapCidUni();
+    final cidUni = CraftCMapCidUni();
     return await _parseCmap(cmap, cidUni);
   }
 
-  static Future<CMapUniCid> getUni2CidCmap(String uniMap) async {
+  static Future<CraftCMapUniCid> getUni2CidCmap(String uniMap) async {
     await init();
-    final uniCid = CMapUniCid();
+    final uniCid = CraftCMapUniCid();
     return await _parseCmap(uniMap, uniCid);
   }
 
-  static Future<T> _parseCmap<T extends AbstractCMap>(
+  static Future<T> _parseCmap<T extends CraftAbstractCMap>(
       String name, T cmap) async {
-    await CMapParser.parseCid(name, cmap, cmapLocation);
+    await CraftCMapParser.loadCidMappings(name, cmap, cmapLocation);
     return cmap;
   }
 
@@ -191,47 +191,49 @@ class CjkResourceLoader {
     return fontProperties;
   }
 
-  static CMapCidUni getCid2UniCmapSync(String cmap) {
+  static CraftCMapCidUni getCid2UniCmapSync(String cmap) {
     initSync();
-    final cidUni = CMapCidUni();
+    final cidUni = CraftCMapCidUni();
     _parseCmapSync(cmap, cidUni);
     return cidUni;
   }
 
-  static CMapUniCid getUni2CidCmapSync(String uniMap) {
+  static CraftCMapUniCid getUni2CidCmapSync(String uniMap) {
     initSync();
-    final uniCid = CMapUniCid();
+    final uniCid = CraftCMapUniCid();
     _parseCmapSync(uniMap, uniCid);
     return uniCid;
   }
 
-  static CMapCidToCodepoint getCidToCodepointCmapSync(String cmap) {
+  static CraftCMapCidToCodepoint getCidToCodepointCmapSync(String cmap) {
     initSync();
-    final cidByte = CMapCidToCodepoint();
+    final cidByte = CraftCMapCidToCodepoint();
     _parseCmapSync(cmap, cidByte);
     return cidByte;
   }
 
-  static CMapCodepointToCid getCodepointToCidCmapSync(String uniMap) {
+  static CraftCMapCodepointToCid getCodepointToCidCmapSync(String uniMap) {
     initSync();
-    final cp2cid = CMapCodepointToCid();
+    final cp2cid = CraftCMapCodepointToCid();
     _parseCmapSync(uniMap, cp2cid);
     return cp2cid;
   }
 
-  static Future<CMapCidToCodepoint> getCidToCodepointCmap(String cmap) async {
+  static Future<CraftCMapCidToCodepoint> getCidToCodepointCmap(
+      String cmap) async {
     await init();
-    final cidByte = CMapCidToCodepoint();
+    final cidByte = CraftCMapCidToCodepoint();
     return await _parseCmap(cmap, cidByte);
   }
 
-  static Future<CMapCodepointToCid> getCodepointToCidCmap(String uniMap) async {
+  static Future<CraftCMapCodepointToCid> getCodepointToCidCmap(
+      String uniMap) async {
     await init();
-    final cp2cid = CMapCodepointToCid();
+    final cp2cid = CraftCMapCodepointToCid();
     return await _parseCmap(uniMap, cp2cid);
   }
 
-  static void _parseCmapSync<T extends AbstractCMap>(String name, T cmap) {
-    CMapParser.parseCidSync(name, cmap, cmapLocation);
+  static void _parseCmapSync<T extends CraftAbstractCMap>(String name, T cmap) {
+    CraftCMapParser.loadCidMappingsSync(name, cmap, cmapLocation);
   }
 }

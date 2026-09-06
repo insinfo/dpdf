@@ -1,94 +1,94 @@
 import 'dart:typed_data';
-import 'package:dpdf/src/io/source/byte_utils.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_resources.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_page.dart';
-import 'package:dpdf/src/kernel/pdf/canvas/canvas_graphics_state.dart';
-import 'package:dpdf/src/kernel/font/pdf_font.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
-import 'package:dpdf/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
-import 'package:dpdf/src/kernel/pdf/colorspace/pdf_shading.dart';
-import 'package:dpdf/src/io/image/image_data.dart';
-import 'package:dpdf/src/kernel/pdf/xobject/pdf_image_x_object.dart';
-import 'package:dpdf/src/kernel/pdf/xobject/pdf_form_x_object.dart';
-import 'package:dpdf/src/kernel/colors/color.dart';
-import 'package:dpdf/src/kernel/colors/device_gray.dart';
-import 'package:dpdf/src/kernel/colors/device_rgb.dart';
-import 'package:dpdf/src/kernel/colors/device_cmyk.dart';
-import 'package:dpdf/src/io/font/otf/glyph_line.dart';
-import 'package:dpdf/src/kernel/pdf/canvas/bezier.dart';
-import 'package:dpdf/src/kernel/geom/affine_transform.dart';
-import 'package:dpdf/src/kernel/pdf/xobject/pdf_x_object.dart';
-import 'package:dpdf/src/kernel/pdf/colorspace/pdf_device_cs.dart';
+import 'package:pdfcraft/src/io/source/byte_utils.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_resources.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_page.dart';
+import 'package:pdfcraft/src/kernel/pdf/canvas/canvas_graphics_state.dart';
+import 'package:pdfcraft/src/kernel/font/pdf_font.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
+import 'package:pdfcraft/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
+import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_shading.dart';
+import 'package:pdfcraft/src/io/image/image_data.dart';
+import 'package:pdfcraft/src/kernel/pdf/xobject/pdf_image_x_object.dart';
+import 'package:pdfcraft/src/kernel/pdf/xobject/pdf_form_x_object.dart';
+import 'package:pdfcraft/src/kernel/colors/color.dart';
+import 'package:pdfcraft/src/kernel/colors/device_gray.dart';
+import 'package:pdfcraft/src/kernel/colors/device_rgb.dart';
+import 'package:pdfcraft/src/kernel/colors/device_cmyk.dart';
+import 'package:pdfcraft/src/io/font/otf/glyph_line.dart';
+import 'package:pdfcraft/src/kernel/pdf/canvas/bezier.dart';
+import 'package:pdfcraft/src/kernel/geom/affine_transform.dart';
+import 'package:pdfcraft/src/kernel/pdf/xobject/pdf_x_object.dart';
+import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_device_cs.dart';
 
-/// PdfCanvas class represents an algorithm for writing data into content stream.
-class PdfCanvas {
+/// Writes PDF graphics and text operators into content streams.
+class CraftPdfCanvas {
   // Constants for operators
-  static final Uint8List B = ByteUtils.getIsoBytes("B\n");
-  static final Uint8List b_low = ByteUtils.getIsoBytes("b\n");
-  static final Uint8List BDC = ByteUtils.getIsoBytes("BDC\n");
-  static final Uint8List BI = ByteUtils.getIsoBytes("BI\n");
-  static final Uint8List BMC = ByteUtils.getIsoBytes("BMC\n");
-  static final Uint8List BStar = ByteUtils.getIsoBytes("B*\n");
-  static final Uint8List bStar = ByteUtils.getIsoBytes("b*\n");
-  static final Uint8List BT = ByteUtils.getIsoBytes("BT\n");
-  static final Uint8List c_op = ByteUtils.getIsoBytes("c\n");
-  static final Uint8List cm_op = ByteUtils.getIsoBytes("cm\n");
-  static final Uint8List cs_op = ByteUtils.getIsoBytes("cs\n");
-  static final Uint8List CS_op = ByteUtils.getIsoBytes("CS\n");
-  static final Uint8List d_op = ByteUtils.getIsoBytes("d\n");
-  static final Uint8List Do_op = ByteUtils.getIsoBytes("Do\n");
-  static final Uint8List EI = ByteUtils.getIsoBytes("EI\n");
-  static final Uint8List EMC = ByteUtils.getIsoBytes("EMC\n");
-  static final Uint8List ET = ByteUtils.getIsoBytes("ET\n");
-  static final Uint8List f_op = ByteUtils.getIsoBytes("f\n");
-  static final Uint8List fStar = ByteUtils.getIsoBytes("f*\n");
-  static final Uint8List G_op = ByteUtils.getIsoBytes("G\n");
-  static final Uint8List g_op = ByteUtils.getIsoBytes("g\n");
-  static final Uint8List gs_op = ByteUtils.getIsoBytes("gs\n");
-  static final Uint8List h_op = ByteUtils.getIsoBytes("h\n");
-  static final Uint8List i_op = ByteUtils.getIsoBytes("i\n");
-  static final Uint8List ID = ByteUtils.getIsoBytes("ID\n");
-  static final Uint8List j_op = ByteUtils.getIsoBytes("j\n");
-  static final Uint8List J_op = ByteUtils.getIsoBytes("J\n");
-  static final Uint8List k_op = ByteUtils.getIsoBytes("k\n");
-  static final Uint8List K_op = ByteUtils.getIsoBytes("K\n");
-  static final Uint8List l_op = ByteUtils.getIsoBytes("l\n");
-  static final Uint8List m_op = ByteUtils.getIsoBytes("m\n");
-  static final Uint8List M_op = ByteUtils.getIsoBytes("M\n");
-  static final Uint8List n_op = ByteUtils.getIsoBytes("n\n");
-  static final Uint8List q_op = ByteUtils.getIsoBytes("q\n");
-  static final Uint8List Q_op = ByteUtils.getIsoBytes("Q\n");
-  static final Uint8List re_op = ByteUtils.getIsoBytes("re\n");
-  static final Uint8List RG_op = ByteUtils.getIsoBytes("RG\n");
-  static final Uint8List rg_op = ByteUtils.getIsoBytes("rg\n");
-  static final Uint8List ri_op = ByteUtils.getIsoBytes("ri\n");
-  static final Uint8List S_op = ByteUtils.getIsoBytes("S\n");
-  static final Uint8List s_op = ByteUtils.getIsoBytes("s\n");
-  static final Uint8List scn = ByteUtils.getIsoBytes("scn\n");
-  static final Uint8List SCN = ByteUtils.getIsoBytes("SCN\n");
-  static final Uint8List sh_op = ByteUtils.getIsoBytes("sh\n");
-  static final Uint8List Tc = ByteUtils.getIsoBytes("Tc\n");
-  static final Uint8List Td = ByteUtils.getIsoBytes("Td\n");
-  static final Uint8List TD = ByteUtils.getIsoBytes("TD\n");
-  static final Uint8List Tf = ByteUtils.getIsoBytes("Tf\n");
-  static final Uint8List TJ = ByteUtils.getIsoBytes("TJ\n");
-  static final Uint8List Tj = ByteUtils.getIsoBytes("Tj\n");
-  static final Uint8List TL = ByteUtils.getIsoBytes("TL\n");
-  static final Uint8List Tm = ByteUtils.getIsoBytes("Tm\n");
-  static final Uint8List Tr = ByteUtils.getIsoBytes("Tr\n");
-  static final Uint8List Ts = ByteUtils.getIsoBytes("Ts\n");
-  static final Uint8List TStar = ByteUtils.getIsoBytes("T*\n");
-  static final Uint8List Tw = ByteUtils.getIsoBytes("Tw\n");
-  static final Uint8List Tz = ByteUtils.getIsoBytes("Tz\n");
-  static final Uint8List v_op = ByteUtils.getIsoBytes("v\n");
-  static final Uint8List w_op = ByteUtils.getIsoBytes("w\n");
-  static final Uint8List W_op = ByteUtils.getIsoBytes("W\n");
-  static final Uint8List WStar = ByteUtils.getIsoBytes("W*\n");
-  static final Uint8List y_op = ByteUtils.getIsoBytes("y\n");
+  static final Uint8List B = CraftByteUtils.getIsoBytes("B\n");
+  static final Uint8List b_low = CraftByteUtils.getIsoBytes("b\n");
+  static final Uint8List BDC = CraftByteUtils.getIsoBytes("BDC\n");
+  static final Uint8List BI = CraftByteUtils.getIsoBytes("BI\n");
+  static final Uint8List BMC = CraftByteUtils.getIsoBytes("BMC\n");
+  static final Uint8List BStar = CraftByteUtils.getIsoBytes("B*\n");
+  static final Uint8List bStar = CraftByteUtils.getIsoBytes("b*\n");
+  static final Uint8List BT = CraftByteUtils.getIsoBytes("BT\n");
+  static final Uint8List c_op = CraftByteUtils.getIsoBytes("c\n");
+  static final Uint8List cm_op = CraftByteUtils.getIsoBytes("cm\n");
+  static final Uint8List cs_op = CraftByteUtils.getIsoBytes("cs\n");
+  static final Uint8List CS_op = CraftByteUtils.getIsoBytes("CS\n");
+  static final Uint8List d_op = CraftByteUtils.getIsoBytes("d\n");
+  static final Uint8List Do_op = CraftByteUtils.getIsoBytes("Do\n");
+  static final Uint8List EI = CraftByteUtils.getIsoBytes("EI\n");
+  static final Uint8List EMC = CraftByteUtils.getIsoBytes("EMC\n");
+  static final Uint8List ET = CraftByteUtils.getIsoBytes("ET\n");
+  static final Uint8List f_op = CraftByteUtils.getIsoBytes("f\n");
+  static final Uint8List fStar = CraftByteUtils.getIsoBytes("f*\n");
+  static final Uint8List G_op = CraftByteUtils.getIsoBytes("G\n");
+  static final Uint8List g_op = CraftByteUtils.getIsoBytes("g\n");
+  static final Uint8List gs_op = CraftByteUtils.getIsoBytes("gs\n");
+  static final Uint8List h_op = CraftByteUtils.getIsoBytes("h\n");
+  static final Uint8List i_op = CraftByteUtils.getIsoBytes("i\n");
+  static final Uint8List ID = CraftByteUtils.getIsoBytes("ID\n");
+  static final Uint8List j_op = CraftByteUtils.getIsoBytes("j\n");
+  static final Uint8List J_op = CraftByteUtils.getIsoBytes("J\n");
+  static final Uint8List k_op = CraftByteUtils.getIsoBytes("k\n");
+  static final Uint8List K_op = CraftByteUtils.getIsoBytes("K\n");
+  static final Uint8List l_op = CraftByteUtils.getIsoBytes("l\n");
+  static final Uint8List m_op = CraftByteUtils.getIsoBytes("m\n");
+  static final Uint8List M_op = CraftByteUtils.getIsoBytes("M\n");
+  static final Uint8List n_op = CraftByteUtils.getIsoBytes("n\n");
+  static final Uint8List q_op = CraftByteUtils.getIsoBytes("q\n");
+  static final Uint8List Q_op = CraftByteUtils.getIsoBytes("Q\n");
+  static final Uint8List re_op = CraftByteUtils.getIsoBytes("re\n");
+  static final Uint8List RG_op = CraftByteUtils.getIsoBytes("RG\n");
+  static final Uint8List rg_op = CraftByteUtils.getIsoBytes("rg\n");
+  static final Uint8List ri_op = CraftByteUtils.getIsoBytes("ri\n");
+  static final Uint8List S_op = CraftByteUtils.getIsoBytes("S\n");
+  static final Uint8List s_op = CraftByteUtils.getIsoBytes("s\n");
+  static final Uint8List scn = CraftByteUtils.getIsoBytes("scn\n");
+  static final Uint8List SCN = CraftByteUtils.getIsoBytes("SCN\n");
+  static final Uint8List sh_op = CraftByteUtils.getIsoBytes("sh\n");
+  static final Uint8List Tc = CraftByteUtils.getIsoBytes("Tc\n");
+  static final Uint8List Td = CraftByteUtils.getIsoBytes("Td\n");
+  static final Uint8List TD = CraftByteUtils.getIsoBytes("TD\n");
+  static final Uint8List Tf = CraftByteUtils.getIsoBytes("Tf\n");
+  static final Uint8List TJ = CraftByteUtils.getIsoBytes("TJ\n");
+  static final Uint8List Tj = CraftByteUtils.getIsoBytes("Tj\n");
+  static final Uint8List TL = CraftByteUtils.getIsoBytes("TL\n");
+  static final Uint8List Tm = CraftByteUtils.getIsoBytes("Tm\n");
+  static final Uint8List Tr = CraftByteUtils.getIsoBytes("Tr\n");
+  static final Uint8List Ts = CraftByteUtils.getIsoBytes("Ts\n");
+  static final Uint8List TStar = CraftByteUtils.getIsoBytes("T*\n");
+  static final Uint8List Tw = CraftByteUtils.getIsoBytes("Tw\n");
+  static final Uint8List Tz = CraftByteUtils.getIsoBytes("Tz\n");
+  static final Uint8List v_op = CraftByteUtils.getIsoBytes("v\n");
+  static final Uint8List w_op = CraftByteUtils.getIsoBytes("w\n");
+  static final Uint8List W_op = CraftByteUtils.getIsoBytes("W\n");
+  static final Uint8List WStar = CraftByteUtils.getIsoBytes("W*\n");
+  static final Uint8List y_op = CraftByteUtils.getIsoBytes("y\n");
 
   static final PdfDeviceCsGray gray = PdfDeviceCsGray();
   static final PdfDeviceCsRgb rgb = PdfDeviceCsRgb();
@@ -103,10 +103,10 @@ class PdfCanvas {
   }
 
   /// Draw an arc on the passed canvas,
-  /// enclosed by the rectangle for which two opposite corners are specified.
-  PdfCanvas arc(double x1, double y1, double x2, double y2, double startAng,
-      double extent,
-      [AffineTransform? transform]) {
+  /// inside the bounds determined by two opposite corners.
+  CraftPdfCanvas arc(double x1, double y1, double x2, double y2,
+      double startAng, double extent,
+      [CraftAffineTransform? transform]) {
     List<Float64List> ar = bezierArc(x1, y1, x2, y2, startAng, extent);
     if (ar.isNotEmpty) {
       for (Float64List pt in ar) {
@@ -119,56 +119,57 @@ class PdfCanvas {
     return this;
   }
 
-  List<CanvasGraphicsState> gsStack = [];
-  CanvasGraphicsState currentGs = CanvasGraphicsState();
-  PdfStream? contentStream;
-  PdfResources? resources;
-  PdfDocument? document;
+  List<CraftCanvasGraphicsState> gsStack = [];
+  CraftCanvasGraphicsState currentGs = CraftCanvasGraphicsState();
+  CraftPdfStream? contentStream;
+  CraftPdfResources? resources;
+  CraftPdfDocument? document;
   int mcDepth = 0;
   bool drawingOnPage = false;
 
-  CanvasGraphicsState getGraphicsState() => currentGs;
+  CraftCanvasGraphicsState getGraphicsState() => currentGs;
 
-  PdfCanvas(
-      PdfStream contentStream, PdfResources? resources, PdfDocument? document) {
+  CraftPdfCanvas(CraftPdfStream contentStream, CraftPdfResources? resources,
+      CraftPdfDocument? document) {
     this.contentStream = _ensureStreamDataIsReadyToBeProcessed(contentStream);
     this.resources = resources;
     this.document = document;
   }
 
-  PdfDocument? getDocument() => document;
+  CraftPdfDocument? getDocument() => document;
 
-  static Future<PdfCanvas> fromPage(PdfPage page) async {
-    PdfStream? stream;
-    final count = await page.getContentStreamCount();
+  static Future<CraftPdfCanvas> fromPage(CraftPdfPage page) async {
+    CraftPdfStream? stream;
+    final count = await page.contentSegmentCount();
     if (count > 0) {
-      final obj = await page.getContentStream(count - 1);
-      if (obj is PdfStream) {
+      final obj = await page.contentSegmentAt(count - 1);
+      if (obj is CraftPdfStream) {
         stream = obj;
       }
     }
 
-    final doc = page.getPdfObject().getIndirectReference()?.getDocument();
+    final doc = page.pdfRepresentation().indirectHandle()?.getDocument();
 
     if (stream == null) {
-      stream = PdfStream();
+      stream = CraftPdfStream();
       if (doc != null) {
-        stream.makeIndirect(doc);
+        stream.attachToDocument(doc);
       }
-      page.getPdfObject().put(PdfName.contents, stream);
+      page.pdfRepresentation().put(CraftPdfName.contents, stream);
     }
 
-    final canvas = PdfCanvas(stream, await page.getResources(), doc);
+    final canvas = CraftPdfCanvas(stream, await page.resourceDirectory(), doc);
     canvas.drawingOnPage = true;
     return canvas;
   }
 
-  static Future<PdfCanvas> fromFormXObject(
-      PdfFormXObject xObj, PdfDocument document) async {
-    return PdfCanvas(xObj.getPdfObject(), await xObj.getResources(), document);
+  static Future<CraftPdfCanvas> fromFormXObject(
+      CraftPdfFormXObject xObj, CraftPdfDocument document) async {
+    return CraftPdfCanvas(
+        xObj.pdfRepresentation(), await xObj.resourceDirectory(), document);
   }
 
-  PdfStream _ensureStreamDataIsReadyToBeProcessed(PdfStream stream) {
+  CraftPdfStream _ensureStreamDataIsReadyToBeProcessed(CraftPdfStream stream) {
     return stream;
   }
 
@@ -178,13 +179,13 @@ class PdfCanvas {
     document = null;
   }
 
-  PdfCanvas saveState() {
+  CraftPdfCanvas saveState() {
     gsStack.add(currentGs.copy());
     contentStream!.getOutputStream().writeBytes(q_op);
     return this;
   }
 
-  PdfCanvas restoreState() {
+  CraftPdfCanvas restoreState() {
     if (gsStack.isNotEmpty) {
       currentGs = gsStack.removeLast();
     }
@@ -192,317 +193,320 @@ class PdfCanvas {
     return this;
   }
 
-  PdfCanvas concatMatrix(
+  CraftPdfCanvas concatMatrix(
       double a, double b, double c, double d, double e, double f) {
     currentGs
         .getCtm()
-        .concatenate(AffineTransform.fromValues(a, b, c, d, e, f));
+        .concatenate(CraftAffineTransform.fromValues(a, b, c, d, e, f));
     contentStream!.getOutputStream()
       ..writeDouble(a)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(b)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(c)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(d)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(e)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(f)
-      ..writeBytes(ByteUtils.getIsoBytes(" cm\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" cm\n"));
     return this;
   }
 
-  PdfCanvas beginText() {
+  CraftPdfCanvas beginText() {
     contentStream!.getOutputStream().writeBytes(BT);
     return this;
   }
 
-  PdfCanvas endText() {
+  CraftPdfCanvas endText() {
     contentStream!.getOutputStream().writeBytes(ET);
     return this;
   }
 
-  PdfCanvas moveTo(double x, double y) {
+  CraftPdfCanvas moveTo(double x, double y) {
     contentStream!.getOutputStream()
       ..writeDouble(x)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y)
-      ..writeBytes(ByteUtils.getIsoBytes(" m\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" m\n"));
     return this;
   }
 
-  PdfCanvas lineTo(double x, double y) {
+  CraftPdfCanvas lineTo(double x, double y) {
     contentStream!.getOutputStream()
       ..writeDouble(x)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y)
-      ..writeBytes(ByteUtils.getIsoBytes(" l\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" l\n"));
     return this;
   }
 
-  PdfCanvas curveTo1(double x1, double y1, double x3, double y3) {
+  CraftPdfCanvas curveTo1(double x1, double y1, double x3, double y3) {
     contentStream!.getOutputStream()
       ..writeDouble(x1)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y1)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(x3)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y3)
-      ..writeBytes(ByteUtils.getIsoBytes(" v\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" v\n"));
     return this;
   }
 
-  PdfCanvas curveTo2(double x2, double y2, double x3, double y3) {
+  CraftPdfCanvas curveTo2(double x2, double y2, double x3, double y3) {
     contentStream!.getOutputStream()
       ..writeDouble(x2)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y2)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(x3)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y3)
-      ..writeBytes(ByteUtils.getIsoBytes(" y\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" y\n"));
     return this;
   }
 
-  PdfCanvas curveTo(
+  CraftPdfCanvas curveTo(
       double x1, double y1, double x2, double y2, double x3, double y3) {
     contentStream!.getOutputStream()
       ..writeDouble(x1)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y1)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(x2)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y2)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(x3)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y3)
-      ..writeBytes(ByteUtils.getIsoBytes(" c\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" c\n"));
     return this;
   }
 
-  PdfCanvas circle(double x, double y, double r) {
+  CraftPdfCanvas circle(double x, double y, double r) {
     arc(x - r, y - r, x + r, y + r, 0, 360);
     return this;
   }
 
-  PdfCanvas closePath() {
+  CraftPdfCanvas closePath() {
     contentStream!.getOutputStream().writeBytes(h_op);
     return this;
   }
 
-  PdfCanvas stroke() {
+  CraftPdfCanvas stroke() {
     contentStream!.getOutputStream().writeBytes(S_op);
     return this;
   }
 
-  PdfCanvas closePathStroke() {
+  CraftPdfCanvas closePathStroke() {
     contentStream!.getOutputStream().writeBytes(s_op);
     return this;
   }
 
-  PdfCanvas clip() {
+  CraftPdfCanvas clip() {
     contentStream!.getOutputStream().writeBytes(W_op);
     contentStream!.getOutputStream().writeBytes(n_op);
     return this;
   }
 
-  PdfCanvas eoClip() {
+  CraftPdfCanvas eoClip() {
     contentStream!.getOutputStream().writeBytes(WStar);
     contentStream!.getOutputStream().writeBytes(n_op);
     return this;
   }
 
-  PdfCanvas fill() {
+  CraftPdfCanvas fill() {
     contentStream!.getOutputStream().writeBytes(f_op);
     return this;
   }
 
-  PdfCanvas eoFill() {
+  CraftPdfCanvas eoFill() {
     contentStream!.getOutputStream().writeBytes(fStar);
     return this;
   }
 
-  PdfCanvas fillStroke() {
+  CraftPdfCanvas fillStroke() {
     contentStream!.getOutputStream().writeBytes(B);
     return this;
   }
 
-  PdfCanvas closePathFillStroke() {
+  CraftPdfCanvas closePathFillStroke() {
     contentStream!.getOutputStream().writeBytes(b_low);
     return this;
   }
 
-  PdfCanvas eoFillStroke() {
+  CraftPdfCanvas eoFillStroke() {
     contentStream!.getOutputStream().writeBytes(BStar);
     return this;
   }
 
-  PdfCanvas closePathEoFillStroke() {
+  CraftPdfCanvas closePathEoFillStroke() {
     contentStream!.getOutputStream().writeBytes(bStar);
     return this;
   }
 
-  PdfCanvas newPath() {
+  CraftPdfCanvas newPath() {
     contentStream!.getOutputStream().writeBytes(n_op);
     return this;
   }
 
-  PdfCanvas rectangle(double x, double y, double w, double h) {
+  CraftPdfCanvas rectangle(double x, double y, double w, double h) {
     contentStream!.getOutputStream()
       ..writeDouble(x)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(w)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(h)
-      ..writeBytes(ByteUtils.getIsoBytes(" re\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" re\n"));
     return this;
   }
 
-  PdfCanvas setCharacterSpacing(double charSpacing) {
+  CraftPdfCanvas setCharacterSpacing(double charSpacing) {
     contentStream!.getOutputStream()
       ..writeDouble(charSpacing)
-      ..writeBytes(ByteUtils.getIsoBytes(" Tc\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" Tc\n"));
     return this;
   }
 
-  PdfCanvas setWordSpacing(double wordSpacing) {
+  CraftPdfCanvas setWordSpacing(double wordSpacing) {
     contentStream!.getOutputStream()
       ..writeDouble(wordSpacing)
-      ..writeBytes(ByteUtils.getIsoBytes(" Tw\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" Tw\n"));
     return this;
   }
 
-  PdfCanvas setHorizontalScaling(double horizontalScaling) {
+  CraftPdfCanvas setHorizontalScaling(double horizontalScaling) {
     contentStream!.getOutputStream()
       ..writeDouble(horizontalScaling)
-      ..writeBytes(ByteUtils.getIsoBytes(" Tz\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" Tz\n"));
     return this;
   }
 
-  PdfCanvas setTextRise(double textRise) {
+  CraftPdfCanvas setTextRise(double textRise) {
     contentStream!.getOutputStream()
       ..writeDouble(textRise)
-      ..writeBytes(ByteUtils.getIsoBytes(" Ts\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" Ts\n"));
     return this;
   }
 
-  PdfCanvas setTextRenderingMode(int textRenderingMode) {
+  CraftPdfCanvas setTextRenderingMode(int textRenderingMode) {
     contentStream!.getOutputStream()
       ..writeInteger(textRenderingMode)
-      ..writeBytes(ByteUtils.getIsoBytes(" Tr\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" Tr\n"));
     return this;
   }
 
-  Future<PdfCanvas> setFontAndSize(PdfFont font, double size) async {
+  Future<CraftPdfCanvas> setFontAndSize(CraftPdfFont font, double size) async {
     currentGs.setFont(font);
     currentGs.setFontSize(size);
-    PdfName fontName = await resources!.addFont(document!, font);
+    CraftPdfName fontName = await resources!.registerTypeface(document!, font);
     contentStream!.getOutputStream()
-      ..writeBytes(ByteUtils.getIsoBytes("/${fontName.getValue()}"))
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes("/${fontName.getValue()}"))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(size)
-      ..writeBytes(ByteUtils.getIsoBytes(" Tf\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" Tf\n"));
     return this;
   }
 
-  PdfCanvas moveText(double x, double y) {
+  CraftPdfCanvas moveText(double x, double y) {
     contentStream!.getOutputStream()
       ..writeDouble(x)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y)
-      ..writeBytes(ByteUtils.getIsoBytes(" Td\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" Td\n"));
     return this;
   }
 
-  PdfCanvas moveTextWithLeading(double x, double y) {
+  CraftPdfCanvas moveTextWithLeading(double x, double y) {
     contentStream!.getOutputStream()
       ..writeDouble(x)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y)
-      ..writeBytes(ByteUtils.getIsoBytes(" TD\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" TD\n"));
     return this;
   }
 
-  PdfCanvas setTextMatrix(
+  CraftPdfCanvas setTextMatrix(
       double a, double b, double c, double d, double x, double y) {
     contentStream!.getOutputStream()
       ..writeDouble(a)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(b)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(c)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(d)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(x)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(y)
-      ..writeBytes(ByteUtils.getIsoBytes(" Tm\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" Tm\n"));
     return this;
   }
 
-  PdfCanvas setTextMatrixSimple(double x, double y) {
+  CraftPdfCanvas setTextMatrixSimple(double x, double y) {
     return setTextMatrix(1, 0, 0, 1, x, y);
   }
 
-  PdfCanvas setLeading(double leading) {
+  CraftPdfCanvas setLeading(double leading) {
     contentStream!.getOutputStream()
       ..writeDouble(leading)
-      ..writeBytes(ByteUtils.getIsoBytes(" TL\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" TL\n"));
     return this;
   }
 
-  PdfCanvas newlineText() {
+  CraftPdfCanvas newlineText() {
     contentStream!.getOutputStream().writeBytes(TStar);
     return this;
   }
 
-  Future<PdfCanvas> newlineShowText(String text) async {
-    final font = currentGs.getFont();
+  Future<CraftPdfCanvas> newlineShowText(String text) async {
+    final font = currentGs.resolveTypeface();
     if (font == null) {
       // Fallback for missing font
       contentStream!.getOutputStream()
-          ..writeBytes(ByteUtils.getIsoBytes("(${text.replaceAll('(', '\\(').replaceAll(')', '\\)')})"))
-          ..writeBytes(ByteUtils.getIsoBytes(" '\n"));
+        ..writeBytes(CraftByteUtils.getIsoBytes(
+            "(${text.replaceAll('(', '\\(').replaceAll(')', '\\)')})"))
+        ..writeBytes(CraftByteUtils.getIsoBytes(" '\n"));
     } else {
       font.writeText(text, contentStream!.getOutputStream());
-      contentStream!.getOutputStream().writeBytes(ByteUtils.getIsoBytes(" '\n"));
+      contentStream!
+          .getOutputStream()
+          .writeBytes(CraftByteUtils.getIsoBytes(" '\n"));
     }
     return this;
   }
 
-  PdfCanvas showText(dynamic text) {
-    final font = currentGs.getFont();
+  CraftPdfCanvas showText(dynamic text) {
+    final font = currentGs.resolveTypeface();
     final os = contentStream!.getOutputStream();
     if (text is String) {
       if (font == null) {
-        os.writeBytes(ByteUtils.getIsoBytes(
+        os.writeBytes(CraftByteUtils.getIsoBytes(
             "(${text.replaceAll('(', '\\(').replaceAll(')', '\\)')})"));
       } else {
         font.writeText(text, os);
       }
-      os.writeBytes(ByteUtils.getIsoBytes(" Tj\n"));
-    } else if (text is GlyphLine) {
+      os.writeBytes(CraftByteUtils.getIsoBytes(" Tj\n"));
+    } else if (text is CraftGlyphLine) {
       if (font == null) {
         _showGlyphLine(text);
       } else {
         font.writeText(text, os);
       }
-      os.writeBytes(ByteUtils.getIsoBytes(" Tj\n"));
+      os.writeBytes(CraftByteUtils.getIsoBytes(" Tj\n"));
     }
     return this;
   }
 
-  void _showGlyphLine(GlyphLine text) {
+  void _showGlyphLine(CraftGlyphLine text) {
     final os = contentStream!.getOutputStream();
-    os.writeBytes(ByteUtils.getIsoBytes("("));
+    os.writeBytes(CraftByteUtils.getIsoBytes("("));
     for (int i = text.getStart(); i < text.getEnd(); i++) {
       final glyph = text.get(i);
       final unicode = glyph.getUnicode();
@@ -510,167 +514,172 @@ class PdfCanvas {
         // Simple character output for now (works for standard fonts)
         final char = String.fromCharCode(unicode);
         if (char == '(' || char == ')' || char == '\\') {
-           os.writeBytes(ByteUtils.getIsoBytes("\\"));
+          os.writeBytes(CraftByteUtils.getIsoBytes("\\"));
         }
-        os.writeBytes(ByteUtils.getIsoBytes(char));
+        os.writeBytes(CraftByteUtils.getIsoBytes(char));
       }
     }
-    os.writeBytes(ByteUtils.getIsoBytes(") Tj\n"));
+    os.writeBytes(CraftByteUtils.getIsoBytes(") Tj\n"));
   }
 
-  PdfCanvas showTextWithAdjustment(List<dynamic> items) {
-    contentStream!.getOutputStream().writeBytes(ByteUtils.getIsoBytes("["));
+  CraftPdfCanvas showTextWithAdjustment(List<dynamic> items) {
+    contentStream!
+        .getOutputStream()
+        .writeBytes(CraftByteUtils.getIsoBytes("["));
     for (var item in items) {
       if (item is String) {
         contentStream!.getOutputStream()
-          ..writeBytes(ByteUtils.getIsoBytes(
+          ..writeBytes(CraftByteUtils.getIsoBytes(
               "(${item.replaceAll('(', '\\(').replaceAll(')', '\\)')})"));
       } else if (item is double || item is int) {
         contentStream!.getOutputStream().writeDouble(item.toDouble());
       }
-      contentStream!.getOutputStream().writeBytes(ByteUtils.getIsoBytes(" "));
+      contentStream!
+          .getOutputStream()
+          .writeBytes(CraftByteUtils.getIsoBytes(" "));
     }
     contentStream!
         .getOutputStream()
-        .writeBytes(ByteUtils.getIsoBytes("] TJ\n"));
+        .writeBytes(CraftByteUtils.getIsoBytes("] TJ\n"));
     return this;
   }
 
-  PdfCanvas newlineShowTextWithSpacing(
+  CraftPdfCanvas newlineShowTextWithSpacing(
       double wordSpacing, double charSpacing, String text) {
     contentStream!.getOutputStream()
       ..writeDouble(wordSpacing)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(charSpacing)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
-      ..writeBytes(ByteUtils.getIsoBytes(
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(
           "(${text.replaceAll('(', '\\(').replaceAll(')', '\\)')})"))
-      ..writeBytes(ByteUtils.getIsoBytes(" \"\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" \"\n"));
     return this;
   }
 
-  PdfCanvas setLineWidth(double lineWidth) {
+  CraftPdfCanvas setLineWidth(double lineWidth) {
     contentStream!.getOutputStream()
       ..writeDouble(lineWidth)
-      ..writeBytes(ByteUtils.getIsoBytes(" w\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" w\n"));
     return this;
   }
 
-  PdfCanvas setLineCap(int lineCap) {
+  CraftPdfCanvas setLineCap(int lineCap) {
     contentStream!.getOutputStream()
       ..writeInteger(lineCap)
-      ..writeBytes(ByteUtils.getIsoBytes(" J\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" J\n"));
     return this;
   }
 
-  PdfCanvas setLineJoin(int lineJoin) {
+  CraftPdfCanvas setLineJoin(int lineJoin) {
     contentStream!.getOutputStream()
       ..writeInteger(lineJoin)
-      ..writeBytes(ByteUtils.getIsoBytes(" j\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" j\n"));
     return this;
   }
 
-  PdfCanvas setMiterLimit(double miterLimit) {
+  CraftPdfCanvas setMiterLimit(double miterLimit) {
     contentStream!.getOutputStream()
       ..writeDouble(miterLimit)
-      ..writeBytes(ByteUtils.getIsoBytes(" M\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" M\n"));
     return this;
   }
 
-  PdfCanvas setDashPattern(PdfArray dashPattern, [double phase = 0]) {
+  CraftPdfCanvas setDashPattern(CraftPdfArray dashPattern, [double phase = 0]) {
     contentStream!.getOutputStream()
       ..writePdfObject(dashPattern)
-      ..writeBytes(ByteUtils.getIsoBytes(" "))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
       ..writeDouble(phase)
-      ..writeBytes(ByteUtils.getIsoBytes(" d\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" d\n"));
     return this;
   }
 
-  PdfCanvas setFlatness(double flatness) {
+  CraftPdfCanvas setFlatness(double flatness) {
     contentStream!.getOutputStream()
       ..writeDouble(flatness)
-      ..writeBytes(ByteUtils.getIsoBytes(" i\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" i\n"));
     return this;
   }
 
-  PdfCanvas setFillColor(Color color) {
+  CraftPdfCanvas setFillColor(CraftColor color) {
     return _setColor(color, true);
   }
 
-  PdfCanvas setStrokeColor(Color color) {
+  CraftPdfCanvas setStrokeColor(CraftColor color) {
     return _setColor(color, false);
   }
 
-  PdfCanvas _setColor(Color color, bool fill) {
-    if (color is DeviceRgb) {
+  CraftPdfCanvas _setColor(CraftColor color, bool fill) {
+    if (color is CraftDeviceRgb) {
       contentStream!.getOutputStream()
         ..writeDouble(color.getColorValue()[0])
-        ..writeBytes(ByteUtils.getIsoBytes(" "))
+        ..writeBytes(CraftByteUtils.getIsoBytes(" "))
         ..writeDouble(color.getColorValue()[1])
-        ..writeBytes(ByteUtils.getIsoBytes(" "))
+        ..writeBytes(CraftByteUtils.getIsoBytes(" "))
         ..writeDouble(color.getColorValue()[2])
-        ..writeBytes(ByteUtils.getIsoBytes(fill ? " rg\n" : " RG\n"));
-    } else if (color is DeviceGray) {
+        ..writeBytes(CraftByteUtils.getIsoBytes(fill ? " rg\n" : " RG\n"));
+    } else if (color is CraftDeviceGray) {
       contentStream!.getOutputStream()
         ..writeDouble(color.getColorValue()[0])
-        ..writeBytes(ByteUtils.getIsoBytes(fill ? " g\n" : " G\n"));
-    } else if (color is DeviceCmyk) {
+        ..writeBytes(CraftByteUtils.getIsoBytes(fill ? " g\n" : " G\n"));
+    } else if (color is CraftDeviceCmyk) {
       contentStream!.getOutputStream()
         ..writeDouble(color.getColorValue()[0])
-        ..writeBytes(ByteUtils.getIsoBytes(" "))
+        ..writeBytes(CraftByteUtils.getIsoBytes(" "))
         ..writeDouble(color.getColorValue()[1])
-        ..writeBytes(ByteUtils.getIsoBytes(" "))
+        ..writeBytes(CraftByteUtils.getIsoBytes(" "))
         ..writeDouble(color.getColorValue()[2])
-        ..writeBytes(ByteUtils.getIsoBytes(" "))
+        ..writeBytes(CraftByteUtils.getIsoBytes(" "))
         ..writeDouble(color.getColorValue()[3])
-        ..writeBytes(ByteUtils.getIsoBytes(fill ? " k\n" : " K\n"));
+        ..writeBytes(CraftByteUtils.getIsoBytes(fill ? " k\n" : " K\n"));
     }
     return this;
   }
 
-  PdfCanvas setRenderingIntent(PdfName intent) {
+  CraftPdfCanvas setRenderingIntent(CraftPdfName intent) {
     contentStream!.getOutputStream()
       ..writePdfObject(intent)
-      ..writeBytes(ByteUtils.getIsoBytes(" ri\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(" ri\n"));
     return this;
   }
 
-  Future<PdfCanvas> setExtGState(PdfExtGState gs) async {
-    PdfName name = await resources!.addExtGState(document!, gs.getPdfObject());
+  Future<CraftPdfCanvas> setExtGState(CraftPdfExtGState gs) async {
+    CraftPdfName name =
+        await resources!.addExtGState(document!, gs.pdfRepresentation());
     contentStream!.getOutputStream()
-      ..writeBytes(ByteUtils.getIsoBytes("/${name.getValue()}"))
-      ..writeBytes(ByteUtils.getIsoBytes(" gs\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes("/${name.getValue()}"))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" gs\n"));
     return this;
   }
 
-  Future<PdfCanvas> shading(PdfShading shading) async {
-    PdfName name =
-        await resources!.addShading(document!, shading.getPdfObject());
+  Future<CraftPdfCanvas> shading(CraftPdfShading shading) async {
+    CraftPdfName name =
+        await resources!.addShading(document!, shading.pdfRepresentation());
     contentStream!.getOutputStream()
-      ..writeBytes(ByteUtils.getIsoBytes("/${name.getValue()}"))
-      ..writeBytes(ByteUtils.getIsoBytes(" sh\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes("/${name.getValue()}"))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" sh\n"));
     return this;
   }
 
-  Future<PdfCanvas> beginMarkedContent(PdfName tag,
-      [PdfDictionary? properties]) async {
+  Future<CraftPdfCanvas> beginMarkedContent(CraftPdfName tag,
+      [CraftPdfDictionary? properties]) async {
     if (properties == null) {
       contentStream!.getOutputStream()
-        ..writeBytes(ByteUtils.getIsoBytes("/${tag.getValue()}"))
-        ..writeBytes(ByteUtils.getIsoBytes(" BMC\n"));
+        ..writeBytes(CraftByteUtils.getIsoBytes("/${tag.getValue()}"))
+        ..writeBytes(CraftByteUtils.getIsoBytes(" BMC\n"));
     } else {
-      PdfName name = await resources!.addProperties(document!, properties);
+      CraftPdfName name = await resources!.addProperties(document!, properties);
       contentStream!.getOutputStream()
-        ..writeBytes(ByteUtils.getIsoBytes("/${tag.getValue()}"))
-        ..writeBytes(ByteUtils.getIsoBytes(" "))
-        ..writeBytes(ByteUtils.getIsoBytes("/${name.getValue()}"))
-        ..writeBytes(ByteUtils.getIsoBytes(" BDC\n"));
+        ..writeBytes(CraftByteUtils.getIsoBytes("/${tag.getValue()}"))
+        ..writeBytes(CraftByteUtils.getIsoBytes(" "))
+        ..writeBytes(CraftByteUtils.getIsoBytes("/${name.getValue()}"))
+        ..writeBytes(CraftByteUtils.getIsoBytes(" BDC\n"));
     }
     mcDepth++;
     return this;
   }
 
-  PdfCanvas endMarkedContent() {
+  CraftPdfCanvas endMarkedContent() {
     if (mcDepth > 0) {
       contentStream!.getOutputStream().writeBytes(EMC);
       mcDepth--;
@@ -678,56 +687,63 @@ class PdfCanvas {
     return this;
   }
 
-  Future<PdfCanvas> addImageAt(ImageData image, double x, double y,
+  Future<CraftPdfCanvas> addImageAt(CraftImageData image, double x, double y,
       [bool inline = false]) async {
     return addImageWithTransformationMatrix(image, image.getWidth().toDouble(),
         0, 0, image.getHeight().toDouble(), x, y, inline);
   }
 
-  Future<PdfCanvas> addImageWithTransformationMatrix(ImageData image, double a,
-      double b, double c, double d, double e, double f,
+  Future<CraftPdfCanvas> addImageWithTransformationMatrix(CraftImageData image,
+      double a, double b, double c, double d, double e, double f,
       [bool inline = false]) async {
     if (inline) {
       // ... BI ... ID ... EI
     } else {
-      PdfImageXObject imageXObject = PdfImageXObject(image);
-      PdfName name =
-          await resources!.addXObject(document!, imageXObject.getPdfObject());
+      CraftPdfImageXObject imageXObject = CraftPdfImageXObject(image);
+      CraftPdfName name = await resources!
+          .addXObject(document!, imageXObject.pdfRepresentation());
       saveState();
       concatMatrix(a, b, c, d, e, f);
       contentStream!.getOutputStream()
-        ..writeBytes(ByteUtils.getIsoBytes("/${name.getValue()}"))
-        ..writeBytes(ByteUtils.getIsoBytes(" Do\n"));
+        ..writeBytes(CraftByteUtils.getIsoBytes("/${name.getValue()}"))
+        ..writeBytes(CraftByteUtils.getIsoBytes(" Do\n"));
       restoreState();
     }
     return this;
   }
 
-  Future<PdfCanvas> addXObject(PdfXObject xObject, double x, double y) async {
+  Future<CraftPdfCanvas> addXObject(
+      CraftPdfXObject xObject, double x, double y) async {
     double a = 1.0;
     double d = 1.0;
-    if (xObject is PdfImageXObject) {
+    if (xObject is CraftPdfImageXObject) {
       a = xObject.getWidth();
       d = xObject.getHeight();
     }
     return addXObjectWithTransformationMatrix(
-        xObject.getPdfObject(), a, 0, 0, d, x, y);
+        xObject.pdfRepresentation(), a, 0, 0, d, x, y);
   }
 
-  Future<PdfCanvas> addXObjectWithTransformationMatrix(PdfStream xObject,
-      double a, double b, double c, double d, double e, double f) async {
-    PdfName name = await resources!.addXObject(document!, xObject);
+  Future<CraftPdfCanvas> addXObjectWithTransformationMatrix(
+      CraftPdfStream xObject,
+      double a,
+      double b,
+      double c,
+      double d,
+      double e,
+      double f) async {
+    CraftPdfName name = await resources!.addXObject(document!, xObject);
     saveState();
     concatMatrix(a, b, c, d, e, f);
     contentStream!.getOutputStream()
-      ..writeBytes(ByteUtils.getIsoBytes("/${name.getValue()}"))
-      ..writeBytes(ByteUtils.getIsoBytes(" Do\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes("/${name.getValue()}"))
+      ..writeBytes(CraftByteUtils.getIsoBytes(" Do\n"));
     restoreState();
     return this;
   }
 
-  PdfCanvas addInlineImage(PdfImageXObject imageXObject, double a, double b,
-      double c, double d, double e, double f) {
+  CraftPdfCanvas addInlineImage(CraftPdfImageXObject imageXObject, double a,
+      double b, double c, double d, double e, double f) {
     return this;
   }
 }

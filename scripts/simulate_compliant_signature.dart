@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
-import 'package:dpdf/dpdf.dart';
+import 'package:pdfcraft/pdfcraft.dart';
 import 'package:crypto/crypto.dart';
 
 void main() async {
@@ -9,21 +9,22 @@ void main() async {
   if (outputFile.existsSync()) outputFile.deleteSync();
 
   print('--- Phase 1: Creating Base PDF with Compliance ---');
-  final writer = PdfWriter.toFile(outputFile.path);
-  final pdfDoc = PdfDocument.fromWriter(writer);
-  
+  final writer = CraftPdfWriter.toFile(outputFile.path);
+  final pdfDoc = CraftPdfDocument.fromWriter(writer);
+
   // 1. Set PDF/A-1B and PDF/UA Conformance
-  await pdfDoc.setPdfAConformance();
-  pdfDoc.setTagged(); // PDF/UA
-  pdfDoc.getCatalog().setDisplayDocTitle(true); // PDF/UA
-  
+  await pdfDoc.configureArchivalProfile();
+  pdfDoc.enableTagging(); // PDF/UA
+  pdfDoc.rootCatalog().setDisplayDocTitle(true); // PDF/UA
+
   // 2. Load Font
-  final fontName = 'test/assets/arial.ttf';
-  final font = PdfFontFactory.createFont(fontName, PdfEncodings.IDENTITY_H, true);
-  
+  final fontName = 'test/assets/ABeeZee-Regular.ttf';
+  final font = CraftPdfFontFactory.createFont(
+      fontName, CraftPdfEncodings.IDENTITY_H, true);
+
   // 3. Add Content
-  final page = await pdfDoc.addNewPage();
-  final canvas = await PdfCanvas.fromPage(page);
+  final page = await pdfDoc.appendBlankPage();
+  final canvas = await CraftPdfCanvas.fromPage(page);
   canvas.beginText();
   await canvas.setFontAndSize(font, 12);
   canvas
@@ -32,20 +33,21 @@ void main() async {
       .endText();
 
   // 4. Add OutputIntent with real ICC profile
-  final iccFile = File('referencias/pdfcraft-dotnet-develop/pdfcraft.tests/pdfcraft.layout.tests/resources/pdfcraft/layout/ImageColorProfileTest/sRGB_v4_ICC_preference.icc');
+  final iccFile = File(
+      'referencias/pdfcraft-dotnet-develop/pdfcraft.tests/pdfcraft.layout.tests/resources/pdfcraft/layout/ImageColorProfileTest/sRGB_v4_ICC_preference.icc');
   if (iccFile.existsSync()) {
-    final iccStream = PdfStream();
+    final iccStream = CraftPdfStream();
     iccStream.setData(iccFile.readAsBytesSync());
-    iccStream.makeIndirect(pdfDoc);
-    
-    final outputIntent = PdfOutputIntent.create(
+    iccStream.attachToDocument(pdfDoc);
+
+    final outputIntent = CraftPdfOutputIntent.create(
       'sRGB IEC61966-2.1',
       'sRGB IEC61966-2.1',
       'http://www.color.org',
       'sRGB IEC61966-2.1',
       iccStream,
     );
-    pdfDoc.addOutputIntent(outputIntent);
+    pdfDoc.registerOutputProfile(outputIntent);
     print('OutputIntent with ICC profile added.');
   }
 
@@ -53,37 +55,40 @@ void main() async {
   print('Base PDF created: ${outputFile.path}');
 
   print('\n--- Phase 2: Applying First Signature ---');
-  await signDocument(outputFile.path, 'document_signed_1.pdf', 'sig1', 'Reason 1');
+  await signDocument(
+      outputFile.path, 'document_signed_1.pdf', 'sig1', 'Reason 1');
 
   print('\n--- Phase 3: Applying Second Signature (Incremental) ---');
-  await signDocument('document_signed_1.pdf', 'document_signed_2.pdf', 'sig2', 'Reason 2');
+  await signDocument(
+      'document_signed_1.pdf', 'document_signed_2.pdf', 'sig2', 'Reason 2');
 
   print('\n--- Phase 4: Verifying Integrity ---');
   await verifyIntegrity('document_signed_2.pdf');
 }
 
-Future<void> signDocument(String inputPath, String outputPath, String name, String reason) async {
-  final reader = await PdfReader.fromFile(inputPath);
-  final writer = PdfWriter.toFile(outputPath);
-  
+Future<void> signDocument(
+    String inputPath, String outputPath, String name, String reason) async {
+  final reader = await CraftPdfReader.fromFile(inputPath);
+  final writer = CraftPdfWriter.toFile(outputPath);
+
   // PdfSigner always uses append mode by default in this port
-  final signer = PdfSigner(reader, writer.getSink());
-  
+  final signer = CraftPdfSigner(reader, writer.getSink());
+
   signer.setFieldName(name);
   signer.setReason(reason);
   signer.setContact('suporte@empresa.com');
   signer.setLocation('Brasil');
-  
+
   // Mock Container
   final container = MockSignatureContainer('SHA-256', 'RSA');
-  
+
   // Load real certificate for PdfPKCS7 (it needs it for structure)
   final certBytes = await loadCert('test/assets/rootRsa.cer');
   final chain = [certBytes];
-  
+
   await signer.signDetached(container, chain, estimatedSize: 8192);
   print('Signed: $outputPath');
-  
+
   // Important: Writer sink should be closed after use
   await writer.getSink().close();
 }
@@ -102,38 +107,39 @@ Future<Uint8List> loadCert(String path) async {
 Future<void> verifyIntegrity(String path) async {
   final bytes = File(path).readAsBytesSync();
   final content = String.fromCharCodes(bytes);
-  
-  final rangeRegex = RegExp(r'/ByteRange\s*\[\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*\]');
+
+  final rangeRegex =
+      RegExp(r'/ByteRange\s*\[\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*\]');
   final matches = rangeRegex.allMatches(content);
-  
+
   print('Found ${matches.length} signatures.');
-  
+
   int i = 1;
   for (final match in matches) {
     final r1 = int.parse(match.group(1)!);
     final r2 = int.parse(match.group(2)!);
     final r3 = int.parse(match.group(3)!);
     final r4 = int.parse(match.group(4)!);
-    
+
     print('Signature $i ByteRange: [$r1, $r2, $r3, $r4]');
-    
+
     final builder = BytesBuilder();
     builder.add(bytes.sublist(r1, r1 + r2));
     builder.add(bytes.sublist(r3, r3 + r4));
-    
+
     final hash = sha256.convert(builder.toBytes());
     print('  SHA256: $hash');
-    
+
     if (r3 + r4 <= bytes.length) {
-       print('  Integrity Check: OK (Range is within file bounds)');
+      print('  Integrity Check: OK (Range is within file bounds)');
     } else {
-       print('  Integrity Check: FAILED (Unexpected range end)');
+      print('  Integrity Check: FAILED (Unexpected range end)');
     }
     i++;
   }
 }
 
-class MockSignatureContainer implements IExternalSignature {
+class MockSignatureContainer implements CraftExternalSignature {
   final String digestAlgorithm;
   final String encryptionAlgorithm;
 

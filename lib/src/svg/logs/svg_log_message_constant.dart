@@ -1,73 +1,72 @@
-/// Class that holds the logging and exception messages.
-class SvgLogMessageConstant {
-  SvgLogMessageConstant._();
+/// Diagnostic templates for PDFCraft. Public identifiers and format slots are stable.
+class CraftSvgLogMessageConstant {
+  CraftSvgLogMessageConstant._();
 
   static const String CUSTOM_ABSTRACT_CSS_CONTEXT_NOT_SUPPORTED =
-      "Custom AbstractCssContext implementations are not supported yet";
+      'This renderer does not accept custom AbstractCssContext implementations.';
 
   static const String ERROR_INITIALIZING_DEFAULT_CSS =
-      "Error loading the default CSS. Initializing an empty style sheet.";
+      'Default CSS could not be loaded; continuing with an empty stylesheet.';
 
   static const String GRADIENT_INVALID_GRADIENT_UNITS_LOG =
-      "Could not recognize gradient units value {0}";
+      'Unrecognized gradientUnits setting: {0}.';
 
   static const String GRADIENT_INVALID_SPREAD_METHOD_LOG =
-      "Could not recognize gradient spread method value {0}";
+      'Unrecognized gradient spreadMethod setting: {0}.';
 
   static const String MARKER_HEIGHT_IS_NEGATIVE_VALUE =
-      "markerHeight has negative value. Marker will not be rendered.";
+      'Skipping the marker because markerHeight is below zero.';
 
   static const String MARKER_HEIGHT_IS_ZERO_VALUE =
-      "markerHeight has zero value. Marker will not be rendered.";
+      'Skipping the marker because markerHeight is zero.';
 
   static const String MARKER_WIDTH_IS_NEGATIVE_VALUE =
-      "markerWidth has negative value. Marker will not be rendered.";
+      'Skipping the marker because markerWidth is below zero.';
 
   static const String MARKER_WIDTH_IS_ZERO_VALUE =
-      "markerWidth has zero value. Marker will not be rendered.";
+      'Skipping the marker because markerWidth is zero.';
 
   static const String PATTERN_INVALID_PATTERN_UNITS_LOG =
-      "Could not recognize patternUnits value {0}";
+      'Unrecognized patternUnits setting: {0}.';
 
   static const String PATTERN_INVALID_PATTERN_CONTENT_UNITS_LOG =
-      "Could not recognize patternContentUnits value {0}";
+      'Unrecognized patternContentUnits setting: {0}.';
 
   static const String PATTERN_WIDTH_OR_HEIGHT_IS_ZERO =
-      "Pattern width or height is zero. This pattern will not be rendered.";
+      'Skipping the pattern because its width or height is zero.';
 
   static const String PATTERN_WIDTH_OR_HEIGHT_IS_NEGATIVE =
-      "Pattern width or height is negative value. This pattern will not be rendered.";
+      'Skipping the pattern because its width or height is below zero.';
 
   @deprecated
   static const String MISSING_WIDTH =
-      "Top Svg tag has no defined width attribute and viewbox width is not present, so browser default of 300px is used";
+      'The root SVG specifies neither a width nor a viewBox width; using the browser fallback of 300px.';
 
   @deprecated
   static const String MISSING_HEIGHT =
-      "Top Svg tag has no defined height attribute and viewbox height is not present, so browser default of 150px is used";
+      'The root SVG specifies neither a height nor a viewBox height; using the browser fallback of 150px.';
 
   static const String NONINVERTIBLE_TRANSFORMATION_MATRIX_USED_IN_CLIP_PATH =
-      "Non-invertible transformation matrix was used in a clipping path context. Clipped elements may show undefined behavior.";
+      'The clipping transform is singular; rendering clipped elements may be unreliable.';
 
   static const String
       NON_INVERTIBLE_TRANSFORMATION_MATRIX_FOR_NON_SCALING_STROKE =
-      "Unable to get inverse transformation matrix and thus apply non-scaling-stroke vector-effect property: some of the transformation matrices, written to the document, have a determinant of zero value.";
+      'Cannot apply non-scaling-stroke: a document transform has zero determinant and cannot be inverted.';
 
   static const String UNABLE_TO_GET_INVERSE_MATRIX_DUE_TO_ZERO_DETERMINANT =
-      "Unable to get inverse transformation matrix and thus calculate a viewport for the element because some of the transformation matrices, which are written to document, have a determinant of zero value. A bbox of zero values will be used as a viewport for this element.";
+      'A document transform has zero determinant, preventing viewport calculation; using a zero-sized bounding box as the element viewport.';
 
-  static const String UNABLE_TO_RETRIEVE_FONT =
-      "Unable to retrieve font:\n {0}";
+  static const String UNABLE_TO_RETRIEVE_FONT = 'Font retrieval failed: {0}.';
 
   static const String VIEWBOX_VALUE_MUST_BE_FOUR_NUMBERS =
-      "The viewBox value must be 4 numbers. This viewBox=\"{0}\" will not be processed.";
+      'Ignoring viewBox="{0}": exactly four numeric values are required.';
 
   static const String VIEWBOX_WIDTH_AND_HEIGHT_CANNOT_BE_NEGATIVE =
-      "The viewBox width and height cannot be negative. This viewBox=\"{0}\" will not be processed.";
+      'Ignoring viewBox="{0}": width and height must be nonnegative.';
 
   static const String VIEWBOX_WIDTH_OR_HEIGHT_IS_ZERO =
-      "The viewBox width or height is zero. The element with this viewBox will not be rendered.";
+      'Skipping the element because its viewBox has zero width or height.';
 
   static const String UNMAPPED_TAG =
-      "Could not find implementation for tag {0}";
+      'No renderer is registered for SVG tag {0}.';
 }

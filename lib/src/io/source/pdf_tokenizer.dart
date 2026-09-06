@@ -28,42 +28,42 @@ enum TokenType {
 ///
 /// This class is responsible for tokenizing PDF content, recognizing
 /// PDF objects like numbers, strings, names, arrays, and dictionaries.
-class PdfTokenizer {
+class CraftPdfTokenizer {
   /// "obj" keyword bytes.
-  static final Uint8List obj = ByteUtils.getIsoBytes('obj');
+  static final Uint8List obj = CraftByteUtils.getIsoBytes('obj');
 
   /// "R" keyword bytes.
-  static final Uint8List r = ByteUtils.getIsoBytes('R');
+  static final Uint8List r = CraftByteUtils.getIsoBytes('R');
 
   /// "xref" keyword bytes.
-  static final Uint8List xref = ByteUtils.getIsoBytes('xref');
+  static final Uint8List xref = CraftByteUtils.getIsoBytes('xref');
 
   /// "startxref" keyword bytes.
-  static final Uint8List startxref = ByteUtils.getIsoBytes('startxref');
+  static final Uint8List startxref = CraftByteUtils.getIsoBytes('startxref');
 
   /// "stream" keyword bytes.
-  static final Uint8List stream = ByteUtils.getIsoBytes('stream');
+  static final Uint8List stream = CraftByteUtils.getIsoBytes('stream');
 
   /// "endstream" keyword bytes.
-  static final Uint8List endStream = ByteUtils.getIsoBytes('endstream');
+  static final Uint8List endStream = CraftByteUtils.getIsoBytes('endstream');
 
   /// "trailer" keyword bytes.
-  static final Uint8List trailer = ByteUtils.getIsoBytes('trailer');
+  static final Uint8List trailer = CraftByteUtils.getIsoBytes('trailer');
 
   /// "n" keyword bytes.
-  static final Uint8List n = ByteUtils.getIsoBytes('n');
+  static final Uint8List n = CraftByteUtils.getIsoBytes('n');
 
   /// "f" keyword bytes.
-  static final Uint8List f = ByteUtils.getIsoBytes('f');
+  static final Uint8List f = CraftByteUtils.getIsoBytes('f');
 
   /// "null" keyword bytes.
-  static final Uint8List nullBytes = ByteUtils.getIsoBytes('null');
+  static final Uint8List nullBytes = CraftByteUtils.getIsoBytes('null');
 
   /// "true" keyword bytes.
-  static final Uint8List trueBytes = ByteUtils.getIsoBytes('true');
+  static final Uint8List trueBytes = CraftByteUtils.getIsoBytes('true');
 
   /// "false" keyword bytes.
-  static final Uint8List falseBytes = ByteUtils.getIsoBytes('false');
+  static final Uint8List falseBytes = CraftByteUtils.getIsoBytes('false');
 
   /// Current token type.
   TokenType _type = TokenType.endOfFile;
@@ -78,10 +78,10 @@ class PdfTokenizer {
   bool _hexString = false;
 
   /// Output buffer for token content.
-  final ByteBuffer _outBuf;
+  final CraftByteBuffer _outBuf;
 
   /// The underlying file source.
-  final RandomAccessFileOrArray _file;
+  final CraftRandomAccessFileOrArray _file;
 
   /// Whether to close the stream on dispose.
   bool _closeStream = true;
@@ -122,7 +122,7 @@ class PdfTokenizer {
   /// The beginning of the file is read to determine the location of the header,
   /// and the data source is adjusted as necessary to account for any junk
   /// that occurs in the byte source before the header.
-  PdfTokenizer(this._file) : _outBuf = ByteBuffer();
+  CraftPdfTokenizer(this._file) : _outBuf = CraftByteBuffer();
 
   /// Seeks to the specified position.
   void seek(int pos) {
@@ -277,7 +277,7 @@ class PdfTokenizer {
     if (idx < 0) {
       idx = str.indexOf('%FDF-');
       if (idx < 0) {
-        throw IoException(IoExceptionMessageConstant.pdfHeaderNotFound);
+        throw IoException(CraftIoExceptionMessageConstant.pdfHeaderNotFound);
       }
     }
     return idx;
@@ -289,7 +289,7 @@ class PdfTokenizer {
     final str = await readString(1024);
     final idx = str.indexOf('%PDF-');
     if (idx != 0) {
-      throw IoException(IoExceptionMessageConstant.pdfHeaderNotFound);
+      throw IoException(CraftIoExceptionMessageConstant.pdfHeaderNotFound);
     }
     return str.substring(idx + 1, idx + 8);
   }
@@ -300,7 +300,7 @@ class PdfTokenizer {
     final str = await readString(1024);
     final idx = str.indexOf('%FDF-');
     if (idx != 0) {
-      throw IoException(IoExceptionMessageConstant.fdfStartxrefNotFound);
+      throw IoException(CraftIoExceptionMessageConstant.fdfStartxrefNotFound);
     }
   }
 
@@ -322,7 +322,7 @@ class PdfTokenizer {
       // 9 = "startxref".length
       pos = pos - arrLength + 9;
     }
-    throw IoException(IoExceptionMessageConstant.pdfStartxrefNotFound);
+    throw IoException(CraftIoExceptionMessageConstant.pdfStartxrefNotFound);
   }
 
   /// Gets the next %%EOF marker position.
@@ -351,7 +351,7 @@ class PdfTokenizer {
       // Ensure '%%EOF' is not cut in half
       seek(_file.getPosition() - 4);
     } while (str.length > 4);
-    throw IoException(IoExceptionMessageConstant.pdfEofNotFound);
+    throw IoException(CraftIoExceptionMessageConstant.pdfEofNotFound);
   }
 
   /// Reads the next valid token, resolving references.
@@ -518,7 +518,7 @@ class PdfTokenizer {
         ch = await _file.read();
         if (ch != 0x3E) {
           // '>'
-          throwError(IoExceptionMessageConstant.gtNotExpected);
+          throwError(CraftIoExceptionMessageConstant.gtNotExpected);
         }
         _type = TokenType.endDic;
         break;
@@ -543,7 +543,7 @@ class PdfTokenizer {
             break;
           }
           _outBuf.append(v1);
-          v1 = ByteBuffer.getHex(v1);
+          v1 = CraftByteBuffer.getHex(v1);
           if (v1 < 0) {
             break;
           }
@@ -556,14 +556,14 @@ class PdfTokenizer {
             break;
           }
           _outBuf.append(v2);
-          v2 = ByteBuffer.getHex(v2);
+          v2 = CraftByteBuffer.getHex(v2);
           if (v2 < 0) {
             break;
           }
           v1 = await _file.read();
         }
         if (v1 < 0 || v2 < 0) {
-          throwError(IoExceptionMessageConstant.errorReadingString);
+          throwError(CraftIoExceptionMessageConstant.errorReadingString);
         }
         break;
 
@@ -603,7 +603,7 @@ class PdfTokenizer {
           _outBuf.append(ch);
         }
         if (ch == -1) {
-          throwError(IoExceptionMessageConstant.errorReadingString);
+          throwError(CraftIoExceptionMessageConstant.errorReadingString);
         }
         break;
 
@@ -710,7 +710,7 @@ class PdfTokenizer {
         ch = _file.read();
         if (ch != 0x3E) {
           // '>'
-          throwError(IoExceptionMessageConstant.gtNotExpected);
+          throwError(CraftIoExceptionMessageConstant.gtNotExpected);
         }
         _type = TokenType.endDic;
         break;
@@ -735,7 +735,7 @@ class PdfTokenizer {
             break;
           }
           _outBuf.append(v1);
-          v1 = ByteBuffer.getHex(v1);
+          v1 = CraftByteBuffer.getHex(v1);
           if (v1 < 0) {
             break;
           }
@@ -748,14 +748,14 @@ class PdfTokenizer {
             break;
           }
           _outBuf.append(v2);
-          v2 = ByteBuffer.getHex(v2);
+          v2 = CraftByteBuffer.getHex(v2);
           if (v2 < 0) {
             break;
           }
           v1 = _file.read();
         }
         if (v1 < 0 || v2 < 0) {
-          throwError(IoExceptionMessageConstant.errorReadingString);
+          throwError(CraftIoExceptionMessageConstant.errorReadingString);
         }
         break;
 
@@ -795,7 +795,7 @@ class PdfTokenizer {
           _outBuf.append(ch);
         }
         if (ch == -1) {
-          throwError(IoExceptionMessageConstant.errorReadingString);
+          throwError(CraftIoExceptionMessageConstant.errorReadingString);
         }
         break;
 
@@ -884,7 +884,7 @@ class PdfTokenizer {
   }
 
   /// Creates an independent view of the file.
-  RandomAccessFileOrArray getSafeFile() {
+  CraftRandomAccessFileOrArray getSafeFile() {
     return _file.createView();
   }
 
@@ -895,19 +895,19 @@ class PdfTokenizer {
     int to,
     bool hexWriting,
   ) {
-    final buffer = ByteBuffer.withCapacity(to - from + 1);
+    final buffer = CraftByteBuffer.withCapacity(to - from + 1);
 
     if (hexWriting) {
       // Hex string: <69546578...>
       var i = from;
       while (i <= to) {
-        var v1 = ByteBuffer.getHex(content[i++]);
+        var v1 = CraftByteBuffer.getHex(content[i++]);
         if (i > to) {
           buffer.append(v1 << 4);
           break;
         }
         var v2 = content[i++];
-        v2 = ByteBuffer.getHex(v2);
+        v2 = CraftByteBuffer.getHex(v2);
         buffer.append((v1 << 4) + v2);
       }
     } else {
@@ -1053,14 +1053,14 @@ class PdfTokenizer {
       innerException.setMessageParams(messageParams);
     }
     throw IoException.full(
-      IoExceptionMessageConstant.errorAtFilePointer,
+      CraftIoExceptionMessageConstant.errorAtFilePointer,
       innerException,
       null,
     ).setMessageParams([_file.getPosition()]);
   }
 
   /// Checks whether line equals to 'trailer'.
-  static bool checkTrailer(ByteBuffer line) {
+  static bool checkTrailer(CraftByteBuffer line) {
     if (trailer.length > line.size()) {
       return false;
     }
@@ -1075,7 +1075,7 @@ class PdfTokenizer {
   /// Reads data into the provided ByteBuffer.
   ///
   /// Skips initial whitespace.
-  Future<bool> readLineSegment(ByteBuffer buffer,
+  Future<bool> readLineSegment(CraftByteBuffer buffer,
       [bool isNullWhitespace = true]) async {
     int c;
     var eol = false;
@@ -1148,7 +1148,8 @@ class PdfTokenizer {
   /// Check whether line starts with object declaration.
   ///
   /// Returns [objectNumber, generation] if check is successful, otherwise null.
-  static Future<List<int>?> checkObjectStart(PdfTokenizer lineTokenizer) async {
+  static Future<List<int>?> checkObjectStart(
+      CraftPdfTokenizer lineTokenizer) async {
     try {
       lineTokenizer.seek(0);
       if (!await lineTokenizer.nextToken() ||

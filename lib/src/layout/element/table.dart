@@ -1,29 +1,29 @@
-import 'package:dpdf/src/layout/element/block_element.dart';
-import 'package:dpdf/src/layout/element/cell.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
-import 'package:dpdf/src/layout/renderer/table_renderer.dart';
-import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
-import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:pdfcraft/src/layout/element/block_element.dart';
+import 'package:pdfcraft/src/layout/element/cell.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:pdfcraft/src/layout/renderer/table_renderer.dart';
+import 'package:pdfcraft/src/kernel/pdf/tagutils/accessibility_properties.dart';
+import 'package:pdfcraft/src/layout/properties/unit_value.dart';
 
-class Table extends BlockElement<Table> {
-  List<UnitValue>? columnWidths;
+class CraftTable extends CraftBlockElement<CraftTable> {
+  List<CraftUnitValue>? columnWidths;
 
   // Basic constructor with point widths (float array)
-  Table.fromPointColumnWidths(List<double> columnWidths) {
+  CraftTable.fromPointColumnWidths(List<double> columnWidths) {
     this.columnWidths = [];
     for (double w in columnWidths) {
       if (w >= 0) {
-        this.columnWidths!.add(UnitValue.createPointValue(w));
+        this.columnWidths!.add(CraftUnitValue.createPointValue(w));
       } else {
         // Handle auto/percent? For now assume valid point values or simple default
-        this.columnWidths!.add(UnitValue.createPointValue(0));
+        this.columnWidths!.add(CraftUnitValue.createPointValue(0));
       }
     }
     _init();
   }
 
   // Standard constructor with UnitValue array
-  Table(List<UnitValue> columnWidths) {
+  CraftTable(List<CraftUnitValue> columnWidths) {
     this.columnWidths = columnWidths;
     _init();
   }
@@ -32,7 +32,7 @@ class Table extends BlockElement<Table> {
     // Default properties if needed
   }
 
-  Table addCell(Cell cell) {
+  CraftTable addCell(CraftCell cell) {
     childElements.add(cell);
     return this;
   }
@@ -42,12 +42,12 @@ class Table extends BlockElement<Table> {
   // We'll trust user adds Cells or wrappers.
 
   @override
-  IRenderer makeNewRenderer() {
-    return TableRenderer(this);
+  CraftRenderer makeNewRenderer() {
+    return CraftTableRenderer(this);
   }
 
   @override
-  AccessibilityProperties getAccessibilityProperties() {
-    return AccessibilityProperties();
+  CraftAccessibilityProperties getAccessibilityProperties() {
+    return CraftAccessibilityProperties();
   }
 }

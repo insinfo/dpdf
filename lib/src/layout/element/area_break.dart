@@ -1,14 +1,14 @@
-import 'package:dpdf/src/layout/element/abstract_element.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
-import 'package:dpdf/src/layout/renderer/area_break_renderer.dart';
+import 'package:pdfcraft/src/layout/element/abstract_element.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:pdfcraft/src/layout/renderer/area_break_renderer.dart';
 
-class AreaBreak extends AbstractElement {
-  AreaBreak() {
+class CraftAreaBreak extends CraftAbstractElement {
+  CraftAreaBreak() {
     // defaults
   }
 
   @override
-  IRenderer makeNewRenderer() {
-    return AreaBreakRenderer(this);
+  CraftRenderer makeNewRenderer() {
+    return CraftAreaBreakRenderer(this);
   }
 }

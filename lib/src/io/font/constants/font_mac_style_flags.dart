@@ -1,4 +1,4 @@
-class FontMacStyleFlags {
+class CraftFontMacStyleFlags {
   static const int BOLD = 1;
   static const int ITALIC = 2;
   static const int UNDERLINE = 4;

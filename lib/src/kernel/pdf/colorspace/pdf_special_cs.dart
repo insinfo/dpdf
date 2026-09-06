@@ -1,19 +1,19 @@
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
-import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
+import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_color_space.dart';
 
 /// Abstract class for special color spaces (Pattern, Indexed, Separation, DeviceN).
-abstract class PdfSpecialCs extends PdfColorSpace {
-  PdfSpecialCs(PdfObject pdfObject) : super(pdfObject);
+abstract class CraftPdfSpecialCs extends CraftPdfColorSpace {
+  CraftPdfSpecialCs(CraftPdfObject pdfObject) : super(pdfObject);
 
   @override
-  bool isWrappedObjectMustBeIndirect() => false;
+  bool requiresIndirectStorage() => false;
 }
 
 /// Represents a Pattern color space.
-class PdfSpecialCsPattern extends PdfSpecialCs {
+class PdfSpecialCsPattern extends CraftPdfSpecialCs {
   /// Creates a new [PdfSpecialCsPattern] object.
-  PdfSpecialCsPattern() : super(PdfName.pattern);
+  PdfSpecialCsPattern() : super(CraftPdfName.pattern);
 
   // TODO: Support /Pattern CS with underlying CS (Array form)
 

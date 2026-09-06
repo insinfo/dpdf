@@ -2,26 +2,27 @@ import '../kernel/pdf/pdf_dictionary.dart';
 import '../kernel/pdf/pdf_name.dart';
 import '../kernel/pdf/pdf_object_wrapper.dart';
 
-/// A dictionary that stores the name of the application that signs the PDF.
-class PdfSignatureApp extends PdfObjectWrapper<PdfDictionary> {
+/// Signature application information stored in a PDF dictionary.
+class CraftPdfSignatureApp extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// Creates a new PdfSignatureApp.
-  PdfSignatureApp() : super(PdfDictionary());
+  CraftPdfSignatureApp() : super(CraftPdfDictionary());
 
   /// Creates a new PdfSignatureApp from existing dictionary.
   ///
   /// @param pdfObject PdfDictionary containing initial values
-  PdfSignatureApp.fromDictionary(PdfDictionary pdfObject) : super(pdfObject);
+  CraftPdfSignatureApp.fromDictionary(CraftPdfDictionary pdfObject)
+      : super(pdfObject);
 
-  /// Sets the signature created property in the Prop_Build dictionary's App
+  /// Updates the creator entry within the App portion of Prop_Build
   /// dictionary.
   ///
-  /// @param name String name of the application creating the signature
+  /// @param name signing application label
   void setSignatureCreator(String name) {
-    getPdfObject().put(PdfName.name, PdfName(name));
+    pdfRepresentation().put(CraftPdfName.name, CraftPdfName(name));
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() {
+  bool requiresIndirectStorage() {
     return false;
   }
 }

@@ -1,9 +1,9 @@
 import 'dart:typed_data';
-import 'dart:io';
-import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
-import 'package:dpdf/src/io/font/font_names.dart';
-import 'package:dpdf/src/commons/utils/tuple2.dart';
-import 'package:dpdf/src/io/font/true_type_font_subsetter.dart';
+import '../../platform/io.dart';
+import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
+import 'package:pdfcraft/src/io/font/font_names.dart';
+import 'package:pdfcraft/src/commons/utils/tuple2.dart';
+import 'package:pdfcraft/src/io/font/true_type_font_subsetter.dart';
 
 class HeaderTable {
   int flags = 0;
@@ -77,8 +77,8 @@ class CmapTable {
   bool fontSpecific = false;
 }
 
-class OpenTypeParser {
-  late RandomAccessFileOrArray raf;
+class CraftOpenTypeParser {
+  late CraftRandomAccessFileOrArray raf;
   String? fileName;
   int ttcIndex = -1;
   int directoryOffset = 0;
@@ -105,14 +105,14 @@ class OpenTypeParser {
 
   Map<String, List<int>> tables = {};
 
-  OpenTypeParser(Uint8List ttf, [this.isLenientMode = false]) {
-    raf = RandomAccessFileOrArray(ttf);
+  CraftOpenTypeParser(Uint8List ttf, [this.isLenientMode = false]) {
+    raf = CraftRandomAccessFileOrArray(ttf);
     initializeSfntTables();
   }
 
-  OpenTypeParser.fromFile(String filename, [this.isLenientMode = false]) {
+  CraftOpenTypeParser.fromFile(String filename, [this.isLenientMode = false]) {
     fileName = filename;
-    raf = RandomAccessFileOrArray.fromFile(File(filename));
+    raf = CraftRandomAccessFileOrArray.fromFile(File(filename));
     initializeSfntTables();
   }
 
@@ -150,7 +150,7 @@ class OpenTypeParser {
   void loadTables(bool all) {
     readHeadTable();
     readHheaTable();
-    readOs2Table();
+    loadWindowsMetrics();
     readPostTable();
     readNameTable();
     if (all) {
@@ -202,46 +202,81 @@ class OpenTypeParser {
     hhea.numberOfHMetrics = raf.readUnsignedShort();
   }
 
-  void readOs2Table() {
-    List<int>? tableLocation = tables["OS/2"];
-    os_2 = WindowsMetrics();
-    if (tableLocation != null) {
-      raf.seek(tableLocation[0]);
-      int version = raf.readUnsignedShort();
-      os_2.xAvgCharWidth = raf.readShort();
-      os_2.usWeightClass = raf.readUnsignedShort();
-      os_2.usWidthClass = raf.readUnsignedShort();
-      os_2.fsType = raf.readShort();
-      os_2.ySubscriptXSize = raf.readShort();
-      os_2.ySubscriptYSize = raf.readShort();
-      os_2.ySubscriptXOffset = raf.readShort();
-      os_2.ySubscriptYOffset = raf.readShort();
-      os_2.ySuperscriptXSize = raf.readShort();
-      os_2.ySuperscriptYSize = raf.readShort();
-      os_2.ySuperscriptXOffset = raf.readShort();
-      os_2.ySuperscriptYOffset = raf.readShort();
-      os_2.yStrikeoutSize = raf.readShort();
-      os_2.yStrikeoutPosition = raf.readShort();
-      os_2.sFamilyClass = raf.readShort();
-      raf.readFully(os_2.panose);
-      raf.skipBytes(16);
-      raf.readFully(os_2.achVendID);
-      os_2.fsSelection = raf.readUnsignedShort();
-      os_2.usFirstCharIndex = raf.readUnsignedShort();
-      os_2.usLastCharIndex = raf.readUnsignedShort();
-      os_2.sTypoAscender = raf.readShort();
-      os_2.sTypoDescender = raf.readShort();
-      if (os_2.sTypoDescender > 0) os_2.sTypoDescender = -os_2.sTypoDescender;
-      os_2.sTypoLineGap = raf.readShort();
-      os_2.usWinAscent = raf.readUnsignedShort();
-      os_2.usWinDescent = raf.readUnsignedShort();
-      os_2.ulCodePageRange1 = raf.readInt();
-      os_2.ulCodePageRange2 = raf.readInt();
-      if (version >= 2) {
-        os_2.sxHeight = raf.readShort();
-        os_2.sCapHeight = raf.readShort();
-      }
+  /// Reads only the declared OS/2 table span, using the versioned field offsets
+  /// from the OpenType format. No field read can enter the following table.
+  void loadWindowsMetrics() {
+    final span = tables['OS/2'];
+    if (span == null) {
+      os_2 = WindowsMetrics();
+      return;
     }
+    if (span.length != 2 ||
+        span[0] < 0 ||
+        span[1] < 2 ||
+        span[0] > raf.length() - span[1]) {
+      throw FormatException('OS/2 table span is outside the font data.');
+    }
+    final raw =
+        Uint8List.sublistView(raf.getBytes(), span[0], span[0] + span[1]);
+    final fields = ByteData.sublistView(raw);
+    final revision = fields.getUint16(0);
+    if (revision > 5)
+      throw UnsupportedError('OS/2 revision $revision is unsupported.');
+    final required = switch (revision) {
+      0 => span[1] == 68 ? 68 : 78,
+      1 => 86,
+      5 => 100,
+      _ => 96,
+    };
+    if (raw.length < required) {
+      throw FormatException(
+          'OS/2 revision $revision requires $required bytes.');
+    }
+    final value = WindowsMetrics();
+    // Fields are grouped by meaning rather than by sequential cursor movement.
+    value.panose = Uint8List.fromList(raw.sublist(32, 42));
+    value.achVendID = Uint8List.fromList(raw.sublist(58, 62));
+    value.fsSelection = fields.getUint16(62);
+    value.fsType = fields.getUint16(8);
+    value.sFamilyClass = fields.getInt16(30);
+    value.usWeightClass = fields.getUint16(4);
+    value.usWidthClass = fields.getUint16(6);
+    value.xAvgCharWidth = fields.getInt16(2);
+    value.usFirstCharIndex = fields.getUint16(64);
+    value.usLastCharIndex = fields.getUint16(66);
+
+    final smallForms = <void Function(int)>[
+      (n) => value.ySubscriptXSize = n,
+      (n) => value.ySubscriptYSize = n,
+      (n) => value.ySubscriptXOffset = n,
+      (n) => value.ySubscriptYOffset = n,
+      (n) => value.ySuperscriptXSize = n,
+      (n) => value.ySuperscriptYSize = n,
+      (n) => value.ySuperscriptXOffset = n,
+      (n) => value.ySuperscriptYOffset = n,
+    ];
+    for (var field = 0; field < smallForms.length; field++) {
+      smallForms[field](fields.getInt16(10 + field * 2));
+    }
+    value.yStrikeoutPosition = fields.getInt16(28);
+    value.yStrikeoutSize = fields.getInt16(26);
+
+    if (raw.length >= 78) {
+      value.usWinDescent = fields.getUint16(76);
+      value.usWinAscent = fields.getUint16(74);
+      value.sTypoLineGap = fields.getInt16(72);
+      value.sTypoDescender = -fields.getInt16(70).abs();
+      value.sTypoAscender = fields.getInt16(68);
+    }
+    if (revision >= 1) {
+      value.ulCodePageRange2 = fields.getUint32(82);
+      value.ulCodePageRange1 = fields.getUint32(78);
+    }
+    if (revision >= 2) {
+      value.sCapHeight = fields.getInt16(88);
+      value.sxHeight = fields.getInt16(86);
+    }
+    os_2 = value;
   }
 
   void readPostTable() {
@@ -417,7 +452,7 @@ class OpenTypeParser {
       // Format 12 usually
       raf.seek(tableLocation[0] + map310);
       int format = raf.readUnsignedShort();
-      if (format == 12) cmaps.cmap310 = readFormat12();
+      if (format == 12) cmaps.cmap310 = readGroupedUnicodeMap();
     }
   }
 
@@ -489,22 +524,51 @@ class OpenTypeParser {
     return h;
   }
 
-  Map<int, List<int>> readFormat12() {
-    Map<int, List<int>> h = {};
-    raf.skipBytes(2); // reserved
-    raf.readInt(); // length
-    raf.readInt(); // language
-    int nGroups = raf.readInt();
-    for (int k = 0; k < nGroups; k++) {
-      int startCharCode = raf.readInt();
-      int endCharCode = raf.readInt();
-      int startGlyphID = raf.readInt();
-      for (int i = startCharCode; i <= endCharCode; i++) {
-        int glyph = startGlyphID + (i - startCharCode);
-        h[i] = [glyph, getGlyphWidth(glyph)];
+  Map<int, List<int>> readGroupedUnicodeMap() {
+    final start = raf.getPosition() - 2;
+    final parent = tables['cmap'];
+    final limit = parent == null ? raf.length() : parent[0] + parent[1];
+    if (start < 0 || start > limit - 16 || limit > raf.length()) {
+      throw FormatException('Grouped cmap header is outside its table.');
+    }
+    final header = ByteData.sublistView(raf.getBytes(), start, start + 16);
+    final size = header.getUint32(4);
+    final count = header.getUint32(12);
+    if (header.getUint16(0) != 12 ||
+        header.getUint16(2) != 0 ||
+        size < 16 ||
+        size > limit - start ||
+        count > (size - 16) ~/ 12) {
+      throw FormatException('Grouped cmap has invalid header or group count.');
+    }
+    final records =
+        ByteData.sublistView(raf.getBytes(), start + 16, start + size);
+    final intervals = <(int, int, int)>[];
+    var previousEnd = -1;
+    for (var record = 0; record < count * 12; record += 12) {
+      final lower = records.getUint32(record);
+      final upper = records.getUint32(record + 4);
+      final firstGlyph = records.getUint32(record + 8);
+      if (lower <= previousEnd ||
+          upper < lower ||
+          upper > 0x10ffff ||
+          (lower <= 0xdfff && upper >= 0xd800) ||
+          firstGlyph + upper - lower >= glyphWidthsByIndex.length) {
+        throw FormatException(
+            'Grouped cmap has invalid Unicode or glyph interval.');
+      }
+      intervals.add((lower, upper - lower + 1, firstGlyph));
+      previousEnd = upper;
+    }
+    final result = <int, List<int>>{};
+    for (final (unicode, length, glyph) in intervals) {
+      for (var relative = 0; relative < length; relative++) {
+        final index = glyph + relative;
+        result[unicode + relative] = [index, glyphWidthsByIndex[index]];
       }
     }
-    return h;
+    raf.seek(start + size);
+    return result;
   }
 
   int getGlyphWidth(int glyph) {
@@ -578,8 +642,8 @@ class OpenTypeParser {
     return Uint8List.fromList(raf.getBytes());
   }
 
-  FontNames getFontNames() {
-    FontNames fn = FontNames();
+  CraftFontNames getFontNames() {
+    CraftFontNames fn = CraftFontNames();
     fn.setAllNames(allNameEntries);
     if (allNameEntries[6] != null && allNameEntries[6]!.isNotEmpty) {
       fn.setFontName(allNameEntries[6]![0][3]);
@@ -630,7 +694,7 @@ class OpenTypeParser {
     if (start == locaTable[glyph + 1]) {
       return;
     }
-    RandomAccessFileOrArray tmpRaf = raf.createView();
+    CraftRandomAccessFileOrArray tmpRaf = raf.createView();
     try {
       tmpRaf.seek(glyfOffset + start);
       int numContours = tmpRaf.readShort();
@@ -677,7 +741,7 @@ class OpenTypeParser {
     int start = locaTable[gid];
     int len = locaTable[gid + 1] - start;
     Uint8List data = Uint8List(len);
-    RandomAccessFileOrArray tmpRaf = raf.createView();
+    CraftRandomAccessFileOrArray tmpRaf = raf.createView();
     try {
       tmpRaf.seek(glyfOffset + start);
       tmpRaf.readFully(data);
@@ -693,7 +757,7 @@ class OpenTypeParser {
       throw Exception("Table 'hmtx' does not exist in $fileName");
     }
     int hmtxOffset = tableLocation[0];
-    RandomAccessFileOrArray tmpRaf = raf.createView();
+    CraftRandomAccessFileOrArray tmpRaf = raf.createView();
     try {
       if (gid < hhea.numberOfHMetrics) {
         tmpRaf.seek(hmtxOffset + gid * 4);

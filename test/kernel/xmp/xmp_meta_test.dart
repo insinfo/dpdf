@@ -1,12 +1,12 @@
 import 'package:test/test.dart';
-import 'package:dpdf/src/kernel/xmp/xmp_meta.dart';
-import 'package:dpdf/src/kernel/xmp/xmp_const.dart';
-import 'package:dpdf/src/kernel/xmp/pdf_const.dart';
+import 'package:pdfcraft/src/kernel/xmp/xmp_meta.dart';
+import 'package:pdfcraft/src/kernel/xmp/xmp_const.dart';
+import 'package:pdfcraft/src/kernel/xmp/pdf_const.dart';
 
 void main() {
   group('XMPMeta Tests', () {
     test('create creates a valid XMP structure', () {
-      final xmp = XMPMetaFactory.create();
+      final xmp = CraftXMPMetaFactory.create();
       expect(xmp, isNotNull);
       final xmlStr = xmp.getDocument().toXmlString();
       expect(xmlStr, contains('x:xmpmeta'));
@@ -14,10 +14,12 @@ void main() {
     });
 
     test('setProperty adds property to rdf:Description', () {
-      final xmp = XMPMetaFactory.create();
-      xmp.setProperty(XMPConst.NS_DC, PdfConst.Format, "application/pdf");
+      final xmp = CraftXMPMetaFactory.create();
+      xmp.setProperty(
+          CraftXMPConst.NS_DC, CraftPdfConst.Format, "application/pdf");
 
-      final val = xmp.getPropertyString(XMPConst.NS_DC, PdfConst.Format);
+      final val =
+          xmp.getPropertyString(CraftXMPConst.NS_DC, CraftPdfConst.Format);
       expect(val, equals("application/pdf"));
 
       final xmlStr = xmp.getDocument().toXmlString();
@@ -25,13 +27,15 @@ void main() {
     });
 
     test('serialize and parse round trip', () {
-      final xmp = XMPMetaFactory.create();
-      xmp.setProperty(XMPConst.NS_DC, PdfConst.Format, "application/pdf");
+      final xmp = CraftXMPMetaFactory.create();
+      xmp.setProperty(
+          CraftXMPConst.NS_DC, CraftPdfConst.Format, "application/pdf");
 
-      final bytes = XMPMetaFactory.serializeToBuffer(xmp);
-      final xmp2 = XMPMetaFactory.parseFromBuffer(bytes);
+      final bytes = CraftXMPMetaFactory.serializeToBuffer(xmp);
+      final xmp2 = CraftXMPMetaFactory.parseFromBuffer(bytes);
 
-      final val = xmp2.getPropertyString(XMPConst.NS_DC, PdfConst.Format);
+      final val =
+          xmp2.getPropertyString(CraftXMPConst.NS_DC, CraftPdfConst.Format);
       expect(val, equals("application/pdf"));
     });
   });

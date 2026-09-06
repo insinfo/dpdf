@@ -1,23 +1,23 @@
 import 'dart:typed_data';
 
 import '../exceptions/io_exception_message_constant.dart';
-import 'i_random_access_source.dart';
+import 'random_access_source.dart';
 
 /// A RandomAccessSource that is based on an underlying byte array.
-class ArrayRandomAccessSource implements IRandomAccessSource {
+class CraftArrayRandomAccessSource implements CraftRandomAccessSource {
   Uint8List? _array;
 
   /// Creates a new ArrayRandomAccessSource from an array.
   ///
   /// [array] the underlying byte array
-  ArrayRandomAccessSource(Uint8List array) {
+  CraftArrayRandomAccessSource(Uint8List array) {
     _array = array;
   }
 
   @override
   Future<int> get(int offset) async {
     if (_array == null) {
-      throw StateError(IoExceptionMessageConstant.alreadyClosed);
+      throw StateError(CraftIoExceptionMessageConstant.alreadyClosed);
     }
     if (offset >= _array!.length) {
       return -1;
@@ -28,7 +28,7 @@ class ArrayRandomAccessSource implements IRandomAccessSource {
   @override
   Future<int> getRange(int offset, Uint8List bytes, int off, int len) async {
     if (_array == null) {
-      throw StateError(IoExceptionMessageConstant.alreadyClosed);
+      throw StateError(CraftIoExceptionMessageConstant.alreadyClosed);
     }
     if (offset >= _array!.length) {
       return -1;
@@ -46,7 +46,7 @@ class ArrayRandomAccessSource implements IRandomAccessSource {
   @override
   Future<int> length() async {
     if (_array == null) {
-      throw StateError(IoExceptionMessageConstant.alreadyClosed);
+      throw StateError(CraftIoExceptionMessageConstant.alreadyClosed);
     }
     return _array!.length;
   }

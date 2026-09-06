@@ -1,18 +1,18 @@
 import 'dart:typed_data';
 
-import 'i_random_access_source.dart';
+import 'random_access_source.dart';
 
 /// A thread-safe wrapper for RandomAccessSource.
 ///
 /// Note: In Dart single-isolate context, this class doesn't need actual locking.
 /// However, it maintains the same interface as the C# version for compatibility.
 /// If used across isolates, appropriate synchronization would be needed.
-class ThreadSafeRandomAccessSource implements IRandomAccessSource {
+class CraftThreadSafeRandomAccessSource implements CraftRandomAccessSource {
   /// The underlying source.
-  final IRandomAccessSource _source;
+  final CraftRandomAccessSource _source;
 
   /// Constructs a new ThreadSafeRandomAccessSource.
-  ThreadSafeRandomAccessSource(this._source);
+  CraftThreadSafeRandomAccessSource(this._source);
 
   @override
   Future<int> get(int position) {

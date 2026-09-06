@@ -1,13 +1,13 @@
-import 'package:dpdf/src/layout/properties/unit_value.dart';
-import 'package:dpdf/src/styledxmlparser/css/common_css_constants.dart';
-import 'package:dpdf/src/styledxmlparser/css/util/css_types_validation_utils.dart';
-import 'package:dpdf/src/styledxmlparser/exceptions/styled_xml_parser_exception.dart';
+import 'package:pdfcraft/src/layout/properties/unit_value.dart';
+import 'package:pdfcraft/src/styledxmlparser/css/common_css_constants.dart';
+import 'package:pdfcraft/src/styledxmlparser/css/util/css_types_validation_utils.dart';
+import 'package:pdfcraft/src/styledxmlparser/exceptions/styled_xml_parser_exception.dart';
 
 /// Utilities class for CSS dimension parsing operations.
-class CssDimensionParsingUtils {
-  CssDimensionParsingUtils._();
+class CraftCssDimensionParsingUtils {
+  CraftCssDimensionParsingUtils._();
 
-  /// Parses a float without throwing an exception if something goes wrong.
+  /// Attempts floating-point parsing without propagating conversion errors.
   static double? parseFloat(String? str) {
     if (str == null) return null;
     return double.tryParse(str);
@@ -15,41 +15,41 @@ class CssDimensionParsingUtils {
 
   /// Parses a length with an allowed metric unit (px, pt, in, cm, mm, pc, q) or numeric value (e.g. 123, 1.23, .123) to pt.
   static double parseAbsoluteLength(String length,
-      [String defaultMetric = CommonCssConstants.PX]) {
+      [String defaultMetric = CraftCommonCssConstants.PX]) {
     int pos = determinePositionBetweenValueAndUnit(length);
     if (pos == 0) {
-      throw StyledXMLParserException(
-          StyledXMLParserException.NAN.replaceFirst("{0}", length));
+      throw CraftStyledXMLParserException(
+          CraftStyledXMLParserException.NAN.replaceFirst("{0}", length));
     }
     double f = double.parse(length.substring(0, pos));
     String unit = length.substring(pos);
 
-    if (unit.startsWith(CommonCssConstants.PT) ||
-        (unit == "" && defaultMetric == CommonCssConstants.PT)) {
+    if (unit.startsWith(CraftCommonCssConstants.PT) ||
+        (unit == "" && defaultMetric == CraftCommonCssConstants.PT)) {
       return f;
     }
-    if (unit.startsWith(CommonCssConstants.IN) ||
-        (unit == "" && defaultMetric == CommonCssConstants.IN)) {
+    if (unit.startsWith(CraftCommonCssConstants.IN) ||
+        (unit == "" && defaultMetric == CraftCommonCssConstants.IN)) {
       return f * 72;
     }
-    if (unit.startsWith(CommonCssConstants.CM) ||
-        (unit == "" && defaultMetric == CommonCssConstants.CM)) {
+    if (unit.startsWith(CraftCommonCssConstants.CM) ||
+        (unit == "" && defaultMetric == CraftCommonCssConstants.CM)) {
       return (f / 2.54) * 72;
     }
-    if (unit.startsWith(CommonCssConstants.Q) ||
-        (unit == "" && defaultMetric == CommonCssConstants.Q)) {
+    if (unit.startsWith(CraftCommonCssConstants.Q) ||
+        (unit == "" && defaultMetric == CraftCommonCssConstants.Q)) {
       return (f / 2.54) * 72 / 40;
     }
-    if (unit.startsWith(CommonCssConstants.MM) ||
-        (unit == "" && defaultMetric == CommonCssConstants.MM)) {
+    if (unit.startsWith(CraftCommonCssConstants.MM) ||
+        (unit == "" && defaultMetric == CraftCommonCssConstants.MM)) {
       return (f / 25.4) * 72;
     }
-    if (unit.startsWith(CommonCssConstants.PC) ||
-        (unit == "" && defaultMetric == CommonCssConstants.PC)) {
+    if (unit.startsWith(CraftCommonCssConstants.PC) ||
+        (unit == "" && defaultMetric == CraftCommonCssConstants.PC)) {
       return f * 12;
     }
-    if (unit.startsWith(CommonCssConstants.PX) ||
-        (unit == "" && defaultMetric == CommonCssConstants.PX)) {
+    if (unit.startsWith(CraftCommonCssConstants.PX) ||
+        (unit == "" && defaultMetric == CraftCommonCssConstants.PX)) {
       return f * 0.75;
     }
     return f;
@@ -62,31 +62,33 @@ class CssDimensionParsingUtils {
     double f = double.parse(relativeValue.substring(0, pos));
     String unit = relativeValue.substring(pos);
 
-    if (unit.startsWith(CommonCssConstants.PERCENTAGE)) {
+    if (unit.startsWith(CraftCommonCssConstants.PERCENTAGE)) {
       return baseValue * f / 100;
-    } else if (unit.startsWith(CommonCssConstants.EM) ||
-        unit.startsWith(CommonCssConstants.REM)) {
+    } else if (unit.startsWith(CraftCommonCssConstants.EM) ||
+        unit.startsWith(CraftCommonCssConstants.REM)) {
       return baseValue * f;
-    } else if (unit.startsWith(CommonCssConstants.EX)) {
+    } else if (unit.startsWith(CraftCommonCssConstants.EX)) {
       return baseValue * f / 2;
     }
     return f;
   }
 
   /// Convenience method for parsing a value to pt.
-  static UnitValue? parseLengthValueToPt(
+  static CraftUnitValue? parseLengthValueToPt(
       String? value, double emValue, double remValue) {
     if (value == null) return null;
-    if (CssTypesValidationUtils.isMetricValue(value) ||
-        CssTypesValidationUtils.isNumber(value)) {
-      return UnitValue(UnitValue.POINT, parseAbsoluteLength(value));
-    } else if (value.endsWith(CommonCssConstants.PERCENTAGE)) {
-      return UnitValue(UnitValue.PERCENT,
+    if (CraftCssTypesValidationUtils.isMetricValue(value) ||
+        CraftCssTypesValidationUtils.isNumber(value)) {
+      return CraftUnitValue(CraftUnitValue.POINT, parseAbsoluteLength(value));
+    } else if (value.endsWith(CraftCommonCssConstants.PERCENTAGE)) {
+      return CraftUnitValue(CraftUnitValue.PERCENT,
           double.parse(value.substring(0, value.length - 1)));
-    } else if (CssTypesValidationUtils.isRemValue(value)) {
-      return UnitValue(UnitValue.POINT, parseRelativeValue(value, remValue));
-    } else if (CssTypesValidationUtils.isRelativeValue(value)) {
-      return UnitValue(UnitValue.POINT, parseRelativeValue(value, emValue));
+    } else if (CraftCssTypesValidationUtils.isRemValue(value)) {
+      return CraftUnitValue(
+          CraftUnitValue.POINT, parseRelativeValue(value, remValue));
+    } else if (CraftCssTypesValidationUtils.isRelativeValue(value)) {
+      return CraftUnitValue(
+          CraftUnitValue.POINT, parseRelativeValue(value, emValue));
     }
     return null;
   }
@@ -94,10 +96,10 @@ class CssDimensionParsingUtils {
   /// Parse length attributes.
   static double parseLength(String length, double percentBaseValue,
       double defaultValue, double fontSize, double rootFontSize) {
-    if (CssTypesValidationUtils.isPercentageValue(length)) {
+    if (CraftCssTypesValidationUtils.isPercentageValue(length)) {
       return parseRelativeValue(length, percentBaseValue);
     } else {
-      UnitValue? unitValue =
+      CraftUnitValue? unitValue =
           parseLengthValueToPt(length, fontSize, rootFontSize);
       if (unitValue != null && unitValue.isPointValue()) {
         return unitValue.getValue();
@@ -145,9 +147,9 @@ class CssDimensionParsingUtils {
   static double parseAbsoluteFontSize(String? fontSizeAttribute) {
     if (fontSizeAttribute == null) return 12.0;
     // Map keywords
-    if (CommonCssConstants.FONT_ABSOLUTE_SIZE_KEYWORDS_VALUES
+    if (CraftCommonCssConstants.FONT_ABSOLUTE_SIZE_KEYWORDS_VALUES
         .containsKey(fontSizeAttribute)) {
-      return parseAbsoluteLength(CommonCssConstants
+      return parseAbsoluteLength(CraftCommonCssConstants
           .FONT_ABSOLUTE_SIZE_KEYWORDS_VALUES[fontSizeAttribute]!);
     }
     return parseAbsoluteLength(fontSizeAttribute);
@@ -155,9 +157,9 @@ class CssDimensionParsingUtils {
 
   static double parseRelativeFontSize(
       String elementFontSize, double baseFontSize) {
-    if (elementFontSize == CommonCssConstants.LARGER) {
+    if (elementFontSize == CraftCommonCssConstants.LARGER) {
       return baseFontSize * 1.2;
-    } else if (elementFontSize == CommonCssConstants.SMALLER) {
+    } else if (elementFontSize == CraftCommonCssConstants.SMALLER) {
       return baseFontSize / 1.2;
     }
     return parseRelativeValue(elementFontSize, baseFontSize);

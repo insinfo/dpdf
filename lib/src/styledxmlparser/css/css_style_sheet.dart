@@ -1,36 +1,36 @@
-import 'package:dpdf/src/styledxmlparser/node/i_node.dart';
-import 'package:dpdf/src/styledxmlparser/css/media/media_device_description.dart';
+import 'package:pdfcraft/src/styledxmlparser/node/markup_node.dart';
+import 'package:pdfcraft/src/styledxmlparser/css/media/media_device_description.dart';
 
-class CssStyleSheet {
-  void appendCssStyleSheet(CssStyleSheet other) {}
+class CraftCssStyleSheet {
+  void appendCssStyleSheet(CraftCssStyleSheet other) {}
 
-  List<CssDeclaration> getCssDeclarations(
-      INode node, MediaDeviceDescription deviceDescription) {
+  List<CraftCssDeclaration> getCssDeclarations(
+      CraftMarkupNode node, CraftMediaDeviceDescription deviceDescription) {
     return [];
   }
 
   static Map<String, String> extractStylesFromRuleSets(
-      List<CssRuleSet> ruleSets) {
+      List<CraftCssRuleSet> ruleSets) {
     return {};
   }
 
-  Iterable<CssStatement> getStatements() => [];
+  Iterable<CraftCssStatement> getStatements() => [];
 }
 
-abstract class CssStatement {}
+abstract class CraftCssStatement {}
 
-class CssDeclaration extends CssStatement {
+class CraftCssDeclaration extends CraftCssStatement {
   String getProperty() => "";
   String getExpression() => "";
 }
 
-class CssFontFaceRule extends CssStatement {}
+class CraftCssFontFaceRule extends CraftCssStatement {}
 
-class CssMediaRule extends CssStatement {
-  bool matchMediaDevice(MediaDeviceDescription deviceDescription) => true;
-  Iterable<CssStatement> getStatements() => [];
+class CraftCssMediaRule extends CraftCssStatement {
+  bool matchMediaDevice(CraftMediaDeviceDescription deviceDescription) => true;
+  Iterable<CraftCssStatement> getStatements() => [];
 }
 
-class CssRuleSet {
-  CssRuleSet(dynamic selector, List<CssDeclaration> declarations);
+class CraftCssRuleSet {
+  CraftCssRuleSet(dynamic selector, List<CraftCssDeclaration> declarations);
 }

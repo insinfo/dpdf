@@ -1,5 +1,5 @@
 /// A specialized enum containing potential property values for float.
-enum FloatPropertyValue {
+enum CraftFloatPropertyValue {
   /// Float to the left.
   left,
 

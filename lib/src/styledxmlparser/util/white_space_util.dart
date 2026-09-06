@@ -1,6 +1,6 @@
-import 'package:dpdf/src/io/util/text_util.dart';
+import 'package:pdfcraft/src/io/util/text_util.dart';
 
-class WhiteSpaceUtil {
+class CraftWhiteSpaceUtil {
   static const Set<int> EM_SPACES = {
     0x2002,
     0x2003,
@@ -27,7 +27,8 @@ class WhiteSpaceUtil {
 
   static bool isNonEmSpace(String ch) {
     int codeUnit = ch.codeUnitAt(0);
-    return TextUtil.isWhiteSpace(codeUnit) && !EM_SPACES.contains(codeUnit);
+    return CraftTextUtil.isWhiteSpace(codeUnit) &&
+        !EM_SPACES.contains(codeUnit);
   }
 
   static bool isNonLineBreakSpace(String ch) {

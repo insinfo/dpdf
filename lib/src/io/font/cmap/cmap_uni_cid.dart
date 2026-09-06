@@ -1,41 +1,37 @@
 import '../../util/int_hashtable.dart';
-import '../../util/text_util.dart';
+import 'unicode_mapping_scalar.dart';
 import 'abstract_cmap.dart';
 import 'cmap_object.dart';
 import 'cmap_to_unicode.dart';
 
-class CMapUniCid extends AbstractCMap {
-  final IntHashtable map = IntHashtable.withInitialCapacity(65537);
+class CraftCMapUniCid extends CraftAbstractCMap {
+  final CraftIntHashtable map = CraftIntHashtable.withInitialCapacity(65537);
 
   @override
-  void addChar(String mark, CMapObject code) {
-    if (code.isNumber()) {
-      int codePoint;
-      String s = toUnicodeString(mark, true);
-      if (TextUtil.isSurrogatePair(s, 0)) {
-        codePoint = TextUtil.convertToUtf32(s, 0);
-      } else {
-        codePoint = s.codeUnitAt(0);
-      }
-      map.put(codePoint, code.getValue() as int);
+  void registerMappedCode(String mark, CraftCMapObject code) {
+    if (!code.isNumber()) return;
+    final cid = code.getValue();
+    if (cid is! int || cid < 0 || cid > 0xffff) {
+      throw FormatException(
+          'Character identifier must be an unsigned 16-bit value.');
     }
+    final scalar = unicodeMappingScalar(mark);
+    map.put(scalar, cid);
   }
 
   int lookup(int character) {
     return map.get(character);
   }
 
-  CMapToUnicode exportToUnicode() {
-    CMapToUnicode uni = CMapToUnicode();
+  CraftCMapToUnicode exportToUnicode() {
+    CraftCMapToUnicode uni = CraftCMapToUnicode();
     List<int> keys = map.toOrderedKeys();
     for (int key in keys) {
-      uni.addCharInt(
-          map.get(key), String.fromCharCodes(TextUtil.convertFromUtf32(key)));
+      uni.addCharInt(map.get(key), String.fromCharCode(key));
     }
     int spaceCid = lookup(32);
     if (spaceCid != 0) {
-      uni.addCharInt(
-          spaceCid, String.fromCharCodes(TextUtil.convertFromUtf32(32)));
+      uni.addCharInt(spaceCid, String.fromCharCode(32));
     }
     return uni;
   }

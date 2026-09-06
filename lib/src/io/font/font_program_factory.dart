@@ -1,28 +1,28 @@
 import 'dart:typed_data';
-import 'package:dpdf/src/io/font/font_program.dart';
-import 'package:dpdf/src/io/font/true_type_font.dart';
-import 'package:dpdf/src/io/font/type1_font.dart';
-import 'package:dpdf/src/io/font/constants/standard_fonts.dart';
-import 'package:dpdf/src/io/font/font_cache.dart';
+import 'package:pdfcraft/src/io/font/font_program.dart';
+import 'package:pdfcraft/src/io/font/true_type_font.dart';
+import 'package:pdfcraft/src/io/font/type1_font.dart';
+import 'package:pdfcraft/src/io/font/constants/standard_fonts.dart';
+import 'package:pdfcraft/src/io/font/font_cache.dart';
 
-class FontProgramFactory {
+class CraftFontProgramFactory {
   static const bool DEFAULT_CACHED = true;
 
-  static FontProgram createFont(String fontName,
+  static CraftFontProgram createFont(String fontName,
       [bool cached = DEFAULT_CACHED]) {
     if (cached) {
-      final key = FontCacheKey(fontName);
-      final cachedFont = FontCache.getFont(key);
+      final key = CraftFontCacheKey(fontName);
+      final cachedFont = CraftFontCache.resolveTypeface(key);
       if (cachedFont != null) return cachedFont;
     }
 
-    FontProgram font;
-    if (StandardFonts.isStandardFont(fontName)) {
-      font = Type1Font.createBuiltInFont(fontName);
+    CraftFontProgram font;
+    if (CraftStandardFonts.isStandardFont(fontName)) {
+      font = CraftType1Font.createBuiltInFont(fontName);
     } else {
       if (fontName.toLowerCase().endsWith(".ttf") ||
           fontName.toLowerCase().endsWith(".otf")) {
-        font = TrueTypeFont.fromFile(fontName);
+        font = CraftTrueTypeFont.fromFile(fontName);
       } else {
         // Default to Type1 or throw
         throw Exception("Font type not recognized for: $fontName");
@@ -30,23 +30,23 @@ class FontProgramFactory {
     }
 
     if (cached) {
-      FontCache.saveFont(font, FontCacheKey(fontName));
+      CraftFontCache.saveFont(font, CraftFontCacheKey(fontName));
     }
     return font;
   }
 
-  static FontProgram createFontFromBytes(Uint8List bytes,
+  static CraftFontProgram createFontFromBytes(Uint8List bytes,
       [bool cached = DEFAULT_CACHED]) {
     if (cached) {
-      final key = FontCacheKey(null, bytes);
-      final cachedFont = FontCache.getFont(key);
+      final key = CraftFontCacheKey(null, bytes);
+      final cachedFont = CraftFontCache.resolveTypeface(key);
       if (cachedFont != null) return cachedFont;
     }
 
     // Try TrueType first
-    FontProgram font;
+    CraftFontProgram font;
     try {
-      font = TrueTypeFont.fromBytes(bytes);
+      font = CraftTrueTypeFont.fromBytes(bytes);
     } catch (e) {
       // Try Type1?
       // For now just rethrow or try Type1 if we have a parser that works with bytes.
@@ -54,7 +54,7 @@ class FontProgramFactory {
     }
 
     if (cached) {
-      FontCache.saveFont(font, FontCacheKey(null, bytes));
+      CraftFontCache.saveFont(font, CraftFontCacheKey(null, bytes));
     }
     return font;
   }

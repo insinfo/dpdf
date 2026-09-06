@@ -1,19 +1,19 @@
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
 import 'pdf_action.dart';
 
-class PdfActionGoTo extends PdfAction {
-  PdfActionGoTo(PdfDictionary pdfObject) : super(pdfObject);
+class PdfActionGoTo extends CraftPdfAction {
+  PdfActionGoTo(CraftPdfDictionary pdfObject) : super(pdfObject);
 
-  static PdfActionGoTo createGoTo(PdfObject destination) {
-    PdfDictionary dict = PdfDictionary();
-    dict.put(PdfName.s, PdfName.goTo);
-    dict.put(PdfName.d, destination);
+  static PdfActionGoTo createGoTo(CraftPdfObject destination) {
+    CraftPdfDictionary dict = CraftPdfDictionary();
+    dict.put(CraftPdfName.s, CraftPdfName.goTo);
+    dict.put(CraftPdfName.d, destination);
     return PdfActionGoTo(dict);
   }
 
-  Future<PdfObject?> getDestination() async {
-    return getPdfObject().get(PdfName.d);
+  Future<CraftPdfObject?> getDestination() async {
+    return pdfRepresentation().get(CraftPdfName.d);
   }
 }

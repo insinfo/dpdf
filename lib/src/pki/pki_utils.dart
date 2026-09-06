@@ -1,41 +1,24 @@
-import 'dart:math';
+import '../commons/digest/digest_bytes.dart';
+import '../kernel/crypto/aes_cipher.dart';
+export 'rsa.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 
-import 'package:pointycastle/export.dart';
-import 'package:dpdf/src/sign/asn1_utils.dart' as DpdfAsn1;
-import 'package:pointycastle/asn1.dart';
+import 'package:pdfcraft/src/pki/rsa.dart';
+import 'package:pdfcraft/src/sign/asn1_utils.dart' as DpdfAsn1;
+import 'package:pdfcraft/src/sign/der_objects.dart';
 
 class PkiUtils {
-  static final SecureRandom _secureRandom = _initSecureRandom();
-
-  static SecureRandom _initSecureRandom() {
-    final secureRandom = FortunaRandom();
-    final seedSource = Random.secure();
-    final seeds = <int>[];
-    for (int i = 0; i < 32; i++) {
-      seeds.add(seedSource.nextInt(255));
-    }
-    secureRandom.seed(KeyParameter(Uint8List.fromList(seeds)));
-    return secureRandom;
-  }
-
-  static Uint8List generateRandomBytes(int length) {
-    return _secureRandom.nextBytes(length);
-  }
+  static Uint8List generateRandomBytes(int length) =>
+      RsaMath.randomBytes(length);
 
   static AsymmetricKeyPair<PublicKey, PrivateKey> generateRSAKeyPair(
-      {int bitStrength = 2048}) {
-    final keyGen = RSAKeyGenerator()
-      ..init(ParametersWithRandom(
-          RSAKeyGeneratorParameters(BigInt.parse('65537'), bitStrength, 64),
-          _secureRandom));
-    return keyGen.generateKeyPair();
-  }
+          {int bitStrength = 2048}) =>
+      RsaMath.generate(bitStrength);
 
   /// Creates a basic X.509 v3 certificate.
   ///
-  /// Note: This is a manual ASN.1 construction as PointyCastle lacks a high-level builder.
+  /// The certificate is encoded using the local DER value model.
   static Uint8List createCertificate({
     required String subjectDN,
     required String issuerDN,
@@ -207,31 +190,39 @@ class PkiUtils {
     final signer = Signer('SHA-256/RSA');
     signer.init(true, PrivateKeyParameter<RSAPrivateKey>(key));
     final sig = signer.generateSignature(data);
-    if (sig is RSASignature) {
-      return sig.bytes;
-    }
-    return Uint8List(0);
+    return sig.bytes;
   }
 
   static Uint8List deriveKey(String password, Uint8List salt, int iterations) {
-    final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64));
-    derivator.init(Pbkdf2Parameters(salt, iterations, 32));
-    return derivator.process(Uint8List.fromList(utf8.encode(password)));
+    if (iterations < 1) throw ArgumentError.value(iterations, 'iterations');
+    var key = Uint8List.fromList(utf8.encode(password));
+    if (key.length > 64) key = DigestBytes.compute('SHA256', key);
+    final inner = Uint8List(64)..fillRange(0, 64, 0x36);
+    final outer = Uint8List(64)..fillRange(0, 64, 0x5c);
+    for (var i = 0; i < key.length; i++) {
+      inner[i] ^= key[i];
+      outer[i] ^= key[i];
+    }
+    Uint8List hmac(List<int> message) => DigestBytes.compute(
+        'SHA256',
+        Uint8List.fromList([
+          ...outer,
+          ...DigestBytes.compute(
+              'SHA256', Uint8List.fromList([...inner, ...message]))
+        ]));
+    var u = hmac([...salt, 0, 0, 0, 1]);
+    final result = Uint8List.fromList(u);
+    for (var round = 1; round < iterations; round++) {
+      u = hmac(u);
+      for (var i = 0; i < 32; i++) result[i] ^= u[i];
+    }
+    return result;
   }
 
   static Uint8List processAesCbc(
       bool encrypt, Uint8List key, Uint8List iv, Uint8List data) {
-    final cipher = PaddedBlockCipherImpl(
-      PKCS7Padding(),
-      CBCBlockCipher(AESEngine()),
-    );
-    cipher.init(
-      encrypt,
-      PaddedBlockCipherParameters(
-        ParametersWithIV(KeyParameter(key), iv),
-        null, // No AAD for basic AES-CBC
-      ),
-    );
-    return cipher.process(data);
+    final cipher = CraftAESCipher(encrypt, key, iv);
+    return Uint8List.fromList(
+        [...cipher.update(data, 0, data.length), ...cipher.doFinal()]);
   }
 }

@@ -1,58 +1,61 @@
-import 'package:dpdf/src/layout/renderer/abstract_renderer.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
-import 'package:dpdf/src/layout/renderer/draw_context.dart';
-import 'package:dpdf/src/layout/layout/layout_context.dart';
-import 'package:dpdf/src/layout/layout/layout_result.dart';
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/layout/element/image.dart';
-import 'package:dpdf/src/kernel/pdf/xobject/pdf_image_x_object.dart';
-import 'package:dpdf/src/layout/properties/property.dart';
-import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:pdfcraft/src/layout/renderer/abstract_renderer.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:pdfcraft/src/layout/renderer/draw_context.dart';
+import 'package:pdfcraft/src/layout/layout/layout_context.dart';
+import 'package:pdfcraft/src/layout/layout/layout_result.dart';
+import 'package:pdfcraft/src/layout/layout/layout_area.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/layout/element/image.dart';
+import 'package:pdfcraft/src/kernel/pdf/xobject/pdf_image_x_object.dart';
+import 'package:pdfcraft/src/layout/properties/property.dart';
+import 'package:pdfcraft/src/layout/properties/unit_value.dart';
 
-class ImageRenderer extends AbstractRenderer {
+class CraftImageRenderer extends CraftAbstractRenderer {
   late double _imageWidth;
   late double _imageHeight;
 
-  ImageRenderer(Image modelElement) : super(modelElement) {
+  CraftImageRenderer(CraftImage modelElement) : super(modelElement) {
     _imageWidth = modelElement.imageData.width;
     _imageHeight = modelElement.imageData.height;
   }
 
   @override
-  LayoutResult layout(LayoutContext layoutContext) {
+  CraftLayoutResult layout(CraftLayoutContext layoutContext) {
     final area = layoutContext.getArea();
     final layoutBox = area.getBBox().clone();
 
     double width =
-        getProperty<UnitValue>(Property.WIDTH)?.getValue() ?? _imageWidth;
+        getProperty<CraftUnitValue>(CraftProperty.WIDTH)?.getValue() ??
+            _imageWidth;
     double height =
-        getProperty<UnitValue>(Property.HEIGHT)?.getValue() ?? _imageHeight;
+        getProperty<CraftUnitValue>(CraftProperty.HEIGHT)?.getValue() ??
+            _imageHeight;
 
     if (width > layoutBox.getWidth()) {
       // Simple fitting for now
-      return LayoutResult(LayoutResult.NOTHING, null, null, this, this);
+      return CraftLayoutResult(
+          CraftLayoutResult.NOTHING, null, null, this, this);
     }
 
     // Simplified layout: just occupation of width/height
-    occupiedArea = LayoutArea(
-        area.getPageNumber(),
-        Rectangle(layoutBox.getX(),
+    occupiedArea = CraftLayoutArea(
+        area.pageOrdinal(),
+        CraftRectangle(layoutBox.getX(),
             layoutBox.getY() + layoutBox.getHeight() - height, width, height));
 
-    return LayoutResult(LayoutResult.FULL, occupiedArea, null, null);
+    return CraftLayoutResult(CraftLayoutResult.FULL, occupiedArea, null, null);
   }
 
   @override
-  Future<void> draw(DrawContext drawContext) async {
+  Future<void> draw(CraftDrawContext drawContext) async {
     if (occupiedArea == null) return;
 
-    final image = getModelElement() as Image;
-    final xObject = PdfImageXObject(image.imageData);
+    final image = getModelElement() as CraftImage;
+    final xObject = CraftPdfImageXObject(image.imageData);
 
     final box = occupiedArea!.getBBox();
     await drawContext.getCanvas().addXObjectWithTransformationMatrix(
-        xObject.getPdfObject(),
+        xObject.pdfRepresentation(),
         box.getWidth(),
         0,
         0,
@@ -62,7 +65,7 @@ class ImageRenderer extends AbstractRenderer {
   }
 
   @override
-  IRenderer getNextRenderer() {
-    return ImageRenderer(getModelElement() as Image);
+  CraftRenderer getNextRenderer() {
+    return CraftImageRenderer(getModelElement() as CraftImage);
   }
 }

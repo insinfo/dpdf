@@ -3,11 +3,11 @@ import 'error_correction_level.dart';
 import 'mode.dart';
 
 /// A QR code (short for "quick-response code") is a type of two-dimensional matrix barcode.
-class QRCode {
+class CraftQRCode {
   static const int NUM_MASK_PATTERNS = 8;
 
-  Mode? _mode;
-  ErrorCorrectionLevel? _ecLevel;
+  CraftMode? _mode;
+  CraftErrorCorrectionLevel? _ecLevel;
   int _version = -1;
   int _matrixWidth = -1;
   int _maskPattern = -1;
@@ -15,19 +15,19 @@ class QRCode {
   int _numDataBytes = -1;
   int _numECBytes = -1;
   int _numRSBlocks = -1;
-  ByteMatrix? _matrix;
+  CraftByteMatrix? _matrix;
 
-  QRCode();
+  CraftQRCode();
 
-  Mode? getMode() {
+  CraftMode? getMode() {
     return _mode;
   }
 
-  ErrorCorrectionLevel? getECLevel() {
+  CraftErrorCorrectionLevel? getECLevel() {
     return _ecLevel;
   }
 
-  int getVersion() {
+  int formatVersion() {
     return _version;
   }
 
@@ -55,7 +55,7 @@ class QRCode {
     return _numRSBlocks;
   }
 
-  ByteMatrix? getMatrix() {
+  CraftByteMatrix? getMatrix() {
     return _matrix;
   }
 
@@ -117,11 +117,11 @@ class QRCode {
     return result.toString();
   }
 
-  void setMode(Mode value) {
+  void setMode(CraftMode value) {
     _mode = value;
   }
 
-  void setECLevel(ErrorCorrectionLevel value) {
+  void setECLevel(CraftErrorCorrectionLevel value) {
     _ecLevel = value;
   }
 
@@ -153,7 +153,7 @@ class QRCode {
     _numRSBlocks = value;
   }
 
-  void setMatrix(ByteMatrix value) {
+  void setMatrix(CraftByteMatrix value) {
     _matrix = value;
   }
 

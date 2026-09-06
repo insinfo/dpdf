@@ -1,23 +1,21 @@
 import '../../util/int_hashtable.dart';
-import '../../util/text_util.dart';
+import 'unicode_mapping_scalar.dart';
 import 'abstract_cmap.dart';
 import 'cmap_object.dart';
 
-class CMapCidUni extends AbstractCMap {
-  final IntHashtable map = IntHashtable.withInitialCapacity(65537);
+class CraftCMapCidUni extends CraftAbstractCMap {
+  final CraftIntHashtable map = CraftIntHashtable.withInitialCapacity(65537);
 
   @override
-  void addChar(String mark, CMapObject code) {
-    if (code.isNumber()) {
-      int codePoint;
-      String s = toUnicodeString(mark, true);
-      if (TextUtil.isSurrogatePair(s, 0)) {
-        codePoint = TextUtil.convertToUtf32(s, 0);
-      } else {
-        codePoint = s.codeUnitAt(0);
-      }
-      map.put(code.getValue() as int, codePoint);
+  void registerMappedCode(String mark, CraftCMapObject code) {
+    if (!code.isNumber()) return;
+    final cid = code.getValue();
+    if (cid is! int || cid < 0 || cid > 0xffff) {
+      throw FormatException(
+          'Character identifier must be an unsigned 16-bit value.');
     }
+    final scalar = unicodeMappingScalar(mark);
+    map.put(cid, scalar);
   }
 
   int lookup(int cid) {

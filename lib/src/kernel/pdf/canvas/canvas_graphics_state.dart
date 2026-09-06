@@ -1,26 +1,26 @@
-import 'package:dpdf/src/kernel/geom/affine_transform.dart';
-import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas_constants.dart';
-import 'package:dpdf/src/kernel/colors/color.dart';
-import 'package:dpdf/src/kernel/colors/device_gray.dart';
-import 'package:dpdf/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/font/pdf_font.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:pdfcraft/src/kernel/geom/affine_transform.dart';
+import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas_constants.dart';
+import 'package:pdfcraft/src/kernel/colors/color.dart';
+import 'package:pdfcraft/src/kernel/colors/device_gray.dart';
+import 'package:pdfcraft/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/font/pdf_font.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
 
 /// Represents the graphics state for the canvas.
-class CanvasGraphicsState {
-  AffineTransform ctm = AffineTransform();
-  Color strokeColor = DeviceGray.BLACK;
-  Color fillColor = DeviceGray.BLACK;
+class CraftCanvasGraphicsState {
+  CraftAffineTransform ctm = CraftAffineTransform();
+  CraftColor strokeColor = CraftDeviceGray.BLACK;
+  CraftColor fillColor = CraftDeviceGray.BLACK;
   double charSpacing = 0;
   double wordSpacing = 0;
   double horizontalScaling = 100;
   double leading = 0;
-  PdfFont? font;
+  CraftPdfFont? font;
   double fontSize = 0;
   int textRenderingMode = TextRenderingMode.FILL;
   double textRise = 0;
@@ -29,39 +29,40 @@ class CanvasGraphicsState {
   int lineCapStyle = LineCapStyle.BUTT;
   int lineJoinStyle = LineJoinStyle.MITER;
   double miterLimit = 10;
-  PdfArray dashPattern = PdfArray.fromList([PdfArray(), PdfNumber(0)]);
-  PdfName renderingIntent = PdfName.relativeColorimetric;
+  CraftPdfArray dashPattern =
+      CraftPdfArray.fromList([CraftPdfArray(), CraftPdfNumber(0)]);
+  CraftPdfName renderingIntent = CraftPdfName.relativeColorimetric;
 
   bool automaticStrokeAdjustment = false;
-  PdfObject blendMode = PdfName.normal; // Normal
-  PdfObject softMask = PdfName.none; // None
+  CraftPdfObject blendMode = CraftPdfName.normal; // Normal
+  CraftPdfObject softMask = CraftPdfName.none; // None
   double strokeAlpha = 1.0;
   double fillAlpha = 1.0;
   bool alphaIsShape = false;
   bool strokeOverprint = false;
   bool fillOverprint = false;
   int overprintMode = 0;
-  PdfObject? blackGenerationFunction;
-  PdfObject? blackGenerationFunction2;
-  PdfObject? underColorRemovalFunction;
-  PdfObject? underColorRemovalFunction2;
-  PdfObject? transferFunction;
-  PdfObject? transferFunction2;
-  PdfObject? halftone;
+  CraftPdfObject? blackGenerationFunction;
+  CraftPdfObject? blackGenerationFunction2;
+  CraftPdfObject? underColorRemovalFunction;
+  CraftPdfObject? underColorRemovalFunction2;
+  CraftPdfObject? transferFunction;
+  CraftPdfObject? transferFunction2;
+  CraftPdfObject? halftone;
   double flatnessTolerance = 1.0;
   double? smoothnessTolerance;
-  PdfObject? htp;
+  CraftPdfObject? htp;
 
-  CanvasGraphicsState([CanvasGraphicsState? source]) {
+  CraftCanvasGraphicsState([CraftCanvasGraphicsState? source]) {
     if (source != null) {
       copyFrom(source);
     }
   }
 
-  AffineTransform getCtm() => ctm;
+  CraftAffineTransform getCtm() => ctm;
 
-  CanvasGraphicsState copy() {
-    return CanvasGraphicsState(this);
+  CraftCanvasGraphicsState copy() {
+    return CraftCanvasGraphicsState(this);
   }
 
   double getCharSpacing() => charSpacing;
@@ -76,8 +77,8 @@ class CanvasGraphicsState {
   double getLeading() => leading;
   void setLeading(double value) => leading = value;
 
-  PdfFont? getFont() => font;
-  void setFont(PdfFont? value) => font = value;
+  CraftPdfFont? resolveTypeface() => font;
+  void setFont(CraftPdfFont? value) => font = value;
 
   double getFontSize() => fontSize;
   void setFontSize(double value) => fontSize = value;
@@ -88,8 +89,8 @@ class CanvasGraphicsState {
   double getTextRise() => textRise;
   void setTextRise(double value) => textRise = value;
 
-  void copyFrom(CanvasGraphicsState source) {
-    ctm = AffineTransform.copy(source.ctm);
+  void copyFrom(CraftCanvasGraphicsState source) {
+    ctm = CraftAffineTransform.copy(source.ctm);
     strokeColor = source.strokeColor;
     fillColor = source.fillColor;
     charSpacing = source.charSpacing;
@@ -128,9 +129,9 @@ class CanvasGraphicsState {
     htp = source.htp;
   }
 
-  Future<void> updateFromExtGState(PdfDictionary extGStateDict,
-      [PdfDocument? pdfDocument]) async {
-    final extGState = PdfExtGState(extGStateDict);
+  Future<void> updateFromExtGState(CraftPdfDictionary extGStateDict,
+      [CraftPdfDocument? pdfDocument]) async {
+    final extGState = CraftPdfExtGState(extGStateDict);
 
     final lw = await extGState.getLineWidth();
     if (lw != null) lineWidth = lw;
@@ -159,15 +160,15 @@ class CanvasGraphicsState {
     final opm = await extGState.getOverprintMode();
     if (opm != null) overprintMode = opm;
 
-    final fnt = await extGState.getFont();
+    final fnt = await extGState.resolveTypeface();
     if (fnt != null && pdfDocument != null) {
-      final fontDict = await fnt.getAsDictionary(0);
+      final fontDict = await fnt.dictionaryEntry(0);
       if (fontDict != null) {
-        if (font == null || font!.getPdfObject() != fontDict) {
-          font = await pdfDocument.getFont(fontDict);
+        if (font == null || font!.pdfRepresentation() != fontDict) {
+          font = await pdfDocument.resolveTypeface(fontDict);
         }
       }
-      final fntSz = await fnt.getAsNumber(1);
+      final fntSz = await fnt.numberEntry(1);
       if (fntSz != null) {
         fontSize = fntSz.doubleValue();
       }

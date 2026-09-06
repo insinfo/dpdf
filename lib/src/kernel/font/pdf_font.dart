@@ -1,37 +1,37 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/font/font_program.dart';
-import 'package:dpdf/src/io/font/otf/glyph.dart';
-import 'package:dpdf/src/io/font/otf/glyph_line.dart';
-import 'package:dpdf/src/io/util/text_util.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_object_wrapper.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
+import 'package:pdfcraft/src/io/font/font_program.dart';
+import 'package:pdfcraft/src/io/font/otf/glyph.dart';
+import 'package:pdfcraft/src/io/font/otf/glyph_line.dart';
+import 'package:pdfcraft/src/io/util/text_util.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_object_wrapper.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
 
-abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
+abstract class CraftPdfFont extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   static const int SIMPLE_FONT_MAX_CHAR_CODE_VALUE = 255;
   static final Uint8List EMPTY_BYTES = Uint8List(0);
 
-  FontProgram? fontProgram;
-  Map<int, Glyph> notdefGlyphs = {};
+  CraftFontProgram? fontProgram;
+  Map<int, CraftGlyph> notdefGlyphs = {};
   bool newFont = true;
   bool embedded = false;
   bool subset = true;
   List<List<int>>? subsetRanges;
 
-  PdfFont([PdfDictionary? fontDictionary])
-      : super(fontDictionary ?? PdfDictionary()) {
-    getPdfObject().put(PdfName.type, PdfName.font);
+  CraftPdfFont([CraftPdfDictionary? fontDictionary])
+      : super(fontDictionary ?? CraftPdfDictionary()) {
+    pdfRepresentation().put(CraftPdfName.type, CraftPdfName.font);
   }
 
-  Glyph? getGlyph(int unicode);
+  CraftGlyph? getGlyph(int unicode);
 
   bool containsGlyph(int unicode) {
-    Glyph? glyph = getGlyph(unicode);
+    CraftGlyph? glyph = getGlyph(unicode);
     if (glyph != null) {
       if (getFontProgram() != null && getFontProgram()!.getIsFontSpecific()) {
         return glyph.getCode() > -1;
@@ -42,26 +42,26 @@ abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
     return false;
   }
 
-  GlyphLine createGlyphLine(String content);
+  CraftGlyphLine createGlyphLine(String content);
 
-  int appendGlyphs(String text, int from, int to, List<Glyph> glyphs);
+  int appendGlyphs(String text, int from, int to, List<CraftGlyph> glyphs);
 
-  int appendAnyGlyph(String text, int from, List<Glyph> glyphs);
+  int appendAnyGlyph(String text, int from, List<CraftGlyph> glyphs);
 
   Uint8List convertToBytes(dynamic text); // String or GlyphLine or Glyph
 
-  String decode(PdfString content);
+  String decode(CraftPdfString content);
 
-  GlyphLine decodeIntoGlyphLine(PdfString characterCodes);
+  CraftGlyphLine decodeIntoGlyphLine(CraftPdfString characterCodes);
 
   bool appendDecodedCodesToGlyphsList(
-      List<Glyph> list, PdfString characterCodes) {
+      List<CraftGlyph> list, CraftPdfString characterCodes) {
     return false;
   }
 
-  Future<void> initFromDictionary(PdfDictionary fontDictionary) async {}
+  Future<void> initFromDictionary(CraftPdfDictionary fontDictionary) async {}
 
-  double getContentWidth(PdfString content);
+  double getContentWidth(CraftPdfString content);
 
   void writeText(dynamic text, dynamic stream, [int? from, int? to]);
 
@@ -70,11 +70,11 @@ abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
     if (text is int) {
       int unicode = text;
       if (fontSize == null) {
-        Glyph? glyph = getGlyph(unicode);
+        CraftGlyph? glyph = getGlyph(unicode);
         return glyph != null ? glyph.getWidth() : 0;
       } else {
         // float GetWidth(int unicode, float fontSize)
-        return (FontProgram.convertTextSpaceToGlyphSpace(
+        return (CraftFontProgram.convertTextSpaceToGlyphSpace(
                 getWidth(unicode) * fontSize))
             .toInt();
         // Wait, C# returns float, logic: value / 1000 * size.
@@ -85,20 +85,20 @@ abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
         int total = 0;
         for (int i = 0; i < text.length; i++) {
           int ch;
-          if (TextUtil.isSurrogatePair(text, i)) {
-            ch = TextUtil.convertToUtf32(text, i);
+          if (CraftTextUtil.isSurrogatePair(text, i)) {
+            ch = CraftTextUtil.convertToUtf32(text, i);
             i++;
           } else {
             ch = text.codeUnitAt(i);
           }
-          Glyph? glyph = getGlyph(ch);
+          CraftGlyph? glyph = getGlyph(ch);
           if (glyph != null) {
             total += glyph.getWidth();
           }
         }
         return total;
       } else {
-        return (FontProgram.convertTextSpaceToGlyphSpace(
+        return (CraftFontProgram.convertTextSpaceToGlyphSpace(
                 getWidth(text) * fontSize))
             .toInt();
       }
@@ -108,10 +108,10 @@ abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
 
   double getWidthPoint(dynamic text, double fontSize) {
     if (text is int) {
-      return FontProgram.convertTextSpaceToGlyphSpace(
+      return CraftFontProgram.convertTextSpaceToGlyphSpace(
           getWidth(text) * fontSize);
     } else if (text is String) {
-      return FontProgram.convertTextSpaceToGlyphSpace(
+      return CraftFontProgram.convertTextSpaceToGlyphSpace(
           getWidth(text) * fontSize);
     }
     return 0;
@@ -122,7 +122,7 @@ abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
     int min = 0;
     if (text is int) {
       int unicode = text;
-      Glyph? glyph = getGlyph(unicode);
+      CraftGlyph? glyph = getGlyph(unicode);
       if (glyph == null) return 0;
       List<int>? bbox = glyph.getBbox();
       if (bbox != null && bbox[1] < min) {
@@ -134,13 +134,13 @@ abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
     } else if (text is String) {
       for (int k = 0; k < text.length; ++k) {
         int ch;
-        if (TextUtil.isSurrogatePair(text, k)) {
-          ch = TextUtil.convertToUtf32(text, k);
+        if (CraftTextUtil.isSurrogatePair(text, k)) {
+          ch = CraftTextUtil.convertToUtf32(text, k);
           k++;
         } else {
           ch = text.codeUnitAt(k);
         }
-        Glyph? glyph = getGlyph(ch);
+        CraftGlyph? glyph = getGlyph(ch);
         if (glyph != null) {
           List<int>? bbox = glyph.getBbox();
           if (bbox != null && bbox[1] < min) {
@@ -152,14 +152,14 @@ abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
         }
       }
     }
-    return FontProgram.convertTextSpaceToGlyphSpace(min * fontSize);
+    return CraftFontProgram.convertTextSpaceToGlyphSpace(min * fontSize);
   }
 
   double getAscent(dynamic text, double fontSize) {
     int max = 0;
     if (text is int) {
       int unicode = text;
-      Glyph? glyph = getGlyph(unicode);
+      CraftGlyph? glyph = getGlyph(unicode);
       if (glyph == null) return 0;
       List<int>? bbox = glyph.getBbox();
       if (bbox != null && bbox[3] > max) {
@@ -171,13 +171,13 @@ abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
     } else if (text is String) {
       for (int k = 0; k < text.length; ++k) {
         int ch;
-        if (TextUtil.isSurrogatePair(text, k)) {
-          ch = TextUtil.convertToUtf32(text, k);
+        if (CraftTextUtil.isSurrogatePair(text, k)) {
+          ch = CraftTextUtil.convertToUtf32(text, k);
           k++;
         } else {
           ch = text.codeUnitAt(k);
         }
-        Glyph? glyph = getGlyph(ch);
+        CraftGlyph? glyph = getGlyph(ch);
         if (glyph != null) {
           List<int>? bbox = glyph.getBbox();
           if (bbox != null && bbox[3] > max) {
@@ -189,10 +189,10 @@ abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
         }
       }
     }
-    return FontProgram.convertTextSpaceToGlyphSpace(max * fontSize);
+    return CraftFontProgram.convertTextSpaceToGlyphSpace(max * fontSize);
   }
 
-  FontProgram? getFontProgram() => fontProgram;
+  CraftFontProgram? getFontProgram() => fontProgram;
 
   bool isEmbedded() => embedded;
   bool isSubset() => subset;
@@ -211,10 +211,10 @@ abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
     await super.flush();
   }
 
-  PdfDictionary? getFontDescriptor(String fontName);
+  CraftPdfDictionary? getFontDescriptor(String fontName);
 
   @override
-  bool isWrappedObjectMustBeIndirect() => true;
+  bool requiresIndirectStorage() => true;
 
   static String updateSubsetPrefix(
       String fontName, bool isSubset, bool isEmbedded) {
@@ -225,23 +225,24 @@ abstract class PdfFont extends PdfObjectWrapper<PdfDictionary> {
     return fontName;
   }
 
-  PdfStream? getPdfFontStream(
+  CraftPdfStream? getPdfFontStream(
       Uint8List? fontStreamBytes, List<int>? fontStreamLengths) {
     if (fontStreamBytes == null || fontStreamLengths == null) {
       throw Exception("Font embedding issue");
     }
-    PdfStream fontStream = PdfStream.withBytes(fontStreamBytes);
+    CraftPdfStream fontStream = CraftPdfStream.withBytes(fontStreamBytes);
     makeObjectIndirect(fontStream);
     for (int k = 0; k < fontStreamLengths.length; ++k) {
-      fontStream.put(PdfName("Length${k + 1}"),
-          PdfNumber(fontStreamLengths[k].toDouble()));
+      fontStream.put(CraftPdfName("Length${k + 1}"),
+          CraftPdfNumber(fontStreamLengths[k].toDouble()));
     }
     return fontStream;
   }
 
-  bool makeObjectIndirect(PdfObject obj) {
-    if (getPdfObject().getIndirectReference() != null) {
-      obj.makeIndirect(getPdfObject().getIndirectReference()!.getDocument()!);
+  bool makeObjectIndirect(CraftPdfObject obj) {
+    if (pdfRepresentation().indirectHandle() != null) {
+      obj.attachToDocument(
+          pdfRepresentation().indirectHandle()!.getDocument()!);
       return true;
     } else {
       return false;

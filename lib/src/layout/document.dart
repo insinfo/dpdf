@@ -1,25 +1,26 @@
-import 'package:dpdf/src/layout/root_element.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/geom/page_size.dart';
-import 'package:dpdf/src/layout/renderer/document_renderer.dart';
-import 'package:dpdf/src/layout/renderer/root_renderer.dart';
-import 'package:dpdf/src/kernel/font/pdf_font_factory.dart';
-import 'package:dpdf/src/io/font/constants/standard_fonts.dart';
-import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:pdfcraft/src/layout/root_element.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/geom/page_size.dart';
+import 'package:pdfcraft/src/layout/renderer/document_renderer.dart';
+import 'package:pdfcraft/src/layout/renderer/root_renderer.dart';
+import 'package:pdfcraft/src/kernel/font/pdf_font_factory.dart';
+import 'package:pdfcraft/src/io/font/constants/standard_fonts.dart';
+import 'package:pdfcraft/src/layout/properties/property.dart';
 
-class Document extends RootElement<Document> {
-  Document(PdfDocument pdfDocument, [PageSize? pageSize]) : super(pdfDocument) {
+class CraftDocument extends CraftRootElement<CraftDocument> {
+  CraftDocument(CraftPdfDocument pdfDocument, [CraftPageSize? pageSize])
+      : super(pdfDocument) {
     if (pageSize != null) {
-      pdfDocument.setDefaultPageSize(pageSize);
+      pdfDocument.configureDefaultPageExtent(pageSize);
     }
-    setProperty(
-        Property.FONT, PdfFontFactory.createFont(StandardFonts.HELVETICA));
+    setProperty(CraftProperty.FONT,
+        CraftPdfFontFactory.createFont(CraftStandardFonts.HELVETICA));
   }
 
   @override
-  RootRenderer ensureRootRendererNotNull() {
+  CraftRootRenderer ensureRootRendererNotNull() {
     if (rootRenderer == null) {
-      rootRenderer = DocumentRenderer(this);
+      rootRenderer = CraftDocumentRenderer(this);
     }
     return rootRenderer!;
   }
@@ -27,7 +28,7 @@ class Document extends RootElement<Document> {
   @override
   Future<void> close() async {
     if (rootRenderer != null) {
-      await (rootRenderer as DocumentRenderer).close();
+      await (rootRenderer as CraftDocumentRenderer).close();
     }
   }
 }

@@ -4,14 +4,16 @@ import '../kernel/pdf/pdf_object_wrapper.dart';
 import 'pdf_signature_app.dart';
 
 /// Dictionary that stores signature build properties.
-class PdfSignatureBuildProperties extends PdfObjectWrapper<PdfDictionary> {
+class CraftPdfSignatureBuildProperties
+    extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// Creates new PdfSignatureBuildProperties.
-  PdfSignatureBuildProperties() : super(PdfDictionary());
+  CraftPdfSignatureBuildProperties() : super(CraftPdfDictionary());
 
   /// Creates new PdfSignatureBuildProperties with preset values.
   ///
   /// @param dict PdfDictionary containing preset values
-  PdfSignatureBuildProperties.fromDictionary(PdfDictionary dict) : super(dict);
+  CraftPdfSignatureBuildProperties.fromDictionary(CraftPdfDictionary dict)
+      : super(dict);
 
   /// Sets the signatureCreator property in the underlying PdfSignatureApp dictionary.
   ///
@@ -25,19 +27,19 @@ class PdfSignatureBuildProperties extends PdfObjectWrapper<PdfDictionary> {
   /// If it does not exist, it adds a new PdfSignatureApp and returns this instance.
   ///
   /// @return PdfSignatureApp
-  PdfSignatureApp getPdfSignatureAppProperty() {
-    final map = getPdfObject().getMap();
-    final obj = map?[PdfName.app];
-    if (obj == null || obj is! PdfDictionary) {
-      final newDict = PdfDictionary();
-      getPdfObject().put(PdfName.app, newDict);
-      return PdfSignatureApp.fromDictionary(newDict);
+  CraftPdfSignatureApp getPdfSignatureAppProperty() {
+    final map = pdfRepresentation().getMap();
+    final obj = map?[CraftPdfName.app];
+    if (obj == null || obj is! CraftPdfDictionary) {
+      final newDict = CraftPdfDictionary();
+      pdfRepresentation().put(CraftPdfName.app, newDict);
+      return CraftPdfSignatureApp.fromDictionary(newDict);
     }
-    return PdfSignatureApp.fromDictionary(obj);
+    return CraftPdfSignatureApp.fromDictionary(obj);
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() {
+  bool requiresIndirectStorage() {
     return false;
   }
 }

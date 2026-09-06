@@ -6,50 +6,52 @@ import 'pdf_object_wrapper.dart';
 
 /// Represents a node in the pages tree.
 /// Follows the same logic as  C# PdfPages.
-class PdfPages extends PdfObjectWrapper<PdfDictionary> {
+class CraftPdfPages extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   int _from;
-  late PdfNumber _count;
-  PdfArray? _kids;
-  final PdfPages? _parent;
+  late CraftPdfNumber _count;
+  CraftPdfArray? _kids;
+  final CraftPdfPages? _parent;
 
-  PdfPages(this._from, {PdfPages? parent, PdfDictionary? pdfObject})
+  CraftPdfPages(this._from,
+      {CraftPdfPages? parent, CraftPdfDictionary? pdfObject})
       : _parent = parent,
-        super(pdfObject ?? PdfDictionary()) {
+        super(pdfObject ?? CraftPdfDictionary()) {
     setForbidRelease();
   }
 
   /// Initializes the pages node, loading count and kids from the dictionary.
   Future<void> init() async {
-    final pdfObject = getPdfObject();
+    final pdfObject = pdfRepresentation();
 
     // Check if this is an existing Pages dictionary by looking for /Count key
     // Don't use isEmpty() as it may return true for loaded dictionaries
-    if (pdfObject.containsKey(PdfName.count) ||
-        pdfObject.containsKey(PdfName.kids)) {
+    if (pdfObject.containsKey(CraftPdfName.count) ||
+        pdfObject.containsKey(CraftPdfName.kids)) {
       // Load from existing dictionary
-      _count = await pdfObject.getAsNumber(PdfName.count) ?? PdfNumber(0.0);
-      _kids = await pdfObject.getAsArray(PdfName.kids);
+      _count = await pdfObject.numberEntry(CraftPdfName.count) ??
+          CraftPdfNumber(0.0);
+      _kids = await pdfObject.arrayEntry(CraftPdfName.kids);
     } else {
       // New empty pages node
-      _count = PdfNumber(0.0);
-      _kids = PdfArray();
-      pdfObject.put(PdfName.type, PdfName.pages);
-      pdfObject.put(PdfName.kids, _kids!);
-      pdfObject.put(PdfName.count, _count);
+      _count = CraftPdfNumber(0.0);
+      _kids = CraftPdfArray();
+      pdfObject.put(CraftPdfName.type, CraftPdfName.pages);
+      pdfObject.put(CraftPdfName.kids, _kids!);
+      pdfObject.put(CraftPdfName.count, _count);
       if (_parent != null) {
         // Use indirect reference for parent
-        final parentRef = _parent.getPdfObject().getIndirectReference();
+        final parentRef = _parent.pdfRepresentation().indirectHandle();
         if (parentRef != null) {
-          pdfObject.put(PdfName.parent, parentRef);
+          pdfObject.put(CraftPdfName.parent, parentRef);
         } else {
-          pdfObject.put(PdfName.parent, _parent.getPdfObject());
+          pdfObject.put(CraftPdfName.parent, _parent.pdfRepresentation());
         }
       }
     }
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => true;
+  bool requiresIndirectStorage() => true;
 
   int getFrom() => _from;
 
@@ -59,51 +61,51 @@ class PdfPages extends PdfObjectWrapper<PdfDictionary> {
     _from += correction;
   }
 
-  PdfArray? getKids() => _kids;
+  CraftPdfArray? getKids() => _kids;
 
-  PdfPages? getParent() => _parent;
+  CraftPdfPages? getParent() => _parent;
 
-  void addPage(PdfDictionary page) {
-    _kids ??= PdfArray();
+  void appendPageObject(CraftPdfDictionary page) {
+    _kids ??= CraftPdfArray();
     _kids!.add(page);
     incrementCount();
     // Use indirect reference for parent to avoid writing inline dictionary
-    final parentRef = getPdfObject().getIndirectReference();
+    final parentRef = pdfRepresentation().indirectHandle();
     if (parentRef != null) {
-      page.put(PdfName.parent, parentRef);
+      page.put(CraftPdfName.parent, parentRef);
     } else {
-      page.put(PdfName.parent, getPdfObject());
+      page.put(CraftPdfName.parent, pdfRepresentation());
     }
-    page.setModified();
+    page.markChanged();
   }
 
   /// Inserts a page at the specified position within this Pages node.
   ///
   /// [index] - The 0-based index within this node's kids where to insert.
   /// [page] - The page dictionary to insert.
-  void addPageAt(int index, PdfDictionary page) {
-    _kids ??= PdfArray();
+  void insertPageObject(int index, CraftPdfDictionary page) {
+    _kids ??= CraftPdfArray();
     _kids!.insert(index, page);
     incrementCount();
     // Use indirect reference for parent to avoid writing inline dictionary
-    final parentRef = getPdfObject().getIndirectReference();
+    final parentRef = pdfRepresentation().indirectHandle();
     if (parentRef != null) {
-      page.put(PdfName.parent, parentRef);
+      page.put(CraftPdfName.parent, parentRef);
     } else {
-      page.put(PdfName.parent, getPdfObject());
+      page.put(CraftPdfName.parent, pdfRepresentation());
     }
-    page.setModified();
+    page.markChanged();
   }
 
   void incrementCount() {
     _count.setValue(_count.doubleValue() + 1);
-    setModified();
+    markChanged();
     _parent?.incrementCount();
   }
 
   void decrementCount() {
     _count.setValue(_count.doubleValue() - 1);
-    setModified();
+    markChanged();
     _parent?.decrementCount();
   }
 
@@ -113,7 +115,7 @@ class PdfPages extends PdfObjectWrapper<PdfDictionary> {
     return 0;
   }
 
-  bool removePage(int pageNum) {
+  bool detachPage(int pageNum) {
     if (pageNum < _from || pageNum >= _from + getCount()) {
       return false;
     }
@@ -122,19 +124,19 @@ class PdfPages extends PdfObjectWrapper<PdfDictionary> {
     return true;
   }
 
-  void addPages(PdfPages other) {
-    _kids ??= PdfArray();
-    _kids!.add(other.getPdfObject());
+  void addPages(CraftPdfPages other) {
+    _kids ??= CraftPdfArray();
+    _kids!.add(other.pdfRepresentation());
     _count.setValue(_count.doubleValue() + other.getCount().toDouble());
     // Use indirect reference for parent
-    final parentRef = getPdfObject().getIndirectReference();
+    final parentRef = pdfRepresentation().indirectHandle();
     if (parentRef != null) {
-      other.getPdfObject().put(PdfName.parent, parentRef);
+      other.pdfRepresentation().put(CraftPdfName.parent, parentRef);
     } else {
-      other.getPdfObject().put(PdfName.parent, getPdfObject());
+      other.pdfRepresentation().put(CraftPdfName.parent, pdfRepresentation());
     }
-    other.setModified();
-    setModified();
+    other.markChanged();
+    markChanged();
   }
 
   void removeFromParent() {

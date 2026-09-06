@@ -1,82 +1,84 @@
 import 'dart:collection';
-import 'package:dpdf/src/kernel/geom/affine_transform.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:dpdf/src/layout/font/font_provider.dart';
-import 'package:dpdf/src/styledxmlparser/resolver/resource/resource_resolver.dart';
-import 'package:dpdf/src/svg/css/svg_css_context.dart';
-import 'package:dpdf/src/svg/exceptions/svg_exception_message_constant.dart';
-import 'package:dpdf/src/svg/exceptions/svg_processing_exception.dart';
-import 'package:dpdf/src/svg/renderers/i_svg_node_renderer.dart';
-import 'package:dpdf/src/svg/utils/svg_text_properties.dart';
+import 'package:pdfcraft/src/kernel/geom/affine_transform.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:pdfcraft/src/layout/font/font_provider.dart';
+import 'package:pdfcraft/src/styledxmlparser/resolver/resource/resource_resolver.dart';
+import 'package:pdfcraft/src/svg/css/svg_css_context.dart';
+import 'package:pdfcraft/src/svg/exceptions/svg_exception_message_constant.dart';
+import 'package:pdfcraft/src/svg/exceptions/svg_processing_exception.dart';
+import 'package:pdfcraft/src/svg/renderers/svg_node_renderer.dart';
+import 'package:pdfcraft/src/svg/utils/svg_text_properties.dart';
 
 /// The SvgDrawContext keeps a stack of PdfCanvas instances, which
-/// represent all levels of XObjects that are added to the root canvas.
-class SvgDrawContext {
-  final Map<String, ISvgNodeRenderer> _namedObjects = {};
-  final ListQueue<PdfCanvas> _canvases = ListQueue<PdfCanvas>();
-  final ListQueue<Rectangle> _viewports = ListQueue<Rectangle>();
+/// track the nested XObjects associated with the root canvas.
+class CraftSvgDrawContext {
+  final Map<String, CraftSvgNodeRenderer> _namedObjects = {};
+  final ListQueue<CraftPdfCanvas> _canvases = ListQueue<CraftPdfCanvas>();
+  final ListQueue<CraftRectangle> _viewports = ListQueue<CraftRectangle>();
   final ListQueue<String> _useIds = ListQueue<String>();
   final ListQueue<String> _patternIds = ListQueue<String>();
 
-  final ResourceResolver _resourceResolver;
-  final FontProvider _fontProvider;
+  final CraftResourceResolver _resourceResolver;
+  final CraftFontProvider _fontProvider;
 
   SvgTextProperties _textProperties = SvgTextProperties();
-  SvgCssContext _cssContext = SvgCssContext();
-  AffineTransform? _rootTransform;
-  AffineTransform _clippingElementTransform = AffineTransform();
+  CraftSvgCssContext _cssContext = CraftSvgCssContext();
+  CraftAffineTransform? _rootTransform;
+  CraftAffineTransform _clippingElementTransform = CraftAffineTransform();
   List<double> _textMove = [0.0, 0.0];
   List<double>? _relativePosition;
-  Rectangle? _customViewport;
+  CraftRectangle? _customViewport;
 
-  SvgDrawContext(ResourceResolver? resourceResolver, FontProvider? fontProvider)
-      : _resourceResolver = resourceResolver ?? ResourceResolver(null),
-        _fontProvider = fontProvider ?? BasicFontProvider() {
-    _cssContext = SvgCssContext();
+  CraftSvgDrawContext(
+      CraftResourceResolver? resourceResolver, CraftFontProvider? fontProvider)
+      : _resourceResolver = resourceResolver ?? CraftResourceResolver(null),
+        _fontProvider = fontProvider ?? CraftBasicFontProvider() {
+    _cssContext = CraftSvgCssContext();
   }
 
-  Rectangle? getCustomViewport() => _customViewport;
-  void setCustomViewport(Rectangle? customViewport) =>
+  CraftRectangle? getCustomViewport() => _customViewport;
+  void setCustomViewport(CraftRectangle? customViewport) =>
       _customViewport = customViewport;
 
-  PdfCanvas getCurrentCanvas() => _canvases.first;
-  PdfCanvas popCanvas() => _canvases.removeFirst();
-  void pushCanvas(PdfCanvas canvas) => _canvases.addFirst(canvas);
+  CraftPdfCanvas getCurrentCanvas() => _canvases.first;
+  CraftPdfCanvas popCanvas() => _canvases.removeFirst();
+  void pushCanvas(CraftPdfCanvas canvas) => _canvases.addFirst(canvas);
   int size() => _canvases.length;
 
-  void addViewPort(Rectangle viewPort) => _viewports.addFirst(viewPort);
-  Rectangle? getCurrentViewPort() =>
+  void addViewPort(CraftRectangle viewPort) => _viewports.addFirst(viewPort);
+  CraftRectangle? getCurrentViewPort() =>
       _viewports.isEmpty ? null : _viewports.first;
-  Rectangle? getRootViewPort() => _viewports.isEmpty ? null : _viewports.last;
+  CraftRectangle? getRootViewPort() =>
+      _viewports.isEmpty ? null : _viewports.last;
   void removeCurrentViewPort() {
     if (_viewports.isNotEmpty) _viewports.removeFirst();
   }
 
-  void addNamedObject(String name, ISvgNodeRenderer namedObject) {
+  void addNamedObject(String name, CraftSvgNodeRenderer namedObject) {
     if (name.isEmpty) {
-      throw SvgProcessingException(
-          SvgExceptionMessageConstant.NAMED_OBJECT_NAME_NULL_OR_EMPTY);
+      throw CraftSvgProcessingException(
+          CraftSvgExceptionMessageConstant.NAMED_OBJECT_NAME_NULL_OR_EMPTY);
     }
     if (!_namedObjects.containsKey(name)) {
       _namedObjects[name] = namedObject;
     }
   }
 
-  ISvgNodeRenderer? getNamedObject(String name) => _namedObjects[name];
-  ResourceResolver getResourceResolver() => _resourceResolver;
-  FontProvider getFontProvider() => _fontProvider;
+  CraftSvgNodeRenderer? getNamedObject(String name) => _namedObjects[name];
+  CraftResourceResolver getResourceResolver() => _resourceResolver;
+  CraftFontProvider getFontProvider() => _fontProvider;
 
   bool isIdUsedByUseTagBefore(String elementId) => _useIds.contains(elementId);
   void addUsedId(String elementId) => _useIds.addFirst(elementId);
   void removeUsedId(String elementId) => _useIds.removeFirst();
 
-  AffineTransform getRootTransform() {
-    _rootTransform ??= AffineTransform();
+  CraftAffineTransform getRootTransform() {
+    _rootTransform ??= CraftAffineTransform();
     return _rootTransform!;
   }
 
-  void setRootTransform(AffineTransform newTransform) =>
+  void setRootTransform(CraftAffineTransform newTransform) =>
       _rootTransform = newTransform;
 
   List<double> getTextMove() => _textMove;
@@ -86,12 +88,13 @@ class SvgDrawContext {
     _textMove[1] += additionalMoveY;
   }
 
-  AffineTransform getCurrentCanvasTransform() {
-    return AffineTransform.copy(getCurrentCanvas().getGraphicsState().getCtm());
+  CraftAffineTransform getCurrentCanvasTransform() {
+    return CraftAffineTransform.copy(
+        getCurrentCanvas().getGraphicsState().getCtm());
   }
 
-  SvgCssContext getCssContext() => _cssContext;
-  void setCssContext(SvgCssContext cssContext) => _cssContext = cssContext;
+  CraftSvgCssContext getCssContext() => _cssContext;
+  void setCssContext(CraftSvgCssContext cssContext) => _cssContext = cssContext;
 
   bool pushPatternId(String patternId) {
     if (_patternIds.contains(patternId)) return false;
@@ -114,19 +117,20 @@ class SvgDrawContext {
 
   void resetRelativePosition() => _relativePosition = [0.0, 0.0];
 
-  AffineTransform getClippingElementTransform() => _clippingElementTransform;
+  CraftAffineTransform getClippingElementTransform() =>
+      _clippingElementTransform;
   void resetClippingElementTransform() =>
       _clippingElementTransform.setToIdentity();
 
-  AffineTransform getConcatenatedTransform() {
-    List<PdfCanvas> canvasList = [];
+  CraftAffineTransform getConcatenatedTransform() {
+    List<CraftPdfCanvas> canvasList = [];
     int canvasesSize = size();
     for (int i = 0; i < canvasesSize; i++) {
       canvasList.add(popCanvas());
     }
-    AffineTransform transform = AffineTransform();
+    CraftAffineTransform transform = CraftAffineTransform();
     for (int i = canvasList.length - 1; i >= 0; i--) {
-      PdfCanvas pdfCanvas = canvasList[i];
+      CraftPdfCanvas pdfCanvas = canvasList[i];
       final matrix = pdfCanvas.getGraphicsState().getCtm();
       transform.concatenate(matrix);
       pushCanvas(pdfCanvas);

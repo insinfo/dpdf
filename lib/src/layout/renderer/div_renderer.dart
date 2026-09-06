@@ -1,6 +1,6 @@
-import 'package:dpdf/src/layout/renderer/block_renderer.dart';
-import 'package:dpdf/src/layout/element/div.dart';
+import 'package:pdfcraft/src/layout/renderer/block_renderer.dart';
+import 'package:pdfcraft/src/layout/element/div.dart';
 
-class DivRenderer extends BlockRenderer {
-  DivRenderer(Div modelElement) : super(modelElement);
+class CraftDivRenderer extends CraftBlockRenderer {
+  CraftDivRenderer(CraftDiv modelElement) : super(modelElement);
 }

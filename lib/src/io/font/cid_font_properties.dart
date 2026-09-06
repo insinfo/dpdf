@@ -1,48 +1,52 @@
 import 'cjk_resource_loader.dart';
 import 'pdf_encodings.dart';
 
-class CidFontProperties {
+class CraftCidFontProperties {
   static Map<String, Map<String, dynamic>> getAllFonts() {
-    CjkResourceLoader.initSync();
-    return CjkResourceLoader.allCidFonts;
+    CraftCjkResourceLoader.initSync();
+    return CraftCjkResourceLoader.allCidFonts;
   }
 
   static Map<String, Set<String>> getRegistryNames() {
-    CjkResourceLoader.initSync();
-    return CjkResourceLoader.registryNames;
+    CraftCjkResourceLoader.initSync();
+    return CraftCjkResourceLoader.registryNames;
   }
 
   static bool isCjkFont(String fontName) {
-    CjkResourceLoader.initSync();
-    final fonts = CjkResourceLoader.registryNames[CjkResourceLoader.FONTS_PROP];
+    CraftCjkResourceLoader.initSync();
+    final fonts =
+        CraftCjkResourceLoader.registryNames[CraftCjkResourceLoader.FONTS_PROP];
     return fonts != null && fonts.contains(fontName);
   }
 
   /// Checks if its a valid CJKFont font.
   static bool isCidFont(String fontName, String enc) {
-    CjkResourceLoader.initSync();
-    final fonts = CjkResourceLoader.registryNames[CjkResourceLoader.FONTS_PROP];
+    CraftCjkResourceLoader.initSync();
+    final fonts =
+        CraftCjkResourceLoader.registryNames[CraftCjkResourceLoader.FONTS_PROP];
     if (fonts == null || !fonts.contains(fontName)) {
       return false;
     }
-    if (enc == PdfEncodings.IDENTITY_H || enc == PdfEncodings.IDENTITY_V) {
+    if (enc == CraftPdfEncodings.IDENTITY_H ||
+        enc == CraftPdfEncodings.IDENTITY_V) {
       return true;
     }
-    final fontProps = CjkResourceLoader.allCidFonts[fontName];
+    final fontProps = CraftCjkResourceLoader.allCidFonts[fontName];
     if (fontProps == null) return false;
-    final registry = fontProps[CjkResourceLoader.REGISTRY_PROP] as String?;
+    final registry = fontProps[CraftCjkResourceLoader.REGISTRY_PROP] as String?;
     if (registry == null) return false;
-    final encodings = CjkResourceLoader.registryNames[registry];
+    final encodings = CraftCjkResourceLoader.registryNames[registry];
     return encodings != null && encodings.contains(enc);
   }
 
   static String? getCompatibleFont(String enc) {
-    CjkResourceLoader.initSync();
-    for (final entry in CjkResourceLoader.registryNames.entries) {
+    CraftCjkResourceLoader.initSync();
+    for (final entry in CraftCjkResourceLoader.registryNames.entries) {
       if (entry.value.contains(enc)) {
         final registry = entry.key;
-        for (final fontEntry in CjkResourceLoader.allCidFonts.entries) {
-          if (registry == fontEntry.value[CjkResourceLoader.REGISTRY_PROP]) {
+        for (final fontEntry in CraftCjkResourceLoader.allCidFonts.entries) {
+          if (registry ==
+              fontEntry.value[CraftCjkResourceLoader.REGISTRY_PROP]) {
             return fontEntry.key;
           }
         }

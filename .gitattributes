@@ -1,0 +1,18 @@
+*.dart text eol=lf
+*.md text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.py text eol=lf
+*.afm text eol=lf
+lib/src/io/resources/*.txt text eol=lf
+*.pdf binary
+*.ttf binary
+*.otf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.bmp binary
+*.gif binary
+*.jb2 binary
+test/assets/*.cer text eol=lf
+test/assets/*.txt text eol=lf

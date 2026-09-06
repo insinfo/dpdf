@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'image_data.dart';
 
 /// GIF image data class that holds multiple frames.
-class GifImageData {
+class CraftGifImageData {
   /// Logical height of the GIF canvas.
   double logicalHeight = 0;
 
@@ -10,7 +10,7 @@ class GifImageData {
   double logicalWidth = 0;
 
   /// List of frames in the GIF.
-  final List<ImageData> _frames = [];
+  final List<CraftImageData> _frames = [];
 
   /// Raw data bytes.
   Uint8List? _data;
@@ -19,10 +19,10 @@ class GifImageData {
   Uri? _url;
 
   /// Creates a GifImageData from a URL.
-  GifImageData.fromUrl(Uri url) : _url = url;
+  CraftGifImageData.fromUrl(Uri url) : _url = url;
 
   /// Creates a GifImageData from bytes.
-  GifImageData.fromBytes(Uint8List data) : _data = data;
+  CraftGifImageData.fromBytes(Uint8List data) : _data = data;
 
   /// Gets the logical height.
   double getLogicalHeight() => logicalHeight;
@@ -37,7 +37,7 @@ class GifImageData {
   void setLogicalWidth(double width) => logicalWidth = width;
 
   /// Gets the list of frames.
-  List<ImageData> getFrames() => _frames;
+  List<CraftImageData> getFrames() => _frames;
 
   /// Gets the raw data.
   Uint8List? getData() => _data;
@@ -46,7 +46,7 @@ class GifImageData {
   Uri? getUrl() => _url;
 
   /// Adds a frame to the GIF.
-  void addFrame(ImageData frame) => _frames.add(frame);
+  void addFrame(CraftImageData frame) => _frames.add(frame);
 
   /// Returns the number of frames.
   int get frameCount => _frames.length;

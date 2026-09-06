@@ -1,14 +1,14 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/exceptions/io_exception.dart';
-import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
 
-/// Class to read a JBIG2 file at a basic level: understand all the segments,
-/// understand what segments belong to which pages, how many pages there are,
-/// what the width and height of each page is, and global segments if there
+/// Reads JBIG2 segment headers and organization,
+/// associating segments with their pages and determining
+/// page dimensions and document-wide segments when they
 /// are any.
-class Jbig2SegmentReader {
+class CraftJbig2SegmentReader {
   static const int symbolDictionary = 0;
   static const int intermediateTextRegion = 4;
   static const int immediateTextRegion = 6;
@@ -35,13 +35,13 @@ class Jbig2SegmentReader {
   final Map<int, Jbig2Page> _pages = SplayTreeMap();
   final Set<Jbig2Segment> _globals = SplayTreeSet();
 
-  final RandomAccessFileOrArray _ra;
+  final CraftRandomAccessFileOrArray _ra;
   bool _sequential = false;
   bool _numberOfPagesKnown = false;
   // int _numberOfPages = -1;
   bool _read = false;
 
-  Jbig2SegmentReader(this._ra);
+  CraftJbig2SegmentReader(this._ra);
 
   static Uint8List copyByteArray(Uint8List b) {
     return Uint8List.fromList(b);
@@ -96,7 +96,7 @@ class Jbig2SegmentReader {
       Jbig2Page? p = _pages[s.page];
       if (p == null) {
         throw IoException(
-            "Referring to width or height of a page we haven't seen yet: ${s.page}");
+            "Dimensions were requested for an undefined JBIG2 page: ${s.page}");
       }
       p.setPageBitmapWidth(pageBitmapWidth);
       p.setPageBitmapHeight(pageBitmapHeight);
@@ -146,7 +146,8 @@ class Jbig2SegmentReader {
         }
       } else if (countOfReferredToSegments == 5 ||
           countOfReferredToSegments == 6) {
-        throw IoException("Count of referred-to segments has forbidden value");
+        throw IoException(
+            "The JBIG2 reference count uses a reserved encoding.");
       }
     }
     s.setSegmentRetentionFlags(segmentRetentionFlags ?? []);
@@ -244,7 +245,7 @@ class Jbig2SegmentReader {
   int getPageHeight(int i) => _pages[i]!.getPageBitmapHeight();
   int getPageWidth(int i) => _pages[i]!.getPageBitmapWidth();
 
-  Jbig2Page? getPage(int page) => _pages[page];
+  Jbig2Page? pageAt(int page) => _pages[page];
 
   Uint8List? getGlobal(bool forEmbedding) {
     BytesBuilder os = BytesBuilder();
@@ -311,7 +312,7 @@ class Jbig2Segment implements Comparable<Jbig2Segment> {
 
 class Jbig2Page {
   final int page;
-  final Jbig2SegmentReader sr;
+  final CraftJbig2SegmentReader sr;
   final Map<int, Jbig2Segment> segs = SplayTreeMap();
   int pageBitmapWidth = -1;
   int pageBitmapHeight = -1;
@@ -332,13 +333,13 @@ class Jbig2Page {
     for (var sn in segs.keys) {
       Jbig2Segment s = segs[sn]!;
       if (forEmbedding &&
-          (s.type == Jbig2SegmentReader.endOfFile ||
-              s.type == Jbig2SegmentReader.endOfPage)) {
+          (s.type == CraftJbig2SegmentReader.endOfFile ||
+              s.type == CraftJbig2SegmentReader.endOfPage)) {
         continue;
       }
       if (forEmbedding) {
         Uint8List headerDataEmb =
-            Jbig2SegmentReader.copyByteArray(s.headerData!);
+            CraftJbig2SegmentReader.copyByteArray(s.headerData!);
         if (s.pageAssociationSize) {
           headerDataEmb[s.pageAssociationOffset] = 0x0;
           headerDataEmb[s.pageAssociationOffset + 1] = 0x0;

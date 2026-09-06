@@ -1,32 +1,29 @@
 import 'dart:typed_data';
-import 'package:dpdf/src/io/font/adobe_glyph_list.dart';
-import 'package:dpdf/src/io/font/constants/font_weights.dart';
+import 'package:pdfcraft/src/io/font/adobe_glyph_list.dart';
+import 'package:pdfcraft/src/io/font/constants/font_weights.dart';
 
-import 'package:dpdf/src/io/font/font_program.dart';
+import 'package:pdfcraft/src/io/font/font_program.dart';
 
-import 'package:dpdf/src/io/font/otf/glyph.dart';
-import 'package:dpdf/src/io/font/type1_parser.dart';
-import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
-import 'package:dpdf/src/io/util/string_tokenizer.dart';
+import 'package:pdfcraft/src/io/font/otf/glyph.dart';
+import 'package:pdfcraft/src/io/font/type1_parser.dart';
 
-class Type1Font extends FontProgram {
+class CraftType1Font extends CraftFontProgram {
   static final List<int> PFB_TYPES = [1, 2, 1];
 
-  Type1Parser? fontParser;
+  CraftType1Parser? fontParser;
   String? characterSet;
-  Map<int, int> kernPairs =
-      {}; // long, int? in C#, assuming first<<32 + second key
+  Map<(int, int), int> kernPairs = {};
   Uint8List? fontStreamBytes;
   List<int>? fontStreamLengths;
 
-  Type1Font(
+  CraftType1Font(
       String metricsPath, String binaryPath, Uint8List? afm, Uint8List? pfb) {
-    fontParser = Type1Parser(metricsPath, binaryPath, afm, pfb);
-    process();
+    fontParser = CraftType1Parser(metricsPath, binaryPath, afm, pfb);
+    loadAfmMetrics();
   }
 
-  static Type1Font createBuiltInFont(String fontName) {
-    return Type1Font(fontName, "", null, null);
+  static CraftType1Font createBuiltInFont(String fontName) {
+    return CraftType1Font(fontName, "", null, null);
   }
 
   @override
@@ -54,13 +51,9 @@ class Type1Font extends FontProgram {
   bool hasKernPairs() => kernPairs.isNotEmpty;
 
   @override
-  int getKerningByGlyph(Glyph first, Glyph second) {
+  int getKerningByGlyph(CraftGlyph first, CraftGlyph second) {
     if (first.hasValidUnicode() && second.hasValidUnicode()) {
-      // Dart ints are 64-bit on VM, so u1 << 32 is safe.
-      int record = (first.getUnicode() << 32) + second.getUnicode();
-      // Dart ints are 64-bit on VM, but JS is 53-bit.
-      // For IO/Server side it's fine.
-      // If web, big int issue. But we are targeting VM/Flutter locally now.
+      final record = (first.getUnicode(), second.getUnicode());
       if (kernPairs.containsKey(record)) {
         return kernPairs[record]!;
       }
@@ -70,196 +63,189 @@ class Type1Font extends FontProgram {
 
   // Implementation of abstract getKerning(int, int) is in FontProgram
 
-  void process() {
-    if (fontParser == null) return;
-    RandomAccessFileOrArray raf = fontParser!.getMetricsFile();
-    String? line;
-    bool startKernPairs = false;
-
+  void loadAfmMetrics() {
+    final input = fontParser?.getMetricsFile();
+    if (input == null) return;
+    var section = 'header';
+    var sawCharacters = false;
+    var completed = false;
+    var expected = 0;
+    var consumed = 0;
+    var widthTotal = 0;
+    var glyphCount = 0;
+    final byCode = <int, CraftGlyph>{};
+    final byUnicode = <int, CraftGlyph>{};
+    final pairs = <(int, int), int>{};
+    final header = <String, void Function(String)>{
+      'FontName': fontNames.setFontName,
+      'FullName': fontNames.setFullNameString,
+      'FamilyName': fontNames.setFamilyNameString,
+      'CharacterSet': (text) => characterSet = text,
+      'EncodingScheme': (text) => encodingScheme = text,
+      'Weight': (text) =>
+          fontNames.setFontWeight(CraftFontWeights.fromType1FontWeight(text)),
+      'ItalicAngle': (text) => fontMetrics.setItalicAngle(double.parse(text)),
+      'IsFixedPitch': (text) {
+        if (text != 'true' && text != 'false')
+          throw FormatException('AFM pitch flag must be boolean.');
+        fontMetrics.setIsFixedPitch(text == 'true');
+      },
+      'FontBBox': (text) {
+        final coordinates = _afmNumbers(text, 4);
+        fontMetrics.setBbox(
+            coordinates[0], coordinates[1], coordinates[2], coordinates[3]);
+      },
+    };
+    final metric = <String, void Function(int)>{
+      'CapHeight': fontMetrics.setCapHeight,
+      'XHeight': fontMetrics.setXHeight,
+      'Ascender': fontMetrics.setTypoAscender,
+      'Descender': fontMetrics.setTypoDescender,
+      'StdHW': fontMetrics.setStemH,
+      'StdVW': fontMetrics.setStemV,
+      'UnderlinePosition': fontMetrics.setUnderlinePosition,
+      'UnderlineThickness': fontMetrics.setUnderlineThickness,
+    };
     try {
-      while (!startKernPairs && (line = raf.readLine()) != null) {
-        StringTokenizer tok = StringTokenizer(line!, " ,\n\r\t\f");
-        if (!tok.hasMoreTokens()) continue;
-
-        String ident = tok.nextToken();
-        switch (ident) {
-          case "FontName":
-            fontNames.setFontName(tok.nextToken("\u00ff").substring(1));
-            break;
-          case "FullName":
-            fontNames.setFullNameString(tok.nextToken("\u00ff").substring(1));
-            break;
-          case "FamilyName":
-            fontNames.setFamilyNameString(tok.nextToken("\u00ff").substring(1));
-            break;
-          case "Weight":
-            fontNames.setFontWeight(
-                FontWeights.fromType1FontWeight(tok.nextToken()));
-            break;
-          case "ItalicAngle":
-            fontMetrics.setItalicAngle(double.parse(tok.nextToken()));
-            break;
-          case "IsFixedPitch":
-            fontMetrics.setIsFixedPitch(tok.nextToken() == "true");
-            break;
-          case "CharacterSet":
-            characterSet = tok.nextToken("\u00ff").substring(1);
-            break;
-          case "FontBBox":
-            int llx = double.parse(tok.nextToken()).toInt();
-            int lly = double.parse(tok.nextToken()).toInt();
-            int urx = double.parse(tok.nextToken()).toInt();
-            int ury = double.parse(tok.nextToken()).toInt();
-            fontMetrics.setBbox(llx, lly, urx, ury);
-            break;
-          case "UnderlinePosition":
-            fontMetrics
-                .setUnderlinePosition(double.parse(tok.nextToken()).toInt());
-            break;
-          case "UnderlineThickness":
-            fontMetrics
-                .setUnderlineThickness(double.parse(tok.nextToken()).toInt());
-            break;
-          case "EncodingScheme":
-            encodingScheme = tok.nextToken("\u00ff").substring(1).trim();
-            break;
-          case "CapHeight":
-            fontMetrics.setCapHeight(double.parse(tok.nextToken()).toInt());
-            break;
-          case "XHeight":
-            fontMetrics.setXHeight(double.parse(tok.nextToken()).toInt());
-            break;
-          case "Ascender":
-            fontMetrics.setTypoAscender(double.parse(tok.nextToken()).toInt());
-            break;
-          case "Descender":
-            fontMetrics.setTypoDescender(double.parse(tok.nextToken()).toInt());
-            break;
-          case "StdHW":
-            fontMetrics.setStemH(double.parse(tok.nextToken()).toInt());
-            break;
-          case "StdVW":
-            fontMetrics.setStemV(double.parse(tok.nextToken()).toInt());
-            break;
-          case "StartCharMetrics":
-            startKernPairs = true;
-            break;
+      String? line;
+      while ((line = input.readLine()) != null) {
+        final row = _afmRecord(line!);
+        if (row == null || row.$1 == 'Comment') continue;
+        final (keyword, payload) = row;
+        if (section == 'glyphs') {
+          if (keyword == 'EndCharMetrics') {
+            if (consumed != expected)
+              throw FormatException(
+                  'AFM character count does not match its section.');
+            section = 'tail';
+            continue;
+          }
+          final glyph = _afmGlyph(line);
+          if (glyph.getCode() >= 0) byCode[glyph.getCode()] = glyph;
+          if (glyph.hasValidUnicode()) byUnicode[glyph.getUnicode()] = glyph;
+          widthTotal += glyph.getWidth();
+          glyphCount++;
+          consumed++;
+          continue;
         }
-      }
-
-      if (!startKernPairs) {
-        throw Exception("startcharmetrics is missing in the metrics file.");
-      }
-
-      avgWidth = 0;
-      int widthCount = 0;
-
-      while ((line = raf.readLine()) != null) {
-        StringTokenizer tok = StringTokenizer(line!);
-        if (!tok.hasMoreTokens()) continue;
-
-        String ident = tok.nextToken();
-        if (ident == "EndCharMetrics") {
-          startKernPairs = false;
+        if (section == 'kerning') {
+          if (keyword == 'EndKernPairs') {
+            if (consumed != expected)
+              throw FormatException(
+                  'AFM kerning count does not match its section.');
+            section = 'tail';
+            continue;
+          }
+          if (keyword == 'KPX') {
+            final values = payload.split(RegExp(r'\s+'));
+            if (values.length != 3)
+              throw FormatException(
+                  'AFM horizontal kerning needs two names and an adjustment.');
+            final first = CraftAdobeGlyphList.nameToUnicode(values[0]);
+            final second = CraftAdobeGlyphList.nameToUnicode(values[1]);
+            final adjustment = _afmNumbers(values[2], 1).single;
+            if (first >= 0 && second >= 0) pairs[(first, second)] = adjustment;
+          }
+          consumed++;
+          continue;
+        }
+        if (keyword == 'StartCharMetrics') {
+          if (sawCharacters)
+            throw FormatException('AFM character metrics section is repeated.');
+          sawCharacters = true;
+          section = 'glyphs';
+          expected = int.parse(payload);
+          consumed = 0;
+        } else if (keyword == 'StartKernPairs' ||
+            keyword == 'StartKernPairs0') {
+          section = 'kerning';
+          expected = int.parse(payload);
+          consumed = 0;
+        } else if (keyword == 'EndFontMetrics') {
+          completed = true;
           break;
-        }
-
-        int C = -1;
-        int WX = 250;
-        String N = "";
-        List<int>? B;
-
-        StringTokenizer tokLine = StringTokenizer(line, ";");
-        while (tokLine.hasMoreTokens()) {
-          StringTokenizer tokc = StringTokenizer(tokLine.nextToken());
-          if (!tokc.hasMoreTokens()) continue;
-
-          ident = tokc.nextToken();
-          switch (ident) {
-            case "C":
-              C = int.parse(tokc.nextToken());
-              break;
-            case "WX":
-              WX = double.parse(tokc.nextToken()).toInt();
-              break;
-            case "N":
-              N = tokc.nextToken();
-              break;
-            case "B":
-              B = [
-                int.parse(tokc.nextToken()),
-                int.parse(tokc.nextToken()),
-                int.parse(tokc.nextToken()),
-                int.parse(tokc.nextToken())
-              ];
-              break;
+        } else if (section == 'header') {
+          if (metric.containsKey(keyword)) {
+            metric[keyword]!(_afmNumbers(payload, 1).single);
+          } else {
+            header[keyword]?.call(payload);
           }
         }
-
-        int unicode = AdobeGlyphList.nameToUnicode(N);
-        Glyph glyph = Glyph(C, WX, unicode, B);
-
-        if (C >= 0) {
-          codeToGlyph[C] = glyph;
-        }
-        if (unicode != -1) {
-          unicodeToGlyph[unicode] = glyph;
-        }
-        avgWidth += WX;
-        widthCount++;
+        if (expected < 0)
+          throw FormatException('AFM section count cannot be negative.');
       }
-
-      if (widthCount != 0) avgWidth ~/= widthCount;
-
-      // Add 00A0 non breaking space if missing
-      if (!unicodeToGlyph.containsKey(0x00A0)) {
-        if (unicodeToGlyph.containsKey(0x0020)) {
-          Glyph space = unicodeToGlyph[0x0020]!;
-          unicodeToGlyph[0x00A0] =
-              Glyph(space.getCode(), space.getWidth(), 0x00A0, space.getBbox());
-        }
-      }
-
-      while ((line = raf.readLine()) != null) {
-        StringTokenizer tok = StringTokenizer(line!);
-        if (!tok.hasMoreTokens()) continue;
-        String ident = tok.nextToken();
-        if (ident == "EndFontMetrics") {
-          break;
-        } else if (ident == "StartKernPairs") {
-          startKernPairs = true;
-          break;
-        }
-      }
-
-      if (startKernPairs) {
-        while ((line = raf.readLine()) != null) {
-          StringTokenizer tok = StringTokenizer(line!);
-          if (!tok.hasMoreTokens()) continue;
-          String ident = tok.nextToken();
-          if (ident == "KPX") {
-            String first = tok.nextToken();
-            String second = tok.nextToken();
-            int width = double.parse(tok.nextToken()).toInt();
-            int u1 = AdobeGlyphList.nameToUnicode(first);
-            int u2 = AdobeGlyphList.nameToUnicode(second);
-            if (u1 != -1 && u2 != -1) {
-              // Dart ints are 64-bit signed
-              int record = (u1 << 32) + u2;
-              kernPairs[record] = width;
-            }
-          } else if (ident == "EndKernPairs") {
-            startKernPairs = false;
-            break;
-          }
-        }
+      if (!sawCharacters ||
+          !completed ||
+          section == 'glyphs' ||
+          section == 'kerning') {
+        throw FormatException('AFM metrics program has an incomplete section.');
       }
     } finally {
-      raf.close();
+      input.close();
     }
+    final space = byUnicode[32];
+    if (space != null) {
+      byUnicode.putIfAbsent(
+          160,
+          () => CraftGlyph(
+              space.getCode(), space.getWidth(), 160, space.getBbox()));
+    }
+    codeToGlyph
+      ..clear()
+      ..addAll(byCode);
+    unicodeToGlyph
+      ..clear()
+      ..addAll(byUnicode);
+    kernPairs = pairs;
+    avgWidth = glyphCount == 0 ? 0 : widthTotal ~/ glyphCount;
+    isFontSpecific = !const {'AdobeStandardEncoding', 'StandardEncoding'}
+        .contains(encodingScheme);
+  }
 
-    isFontSpecific = !(encodingScheme == "AdobeStandardEncoding" ||
-        encodingScheme == "StandardEncoding");
+  static (String, String)? _afmRecord(String source) {
+    final row = source.trim();
+    if (row.isEmpty) return null;
+    final separator = row.indexOf(RegExp(r'\s'));
+    return separator < 0
+        ? (row, '')
+        : (row.substring(0, separator), row.substring(separator).trim());
+  }
+
+  static List<int> _afmNumbers(String text, int count) {
+    final tokens = text.trim().split(RegExp(r'[\s,]+'));
+    if (tokens.length != count)
+      throw FormatException('AFM numeric field requires $count values.');
+    return tokens.map((token) {
+      final value = double.parse(token);
+      if (!value.isFinite) throw FormatException('AFM metric must be finite.');
+      return value.toInt();
+    }).toList();
+  }
+
+  static CraftGlyph _afmGlyph(String row) {
+    final fields = <String, String>{};
+    for (final part in row.split(';')) {
+      final record = _afmRecord(part);
+      if (record != null) fields[record.$1] = record.$2;
+    }
+    var code = -1;
+    if (fields.containsKey('C')) code = int.parse(fields['C']!);
+    if (fields.containsKey('CH')) {
+      final value = fields['CH']!;
+      if (!RegExp(r'^<[0-9A-Fa-f]+>$').hasMatch(value))
+        throw FormatException('AFM hexadecimal character code is malformed.');
+      code = int.parse(value.substring(1, value.length - 1), radix: 16);
+    }
+    final advance = fields['WX'] ?? fields['W0X'];
+    final width = advance != null
+        ? _afmNumbers(advance, 1).single
+        : fields.containsKey('W')
+            ? _afmNumbers(fields['W']!, 2).first
+            : 250;
+    final bounds =
+        fields.containsKey('B') ? _afmNumbers(fields['B']!, 4) : null;
+    final unicode = CraftAdobeGlyphList.nameToUnicode(fields['N'] ?? '');
+    return CraftGlyph(code, width, unicode, bounds);
   }
 
   Uint8List? getFontStreamBytes() {

@@ -1,39 +1,40 @@
 import 'package:test/test.dart';
-import 'package:dpdf/src/layout/element/paragraph.dart';
-import 'package:dpdf/src/layout/element/text.dart';
-import 'package:dpdf/src/layout/renderer/block_renderer.dart';
-import 'package:dpdf/src/layout/renderer/text_renderer.dart';
-import 'package:dpdf/src/layout/properties/property.dart';
-import 'package:dpdf/src/layout/properties/unit_value.dart';
-import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
-import 'package:dpdf/src/io/font/true_type_font.dart';
-import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
+import 'package:pdfcraft/src/layout/element/paragraph.dart';
+import 'package:pdfcraft/src/layout/element/text.dart';
+import 'package:pdfcraft/src/layout/renderer/block_renderer.dart';
+import 'package:pdfcraft/src/layout/renderer/text_renderer.dart';
+import 'package:pdfcraft/src/layout/properties/property.dart';
+import 'package:pdfcraft/src/layout/properties/unit_value.dart';
+import 'package:pdfcraft/src/kernel/font/pdf_true_type_font.dart';
+import 'package:pdfcraft/src/io/font/true_type_font.dart';
+import 'package:pdfcraft/src/layout/minmaxwidth/min_max_width.dart';
 
 void main() {
   test('BlockRenderer MinMaxWidth', () {
-    final ttf =
-        TrueTypeFont.fromFile(r"C:\MyDartProjects\pdfcraft\test\assets\arial.ttf");
-    final font = PdfTrueTypeFont(ttf);
+    final ttf = CraftTrueTypeFont.fromFile(r"test/assets/ABeeZee-Regular.ttf");
+    final font = CraftPdfTrueTypeFont(ttf);
 
-    Paragraph p = Paragraph();
-    Text t1 = Text("Hello");
-    t1.setProperty(Property.FONT, font);
-    t1.setProperty(Property.FONT_SIZE, UnitValue.createPointValue(10));
+    CraftParagraph p = CraftParagraph();
+    CraftText t1 = CraftText("Hello");
+    t1.setProperty(CraftProperty.FONT, font);
+    t1.setProperty(
+        CraftProperty.FONT_SIZE, CraftUnitValue.createPointValue(10));
 
-    Text t2 = Text("WorldLonger");
-    t2.setProperty(Property.FONT, font);
-    t2.setProperty(Property.FONT_SIZE, UnitValue.createPointValue(10));
+    CraftText t2 = CraftText("WorldLonger");
+    t2.setProperty(CraftProperty.FONT, font);
+    t2.setProperty(
+        CraftProperty.FONT_SIZE, CraftUnitValue.createPointValue(10));
 
     p.add(t1);
     p.add(t2);
 
-    BlockRenderer renderer = BlockRenderer(p);
+    CraftBlockRenderer renderer = CraftBlockRenderer(p);
 
     // Manually add child renderers
-    renderer.addChild(TextRenderer(t1));
-    renderer.addChild(TextRenderer(t2));
+    renderer.addChild(CraftTextRenderer(t1));
+    renderer.addChild(CraftTextRenderer(t2));
 
-    MinMaxWidth? mmw = renderer.getMinMaxWidth();
+    CraftMinMaxWidth? mmw = renderer.getMinMaxWidth();
     expect(mmw, isNotNull);
 
     // Block min should be max of children mins (stacking)

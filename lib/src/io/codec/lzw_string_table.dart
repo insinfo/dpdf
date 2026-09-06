@@ -1,12 +1,12 @@
 import 'dart:typed_data';
-import '../../commons/utils/java_util.dart';
+import '../../commons/utils/value_utils.dart';
 
 /// General purpose LZW String Table for compression and decompression.
 ///
 /// This is a hash-based string table used in LZW compression.
 /// Each entry represents a string made up of a predecessor string (by code)
 /// and a character appended to it.
-class LZWStringTable {
+class CraftLZWStringTable {
   // codesize + Reserved Codes
   static const int _resCodes = 2;
 
@@ -37,7 +37,7 @@ class LZWStringTable {
   int _numStrings = 0;
 
   /// Creates a new LZWStringTable with preallocated memory.
-  LZWStringTable()
+  CraftLZWStringTable()
       : _strChr = Uint8List(_maxstr),
         _strNxt = Int16List(_maxstr),
         _strLen = Int32List(_maxstr),
@@ -163,8 +163,8 @@ class LZWStringTable {
   void dump(StringBuffer output) {
     for (int i = 258; i < _numStrings; ++i) {
       output.writeln(' strNxt_[$i] = ${_strNxt[i]} strChr_ '
-          '${JavaUtil.integerToHexString(_strChr[i] & 0xFF)} strLen_ '
-          '${JavaUtil.integerToHexString(_strLen[i])}');
+          '${ValueUtils.integerToHexString(_strChr[i] & 0xFF)} strLen_ '
+          '${ValueUtils.integerToHexString(_strLen[i])}');
     }
   }
 }

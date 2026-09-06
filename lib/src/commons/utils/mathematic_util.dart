@@ -4,7 +4,7 @@ class MathematicUtil {
   MathematicUtil._();
 
   /// Rounds a double value using "away from zero" rounding mode.
-  /// This matches the Java/C# Math.Round behavior.
+  /// Halfway values are rounded away from zero.
   ///
   /// Examples:
   /// - round(2.5) returns 3.0
@@ -12,7 +12,7 @@ class MathematicUtil {
   /// - round(2.4) returns 2.0
   static double round(double a) {
     // Dart's .round() uses "round half to even" (banker's rounding),
-    // but Java/C# use "round half away from zero"
+    // but this operation rounds halfway values away from zero
     if (a >= 0) {
       return (a + 0.5).floorToDouble();
     } else {

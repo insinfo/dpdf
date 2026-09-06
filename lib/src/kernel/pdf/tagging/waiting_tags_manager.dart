@@ -2,21 +2,24 @@ import '../pdf_dictionary.dart';
 import 'tag_tree_pointer.dart';
 import 'pdf_struct_elem.dart';
 
-class WaitingTagsManager {
-  final Map<Object, PdfStructElem> _associatedObjToWaitingTag = {};
-  final Map<PdfDictionary, Object> _waitingTagToAssociatedObj = {};
+class CraftWaitingTagsManager {
+  final Map<Object, CraftPdfStructElem> _associatedObjToWaitingTag = {};
+  final Map<CraftPdfDictionary, Object> _waitingTagToAssociatedObj = {};
 
-  WaitingTagsManager();
+  CraftWaitingTagsManager();
 
-  Object? assignWaitingState(TagTreePointer pointerToTag, Object associatedObj) {
-    return saveAssociatedObjectForWaitingTag(associatedObj, pointerToTag.getCurrentStructElem());
+  Object? assignWaitingState(
+      CraftTagTreePointer pointerToTag, Object associatedObj) {
+    return saveAssociatedObjectForWaitingTag(
+        associatedObj, pointerToTag.getCurrentStructElem());
   }
 
   bool isObjectAssociatedWithWaitingTag(Object obj) {
     return _associatedObjToWaitingTag.containsKey(obj);
   }
 
-  bool tryMovePointerToWaitingTag(TagTreePointer tagPointer, Object? associatedObject) {
+  bool tryMovePointerToWaitingTag(
+      CraftTagTreePointer tagPointer, Object? associatedObject) {
     if (associatedObject == null) return false;
     final waitingStructElem = _associatedObjToWaitingTag[associatedObject];
     if (waitingStructElem != null) {
@@ -30,7 +33,7 @@ class WaitingTagsManager {
     if (associatedObject != null) {
       final structElem = _associatedObjToWaitingTag.remove(associatedObject);
       if (structElem != null) {
-        _waitingTagToAssociatedObj.remove(structElem.getPdfObject());
+        _waitingTagToAssociatedObj.remove(structElem.pdfRepresentation());
         // TODO: Flush if parent is flushed
       }
       return structElem != null;
@@ -43,18 +46,19 @@ class WaitingTagsManager {
     _waitingTagToAssociatedObj.clear();
   }
 
-  PdfStructElem? getStructForObj(Object associatedObj) {
+  CraftPdfStructElem? getStructForObj(Object associatedObj) {
     return _associatedObjToWaitingTag[associatedObj];
   }
 
-  Object? getObjForStructDict(PdfDictionary structDict) {
+  Object? getObjForStructDict(CraftPdfDictionary structDict) {
     return _waitingTagToAssociatedObj[structDict];
   }
 
-  Object? saveAssociatedObjectForWaitingTag(Object associatedObj, PdfStructElem structElem) {
+  Object? saveAssociatedObjectForWaitingTag(
+      Object associatedObj, CraftPdfStructElem structElem) {
     _associatedObjToWaitingTag[associatedObj] = structElem;
-    final prev = _waitingTagToAssociatedObj[structElem.getPdfObject()];
-    _waitingTagToAssociatedObj[structElem.getPdfObject()] = associatedObj;
+    final prev = _waitingTagToAssociatedObj[structElem.pdfRepresentation()];
+    _waitingTagToAssociatedObj[structElem.pdfRepresentation()] = associatedObj;
     return prev;
   }
 }

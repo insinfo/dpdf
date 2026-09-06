@@ -1,13 +1,14 @@
-import 'dart:io';
+import '../../platform/compression.dart';
 import 'dart:typed_data';
-import 'package:dpdf/src/io/image/png_image_data.dart';
-import 'package:dpdf/src/io/image/image_data.dart';
-import 'package:dpdf/src/layout/properties/image_type.dart';
-import 'package:dpdf/src/io/exceptions/io_exception.dart';
-import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:pdfcraft/src/io/image/png_image_data.dart';
+import 'package:pdfcraft/src/io/image/image_data.dart';
+import 'raw_image_data.dart';
+import 'package:pdfcraft/src/layout/properties/image_type.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
 
 class PngParameters {
-  final PngImageData image;
+  final CraftPngImageData image;
   int width = 0;
   int height = 0;
   int bitDepth = 0;
@@ -34,7 +35,7 @@ class PngParameters {
   PngParameters(this.image);
 }
 
-class PngImageHelper {
+class CraftPngImageHelper {
   static const List<int> PNGID = [137, 80, 78, 71, 13, 10, 26, 10];
   static const String IHDR = "IHDR";
   static const String PLTE = "PLTE";
@@ -61,8 +62,8 @@ class PngImageHelper {
     "AbsoluteColorimetric"
   ];
 
-  static void processImage(ImageData image) {
-    if (image.getOriginalType() != ImageType.PNG) {
+  static void processImage(CraftImageData image) {
+    if (image.getOriginalType() != CraftImageType.PNG) {
       throw Exception("PNG image expected");
     }
     try {
@@ -71,10 +72,10 @@ class PngImageHelper {
       }
       Uint8List data = image.getData()!;
       image.imageSize = data.length;
-      PngParameters png = PngParameters(image as PngImageData);
+      PngParameters png = PngParameters(image as CraftPngImageData);
       _processPng(data, png);
     } catch (e) {
-      throw IoException(IoExceptionMessageConstant.pngImageException);
+      throw IoException(CraftIoExceptionMessageConstant.pngImageException);
     }
   }
 
@@ -82,56 +83,30 @@ class PngImageHelper {
     _readPng(data, png);
     int colorType = png.image.getColorType();
 
-    // Pal shades and BW mask logic
-    int pal0 = 0;
-    int palIdx = 0;
-    png.palShades = false;
-    if (png.trans != null) {
-      for (int k = 0; k < png.trans!.length; ++k) {
-        int n = png.trans![k] & 0xff;
-        if (n == 0) {
-          ++pal0;
-          palIdx = k;
-        }
-        if (n != 0 && n != 255) {
-          png.palShades = true;
-          break;
-        }
-      }
-    }
-    if ((colorType & 4) != 0) {
-      png.palShades = true;
-    }
-    png.genBWMask = (!png.palShades && (pal0 > 1 || png.transRedGray >= 0));
-    if (!png.palShades && !png.genBWMask && pal0 == 1) {
-      png.additional["Mask"] = [palIdx, palIdx];
+    final opacity = png.trans ?? Uint8List(0);
+    final transparentIndices = <int>[
+      for (var index = 0; index < opacity.length; index++)
+        if (opacity[index] == 0) index
+    ];
+    png.palShades = colorType == 4 ||
+        colorType == 6 ||
+        opacity.any((alpha) => alpha > 0 && alpha < 255);
+    png.genBWMask = !png.palShades &&
+        (transparentIndices.length > 1 || png.transRedGray >= 0);
+    if (!png.palShades && !png.genBWMask && transparentIndices.length == 1) {
+      png.additional['Mask'] = List<int>.filled(2, transparentIndices.single);
     }
 
-    bool needDecode = (png.interlaceMethod == 1) ||
-        (png.bitDepth == 16) ||
-        ((colorType & 4) != 0) ||
-        png.palShades ||
-        png.genBWMask;
-
-    switch (colorType) {
-      case 0:
-        png.inputBands = 1;
-        break;
-      case 2:
-        png.inputBands = 3;
-        break;
-      case 3:
-        png.inputBands = 1;
-        break;
-      case 4:
-        png.inputBands = 2;
-        break;
-      case 6:
-        png.inputBands = 4;
-        break;
-    }
-
-    if (needDecode) {
+    png.inputBands = switch (colorType) {
+      0 || 3 => 1,
+      2 => 3,
+      4 => 2,
+      6 => 4,
+      _ => throw IoException('PNG color model is unsupported.'),
+    };
+    final hasSeparateMask = png.palShades || png.genBWMask;
+    final transformsSamples = png.bitDepth > 8 || png.interlaceMethod != 0;
+    if (hasSeparateMask || transformsSamples) {
       _decodeIdat(png);
     }
 
@@ -165,6 +140,15 @@ class PngImageHelper {
       };
     }
 
+    if (png.smask != null) {
+      final mask = CraftRawImageData.fromBytes(png.smask!, CraftImageType.RAW)
+        ..width = png.width.toDouble()
+        ..height = png.height.toDouble()
+        ..bpc = png.palShades ? 8 : 1
+        ..colorEncodingComponentsNumber = 1;
+      mask.makeMask();
+      png.image.setImageMask(mask);
+    }
     if (png.intent != null) {
       png.additional["Intent"] = png.intent!;
     }
@@ -263,8 +247,8 @@ class PngImageHelper {
         offset += len;
       } else if (marker == sRGB) {
         int ri = data[offset];
-        if (ri < PngImageHelper.intents.length) {
-          png.intent = PngImageHelper.intents[ri];
+        if (ri < CraftPngImageHelper.intents.length) {
+          png.intent = CraftPngImageHelper.intents[ri];
         }
         png.image.setGamma(2.2);
         offset += len;
@@ -290,73 +274,49 @@ class PngImageHelper {
   }
 
   static void _decodeIdat(PngParameters png) {
-    int nbitDepth = png.bitDepth;
-    if (nbitDepth == 16) nbitDepth = 8;
+    final indexed = png.image.getColorType() == 3;
+    final alphaChannel =
+        png.image.getColorType() == 4 || png.image.getColorType() == 6;
+    final outputBands = png.inputBands - (alphaChannel ? 1 : 0);
+    final outputDepth = png.bitDepth > 8 ? 8 : png.bitDepth;
+    png.bytesPerPixel = (png.inputBands * png.bitDepth + 7) ~/ 8;
 
-    int size = -1;
-    png.bytesPerPixel = (png.bitDepth == 16) ? 2 : 1;
-    int colorType = png.image.getColorType();
-
-    switch (colorType) {
-      case 0:
-        size = ((nbitDepth * png.width + 7) ~/ 8) * png.height;
-        break;
-      case 2:
-        size = png.width * 3 * png.height;
-        png.bytesPerPixel *= 3;
-        break;
-      case 3:
-        if (png.interlaceMethod == 1) {
-          size = ((nbitDepth * png.width + 7) ~/ 8) * png.height;
-        }
-        png.bytesPerPixel = 1;
-        break;
-      case 4:
-        size = png.width * png.height;
-        png.bytesPerPixel *= 2;
-        break;
-      case 6:
-        size = png.width * 3 * png.height;
-        png.bytesPerPixel *= 4;
-        break;
+    // Indexed noninterlaced samples may remain in their original IDAT stream
+    // while the decoded indices supply a separate transparency mask.
+    if (!indexed || png.interlaceMethod != 0) {
+      final rowBytes = (png.width * outputBands * outputDepth + 7) ~/ 8;
+      png.imageData = Uint8List(rowBytes * png.height);
     }
-
-    if (size >= 0) {
-      png.imageData = Uint8List(size);
+    final maskDepth = png.palShades ? 8 : (png.genBWMask ? 1 : 0);
+    if (maskDepth != 0) {
+      png.smask = Uint8List(((png.width * maskDepth + 7) ~/ 8) * png.height);
     }
-    if (png.palShades) {
-      png.smask = Uint8List(png.width * png.height);
-    } else if (png.genBWMask) {
-      png.smask = Uint8List(((png.width + 7) ~/ 8) * png.height);
-    }
-
-    Uint8List compressed = png.idat.toBytes();
-    Uint8List decompressed = Uint8List.fromList(zlib.decode(compressed));
-    _decodePassInternal(decompressed, png);
+    _decodePassInternal(
+        Uint8List.fromList(zlib.decode(png.idat.toBytes())), png);
   }
 
   static void _decodePassInternal(Uint8List data, PngParameters png) {
-    // Simple stateful reader or just wrap in a stream-like way
-    // For now, let's just use an offset-based reader
-    int offset = 0;
-
-    if (png.interlaceMethod != 1) {
-      offset =
-          _decodePass(data, offset, 0, 0, 1, 1, png.width, png.height, png);
-    } else {
-      offset = _decodePass(data, offset, 0, 0, 8, 8, (png.width + 7) ~/ 8,
-          (png.height + 7) ~/ 8, png);
-      offset = _decodePass(data, offset, 4, 0, 8, 8, (png.width + 3) ~/ 8,
-          (png.height + 7) ~/ 8, png);
-      offset = _decodePass(data, offset, 0, 4, 4, 8, (png.width + 3) ~/ 4,
-          (png.height + 3) ~/ 8, png);
-      offset = _decodePass(data, offset, 2, 0, 4, 4, (png.width + 1) ~/ 4,
-          (png.height + 3) ~/ 4, png);
-      offset = _decodePass(data, offset, 0, 2, 2, 4, (png.width + 1) ~/ 2,
-          (png.height + 1) ~/ 4, png);
-      offset = _decodePass(
-          data, offset, 1, 0, 2, 2, png.width ~/ 2, (png.height + 1) ~/ 2, png);
-      _decodePass(data, offset, 0, 1, 1, 2, png.width, png.height ~/ 2, png);
+    final passes = png.interlaceMethod == 0
+        ? const [(0, 0, 1, 1)]
+        : const [
+            (0, 0, 8, 8),
+            (4, 0, 8, 8),
+            (0, 4, 4, 8),
+            (2, 0, 4, 4),
+            (0, 2, 2, 4),
+            (1, 0, 2, 2),
+            (0, 1, 1, 2)
+          ];
+    var cursor = 0;
+    for (final (left, top, across, down) in passes) {
+      if (left >= png.width || top >= png.height) continue;
+      final columns = 1 + (png.width - left - 1) ~/ across;
+      final rows = 1 + (png.height - top - 1) ~/ down;
+      cursor = _decodePass(
+          data, cursor, left, top, across, down, columns, rows, png);
+    }
+    if (cursor != data.length) {
+      throw IoException('PNG raster contains bytes beyond its scanlines.');
     }
   }
 
@@ -370,7 +330,9 @@ class PngImageHelper {
 
     int dstY = yOffset;
     for (int srcY = 0; srcY < passHeight; srcY++, dstY += yStep) {
-      if (offset >= data.length) break;
+      if (data.length - offset < bytesPerRow + 1) {
+        throw IoException('PNG raster ends before a complete scanline.');
+      }
       int filter = data[offset++];
       curr.setRange(0, bytesPerRow, data.sublist(offset, offset + bytesPerRow));
       offset += bytesPerRow;
@@ -391,7 +353,7 @@ class PngImageHelper {
           _decodePaethFilter(curr, prior, bytesPerRow, png.bytesPerPixel);
           break;
         default:
-          throw IoException(IoExceptionMessageConstant.unknownPngFilter);
+          throw IoException(CraftIoExceptionMessageConstant.unknownPngFilter);
       }
 
       _processPixels(curr, xOffset, xStep, dstY, passWidth, png);
@@ -451,106 +413,40 @@ class PngImageHelper {
 
   static void _processPixels(Uint8List curr, int xOffset, int step, int y,
       int width, PngParameters png) {
-    int colorType = png.image.getColorType();
-    Int32List outPixel = _getPixelArray(curr, png);
-    int sizes = 0;
-    switch (colorType) {
-      case 0:
-      case 3:
-      case 4:
-        sizes = 1;
-        break;
-      case 2:
-      case 6:
-        sizes = 3;
-        break;
-    }
-    if (png.imageData != null) {
-      int dstX = xOffset;
-      int yStride =
-          (sizes * png.width * (png.bitDepth == 16 ? 8 : png.bitDepth) + 7) ~/
-              8;
-      for (int srcX = 0; srcX < width; srcX++) {
-        _setPixel(png.imageData!, outPixel, png.inputBands * srcX, sizes, dstX,
-            y, png.bitDepth, yStride);
-        dstX += step;
+    final model = png.image.getColorType();
+    final channels = model == 2 || model == 6 ? 3 : 1;
+    final values = _getPixelArray(curr, png);
+    final depth = png.bitDepth == 16 ? 8 : png.bitDepth;
+    final stride = (png.width * channels * depth + 7) ~/ 8;
+    final maskValue = Int32List(1);
+    for (var pixel = 0; pixel < width; pixel++) {
+      final x = xOffset + pixel * step;
+      final source = pixel * png.inputBands;
+      if (png.imageData != null) {
+        _setPixel(png.imageData!, values, source, channels, x, y, png.bitDepth,
+            stride);
       }
-    }
-
-    if (png.palShades) {
-      if ((colorType & 4) != 0) {
-        if (png.bitDepth == 16) {
-          for (int k = 0; k < width; ++k) {
-            outPixel[k * png.inputBands + sizes] =
-                (outPixel[k * png.inputBands + sizes] >> 8) & 0xff;
-          }
-        }
-        int yStride = png.width;
-        int dstX = xOffset;
-        for (int srcX = 0; srcX < width; srcX++) {
-          _setPixel(png.smask!, outPixel, png.inputBands * srcX + sizes, 1,
-              dstX, y, 8, yStride);
-          dstX += step;
-        }
+      if (png.smask == null) continue;
+      final index = values[source];
+      final paletteAlpha = png.trans != null && index < png.trans!.length
+          ? png.trans![index]
+          : 255;
+      if (png.palShades) {
+        maskValue[0] = model == 4 || model == 6
+            ? values[source + channels] >> (png.bitDepth == 16 ? 8 : 0)
+            : paletteAlpha;
+        _setPixel(png.smask!, maskValue, 0, 1, x, y, 8, png.width);
       } else {
-        // colorType 3
-        int yStride = png.width;
-        Int32List v = Int32List(1);
-        int dstX = xOffset;
-        for (int srcX = 0; srcX < width; srcX++) {
-          int idx = outPixel[srcX];
-          if (png.trans != null && idx < png.trans!.length) {
-            v[0] = png.trans![idx];
-          } else {
-            v[0] = 255;
-          }
-          _setPixel(png.smask!, v, 0, 1, dstX, y, 8, yStride);
-          dstX += step;
-        }
-      }
-    } else if (png.genBWMask) {
-      switch (colorType) {
-        case 3:
-          int yStride = (png.width + 7) ~/ 8;
-          Int32List v = Int32List(1);
-          int dstX = xOffset;
-          for (int srcX = 0; srcX < width; srcX++) {
-            int idx = outPixel[srcX];
-            v[0] = ((png.trans != null &&
-                    idx < png.trans!.length &&
-                    png.trans![idx] == 0)
-                ? 1
-                : 0);
-            _setPixel(png.smask!, v, 0, 1, dstX, y, 1, yStride);
-            dstX += step;
-          }
-          break;
-        case 0:
-          int yStride = (png.width + 7) ~/ 8;
-          Int32List v = Int32List(1);
-          int dstX = xOffset;
-          for (int srcX = 0; srcX < width; srcX++) {
-            int g = outPixel[srcX];
-            v[0] = (g == png.transRedGray ? 1 : 0);
-            _setPixel(png.smask!, v, 0, 1, dstX, y, 1, yStride);
-            dstX += step;
-          }
-          break;
-        case 2:
-          int yStride = (png.width + 7) ~/ 8;
-          Int32List v = Int32List(1);
-          int dstX = xOffset;
-          for (int srcX = 0; srcX < width; srcX++) {
-            int markRed = png.inputBands * srcX;
-            v[0] = (outPixel[markRed] == png.transRedGray &&
-                    outPixel[markRed + 1] == png.transGreen &&
-                    outPixel[markRed + 2] == png.transBlue
-                ? 1
-                : 0);
-            _setPixel(png.smask!, v, 0, 1, dstX, y, 1, yStride);
-            dstX += step;
-          }
-          break;
+        final transparent = switch (model) {
+          3 => paletteAlpha == 0,
+          0 => index == png.transRedGray,
+          2 => index == png.transRedGray &&
+              values[source + 1] == png.transGreen &&
+              values[source + 2] == png.transBlue,
+          _ => false,
+        };
+        maskValue[0] = transparent ? 1 : 0;
+        _setPixel(png.smask!, maskValue, 0, 1, x, y, 1, (png.width + 7) ~/ 8);
       }
     }
   }

@@ -1,4 +1,4 @@
-class SvgNodeRendererInheritanceResolver {
+class CraftSvgNodeRendererInheritanceResolver {
   static void applyInheritanceToSubTree(
       dynamic parent, dynamic child, dynamic cssContext) {}
 }

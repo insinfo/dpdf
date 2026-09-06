@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
-import 'package:dpdf/src/kernel/pdf/stamping_properties.dart';
-import 'package:dpdf/src/kernel/pdf/tagging/pdf_struct_elem.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
+import 'package:pdfcraft/src/kernel/pdf/stamping_properties.dart';
+import 'package:pdfcraft/src/kernel/pdf/tagging/pdf_struct_elem.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -15,44 +15,47 @@ void main() {
       final originalBytes = await _createTaggedPdf();
 
       final appendBuilder = BytesBuilder();
-      final appendWriter = PdfWriter.fromBytesBuilder(appendBuilder);
-      final reader = PdfReader.fromBytes(originalBytes);
-      final props = StampingProperties()..useAppendMode();
-      final doc = PdfDocument(reader: reader, writer: appendWriter, properties: props);
+      final appendWriter = CraftPdfWriter.fromBytesBuilder(appendBuilder);
+      final reader = CraftPdfReader.fromBytes(originalBytes);
+      final props = CraftStampingProperties()..useAppendMode();
+      final doc = CraftPdfDocument(
+          reader: reader, writer: appendWriter, properties: props);
       await doc.load();
 
-      final root = await doc.getStructTreeRootAsync();
+      final root = await doc.loadStructureRoot();
       expect(root, isNotNull);
 
-      final newElem = PdfStructElem.withRole(doc, PdfName('P'));
+      final newElem = CraftPdfStructElem.withRole(doc, CraftPdfName('P'));
       await root!.addKid(newElem);
 
       await doc.close();
 
       final appendedBytes = appendBuilder.toBytes();
       expect(appendedBytes.length, greaterThan(originalBytes.length));
-      expect(appendedBytes.take(originalBytes.length).toList(), equals(originalBytes));
+      expect(appendedBytes.take(originalBytes.length).toList(),
+          equals(originalBytes));
 
-      final readDoc = PdfDocument.fromReader(PdfReader.fromBytes(appendedBytes));
+      final readDoc =
+          CraftPdfDocument.fromReader(CraftPdfReader.fromBytes(appendedBytes));
       await readDoc.load();
 
-      final readRoot = await readDoc.getStructTreeRootAsync();
+      final readRoot = await readDoc.loadStructureRoot();
       expect(readRoot, isNotNull);
 
       final kids = await readRoot!.getKids();
       expect(kids.length, 2);
 
-      final roles = <PdfName>[];
+      final roles = <CraftPdfName>[];
       for (final kid in kids) {
-        expect(kid is PdfDictionary, isTrue);
-        final elem = PdfStructElem(kid as PdfDictionary);
+        expect(kid is CraftPdfDictionary, isTrue);
+        final elem = CraftPdfStructElem(kid as CraftPdfDictionary);
         final role = await elem.getRole();
         expect(role, isNotNull);
         roles.add(role!);
       }
 
-      expect(roles, contains(PdfName('Document')));
-      expect(roles, contains(PdfName('P')));
+      expect(roles, contains(CraftPdfName('Document')));
+      expect(roles, contains(CraftPdfName('P')));
 
       await readDoc.close();
     });
@@ -61,12 +64,12 @@ void main() {
 
 Future<Uint8List> _createTaggedPdf() async {
   final builder = BytesBuilder();
-  final writer = PdfWriter.fromBytesBuilder(builder);
-  final doc = PdfDocument(writer: writer);
-  await doc.addNewPage();
+  final writer = CraftPdfWriter.fromBytesBuilder(builder);
+  final doc = CraftPdfDocument(writer: writer);
+  await doc.appendBlankPage();
 
-  final root = doc.getStructTreeRoot();
-  final docElem = PdfStructElem.withRole(doc, PdfName('Document'));
+  final root = doc.structureRoot();
+  final docElem = CraftPdfStructElem.withRole(doc, CraftPdfName('Document'));
   await root.addKid(docElem);
 
   await doc.close();

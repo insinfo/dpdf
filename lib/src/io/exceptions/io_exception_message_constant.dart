@@ -1,324 +1,373 @@
-/// Class containing constants to be used in exceptions in the IO module.
-class IoExceptionMessageConstant {
-  IoExceptionMessageConstant._();
+/// Diagnostic templates for PDFCraft. Public identifiers and format slots are stable.
+class CraftIoExceptionMessageConstant {
+  CraftIoExceptionMessageConstant._();
 
   static const String allFillBitsPrecedingEolCodeMustBe0 =
-      'All fill bits preceding eol code must be 0.';
+      'Nonzero padding bits precede the fax EOL code; only zero fill bits are allowed.';
 
-  static const String alreadyClosed = 'Already closed';
+  static const String alreadyClosed = 'The resource has already been closed.';
 
   static const String badEndiannessTag0x4949Or0x4d4d =
-      'Bad endianness tag: 0x4949 or 0x4d4d.';
+      'Invalid TIFF byte-order marker; expected 0x4949 (II) or 0x4d4d (MM).';
 
   static const String badMagicNumberShouldBe42 =
-      'Bad magic number. Should be 42.';
+      'The TIFF identification number must be 42.';
 
   static const String bitsPerComponentMustBe1248 =
-      'Bits per component must be 1, 2, 4 or 8.';
+      'Image component depth must be one of 1, 2, 4, or 8 bits.';
 
   static const String bitsPerSampleIsNotSupported =
-      'Bits per sample {0} is not supported.';
+      'Sample depth {0} is not implemented by this decoder.';
 
   static const String
       bitSamplesAreNotSupportedForHorizontalDifferencingPredictor =
-      '{0} bit samples are not supported for horizontal differencing predictor.';
+      'Horizontal differencing cannot decode samples with {0} bits.';
 
-  static const String bmpImageException = 'Bmp image exception.';
+  static const String bmpImageException = 'BMP image processing failed.';
 
-  static const String brotliDecodingFailed = 'Woff2 brotli decoding exception';
+  static const String brotliDecodingFailed =
+      'Brotli decompression of the WOFF2 font failed.';
 
-  static const String bufferReadFailed = 'Reading woff2 exception';
+  static const String bufferReadFailed =
+      'The WOFF2 input buffer could not be read.';
 
   static const String bytesCanBeAssignedToByteArrayOutputStreamOnly =
-      'Bytes can be assigned to ByteArrayOutputStream only.';
+      'Assigning raw bytes requires a ByteArrayOutputStream destination.';
 
   static const String bytesCanBeResetInByteArrayOutputStreamOnly =
-      'Bytes can be reset in ByteArrayOutputStream only.';
+      'Resetting raw bytes requires a ByteArrayOutputStream destination.';
 
   static const String cannotFindFrame =
-      'Cannot find frame number {0} (zero-based)';
+      'No image frame exists at zero-based index {0}.';
 
-  static const String cannotGetTiffImageColor = 'Cannot get TIFF image color.';
+  static const String cannotGetTiffImageColor =
+      'TIFF color information could not be determined.';
 
   static const String cannotHandleBoxSizesHigherThan2pow32 =
-      'Cannot handle box sizes higher than 2^32.';
+      'Box lengths above 2^32 are unsupported.';
 
-  static const String cannotInflateTiffImage = 'Cannot inflate TIFF image.';
+  static const String cannotInflateTiffImage =
+      'Inflate decompression of TIFF image data failed.';
 
   static const String cannotOpenOutputDirectory =
-      'Cannot open output directory for <filename>';
+      'The output directory for <filename> could not be opened.';
 
-  static const String cannotReadTiffImage = 'Cannot read TIFF image.';
+  static const String cannotReadTiffImage =
+      'TIFF image data could not be read.';
 
-  static const String cannotWriteByte = 'Cannot write byte.';
+  static const String cannotWriteByte =
+      'Writing a single byte to the output failed.';
 
-  static const String cannotWriteBytes = 'Cannot write bytes.';
+  static const String cannotWriteBytes =
+      'Writing the byte sequence to the output failed.';
 
-  static const String cannotWriteFloatNumber = 'Cannot write float number.';
+  static const String cannotWriteFloatNumber =
+      'The floating-point value could not be written.';
 
-  static const String cannotWriteIntNumber = 'Cannot write int number.';
+  static const String cannotWriteIntNumber =
+      'The integer value could not be written.';
 
   static const String ccittCompressionTypeMustBeCcittg4Ccittg31dOrCcittg32d =
-      'CCITT compression type must be CCITTG4, CCITTG3_1D or CCITTG3_2D.';
+      'Select one of CCITTG4, CCITTG3_1D, or CCITTG3_2D for fax compression.';
 
-  static const String characterCodeException = 'Character code exception.';
+  static const String characterCodeException =
+      'Character-code processing failed.';
 
   static const String cmapTableMergingIsNotSupported =
-      "cmap table merging isn't supported.";
+      'Merging font cmap tables is unavailable.';
 
-  static const String cmapWasNotFound = 'The CMap {0} was not found.';
+  static const String cmapWasNotFound =
+      'CMap lookup returned no mapping for {0}.';
 
   static const String compareCommandIsNotSpecified =
-      'ImageMagick comparison command is not specified.';
+      'Configure the ImageMagick comparison command before comparing images.';
 
   static const String compareCommandSpecifiedIncorrectly =
-      'ImageMagick comparison command specified incorrectly.';
+      'The configured ImageMagick comparison command is invalid.';
 
-  static const String componentsMustBe134 = 'Components must be 1, 3 or 4.';
+  static const String componentsMustBe134 =
+      'An image must have 1, 3, or 4 color components.';
 
   static const String compressionIsNotSupported =
-      'Compression {0} is not supported.';
+      'The decoder does not implement compression mode {0}.';
 
   static const String
       compressionJpegIsOnlySupportedWithASingleStripThisImageHasStrips =
-      'Compression jpeg is only supported with a single strip. This image has {0} strips.';
+      'JPEG-compressed TIFF requires one strip; this image contains {0} strips.';
 
-  static const String corruptedJfifMarker = '{0} corrupted jfif marker.';
+  static const String corruptedJfifMarker =
+      'Image {0} has a malformed JFIF marker.';
 
   static const String directoryNumberIsTooLarge =
-      'Directory number is too large.';
+      'The requested TIFF directory index exceeds the supported range.';
 
   static const String eolCodeWordEncounteredInBlackRun =
-      'EOL code word encountered in Black run.';
+      'A fax EOL code interrupted a black-pixel run.';
 
   static const String eolCodeWordEncounteredInWhiteRun =
-      'EOL code word encountered in White run.';
+      'A fax EOL code interrupted a white-pixel run.';
 
-  static const String errorAtFilePointer = 'Error at file pointer {0}.';
+  static const String errorAtFilePointer =
+      'Input processing failed at file offset {0}.';
 
-  static const String errorReadingString = 'Error reading string.';
+  static const String errorReadingString =
+      'The input string could not be read.';
 
-  static const String errorWithJpMarker = 'Error with JP marker.';
+  static const String errorWithJpMarker =
+      'The JPEG2000 JP signature marker is malformed.';
 
-  static const String expectedFtypMarker = 'Expected FTYP marker.';
+  static const String expectedFtypMarker =
+      'JPEG2000 parsing requires an FTYP marker at this position.';
 
-  static const String expectedIhdrMarker = 'Expected IHDR marker.';
+  static const String expectedIhdrMarker =
+      'JPEG2000 parsing requires an IHDR marker at this position.';
 
-  static const String expectedJp2hMarker = 'Expected JP2H marker.';
+  static const String expectedJp2hMarker =
+      'JPEG2000 parsing requires a JP2H marker at this position.';
 
-  static const String expectedJpMarker = 'Expected JP marker.';
+  static const String expectedJpMarker =
+      'JPEG2000 parsing requires a JP signature marker at this position.';
 
   static const String expectedTrailingZeroBitsForByteAlignedLines =
-      'Expected trailing zero bits for byte-aligned lines';
+      'Byte-aligned scanlines must finish with zero padding bits.';
 
   static const String extraSamplesAreNotSupported =
-      'Extra samples are not supported.';
+      'This decoder cannot process extra image samples.';
 
-  static const String fdfStartxrefNotFound = 'FDF startxref not found.';
+  static const String fdfStartxrefNotFound =
+      'The FDF input has no startxref marker.';
 
   static const String firstScanlineMustBe1dEncoded =
-      'First scanline must be 1D encoded.';
+      'Fax data must encode its initial scanline in one-dimensional mode.';
 
-  static const String fontFileNotFound = 'Font file {0} not found.';
+  static const String fontFileNotFound = 'The font path does not exist: {0}.';
 
-  static const String ghostscriptFailed = 'GhostScript failed for <filename>';
+  static const String ghostscriptFailed =
+      'Ghostscript processing failed for <filename>.';
 
-  static const String gifImageException = 'GIF image exception.';
+  static const String gifImageException = 'GIF image processing failed.';
 
-  static const String gifSignatureNotFound = 'GIF signature not found.';
+  static const String gifSignatureNotFound =
+      'The image does not begin with a GIF signature.';
 
   static const String gsEnvironmentVariableIsNotSpecified =
-      'Ghostscript command is not specified or specified incorrectly.';
+      'A valid Ghostscript command must be configured before rendering.';
 
-  static const String gtNotExpected = "\'>\' not expected.";
+  static const String gtNotExpected =
+      'A closing angle bracket (>) appeared where it was not allowed.';
 
   static const String
       iccProfileContainsComponentsWhileTheImageDataContainsComponents =
-      'ICC profile contains {0} components, while the image data contains {1} components.';
+      'Component counts differ: ICC profile {0}, image data {1}.';
 
   static const String illegalValueForPredictorInTiffFile =
-      'Illegal value for predictor in TIFF file.';
+      'The TIFF predictor field contains an invalid value.';
 
   static const String imageFormatCannotBeRecognized =
-      'Image format cannot be recognized.';
+      'The input bytes do not identify a supported image format.';
 
   static const String imageIsNotAMaskYouMustCallImageDataMakeMask =
-      'Image is not a mask. You must call ImageData#makeMask().';
+      'Call ImageData.makeMask() before using this image as a mask.';
 
   static const String imageMagickOutputIsNull =
-      'ImageMagick process output is null.';
+      'The ImageMagick process returned no output.';
 
   static const String imageMagickProcessExecutionFailed =
-      'ImageMagick process execution finished with errors: ';
+      'ImageMagick reported errors while processing the image: ';
 
   static const String imageMaskCannotContainAnotherImageMask =
-      'Image mask cannot contain another image mask.';
+      'An image used as a mask cannot itself have an image mask.';
 
   static const String incompatibleGlyphDataDuringFontMerging =
-      'Incompatibility of glyph data/metrics between merged fonts';
+      'The fonts being merged have incompatible glyph outlines or metrics.';
 
-  static const String incompletePalette = 'Incomplete palette.';
+  static const String incompletePalette =
+      'The image palette has fewer entries than required.';
 
-  static const String incorrectSignature = 'Incorrect woff2 signature';
+  static const String incorrectSignature =
+      'The WOFF2 signature bytes are invalid.';
 
   static const String invalidBmpFileCompression =
-      'Invalid BMP file compression.';
+      'The BMP compression field is invalid.';
 
-  static const String invalidCodeEncountered = 'Invalid code encountered.';
+  static const String invalidCodeEncountered =
+      'The compressed data contains an invalid code.';
 
   static const String
       invalidCodeEncounteredWhileDecoding2dGroup3CompressedData =
-      'Invalid code encountered while decoding 2D group 3 compressed data.';
+      'A code in the Group 3 two-dimensional fax data is invalid.';
 
   static const String
       invalidCodeEncounteredWhileDecoding2dGroup4CompressedData =
-      'Invalid code encountered while decoding 2D group 4 compressed data.';
+      'A code in the Group 4 two-dimensional fax data is invalid.';
 
-  static const String invalidIccProfile = 'Invalid ICC profile.';
+  static const String invalidIccProfile =
+      'The supplied bytes do not form a valid ICC profile.';
 
-  static const String invalidJpeg2000File = 'Invalid JPEG2000 file.';
+  static const String invalidJpeg2000File =
+      'The supplied bytes do not form a valid JPEG2000 file.';
 
   static const String invalidMagicValueForBmpFileMustBeBm =
-      "Invalid magic value for bmp file. Must be 'BM'";
+      'BMP input must begin with the BM identification bytes.';
 
-  static const String invalidTtcFile = '{0} is not a valid TTC file.';
+  static const String invalidTtcFile =
+      'Input {0} is not a valid TrueType collection.';
 
-  static const String invalidWoff2FontFile = 'Invalid WOFF2 font file.';
+  static const String invalidWoff2FontFile =
+      'The font does not have a valid WOFF2 structure.';
 
-  static const String invalidWoffFile = 'Invalid WOFF font file.';
+  static const String invalidWoffFile =
+      'The font does not have a valid WOFF structure.';
 
-  static const String ioException = 'I/O exception.';
+  static const String ioException = 'An input/output operation failed.';
 
   static const String isNotAnAfmOrPfmFontFile =
-      '{0} is not an afm or pfm font file.';
+      'Font {0} is neither an AFM nor a PFM file.';
 
-  static const String isNotAValidJpegFile = '{0} is not a valid jpeg file.';
+  static const String isNotAValidJpegFile =
+      'Image {0} does not have a valid JPEG structure.';
 
-  static const String jbig2ImageException = 'JBIG2 image exception.';
+  static const String jbig2ImageException = 'JBIG2 image processing failed.';
 
-  static const String jpeg2000ImageException = 'JPEG2000 image exception.';
+  static const String jpeg2000ImageException =
+      'JPEG2000 image processing failed.';
 
-  static const String jpegImageException = 'JPEG image exception.';
+  static const String jpegImageException = 'JPEG image processing failed.';
 
   static const String locaSizeOverflow =
-      'woff2 loca table content size overflow exception';
+      'The reconstructed WOFF2 loca table exceeds its allowed size.';
 
   static const String missingTagsForOjpegCompression =
-      'Missing tag(s) for OJPEG compression';
+      'Required TIFF tags for OJPEG compression are absent.';
 
   static const String mustHave8BitsPerComponent =
-      '{0} must have 8 bits per component.';
+      'Image {0} requires an 8-bit depth for each component.';
 
-  static const String notAtTrueTypeFile = '{0} is not a true type file';
+  static const String notAtTrueTypeFile =
+      'Font {0} does not have a TrueType signature.';
 
   static const String notFoundAsFileOrResource =
-      '{0} not found as file or resource.';
+      'No file or bundled resource was found for {0}.';
 
-  static const String paddingOverflow = 'woff2 padding overflow exception';
+  static const String paddingOverflow =
+      'WOFF2 alignment padding exceeds the available buffer.';
 
-  static const String pageNumberMustBeGtEq1 = 'Page number must be >= 1.';
+  static const String pageNumberMustBeGtEq1 =
+      'Page numbers are one-based and cannot be below 1.';
 
-  static const String pdfHeaderNotFound = 'PDF header not found.';
+  static const String pdfHeaderNotFound =
+      'The input has no recognizable PDF header.';
 
-  static const String pdfStartxrefNotFound = 'PDF startxref not found.';
+  static const String pdfStartxrefNotFound =
+      'The PDF input has no startxref marker.';
 
-  static const String pdfEofNotFound = 'PDF "%%EOF" marker is not found.';
+  static const String pdfEofNotFound = 'The PDF input has no %%EOF end marker.';
 
   static const String photometricIsNotSupported =
-      'Photometric {0} is not supported.';
+      'Photometric interpretation {0} is not implemented.';
 
   static const String planarImagesAreNotSupported =
-      'Planar images are not supported.';
+      'Images with separate component planes cannot be decoded here.';
 
-  static const String pngImageException = 'PNG image exception.';
+  static const String pngImageException = 'PNG image processing failed.';
 
   static const String prematureEofWhileReadingJpeg =
-      'Premature EOF while reading JPEG.';
+      'JPEG data ended before the image was fully read.';
 
   static const String readBase128Failed =
-      'Reading woff2 base 128 number exception';
+      'A WOFF2 Base128 integer could not be decoded.';
 
   static const String readCollectionHeaderFailed =
-      'Reading collection woff2 header exception';
+      'The WOFF2 collection header could not be decoded.';
 
-  static const String readHeaderFailed = 'Reading woff2 header exception';
+  static const String readHeaderFailed =
+      'The WOFF2 file header could not be decoded.';
 
   static const String readTableDirectoryFailed =
-      'Reading woff2 tables directory exception';
+      'The WOFF2 table directory could not be decoded.';
 
   static const String reconstructGlyfTableFailed =
-      'Reconstructing woff2 glyf table exception';
+      'WOFF2 glyf table reconstruction failed.';
 
   static const String reconstructGlyphFailed =
-      'Reconstructing woff2 glyph exception';
+      'A WOFF2 glyph could not be reconstructed.';
 
   static const String reconstructHmtxTableFailed =
-      'Reconstructing woff2 hmtx table exception';
+      'WOFF2 horizontal-metrics table reconstruction failed.';
 
   static const String reconstructPointFailed =
-      "Reconstructing woff2 glyph's point exception";
+      'A WOFF2 glyph point could not be reconstructed.';
 
   static const String reconstructTableDirectoryFailed =
-      'Reconstructing woff2 table directory exception';
+      'WOFF2 table-directory reconstruction failed.';
 
   static const String scanlineMustBeginWithEolCodeWord =
-      'Scanline must begin with EOL code word.';
+      'The fax scanline is missing its leading EOL code.';
 
-  static const String tableDoesNotExist = 'Table {0} does not exist.';
+  static const String tableDoesNotExist = 'The requested table {0} is absent.';
 
-  static const String tableDoesNotExistsIn = 'Table {0} does not exist in {1}';
+  static const String tableDoesNotExistsIn =
+      'Input {1} has no table named {0}.';
 
   static const String thisImageCanNotBeAnImageMask =
-      'This image can not be an image mask.';
+      'The image format or component layout does not permit use as a mask.';
 
   static const String tiff50StyleLzwCodesAreNotSupported =
-      'TIFF 5.0-style LZW codes are not supported.';
+      'This decoder cannot read the legacy TIFF 5.0 LZW variant.';
 
   static const String tiffFillOrderTagMustBeEither1Or2 =
-      'TIFF_FILL_ORDER tag must be either 1 or 2.';
+      'TIFF FillOrder accepts only 1 or 2.';
 
-  static const String tiffImageException = 'TIFF image exception.';
+  static const String tiffImageException = 'TIFF image processing failed.';
 
-  static const String tilesAreNotSupported = 'Tiles are not supported.';
+  static const String tilesAreNotSupported =
+      'Tiled image decoding is unavailable.';
 
   static const String transparencyLengthMustBeEqualTo2WithCcittImages =
-      'Transparency length must be equal to 2 with CCITT images';
+      'CCITT transparency must contain exactly two values.';
 
   static const String ttcIndexDoesntExistInThisTtcFile =
-      "TTC index doesn't exist in this TTC file.";
+      'The requested font index is absent from this TrueType collection.';
 
   static const String typeOfFontIsNotRecognized =
-      'Type of font is not recognized.';
+      'The font format could not be identified.';
 
   static const String typeOfFontIsNotRecognizedParameterized =
-      'Type of font {0} is not recognized.';
+      'The format of font {0} could not be identified.';
 
-  static const String unexpectedCloseBracket = 'Unexpected close bracket.';
+  static const String unexpectedCloseBracket =
+      'A closing bracket appeared outside its matching structure.';
 
-  static const String unexpectedGtGt = "Unexpected '>>'.";
+  static const String unexpectedGtGt =
+      'A dictionary terminator (>>) appeared at an invalid position.';
 
-  static const String unknownCompressionType = 'Unknown compression type {0}.';
+  static const String unknownCompressionType =
+      'Compression identifier {0} is unrecognized.';
 
-  static const String unknownIoException = 'Unknown I/O exception.';
+  static const String unknownIoException =
+      'An input/output failure occurred without a more specific diagnosis.';
 
-  static const String unknownPngFilter = 'Unknown PNG filter.';
+  static const String unknownPngFilter =
+      'The PNG scanline filter identifier is unrecognized.';
 
-  static const String unsupportedBoxSizeEqEq0 = 'Unsupported box size == 0.';
+  static const String unsupportedBoxSizeEqEq0 =
+      'A box length of zero cannot be handled here.';
 
   static const String unsupportedEncodingException =
-      'Unsupported encoding exception.';
+      'The requested character encoding is unavailable.';
 
   static const String unsupportedJpegMarker =
-      '{0} unsupported jpeg marker {1}.';
+      'Image {0} uses JPEG marker {1}, which this decoder does not implement.';
 
-  static const String writeFailed = 'Writing woff2 exception';
+  static const String writeFailed =
+      'Writing the reconstructed WOFF2 font failed.';
 
   static const String encodingError =
-      'Error during encoding the following code point: {0} in characterset: {1}';
+      'Code point {0} cannot be encoded in character set {1}.';
 
   static const String onlyBmpEncoding =
-      'This encoder only accepts BMP codepoints';
+      'This encoder accepts only Unicode Basic Multilingual Plane code points.';
 
   static const String readingByteLimitMustNotBeLessZero =
-      'The reading byte limit argument must not be less than zero.';
+      'The byte-read limit must be zero or greater.';
 }

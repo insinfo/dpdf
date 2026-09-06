@@ -1,19 +1,20 @@
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/svg/renderers/i_svg_node_renderer.dart';
-import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
-import 'package:dpdf/src/svg/renderers/impl/abstract_container_svg_node_renderer.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/svg/renderers/svg_node_renderer.dart';
+import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
+import 'package:pdfcraft/src/svg/renderers/impl/abstract_container_svg_node_renderer.dart';
 
-class ClipPathSvgNodeRenderer extends AbstractContainerSvgNodeRenderer {
+class CraftClipPathSvgNodeRenderer
+    extends CraftAbstractContainerSvgNodeRenderer {
   @override
-  Future<void> doDraw(SvgDrawContext context) async {}
+  Future<void> doDraw(CraftSvgDrawContext context) async {}
 
   void setClippedRenderer(dynamic renderer) {}
 
   @override
-  Rectangle? getObjectBoundingBox(SvgDrawContext context) => null;
+  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context) => null;
 
   @override
-  ISvgNodeRenderer createDeepCopy() {
+  CraftSvgNodeRenderer createDeepCopy() {
     throw UnimplementedError();
   }
 }

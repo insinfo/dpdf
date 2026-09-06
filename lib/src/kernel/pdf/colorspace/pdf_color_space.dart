@@ -1,56 +1,58 @@
-import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_object_wrapper.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
-import 'package:dpdf/src/kernel/pdf/colorspace/pdf_device_cs.dart';
-import 'package:dpdf/src/kernel/pdf/colorspace/pdf_special_cs.dart';
-import 'package:dpdf/src/kernel/pdf/colorspace/pdf_cie_based_cs.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_object_wrapper.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
+import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_device_cs.dart';
+import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_special_cs.dart';
+import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_cie_based_cs.dart';
 
 /// Represents the most common properties of color spaces.
-abstract class PdfColorSpace extends PdfObjectWrapper<PdfObject> {
-  static final Set<PdfName> directColorSpaces = Set.unmodifiable({
-    PdfName.deviceGray,
-    PdfName.deviceRgb,
-    PdfName.deviceCmyk,
-    PdfName.pattern
+abstract class CraftPdfColorSpace
+    extends CraftPdfObjectWrapper<CraftPdfObject> {
+  static final Set<CraftPdfName> directColorSpaces = Set.unmodifiable({
+    CraftPdfName.deviceGray,
+    CraftPdfName.deviceRgb,
+    CraftPdfName.deviceCmyk,
+    CraftPdfName.pattern
   });
 
-  PdfColorSpace(PdfObject pdfObject) : super(pdfObject);
+  CraftPdfColorSpace(CraftPdfObject pdfObject) : super(pdfObject);
 
   int getNumberOfComponents();
 
   /// Creates a [PdfColorSpace] from a [PdfObject].
-  static Future<PdfColorSpace?> makeColorSpace(PdfObject? pdfObject) async {
+  static Future<CraftPdfColorSpace?> makeColorSpace(
+      CraftPdfObject? pdfObject) async {
     if (pdfObject == null) return null;
 
     // Resolve indirect reference if it is one
-    if (pdfObject is PdfIndirectReference) {
-      pdfObject = await pdfObject.getRefersTo();
+    if (pdfObject is CraftPdfIndirectReference) {
+      pdfObject = await pdfObject.targetObject();
     }
     if (pdfObject == null) return null;
 
     // If array of size 1, unwrap
-    if (pdfObject is PdfArray && pdfObject.size() == 1) {
+    if (pdfObject is CraftPdfArray && pdfObject.size() == 1) {
       pdfObject = await pdfObject.get(0);
     }
 
-    if (PdfName.deviceGray == pdfObject) {
+    if (CraftPdfName.deviceGray == pdfObject) {
       return PdfDeviceCsGray();
-    } else if (PdfName.deviceRgb == pdfObject) {
+    } else if (CraftPdfName.deviceRgb == pdfObject) {
       return PdfDeviceCsRgb();
-    } else if (PdfName.deviceCmyk == pdfObject) {
+    } else if (CraftPdfName.deviceCmyk == pdfObject) {
       return PdfDeviceCsCmyk();
-    } else if (PdfName.pattern == pdfObject) {
+    } else if (CraftPdfName.pattern == pdfObject) {
       return PdfSpecialCsPattern();
-    } else if (pdfObject is PdfArray) {
-      PdfName? csType = await pdfObject.getAsName(0);
-      if (PdfName.calGray == csType) {
+    } else if (pdfObject is CraftPdfArray) {
+      CraftPdfName? csType = await pdfObject.nameEntry(0);
+      if (CraftPdfName.calGray == csType) {
         return PdfCieBasedCsCalGray(pdfObject);
-      } else if (PdfName.calRgb == csType) {
+      } else if (CraftPdfName.calRgb == csType) {
         return PdfCieBasedCsCalRgb(pdfObject);
-      } else if (PdfName.lab == csType) {
+      } else if (CraftPdfName.lab == csType) {
         return PdfCieBasedCsLab(pdfObject);
-      } else if (PdfName.iccBased == csType) {
+      } else if (CraftPdfName.iccBased == csType) {
         return PdfCieBasedCsIccBased(pdfObject);
       }
       // TODO: Indexed, Separation, DeviceN
@@ -59,7 +61,15 @@ abstract class PdfColorSpace extends PdfObjectWrapper<PdfObject> {
     return null;
   }
 
-  PdfName getName() {
-    return PdfName(runtimeType.toString());
+  CraftPdfName getName() {
+    final definition = pdfRepresentation();
+    if (definition is CraftPdfName) return definition;
+    if (definition is CraftPdfArray) {
+      final entries = definition.toListCopy();
+      if (entries.isNotEmpty && entries.first is CraftPdfName) {
+        return entries.first as CraftPdfName;
+      }
+    }
+    throw StateError('The color space definition has no PDF family name.');
   }
 }

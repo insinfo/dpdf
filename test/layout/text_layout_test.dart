@@ -1,36 +1,36 @@
 import 'package:test/test.dart';
-import 'package:dpdf/src/io/font/true_type_font.dart';
-import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/layout/element/text.dart';
-import 'package:dpdf/src/layout/renderer/text_renderer.dart';
-import 'package:dpdf/src/layout/layout/layout_context.dart';
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/layout/layout/layout_result.dart';
-import 'package:dpdf/src/layout/properties/property.dart';
-import 'package:dpdf/src/layout/properties/unit_value.dart';
-import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
+import 'package:pdfcraft/src/io/font/true_type_font.dart';
+import 'package:pdfcraft/src/kernel/font/pdf_true_type_font.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/layout/element/text.dart';
+import 'package:pdfcraft/src/layout/renderer/text_renderer.dart';
+import 'package:pdfcraft/src/layout/layout/layout_context.dart';
+import 'package:pdfcraft/src/layout/layout/layout_area.dart';
+import 'package:pdfcraft/src/layout/layout/layout_result.dart';
+import 'package:pdfcraft/src/layout/properties/property.dart';
+import 'package:pdfcraft/src/layout/properties/unit_value.dart';
+import 'package:pdfcraft/src/layout/minmaxwidth/min_max_width.dart';
 
 void main() {
   group('TextLayout Test', () {
     test('Simple layout - no split', () async {
-      final ttf = TrueTypeFont.fromFile(
-          r"C:\MyDartProjects\pdfcraft\test\assets\arial.ttf");
-      final font = PdfTrueTypeFont(ttf);
+      final ttf =
+          CraftTrueTypeFont.fromFile(r"test/assets/ABeeZee-Regular.ttf");
+      final font = CraftPdfTrueTypeFont(ttf);
 
-      final textElement = Text("Hello World");
-      textElement.setProperty(Property.FONT, font);
+      final textElement = CraftText("Hello World");
+      textElement.setProperty(CraftProperty.FONT, font);
       textElement.setProperty(
-          Property.FONT_SIZE, UnitValue.createPointValue(12));
+          CraftProperty.FONT_SIZE, CraftUnitValue.createPointValue(12));
 
-      final renderer = TextRenderer(textElement);
+      final renderer = CraftTextRenderer(textElement);
 
       // Layout context with plenty of space
-      final area = LayoutArea(1, Rectangle(0, 0, 200, 100));
-      final result = renderer.layout(LayoutContext(area));
+      final area = CraftLayoutArea(1, CraftRectangle(0, 0, 200, 100));
+      final result = renderer.layout(CraftLayoutContext(area));
 
       expect(result, isNotNull);
-      expect(result!.getStatus(), equals(LayoutResult.FULL));
+      expect(result!.getStatus(), equals(CraftLayoutResult.FULL));
       expect(result.getOccupiedArea(), isNotNull);
       // "Hello World" width approx 60-70 pts at 12pt
       expect(result.getOccupiedArea()!.getBBox().getWidth(), greaterThan(50));
@@ -38,60 +38,60 @@ void main() {
     });
 
     test('Simple layout - forced split', () async {
-      final ttf = TrueTypeFont.fromFile(
-          r"C:\MyDartProjects\pdfcraft\test\assets\arial.ttf");
-      final font = PdfTrueTypeFont(ttf);
+      final ttf =
+          CraftTrueTypeFont.fromFile(r"test/assets/ABeeZee-Regular.ttf");
+      final font = CraftPdfTrueTypeFont(ttf);
 
-      final textElement = Text("Hello World");
-      textElement.setProperty(Property.FONT, font);
+      final textElement = CraftText("Hello World");
+      textElement.setProperty(CraftProperty.FONT, font);
       textElement.setProperty(
-          Property.FONT_SIZE, UnitValue.createPointValue(12));
+          CraftProperty.FONT_SIZE, CraftUnitValue.createPointValue(12));
 
-      final renderer = TextRenderer(textElement);
+      final renderer = CraftTextRenderer(textElement);
 
       // Layout context with limited space, should split "Hello " and "World" or similar
       // "Hello World" is about 65 width. Let's give 40. "Hello" is ~30.
-      final area = LayoutArea(1, Rectangle(0, 0, 40, 100));
-      final result = renderer.layout(LayoutContext(area));
+      final area = CraftLayoutArea(1, CraftRectangle(0, 0, 40, 100));
+      final result = renderer.layout(CraftLayoutContext(area));
 
       expect(result, isNotNull);
-      expect(result!.getStatus(), equals(LayoutResult.PARTIAL));
+      expect(result!.getStatus(), equals(CraftLayoutResult.PARTIAL));
       expect(result.getSplitRenderer(), isNotNull);
       expect(result.getOverflowRenderer(), isNotNull);
 
-      final splitRenderer = result.getSplitRenderer() as TextRenderer;
-      final overflowRenderer = result.getOverflowRenderer() as TextRenderer;
-
+      final splitRenderer = result.getSplitRenderer() as CraftTextRenderer;
+      final overflowRenderer =
+          result.getOverflowRenderer() as CraftTextRenderer;
 
       expect(splitRenderer.text, contains("Hell"));
       expect(overflowRenderer.text, isNotEmpty);
     });
 
     test('Layout with margins', () async {
-      final ttf = TrueTypeFont.fromFile(
-          r"C:\MyDartProjects\pdfcraft\test\assets\arial.ttf");
-      final font = PdfTrueTypeFont(ttf);
+      final ttf =
+          CraftTrueTypeFont.fromFile(r"test/assets/ABeeZee-Regular.ttf");
+      final font = CraftPdfTrueTypeFont(ttf);
 
-      final textElement = Text("Margins");
-      textElement.setProperty(Property.FONT, font);
+      final textElement = CraftText("Margins");
+      textElement.setProperty(CraftProperty.FONT, font);
       textElement.setProperty(
-          Property.FONT_SIZE, UnitValue.createPointValue(10));
+          CraftProperty.FONT_SIZE, CraftUnitValue.createPointValue(10));
       textElement.setProperty(
-          Property.MARGIN_LEFT, UnitValue.createPointValue(10));
+          CraftProperty.MARGIN_LEFT, CraftUnitValue.createPointValue(10));
       textElement.setProperty(
-          Property.MARGIN_RIGHT, UnitValue.createPointValue(10));
+          CraftProperty.MARGIN_RIGHT, CraftUnitValue.createPointValue(10));
       textElement.setProperty(
-          Property.MARGIN_TOP, UnitValue.createPointValue(5));
+          CraftProperty.MARGIN_TOP, CraftUnitValue.createPointValue(5));
       textElement.setProperty(
-          Property.MARGIN_BOTTOM, UnitValue.createPointValue(5));
+          CraftProperty.MARGIN_BOTTOM, CraftUnitValue.createPointValue(5));
 
-      final renderer = TextRenderer(textElement);
-      final area = LayoutArea(1, Rectangle(0, 0, 200, 100));
-      final result = renderer.layout(LayoutContext(area));
+      final renderer = CraftTextRenderer(textElement);
+      final area = CraftLayoutArea(1, CraftRectangle(0, 0, 200, 100));
+      final result = renderer.layout(CraftLayoutContext(area));
 
       expect(result, isNotNull);
-      expect(result!.getStatus(), equals(LayoutResult.FULL));
-      Rectangle occ = result.getOccupiedArea()!.getBBox();
+      expect(result!.getStatus(), equals(CraftLayoutResult.FULL));
+      CraftRectangle occ = result.getOccupiedArea()!.getBBox();
 
       expect(occ.getWidth(), greaterThan(40)); // Text width (~35) + 20
       expect(
@@ -102,17 +102,17 @@ void main() {
     });
 
     test('MinMaxWidth calculation', () async {
-      final ttf = TrueTypeFont.fromFile(
-          r"C:\MyDartProjects\pdfcraft\test\assets\arial.ttf");
-      final font = PdfTrueTypeFont(ttf);
+      final ttf =
+          CraftTrueTypeFont.fromFile(r"test/assets/ABeeZee-Regular.ttf");
+      final font = CraftPdfTrueTypeFont(ttf);
 
-      final textElement = Text("Hello World");
-      textElement.setProperty(Property.FONT, font);
+      final textElement = CraftText("Hello World");
+      textElement.setProperty(CraftProperty.FONT, font);
       textElement.setProperty(
-          Property.FONT_SIZE, UnitValue.createPointValue(10));
+          CraftProperty.FONT_SIZE, CraftUnitValue.createPointValue(10));
 
-      final renderer = TextRenderer(textElement);
-      MinMaxWidth? mmw = renderer.getMinMaxWidth();
+      final renderer = CraftTextRenderer(textElement);
+      CraftMinMaxWidth? mmw = renderer.getMinMaxWidth();
       expect(mmw, isNotNull);
 
       expect(mmw!.getMinWidth(), greaterThan(20));

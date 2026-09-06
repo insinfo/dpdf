@@ -1,27 +1,27 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/source/byte_utils.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:pdfcraft/src/io/source/byte_utils.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
 
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_literal.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_null.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_primitive_object.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_literal.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_null.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_primitive_object.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
 
 /// PdfOutputStream class represents an algorithm for writing data into content stream.
-class PdfOutputStream {
+class CraftPdfOutputStream {
   final Sink<List<int>>? _sink;
   final BytesBuilder? _builder;
   int _currentPos = 0;
 
   /// Document associated with PdfOutputStream.
-  PdfDocument? document;
+  CraftPdfDocument? document;
 
   // Crypto field for compatibility/future use
   // PdfEncryption? crypto; // Uncomment if imported
@@ -32,17 +32,17 @@ class PdfOutputStream {
   static final Uint8List _newline = Uint8List.fromList([10]);
   static final Uint8List _openDict = Uint8List.fromList([60, 60]); // <<
   static final Uint8List _closeDict = Uint8List.fromList([62, 62]); // >>
-  static final Uint8List _stream = ByteUtils.getIsoBytes("stream\n");
-  static final Uint8List _endstream = ByteUtils.getIsoBytes("\nendstream");
+  static final Uint8List _stream = CraftByteUtils.getIsoBytes("stream\n");
+  static final Uint8List _endstream = CraftByteUtils.getIsoBytes("\nendstream");
 
-  PdfOutputStream(Sink<List<int>> sink)
+  CraftPdfOutputStream(Sink<List<int>> sink)
       : _sink = sink,
         _builder = null;
-  
+
   Sink<List<int>>? get sink => _sink;
   BytesBuilder? get builder => _builder;
 
-  PdfOutputStream.fromBuilder(BytesBuilder builder)
+  CraftPdfOutputStream.fromBuilder(BytesBuilder builder)
       : _builder = builder,
         _sink = null;
 
@@ -71,35 +71,35 @@ class PdfOutputStream {
 
   /// Writes a string as ISO-8859-1 bytes.
   void writeString(String s) {
-    writeBytes(ByteUtils.getIsoBytes(s));
+    writeBytes(CraftByteUtils.getIsoBytes(s));
   }
 
   /// Writes an integer.
-  PdfOutputStream writeInteger(int n) {
-    writeBytes(ByteUtils.getIsoBytesFromInt(n));
+  CraftPdfOutputStream writeInteger(int n) {
+    writeBytes(CraftByteUtils.getIsoBytesFromInt(n));
     return this;
   }
 
   /// Writes a long (represented as int in Dart).
-  PdfOutputStream writeLong(int n) {
+  CraftPdfOutputStream writeLong(int n) {
     writeString(n.toString());
     return this;
   }
 
   /// Writes a double.
-  PdfOutputStream writeDouble(double d) {
-    writeBytes(ByteUtils.getIsoBytesFromDouble(d));
+  CraftPdfOutputStream writeDouble(double d) {
+    writeBytes(CraftByteUtils.getIsoBytesFromDouble(d));
     return this;
   }
 
   /// Writes a float (same as double in Dart).
-  PdfOutputStream writeFloat(double f) {
+  CraftPdfOutputStream writeFloat(double f) {
     writeDouble(f);
     return this;
   }
 
   /// Writes a space character.
-  PdfOutputStream writeSpace() {
+  CraftPdfOutputStream writeSpace() {
     writeBytes(_space);
     return this;
   }
@@ -111,72 +111,75 @@ class PdfOutputStream {
 
   /// Write a PdfObject to the outputstream.
   /// If [forceDirect] is true, writes object content directly (for ObjStm).
-  Future<PdfOutputStream> writePdfObject(PdfObject pdfObject, {bool forceDirect = false}) async {
+  Future<CraftPdfOutputStream> writePdfObject(CraftPdfObject pdfObject,
+      {bool forceDirect = false}) async {
     // For ObjStm, we need to write the object content directly, not as a reference
     if (!forceDirect) {
-      if (pdfObject.checkState(PdfObject.mustBeIndirect) && document != null) {
-        pdfObject.makeIndirect(document!);
-        pdfObject = pdfObject.getIndirectReference()!;
+      if (pdfObject.checkState(CraftPdfObject.mustBeIndirect) &&
+          document != null) {
+        pdfObject.attachToDocument(document!);
+        pdfObject = pdfObject.indirectHandle()!;
       }
     }
 
-    switch (pdfObject.getObjectType()) {
+    switch (pdfObject.objectKind()) {
       case PdfObjectType.array:
-        await _writeArray(pdfObject as PdfArray);
+        await _writeArray(pdfObject as CraftPdfArray);
         break;
       case PdfObjectType.dictionary:
-        await _writeDictionary(pdfObject as PdfDictionary);
+        await _writeDictionary(pdfObject as CraftPdfDictionary);
         break;
       case PdfObjectType.indirectReference:
         // For forceDirect, we should never reach here with the actual object
         // But if we do get a reference, resolve it and write directly
         if (forceDirect) {
-          final resolved = await (pdfObject as PdfIndirectReference).getRefersTo();
+          final resolved =
+              await (pdfObject as CraftPdfIndirectReference).targetObject();
           if (resolved != null) {
             await writePdfObject(resolved, forceDirect: true);
           }
         } else {
-          writeIndirectReference(pdfObject as PdfIndirectReference);
+          writeIndirectReference(pdfObject as CraftPdfIndirectReference);
         }
         break;
       case PdfObjectType.name:
-        writePdfName(pdfObject as PdfName);
+        writePdfName(pdfObject as CraftPdfName);
         break;
       case PdfObjectType.nullType:
       case PdfObjectType.boolean:
-        writePrimitive(pdfObject as PdfPrimitiveObject);
+        writePrimitive(pdfObject as CraftPdfPrimitiveObject);
         break;
       case PdfObjectType.literal:
-        writeLiteral(pdfObject as PdfLiteral);
+        writeLiteral(pdfObject as CraftPdfLiteral);
         break;
       case PdfObjectType.string:
-        writePdfStringObject(pdfObject as PdfString);
+        writePdfStringObject(pdfObject as CraftPdfString);
         break;
       case PdfObjectType.number:
-        writePdfNumber(pdfObject as PdfNumber);
+        writePdfNumber(pdfObject as CraftPdfNumber);
         break;
       case PdfObjectType.stream:
-        await _writePdfStream(pdfObject as PdfStream);
+        await _writePdfStream(pdfObject as CraftPdfStream);
         break;
     }
     return this;
   }
 
-  void writePrimitive(PdfPrimitiveObject primitive) {
+  void writePrimitive(CraftPdfPrimitiveObject primitive) {
     writeBytes(primitive.getInternalContent() ?? Uint8List(0));
   }
 
-  void writeLiteral(PdfLiteral literal) {
+  void writeLiteral(CraftPdfLiteral literal) {
     literal.setPosition(getCurrentPos());
     writeBytes(literal.getInternalContent() ?? Uint8List(0));
   }
 
-  void writePdfName(PdfName name) {
+  void writePdfName(CraftPdfName name) {
     writeByte(47); // /
     writeBytes(name.getInternalContent() ?? Uint8List(0));
   }
 
-  void writePdfNumber(PdfNumber number) {
+  void writePdfNumber(CraftPdfNumber number) {
     if (number.hasContent()) {
       writeBytes(number.getInternalContent() ?? Uint8List(0));
     } else {
@@ -188,7 +191,7 @@ class PdfOutputStream {
     }
   }
 
-  void writePdfStringObject(PdfString pdfString) {
+  void writePdfStringObject(CraftPdfString pdfString) {
     var bytes = pdfString.getInternalContent() ?? Uint8List(0);
 
     if (crypto != null) {
@@ -242,34 +245,34 @@ class PdfOutputStream {
     }
   }
 
-  void writeIndirectReference(PdfIndirectReference ref) {
+  void writeIndirectReference(CraftPdfIndirectReference ref) {
     if (ref.isFree()) {
-      writePrimitive(PdfNull.pdfNull);
+      writePrimitive(CraftPdfNull.pdfNull);
     } else {
-      writeInteger(ref.getObjNumber());
-      if (ref.getGenNumber() == 0) {
+      writeInteger(ref.objectNumber());
+      if (ref.generationNumber() == 0) {
         writeString(" 0 R");
       } else {
         writeSpace();
-        writeInteger(ref.getGenNumber());
+        writeInteger(ref.generationNumber());
         writeString(" R");
       }
     }
   }
 
-  Future<void> _writeArray(PdfArray array) async {
+  Future<void> _writeArray(CraftPdfArray array) async {
     writeByte(91); // [
     for (var i = 0; i < array.size(); i++) {
       final value = await array.get(i, false);
       if (value != null) {
-        final ref = value.getIndirectReference();
+        final ref = value.indirectHandle();
         if (ref != null) {
           writeIndirectReference(ref);
         } else {
           await writePdfObject(value);
         }
       } else {
-        writePrimitive(PdfNull.pdfNull);
+        writePrimitive(CraftPdfNull.pdfNull);
       }
 
       if (i < array.size() - 1) {
@@ -279,7 +282,7 @@ class PdfOutputStream {
     writeByte(93); // ]
   }
 
-  Future<void> _writeDictionary(PdfDictionary dict) async {
+  Future<void> _writeDictionary(CraftPdfDictionary dict) async {
     writeBytes(_openDict);
     final keys = dict.keySet();
     for (final key in keys) {
@@ -288,9 +291,9 @@ class PdfOutputStream {
       final value = await dict.get(key, false);
       if (value != null) {
         // Check if value should be written as reference (has indirect ref)
-        final ref = value.getIndirectReference();
-        
-        final type = value.getObjectType();
+        final ref = value.indirectHandle();
+
+        final type = value.objectKind();
         // Need space before: numbers, literals, booleans, null, refs, or anything with indirect ref
         if (type == PdfObjectType.number ||
             type == PdfObjectType.literal ||
@@ -298,7 +301,7 @@ class PdfOutputStream {
             type == PdfObjectType.nullType ||
             type == PdfObjectType.indirectReference ||
             ref != null ||
-            value.checkState(PdfObject.mustBeIndirect)) {
+            value.checkState(CraftPdfObject.mustBeIndirect)) {
           writeSpace();
         }
 
@@ -309,16 +312,16 @@ class PdfOutputStream {
         }
       } else {
         writeSpace();
-        writePrimitive(PdfNull.pdfNull);
+        writePrimitive(CraftPdfNull.pdfNull);
       }
     }
     writeBytes(_closeDict);
   }
 
-  Future<void> _writePdfStream(PdfStream stream) async {
+  Future<void> _writePdfStream(CraftPdfStream stream) async {
     final bytes = await stream.getBytes() ?? Uint8List(0);
-    stream.put(PdfName.length, PdfNumber.fromInt(bytes.length));
-    
+    stream.put(CraftPdfName.length, CraftPdfNumber.fromInt(bytes.length));
+
     await _writeDictionary(stream);
     writeNewLine(); // Ensure separation
     writeBytes(_stream);

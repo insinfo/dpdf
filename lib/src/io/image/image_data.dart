@@ -1,15 +1,15 @@
 import 'dart:typed_data';
-import 'package:dpdf/src/layout/properties/image_type.dart';
-import 'package:dpdf/src/io/exceptions/io_exception.dart';
-import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:pdfcraft/src/layout/properties/image_type.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
 import '../colors/icc_profile.dart';
 
-abstract class ImageData {
+abstract class CraftImageData {
   static int _serialId = 0;
 
   Uri? url;
   List<int>? transparency;
-  ImageType? originalType;
+  CraftImageType? originalType;
   int colorType = -1;
   Uint8List? colorPalette;
   double width = 0;
@@ -22,13 +22,13 @@ abstract class ImageData {
   Map<String, Object>? decodeParms;
   bool inverted = false;
   double rotation = 0;
-  IccProfile? profile;
+  CraftIccProfile? profile;
   int dpiX = 0;
   int dpiY = 0;
   int colorTransform = 1;
   bool deflated = false;
   bool mask = false;
-  ImageData? imageMask;
+  CraftImageData? imageMask;
   bool interpolation = false;
   double xyRatio = 0;
   bool hasCHRM = false;
@@ -38,11 +38,11 @@ abstract class ImageData {
   Map<String, Object>? imageAttributes;
   late final int mySerialId;
 
-  ImageData.fromUrl(this.url, this.originalType) {
+  CraftImageData.fromUrl(this.url, this.originalType) {
     mySerialId = _getNextSerialId();
   }
 
-  ImageData.fromBytes(this.data, this.originalType) {
+  CraftImageData.fromBytes(this.data, this.originalType) {
     mySerialId = _getNextSerialId();
   }
 
@@ -62,18 +62,18 @@ abstract class ImageData {
   void makeMask() {
     if (!canBeMask()) {
       throw IoException(
-          IoExceptionMessageConstant.thisImageCanNotBeAnImageMask);
+          CraftIoExceptionMessageConstant.thisImageCanNotBeAnImageMask);
     }
     mask = true;
   }
 
-  void setImageMask(ImageData mask) {
+  void setImageMask(CraftImageData mask) {
     if (this.mask) {
-      throw IoException(
-          IoExceptionMessageConstant.imageMaskCannotContainAnotherImageMask);
+      throw IoException(CraftIoExceptionMessageConstant
+          .imageMaskCannotContainAnotherImageMask);
     }
     if (!mask.mask) {
-      throw IoException(IoExceptionMessageConstant
+      throw IoException(CraftIoExceptionMessageConstant
           .imageIsNotAMaskYouMustCallImageDataMakeMask);
     }
     this.imageMask = mask;
@@ -81,9 +81,9 @@ abstract class ImageData {
 
   Uint8List? getData() => data;
 
-  ImageType? getOriginalType() => originalType;
+  CraftImageType? getOriginalType() => originalType;
 
-  void setProfile(IccProfile profile) {
+  void setProfile(CraftIccProfile profile) {
     this.profile = profile;
   }
 
@@ -155,7 +155,7 @@ abstract class ImageData {
 
   void setColorTransform(int transform) => colorTransform = transform;
 
-  void setRotation(double rotation) => this.rotation = rotation;
+  void setRotationDegrees(double rotation) => this.rotation = rotation;
 
   bool canImageBeInline() => true;
 

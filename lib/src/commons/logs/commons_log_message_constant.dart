@@ -1,48 +1,34 @@
-/// Log message constants for commons module.
-class CommonsLogMessageConstant {
-  CommonsLogMessageConstant._();
+/// Diagnostic templates for PDFCraft. Public identifiers and format slots are stable.
+class CraftCommonsLogMessageConstant {
+  CraftCommonsLogMessageConstant._();
 
-  /// Message notifies that base64 encoding or decoding failed.
   static const String base64Exception =
-      'Exception during base64 encoding or decoding.';
+      'Base64 conversion could not be completed.';
 
-  /// Invalid statistics name was received.
   static const String invalidStatisticsName =
-      'Statistics name {0} is invalid. Cannot find corresponding statistics aggregator.';
+      'No statistics aggregator is registered for name {0}.';
 
-  /// Files archiving operation failed.
   static const String localFileCompressionFailed =
-      'Cannot archive files into zip. Exception message: {0}.';
+      'ZIP creation failed while archiving local files: {0}.';
 
-  /// Archive is suspicious to be a zip bomb (ratio).
   static const String ratioIsHighlySuspicious =
-      'Ratio between compressed and uncompressed data is highly suspicious, '
-      'looks like a Zip Bomb Attack. Threshold ratio is {0}.';
+      'Archive expansion ratio exceeds the configured limit {0}; processing could exhaust resources (possible ZIP bomb).';
 
-  /// Archive is suspicious to be a zip bomb (entries).
   static const String tooMuchEntriesInArchive =
-      'Too much entries in this archive, can lead to inodes exhaustion of the system, '
-      'looks like a Zip Bomb Attack. Threshold number of file entries is {0}.';
+      'Archive entry count exceeds limit {0}; extracting it could exhaust filesystem inodes (possible ZIP bomb).';
 
-  /// Exception during JSON deserialization.
   static const String unableToDeserializeJson =
-      'Unable to deserialize json. Exception {0} was thrown with the message: {1}.';
+      'JSON decoding failed with {0}: {1}.';
 
-  /// Exception during JSON serialization.
   static const String unableToSerializeObject =
-      'Unable to serialize object. Exception {0} was thrown with the message: {1}.';
+      'Object serialization failed with {0}: {1}.';
 
-  /// Archive is suspicious to be a zip bomb (size).
   static const String uncompressedDataSizeIsTooMuch =
-      'The uncompressed data size is too much for the application resource capacity, '
-      'looks like a Zip Bomb Attack. Threshold size is {0}.';
+      'Expanded archive size exceeds resource limit {0}; processing could exhaust memory or storage (possible ZIP bomb).';
 
-  /// Unknown placeholder was ignored during parsing.
   static const String unknownPlaceholderWasIgnored =
-      'Unknown placeholder {0} was ignored';
+      'Skipping unrecognized placeholder {0}.';
 
-  /// Event is at confirmation stage but not known.
   static const String unreportedEvent =
-      'Event for the product {0} with type {1} attempted to be confirmed but it had not been reported yet. '
-      'Probably appropriate process fail';
+      'Cannot confirm product {0} event {1}: no report was recorded; the reporting operation may have failed.';
 }

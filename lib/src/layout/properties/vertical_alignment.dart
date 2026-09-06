@@ -1,5 +1,5 @@
 /// A specialized enum containing potential property values for vertical alignment.
-enum VerticalAlignment {
+enum CraftVerticalAlignment {
   /// Align to the top.
   top,
 

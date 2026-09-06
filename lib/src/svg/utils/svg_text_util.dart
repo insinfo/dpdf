@@ -1,55 +1,25 @@
-import 'package:dpdf/src/io/util/text_util.dart';
+import 'package:pdfcraft/src/io/util/text_util.dart';
 
-class SvgTextUtil {
-  SvgTextUtil._();
+class CraftSvgTextUtil {
+  CraftSvgTextUtil._();
 
-  /// Trim all the leading whitespace characters from the passed string
-  static String trimLeadingWhitespace(String? toTrim) {
-    if (toTrim == null) {
-      return "";
-    }
-    int current = 0;
-    int end = toTrim.length;
-    while (current < end) {
-      int currentChar = toTrim.codeUnitAt(current);
-      if (TextUtil.isWhiteSpace(currentChar) &&
-          !(currentChar == 10 || currentChar == 13)) {
-        current++;
-      } else {
-        break;
-      }
-    }
-    return toTrim.substring(current);
-  }
+  /// Removes horizontal whitespace while preserving line boundaries.
+  static String trimLeadingWhitespace(String? text) =>
+      String.fromCharCodes((text ?? '').codeUnits.skipWhile(_horizontalSpace));
 
-  /// Trim all the trailing whitespace characters from the passed string
-  static String trimTrailingWhitespace(String? toTrim) {
-    if (toTrim == null) {
-      return "";
-    }
-    int end = toTrim.length;
-    if (end > 0) {
-      int current = end - 1;
-      while (current >= 0) {
-        int currentChar = toTrim.codeUnitAt(current);
-        if (TextUtil.isWhiteSpace(currentChar) &&
-            !(currentChar == 10 || currentChar == 13)) {
-          current--;
-        } else {
-          break;
-        }
-      }
-      if (current < 0) {
-        return "";
-      } else {
-        return toTrim.substring(0, current + 1);
-      }
-    } else {
-      return toTrim;
-    }
-  }
+  /// Removes horizontal whitespace at the end, stopping at CR or LF.
+  static String trimTrailingWhitespace(String? text) =>
+      String.fromCharCodes((text ?? '')
+          .codeUnits
+          .reversed
+          .skipWhile(_horizontalSpace)
+          .toList()
+          .reversed);
 
-  /// The reference value may contain a hashtag character or 'url' designation and this method will filter them.
+  static bool _horizontalSpace(int unit) =>
+      unit != 10 && unit != 13 && CraftTextUtil.isWhiteSpace(unit);
+
+  /// Normalizes a reference by removing its fragment or URL wrapper.
   static String filterReferenceValue(String name) {
     return name
         .replaceAll("#", "")

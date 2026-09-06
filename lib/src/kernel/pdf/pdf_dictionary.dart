@@ -3,7 +3,7 @@ import 'pdf_name.dart';
 import 'pdf_number.dart';
 import 'pdf_string.dart';
 import 'pdf_boolean.dart';
-import 'pdf_array.dart' show PdfArray;
+import 'pdf_array.dart' show CraftPdfArray;
 import 'pdf_stream.dart';
 
 /// A representation of a Dictionary as described by the PDF Specification.
@@ -11,44 +11,45 @@ import 'pdf_stream.dart';
 /// A Dictionary is a mapping between keys and values. Keys are [PdfName]s
 /// and the values are [PdfObject]s. Each key can only be associated with
 /// one value.
-class PdfDictionary extends PdfObject {
+class CraftPdfDictionary extends CraftPdfObject {
   /// The internal map.
-  Map<PdfName, PdfObject>? _map;
+  Map<CraftPdfName, CraftPdfObject>? _map;
 
   /// Gets the internal map.
-  Map<PdfName, PdfObject>? getMap() => _map;
+  Map<CraftPdfName, CraftPdfObject>? getMap() => _map;
 
   /// Creates a new PdfDictionary instance.
-  PdfDictionary() {
-    _map = <PdfName, PdfObject>{};
+  CraftPdfDictionary() {
+    _map = <CraftPdfName, CraftPdfObject>{};
   }
 
   /// Creates a new PdfDictionary from a map.
-  PdfDictionary.fromMap(Map<PdfName, PdfObject> map) {
-    _map = Map<PdfName, PdfObject>.from(map);
+  CraftPdfDictionary.fromMap(Map<CraftPdfName, CraftPdfObject> map) {
+    _map = Map<CraftPdfName, CraftPdfObject>.from(map);
   }
 
   /// Creates a new PdfDictionary from entries.
-  PdfDictionary.fromEntries(Iterable<MapEntry<PdfName, PdfObject>> entries) {
-    _map = Map<PdfName, PdfObject>.fromEntries(entries);
+  CraftPdfDictionary.fromEntries(
+      Iterable<MapEntry<CraftPdfName, CraftPdfObject>> entries) {
+    _map = Map<CraftPdfName, CraftPdfObject>.fromEntries(entries);
   }
 
   /// Creates a new PdfDictionary from another PdfDictionary.
-  PdfDictionary.fromDictionary(PdfDictionary dictionary) {
-    _map = Map<PdfName, PdfObject>.from(dictionary._map ?? {});
+  CraftPdfDictionary.fromDictionary(CraftPdfDictionary dictionary) {
+    _map = Map<CraftPdfName, CraftPdfObject>.from(dictionary._map ?? {});
   }
 
   @override
-  int getObjectType() => PdfObjectType.dictionary;
+  int objectKind() => PdfObjectType.dictionary;
 
   @override
-  PdfObject clone() {
-    final cloned = PdfDictionary();
+  CraftPdfObject clone() {
+    final cloned = CraftPdfDictionary();
     if (_map != null) {
       for (final entry in _map!.entries) {
         final val = entry.value;
-        if (val.getIndirectReference() != null) {
-          cloned.put(entry.key, val.getIndirectReference()!);
+        if (val.indirectHandle() != null) {
+          cloned.put(entry.key, val.indirectHandle()!);
         } else {
           cloned.put(entry.key, val.clone());
         }
@@ -58,8 +59,8 @@ class PdfDictionary extends PdfObject {
   }
 
   @override
-  PdfObject newInstance() {
-    return PdfDictionary();
+  CraftPdfObject newInstance() {
+    return CraftPdfDictionary();
   }
 
   /// Returns the number of key-value pairs.
@@ -68,11 +69,12 @@ class PdfDictionary extends PdfObject {
   /// Returns true if there are no key-value pairs.
   bool isEmpty() => _map?.isEmpty ?? true;
 
-  /// Returns true if this PdfDictionary contains the specified key.
-  bool containsKey(PdfName key) => _map?.containsKey(key) ?? false;
+  /// Tests membership of a dictionary key.
+  bool containsKey(CraftPdfName key) => _map?.containsKey(key) ?? false;
 
-  /// Returns true if this PdfDictionary contains the specified value.
-  bool containsValue(PdfObject value) => _map?.containsValue(value) ?? false;
+  /// Tests membership of a dictionary value.
+  bool containsValue(CraftPdfObject value) =>
+      _map?.containsValue(value) ?? false;
 
   /// Returns the value associated with this key.
   ///
@@ -81,13 +83,14 @@ class PdfDictionary extends PdfObject {
   /// returns the reference itself. By default the raw object (including
   /// indirect references) is returned to allow callers to decide when
   /// dereferencing is appropriate.
-  Future<PdfObject?> get(PdfName key, [bool asDirect = false]) async {
+  Future<CraftPdfObject?> get(CraftPdfName key, [bool asDirect = false]) async {
     if (_map == null) return null;
     final obj = _map![key];
     if (asDirect &&
         obj != null &&
-        obj.getObjectType() == PdfObjectType.indirectReference) {
-      final resolved = await (obj as PdfIndirectReference).getRefersTo(true);
+        obj.objectKind() == PdfObjectType.indirectReference) {
+      final resolved =
+          await (obj as CraftPdfIndirectReference).targetObject(true);
       // Return resolved object if available, otherwise the reference itself
       return resolved ?? obj;
     }
@@ -95,106 +98,106 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Returns the value as a PdfArray.
-  Future<PdfArray?> getAsArray(PdfName key) async {
+  Future<CraftPdfArray?> arrayEntry(CraftPdfName key) async {
     final direct = await get(key, true);
-    if (direct != null && direct.getObjectType() == PdfObjectType.array) {
-      return direct as PdfArray;
+    if (direct != null && direct.objectKind() == PdfObjectType.array) {
+      return direct as CraftPdfArray;
     }
     return null;
   }
 
   /// Returns the value as a PdfDictionary.
-  Future<PdfDictionary?> getAsDictionary(PdfName key) async {
+  Future<CraftPdfDictionary?> dictionaryEntry(CraftPdfName key) async {
     final direct = await get(key, true);
-    if (direct != null && direct.getObjectType() == PdfObjectType.dictionary) {
-      return direct as PdfDictionary;
+    if (direct != null && direct.objectKind() == PdfObjectType.dictionary) {
+      return direct as CraftPdfDictionary;
     }
     return null;
   }
 
   /// Returns the value as a PdfStream.
-  Future<PdfStream?> getAsStream(PdfName key) async {
+  Future<CraftPdfStream?> streamEntry(CraftPdfName key) async {
     final direct = await get(key, true);
-    if (direct != null && direct.getObjectType() == PdfObjectType.stream) {
-      return direct as PdfStream;
+    if (direct != null && direct.objectKind() == PdfObjectType.stream) {
+      return direct as CraftPdfStream;
     }
     return null;
   }
 
   /// Returns the value as a PdfNumber.
-  Future<PdfNumber?> getAsNumber(PdfName key) async {
+  Future<CraftPdfNumber?> numberEntry(CraftPdfName key) async {
     final direct = await get(key, true);
-    if (direct != null && direct.getObjectType() == PdfObjectType.number) {
-      return direct as PdfNumber;
+    if (direct != null && direct.objectKind() == PdfObjectType.number) {
+      return direct as CraftPdfNumber;
     }
     return null;
   }
-  
+
   /// Returns the value as a PdfNumber synchronously (does not resolve indirect references).
-  PdfNumber? getNumberSync(PdfName key) {
+  CraftPdfNumber? getNumberSync(CraftPdfName key) {
     final obj = _map?[key];
-    if (obj != null && obj.getObjectType() == PdfObjectType.number) {
-      return obj as PdfNumber;
+    if (obj != null && obj.objectKind() == PdfObjectType.number) {
+      return obj as CraftPdfNumber;
     }
     return null;
   }
-  
+
   /// Returns the value as a PdfBoolean synchronously (does not resolve indirect references).
-  PdfBoolean? getBooleanSync(PdfName key) {
+  CraftPdfBoolean? getBooleanSync(CraftPdfName key) {
     final obj = _map?[key];
-    if (obj != null && obj.getObjectType() == PdfObjectType.boolean) {
-      return obj as PdfBoolean;
+    if (obj != null && obj.objectKind() == PdfObjectType.boolean) {
+      return obj as CraftPdfBoolean;
     }
     return null;
   }
 
   /// Returns the value as a PdfName.
-  Future<PdfName?> getAsName(PdfName key) async {
+  Future<CraftPdfName?> nameEntry(CraftPdfName key) async {
     final direct = await get(key, true);
-    if (direct != null && direct.getObjectType() == PdfObjectType.name) {
-      return direct as PdfName;
+    if (direct != null && direct.objectKind() == PdfObjectType.name) {
+      return direct as CraftPdfName;
     }
     return null;
   }
 
   /// Returns the value as a PdfString.
-  Future<PdfString?> getAsString(PdfName key) async {
+  Future<CraftPdfString?> stringEntry(CraftPdfName key) async {
     final direct = await get(key, true);
-    if (direct != null && direct.getObjectType() == PdfObjectType.string) {
-      return direct as PdfString;
+    if (direct != null && direct.objectKind() == PdfObjectType.string) {
+      return direct as CraftPdfString;
     }
     return null;
   }
 
   /// Returns the value as a PdfBoolean.
-  Future<PdfBoolean?> getAsBoolean(PdfName key) async {
+  Future<CraftPdfBoolean?> booleanEntry(CraftPdfName key) async {
     final direct = await get(key, true);
-    if (direct != null && direct.getObjectType() == PdfObjectType.boolean) {
-      return direct as PdfBoolean;
+    if (direct != null && direct.objectKind() == PdfObjectType.boolean) {
+      return direct as CraftPdfBoolean;
     }
     return null;
   }
 
   /// Returns the value as a double.
-  Future<double?> getAsFloat(PdfName key) async {
-    final number = await getAsNumber(key);
+  Future<double?> decimalEntry(CraftPdfName key) async {
+    final number = await numberEntry(key);
     return number?.doubleValue();
   }
 
   /// Returns the value as an int.
-  Future<int?> getAsInt(PdfName key) async {
-    final number = await getAsNumber(key);
+  Future<int?> integerEntry(CraftPdfName key) async {
+    final number = await numberEntry(key);
     return number?.intValue();
   }
 
   /// Returns the value as a bool.
-  Future<bool?> getAsBool(PdfName key) async {
-    final b = await getAsBoolean(key);
+  Future<bool?> flagEntry(CraftPdfName key) async {
+    final b = await booleanEntry(key);
     return b?.getValue();
   }
 
   /// Inserts the value with the specified key.
-  PdfObject? put(PdfName key, PdfObject value) {
+  CraftPdfObject? put(CraftPdfName key, CraftPdfObject value) {
     if (_map == null) return null;
     final old = _map![key];
     _map![key] = value;
@@ -202,12 +205,12 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Removes the specified key.
-  PdfObject? remove(PdfName key) {
+  CraftPdfObject? remove(CraftPdfName key) {
     return _map?.remove(key);
   }
 
   /// Inserts all key-value pairs from another dictionary.
-  void putAll(PdfDictionary d) {
+  void putAll(CraftPdfDictionary d) {
     if (d._map != null) {
       _map?.addAll(d._map!);
     }
@@ -219,21 +222,21 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Returns all the keys as a Set.
-  Set<PdfName> keySet() {
-    return _map?.keys.toSet() ?? <PdfName>{};
+  Set<CraftPdfName> keySet() {
+    return _map?.keys.toSet() ?? <CraftPdfName>{};
   }
 
   /// Returns all the values.
-  Future<Iterable<PdfObject>> values([bool asDirects = true]) async {
+  Future<Iterable<CraftPdfObject>> values([bool asDirects = true]) async {
     if (_map == null) return [];
     if (!asDirects) {
       return _map!.values;
     }
-    final result = <PdfObject>[];
+    final result = <CraftPdfObject>[];
     for (final obj in _map!.values) {
-      if (obj.getObjectType() == PdfObjectType.indirectReference) {
-        result
-            .add(await (obj as PdfIndirectReference).getRefersTo(true) ?? obj);
+      if (obj.objectKind() == PdfObjectType.indirectReference) {
+        result.add(
+            await (obj as CraftPdfIndirectReference).targetObject(true) ?? obj);
       } else {
         result.add(obj);
       }
@@ -242,14 +245,14 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Returns all entries.
-  Future<Iterable<MapEntry<PdfName, PdfObject>>> entrySet() async {
+  Future<Iterable<MapEntry<CraftPdfName, CraftPdfObject>>> entrySet() async {
     if (_map == null) return [];
-    final result = <MapEntry<PdfName, PdfObject>>[];
+    final result = <MapEntry<CraftPdfName, CraftPdfObject>>[];
     for (final entry in _map!.entries) {
       var value = entry.value;
-      if (value.getObjectType() == PdfObjectType.indirectReference) {
-        value =
-            await (value as PdfIndirectReference).getRefersTo(true) ?? value;
+      if (value.objectKind() == PdfObjectType.indirectReference) {
+        value = await (value as CraftPdfIndirectReference).targetObject(true) ??
+            value;
       }
       result.add(MapEntry(entry.key, value));
     }
@@ -257,8 +260,8 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Creates a clone excluding specified keys.
-  PdfDictionary cloneExcluding(List<PdfName> excludeKeys) {
-    final cloned = PdfDictionary();
+  CraftPdfDictionary cloneExcluding(List<CraftPdfName> excludeKeys) {
+    final cloned = CraftPdfDictionary();
     if (_map != null) {
       for (final entry in _map!.entries) {
         if (!excludeKeys.contains(entry.key)) {
@@ -270,7 +273,7 @@ class PdfDictionary extends PdfObject {
   }
 
   /// Merges fields from another dictionary that don't exist in this one.
-  Future<void> mergeDifferent(PdfDictionary other) async {
+  Future<void> mergeDifferent(CraftPdfDictionary other) async {
     for (final key in other.keySet()) {
       if (!containsKey(key)) {
         final val = await other.get(key);
@@ -288,7 +291,7 @@ class PdfDictionary extends PdfObject {
 
   @override
   String toString() {
-    if (isFlushed()) {
+    if (hasBeenWritten()) {
       return indirectReference?.toString() ?? '<<>>';
     }
     final buffer = StringBuffer('<<');
@@ -296,7 +299,7 @@ class PdfDictionary extends PdfObject {
       for (final entry in _map!.entries) {
         buffer.write(entry.key.toString());
         buffer.write(' ');
-        final ref = entry.value.getIndirectReference();
+        final ref = entry.value.indirectHandle();
         buffer.write(ref?.toString() ?? entry.value.toString());
         buffer.write(' ');
       }

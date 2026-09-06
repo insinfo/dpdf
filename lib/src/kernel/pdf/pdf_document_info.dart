@@ -3,56 +3,56 @@ import 'pdf_name.dart';
 import 'pdf_object_wrapper.dart';
 import 'pdf_string.dart';
 // import 'pdf_document.dart';
-import 'package:dpdf/src/commons/utils/date_time_util.dart';
+import 'package:pdfcraft/src/commons/utils/date_time_util.dart';
 
 /// Document information dictionary.
-class PdfDocumentInfo extends PdfObjectWrapper<PdfDictionary> {
+class CraftPdfDocumentInfo extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// Creates a [PdfDocumentInfo] wrapper.
-  PdfDocumentInfo(PdfDictionary pdfObject) : super(pdfObject);
+  CraftPdfDocumentInfo(CraftPdfDictionary pdfObject) : super(pdfObject);
 
   /// Creates a new [PdfDocumentInfo].
-  PdfDocumentInfo.create() : super(PdfDictionary());
+  CraftPdfDocumentInfo.create() : super(CraftPdfDictionary());
 
   /// Sets the title of the document.
   void setTitle(String title) {
-    getPdfObject().put(PdfName.title, PdfString(title));
+    pdfRepresentation().put(CraftPdfName.title, CraftPdfString(title));
   }
 
   /// Sets the author of the document.
   void setAuthor(String author) {
-    getPdfObject().put(PdfName.author, PdfString(author));
+    pdfRepresentation().put(CraftPdfName.author, CraftPdfString(author));
   }
 
   /// Sets the subject of the document.
   void setSubject(String subject) {
-    getPdfObject().put(PdfName.subject, PdfString(subject));
+    pdfRepresentation().put(CraftPdfName.subject, CraftPdfString(subject));
   }
 
   /// Sets the keywords of the document.
   void setKeywords(String keywords) {
-    getPdfObject().put(PdfName.keywords, PdfString(keywords));
+    pdfRepresentation().put(CraftPdfName.keywords, CraftPdfString(keywords));
   }
 
   /// Sets the creator of the document.
   void setCreator(String creator) {
-    getPdfObject().put(PdfName.creator, PdfString(creator));
+    pdfRepresentation().put(CraftPdfName.creator, CraftPdfString(creator));
   }
 
   /// Sets the producer of the document.
   void setProducer(String producer) {
-    getPdfObject().put(PdfName.producer, PdfString(producer));
+    pdfRepresentation().put(CraftPdfName.producer, CraftPdfString(producer));
   }
 
   /// Sets the creation date of the document.
   void setCreationDate(DateTime date) {
-    getPdfObject()
-        .put(PdfName.creationDate, PdfString(DateTimeUtil.formatPdfDate(date)));
+    pdfRepresentation().put(CraftPdfName.creationDate,
+        CraftPdfString(CraftDateTimeUtil.formatPdfDate(date)));
   }
 
   /// Sets the modification date of the document.
   void setModDate(DateTime date) {
-    getPdfObject()
-        .put(PdfName.modDate, PdfString(DateTimeUtil.formatPdfDate(date)));
+    pdfRepresentation().put(CraftPdfName.modDate,
+        CraftPdfString(CraftDateTimeUtil.formatPdfDate(date)));
   }
 
   /// Adds the current date as validation date.
@@ -66,5 +66,5 @@ class PdfDocumentInfo extends PdfObjectWrapper<PdfDictionary> {
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => true;
+  bool requiresIndirectStorage() => true;
 }

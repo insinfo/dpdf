@@ -1,1 +1,1 @@
-enum ListSymbolAlignment { RIGHT, LEFT }
+enum CraftListSymbolAlignment { RIGHT, LEFT }

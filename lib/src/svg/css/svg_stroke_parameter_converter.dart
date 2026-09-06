@@ -1,9 +1,9 @@
-import 'package:dpdf/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
-import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
-import 'package:dpdf/src/svg/svg_constants.dart';
-import 'package:dpdf/src/svg/utils/svg_coordinate_utils.dart';
-import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
-import 'package:collection/collection.dart';
+import 'package:pdfcraft/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
+import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
+import 'package:pdfcraft/src/svg/svg_constants.dart';
+import 'package:pdfcraft/src/svg/utils/svg_coordinate_utils.dart';
+import 'package:pdfcraft/src/svg/utils/svg_css_utils.dart';
+import 'package:pdfcraft/src/commons/utils/value_collections.dart';
 
 /// This class converts stroke related SVG parameters and attributes into those from PDF specification.
 class SvgStrokeParameterConverter {
@@ -14,14 +14,14 @@ class SvgStrokeParameterConverter {
       String? strokeDashArray,
       String? strokeDashOffset,
       double fontSize,
-      SvgDrawContext context) {
+      CraftSvgDrawContext context) {
     if (strokeDashArray != null &&
-        strokeDashArray.toLowerCase() != SvgConstants.Values.NONE) {
+        strokeDashArray.toLowerCase() != CraftSvgConstants.Values.NONE) {
       double rem = context.getCssContext().getRootFontSize();
       double percentBaseValue =
-          SvgCoordinateUtils.calculateNormalizedDiagonalLength(context);
+          CraftSvgCoordinateUtils.calculateNormalizedDiagonalLength(context);
       List<String> dashArrayStrings =
-          SvgCssUtils.splitValueList(strokeDashArray);
+          CraftSvgCssUtils.splitValueList(strokeDashArray);
 
       if (dashArrayStrings.isNotEmpty) {
         if (dashArrayStrings.length % 2 == 1) {
@@ -32,7 +32,7 @@ class SvgStrokeParameterConverter {
 
         List<double> dashArrayData = [];
         for (String s in dashArrayStrings) {
-          dashArrayData.add(CssDimensionParsingUtils.parseLength(
+          dashArrayData.add(CraftCssDimensionParsingUtils.parseLength(
               s, percentBaseValue, 1.0, fontSize, rem));
         }
 
@@ -40,8 +40,8 @@ class SvgStrokeParameterConverter {
         double dashPhase = 0.0;
         if (strokeDashOffset != null &&
             strokeDashOffset.isNotEmpty &&
-            strokeDashOffset.toLowerCase() != SvgConstants.Values.NONE) {
-          dashPhase = CssDimensionParsingUtils.parseLength(
+            strokeDashOffset.toLowerCase() != CraftSvgConstants.Values.NONE) {
+          dashPhase = CraftCssDimensionParsingUtils.parseLength(
               strokeDashOffset, percentBaseValue, 1.0, fontSize, rem);
         }
 
@@ -71,7 +71,7 @@ class PdfLineDashParameters {
     if (identical(this, other)) return true;
     if (other is! PdfLineDashParameters) return false;
     return dashPhase == other.dashPhase &&
-        const ListEquality().equals(dashArray, other.dashArray);
+        ValueCollections.listsEqual(dashArray, other.dashArray);
   }
 
   @override

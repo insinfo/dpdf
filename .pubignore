@@ -1,0 +1,11 @@
+.git/
+.dart_tool/
+build/
+coverage/
+test/tmp/
+test/out/
+*.log
+*.pdf
+!test/assets/test.pdf
+migrate_working_dir/
+referencias/

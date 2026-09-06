@@ -1,16 +1,16 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:dpdf/src/layout/element/list.dart' as pdfcraft;
-import 'package:dpdf/src/layout/element/image.dart';
-import 'package:dpdf/src/io/image/image_data_factory.dart';
-import 'package:dpdf/src/layout/renderer/list_renderer.dart';
-import 'package:dpdf/src/layout/layout/layout_context.dart';
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/layout/renderer/list_item_renderer.dart';
-import 'package:dpdf/src/layout/layout/layout_result.dart';
-import 'package:dpdf/src/io/font/true_type_font.dart';
-import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
+import 'package:pdfcraft/src/layout/element/list.dart' as pdfcraft;
+import 'package:pdfcraft/src/layout/element/image.dart';
+import 'package:pdfcraft/src/io/image/image_data_factory.dart';
+import 'package:pdfcraft/src/layout/renderer/list_renderer.dart';
+import 'package:pdfcraft/src/layout/layout/layout_context.dart';
+import 'package:pdfcraft/src/layout/layout/layout_area.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/layout/renderer/list_item_renderer.dart';
+import 'package:pdfcraft/src/layout/layout/layout_result.dart';
+import 'package:pdfcraft/src/io/font/true_type_font.dart';
+import 'package:pdfcraft/src/kernel/font/pdf_true_type_font.dart';
 
 void main() {
   test('List with Image Symbol Layout', () async {
@@ -21,30 +21,30 @@ void main() {
       return;
     }
     final bytes = await File(imagePath).readAsBytes();
-    final imageData = ImageDataFactory.create(bytes);
-    final image = Image(imageData).setWidth(10).setHeight(10);
+    final imageData = CraftImageDataFactory.create(bytes);
+    final image = CraftImage(imageData).setWidth(10).setHeight(10);
 
-    final ttfPath = r'C:\MyDartProjects\pdfcraft\test\assets\arial.ttf';
-    final ttf = TrueTypeFont.fromFile(ttfPath);
-    final font = PdfTrueTypeFont(ttf);
+    final ttfPath = r'test/assets/ABeeZee-Regular.ttf';
+    final ttf = CraftTrueTypeFont.fromFile(ttfPath);
+    final font = CraftPdfTrueTypeFont(ttf);
 
-    final list = pdfcraft.List()
+    final list = pdfcraft.CraftList()
         .setListSymbol(image)
         .setFont(font)
         .add("Item 1")
         .add("Item 2");
 
-    final listRenderer = list.createRendererSubTree() as ListRenderer;
+    final listRenderer = list.createRendererSubTree() as CraftListRenderer;
     final layoutContext =
-        LayoutContext(LayoutArea(1, Rectangle(0, 0, 500, 500)));
+        CraftLayoutContext(CraftLayoutArea(1, CraftRectangle(0, 0, 500, 500)));
     final result = listRenderer.layout(layoutContext);
 
     expect(result, isNotNull);
-    expect(result!.getStatus(), LayoutResult.FULL);
+    expect(result!.getStatus(), CraftLayoutResult.FULL);
 
     // Check if symbol renderers are added to items
     for (var child in listRenderer.getChildRenderers()) {
-      if (child is ListItemRenderer) {
+      if (child is CraftListItemRenderer) {
         // The symbol renderer itself is stored in the ListItemRenderer
       }
     }

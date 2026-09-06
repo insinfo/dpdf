@@ -1,12 +1,13 @@
 import 'dart:convert';
-import 'package:xml/xml.dart' as xml;
+import '../../commons/xml/xml.dart' as xml;
+export '../../commons/xml/xml.dart';
 import 'xmp_const.dart';
 
-class XMPMeta {
+class CraftXMPMeta {
   xml.XmlDocument _doc;
   xml.XmlElement? _rdfDescription;
 
-  XMPMeta(this._doc) {
+  CraftXMPMeta(this._doc) {
     _init();
   }
 
@@ -29,19 +30,13 @@ class XMPMeta {
     }
   }
 
-  static XMPMeta create() {
-    final builder = xml.XmlBuilder();
-    builder.processing('xpacket', 'begin="" id="W5M0MpCehiHzreSzNTczkc9d"');
-    builder.element('x:xmpmeta', namespaces: {'adobe:ns:meta/': 'x'}, nest: () {
-      builder.element('rdf:RDF',
-          namespaces: {'http://www.w3.org/1999/02/22-rdf-syntax-ns#': 'rdf'},
-          nest: () {
-        builder.element('rdf:Description',
-            attributes: {'rdf:about': ''}, nest: () {});
-      });
-    });
-    builder.processing('xpacket', 'end="w"');
-    return XMPMeta(builder.buildDocument());
+  static CraftXMPMeta create() {
+    return CraftXMPMeta(xml.XmlDocument.parse(
+        '<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?>'
+        '<x:xmpmeta xmlns:x="adobe:ns:meta/">'
+        '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+        '<rdf:Description rdf:about=""/></rdf:RDF></x:xmpmeta>'
+        '<?xpacket end="w"?>'));
   }
 
   void setObjectName(String name) {}
@@ -50,11 +45,11 @@ class XMPMeta {
     if (_rdfDescription == null) return;
 
     String? prefix;
-    if (schemaNS == XMPConst.NS_DC)
+    if (schemaNS == CraftXMPConst.NS_DC)
       prefix = 'dc';
-    else if (schemaNS == XMPConst.NS_XMP)
+    else if (schemaNS == CraftXMPConst.NS_XMP)
       prefix = 'xmp';
-    else if (schemaNS == XMPConst.NS_PDF) prefix = 'pdf';
+    else if (schemaNS == CraftXMPConst.NS_PDF) prefix = 'pdf';
 
     if (prefix != null) {
       if (_rdfDescription!.getAttribute('xmlns:$prefix') == null) {
@@ -80,11 +75,11 @@ class XMPMeta {
   String? getPropertyString(String schemaNS, String propName) {
     if (_rdfDescription == null) return null;
     String? prefix;
-    if (schemaNS == XMPConst.NS_DC)
+    if (schemaNS == CraftXMPConst.NS_DC)
       prefix = 'dc';
-    else if (schemaNS == XMPConst.NS_XMP)
+    else if (schemaNS == CraftXMPConst.NS_XMP)
       prefix = 'xmp';
-    else if (schemaNS == XMPConst.NS_PDF) prefix = 'pdf';
+    else if (schemaNS == CraftXMPConst.NS_PDF) prefix = 'pdf';
 
     if (prefix == null) return null;
     final pattern = '$prefix:$propName';
@@ -101,17 +96,17 @@ class XMPMeta {
   xml.XmlDocument getDocument() => _doc;
 }
 
-class XMPMetaFactory {
-  static XMPMeta create() {
-    return XMPMeta.create();
+class CraftXMPMetaFactory {
+  static CraftXMPMeta create() {
+    return CraftXMPMeta.create();
   }
 
-  static XMPMeta parseFromBuffer(List<int> buffer) {
+  static CraftXMPMeta parseFromBuffer(List<int> buffer) {
     final str = utf8.decode(buffer);
     return parseFromString(str);
   }
 
-  static XMPMeta parseFromString(String packet) {
+  static CraftXMPMeta parseFromString(String packet) {
     try {
       // XMP packets are often wrapped in <?xpacket ... ?>
       // xml parser should handle it if it's valid XML
@@ -123,14 +118,14 @@ class XMPMetaFactory {
       }
 
       final doc = xml.XmlDocument.parse(packet);
-      return XMPMeta(doc);
+      return CraftXMPMeta(doc);
     } catch (e) {
       // Fallback or rethrow
-      return XMPMeta.create(); // Return empty if failed?
+      return CraftXMPMeta.create(); // Return empty if failed?
     }
   }
 
-  static List<int> serializeToBuffer(XMPMeta xmp, [dynamic options]) {
+  static List<int> serializeToBuffer(CraftXMPMeta xmp, [dynamic options]) {
     return utf8.encode(xmp.getDocument().toXmlString());
   }
 }

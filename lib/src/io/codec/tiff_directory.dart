@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
-import 'package:dpdf/src/io/codec/tiff_field.dart';
-import 'package:dpdf/src/io/exceptions/io_exception.dart';
+import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
+import 'package:pdfcraft/src/io/codec/tiff_field.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
 
 class TiffDirectory {
   bool isBigEndian = false;
@@ -28,7 +28,7 @@ class TiffDirectory {
     8 // 12 = double
   ];
 
-  TiffDirectory(RandomAccessFileOrArray stream,
+  TiffDirectory(CraftRandomAccessFileOrArray stream,
       {int directory = 0, int? ifdOffset}) {
     int globalSaveOffset = stream.getPosition();
     stream.seek(0);
@@ -79,7 +79,7 @@ class TiffDirectory {
     return endian == 0x4949 || endian == 0x4d4d;
   }
 
-  void initialize(RandomAccessFileOrArray stream) {
+  void initialize(CraftRandomAccessFileOrArray stream) {
     int nextTagOffset = 0;
     int maxOffset = stream.length().toInt();
 
@@ -222,32 +222,32 @@ class TiffDirectory {
   }
 
   // Primitive readers
-  int readShort(RandomAccessFileOrArray stream) {
+  int readShort(CraftRandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readShort();
     return stream.readShortLE();
   }
 
-  int readUnsignedShort(RandomAccessFileOrArray stream) {
+  int readUnsignedShort(CraftRandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readUnsignedShort();
     return stream.readUnsignedShortLE();
   }
 
-  int readInt(RandomAccessFileOrArray stream) {
+  int readInt(CraftRandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readInt();
     return stream.readIntLE();
   }
 
-  int readUnsignedInt(RandomAccessFileOrArray stream) {
+  int readUnsignedInt(CraftRandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readUnsignedInt();
     return stream.readUnsignedIntLE();
   }
 
-  double readFloat(RandomAccessFileOrArray stream) {
+  double readFloat(CraftRandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readFloat();
     return stream.readFloatLE();
   }
 
-  double readDouble(RandomAccessFileOrArray stream) {
+  double readDouble(CraftRandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readDouble();
     return stream.readDoubleLE();
   }
@@ -272,11 +272,11 @@ class TiffDirectory {
 
   int getFieldAsInt(int tag, [int index = 0]) {
     TiffField? f = getField(tag);
-    return f?.getAsInt(index) ?? 0;
+    return f?.integerEntry(index) ?? 0;
   }
 
   // Static Helper
-  static int getNumDirectories(RandomAccessFileOrArray stream) {
+  static int getNumDirectories(CraftRandomAccessFileOrArray stream) {
     int pointer = stream.getPosition();
     stream.seek(0);
     int endian = stream.readUnsignedShort();

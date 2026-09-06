@@ -1,7 +1,7 @@
-import 'i_simple_list.dart';
+import 'simple_list.dart';
 
 /// Portable implementation of ArrayList.
-class SimpleArrayList<T> implements ISimpleList<T> {
+class SimpleArrayList<T> implements SimpleList<T> {
   final List<T> _list;
 
   /// Creates a new instance of SimpleArrayList.

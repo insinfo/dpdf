@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 
 /// RC4 encryption algorithm implementation.
-class ARCFOUREncryption {
+class CraftARCFOUREncryption {
   final Uint8List _state = Uint8List(256);
   int _x = 0;
   int _y = 0;
 
-  ARCFOUREncryption();
+  CraftARCFOUREncryption();
 
   void prepareARCFOURKey(Uint8List key, [int off = 0, int? len]) {
     final length = len ?? (key.length - off);

@@ -1,27 +1,27 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/commons/digest/i_message_digest.dart';
-import 'package:dpdf/src/kernel/crypto/digest_algorithms.dart';
-import 'package:dpdf/src/kernel/crypto/i_decryptor.dart';
-import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
+import 'package:pdfcraft/src/commons/digest/message_digest.dart';
+import 'package:pdfcraft/src/kernel/crypto/digest_algorithms.dart';
+import 'package:pdfcraft/src/kernel/crypto/decryptor.dart';
+import 'package:pdfcraft/src/kernel/crypto/output_stream_encryption.dart';
 
 /// Base class for security handlers.
-abstract class SecurityHandler {
+abstract class CraftSecurityHandler {
   /// The global encryption key
   Uint8List mkey = Uint8List(0);
 
   /// The encryption key for a particular object/generation.
   Uint8List? nextObjectKey;
 
-  /// The encryption key length for a particular object/generation
+  /// Key size associated with the object and generation.
   int nextObjectKeySize = 0;
 
-  late IMessageDigest md5;
+  late MessageDigest md5;
 
   /// Work area to prepare the object/generation bytes
   final Uint8List extra = Uint8List(5);
 
-  SecurityHandler() {
+  CraftSecurityHandler() {
     _initMd5MessageDigest();
   }
 
@@ -45,10 +45,10 @@ abstract class SecurityHandler {
   }
 
   /// Gets a stream wrapper, responsible for encryption.
-  OutputStreamEncryption getEncryptionStream(dynamic os);
+  CraftOutputStreamEncryption getEncryptionStream(dynamic os);
 
   /// Gets decryptor object.
-  IDecryptor getDecryptor();
+  CraftDecryptor getDecryptor();
 
   /// Gets encryption key for a particular object/generation.
   Uint8List getNextObjectKey() {
@@ -62,6 +62,6 @@ abstract class SecurityHandler {
 
   /// Init md5 message digest.
   void _initMd5MessageDigest() {
-    md5 = DigestAlgorithms.getMessageDigest("MD5");
+    md5 = CraftDigestAlgorithms.getMessageDigest("MD5");
   }
 }

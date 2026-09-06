@@ -1,31 +1,31 @@
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
 
-class LayoutArea {
+class CraftLayoutArea {
   int pageNumber;
-  Rectangle bBox;
+  CraftRectangle bBox;
 
-  LayoutArea(this.pageNumber, this.bBox);
+  CraftLayoutArea(this.pageNumber, this.bBox);
 
-  int getPageNumber() {
+  int pageOrdinal() {
     return pageNumber;
   }
 
-  Rectangle getBBox() {
+  CraftRectangle getBBox() {
     return bBox;
   }
 
-  void setBBox(Rectangle bbox) {
+  void setBBox(CraftRectangle bbox) {
     this.bBox = bbox;
   }
 
-  LayoutArea clone() {
-    return LayoutArea(pageNumber, bBox.clone());
+  CraftLayoutArea clone() {
+    return CraftLayoutArea(pageNumber, bBox.clone());
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is LayoutArea &&
+    return other is CraftLayoutArea &&
         pageNumber == other.pageNumber &&
         bBox.equalsWithEpsilon(other.bBox);
   }

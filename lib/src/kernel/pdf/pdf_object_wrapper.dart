@@ -4,30 +4,30 @@ import 'pdf_object.dart';
 import 'pdf_document.dart';
 
 /// Base class for all PDF object wrappers.
-abstract class PdfObjectWrapper<T extends PdfObject> {
+abstract class CraftPdfObjectWrapper<T extends CraftPdfObject> {
   T _pdfObject;
 
-  PdfObjectWrapper(this._pdfObject) {
-    if (isWrappedObjectMustBeIndirect()) {
+  CraftPdfObjectWrapper(this._pdfObject) {
+    if (requiresIndirectStorage()) {
       markObjectAsIndirect(_pdfObject);
     }
   }
 
-  T getPdfObject() {
+  T pdfRepresentation() {
     return _pdfObject;
   }
 
-  PdfDocument? getDocument() {
-    return _pdfObject.getIndirectReference()?.getDocument();
+  CraftPdfDocument? getDocument() {
+    return _pdfObject.indirectHandle()?.getDocument();
   }
 
-  PdfObjectWrapper<T> makeIndirect(PdfDocument document) {
-    _pdfObject.makeIndirect(document);
+  CraftPdfObjectWrapper<T> attachToDocument(CraftPdfDocument document) {
+    _pdfObject.attachToDocument(document);
     return this;
   }
 
-  PdfObjectWrapper<T> setModified() {
-    _pdfObject.setModified();
+  CraftPdfObjectWrapper<T> markChanged() {
+    _pdfObject.markChanged();
     return this;
   }
 
@@ -35,42 +35,42 @@ abstract class PdfObjectWrapper<T extends PdfObject> {
     await _pdfObject.flush();
   }
 
-  bool isFlushed() {
-    return _pdfObject.isFlushed();
+  bool hasBeenWritten() {
+    return _pdfObject.hasBeenWritten();
   }
 
-  /// Defines if the object behind this wrapper must be an indirect object in the
+  /// Determines whether the wrapped value requires indirect storage in the
   /// resultant document.
-  bool isWrappedObjectMustBeIndirect();
+  bool requiresIndirectStorage();
 
   void setPdfObject(T pdfObject) {
     _pdfObject = pdfObject;
   }
 
   void setForbidRelease() {
-    _pdfObject.setState(PdfObject.forbidRelease);
+    _pdfObject.setState(CraftPdfObject.forbidRelease);
   }
 
   void unsetForbidRelease() {
-    _pdfObject.clearState(PdfObject.forbidRelease);
+    _pdfObject.clearState(CraftPdfObject.forbidRelease);
   }
 
   void ensureUnderlyingObjectHasIndirectReference() {
-    if (_pdfObject.getIndirectReference() == null) {
-      throw PdfException(KernelExceptionMessageConstant
+    if (_pdfObject.indirectHandle() == null) {
+      throw CraftPdfException(CraftKernelExceptionMessageConstant
           .toFlushThisWrapperUnderlyingObjectMustBeAddedToDocument);
     }
   }
 
-  static void markObjectAsIndirect(PdfObject pdfObject) {
-    if (pdfObject.getIndirectReference() == null) {
-      pdfObject.setState(PdfObject.mustBeIndirect);
+  static void markObjectAsIndirect(CraftPdfObject pdfObject) {
+    if (pdfObject.indirectHandle() == null) {
+      pdfObject.setState(CraftPdfObject.mustBeIndirect);
     }
   }
 
-  static void ensureObjectIsAddedToDocument(PdfObject object) {
-    if (object.getIndirectReference() == null) {
-      throw PdfException(KernelExceptionMessageConstant
+  static void ensureObjectIsAddedToDocument(CraftPdfObject object) {
+    if (object.indirectHandle() == null) {
+      throw CraftPdfException(CraftKernelExceptionMessageConstant
           .objectMustBeIndirectToWorkWithThisWrapper);
     }
   }

@@ -1,10 +1,10 @@
-import 'package:dpdf/src/layout/renderer/block_renderer.dart';
-import 'package:dpdf/src/layout/element/cell.dart';
-import 'package:dpdf/src/layout/layout/layout_context.dart';
-import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:pdfcraft/src/layout/renderer/block_renderer.dart';
+import 'package:pdfcraft/src/layout/element/cell.dart';
+import 'package:pdfcraft/src/layout/layout/layout_context.dart';
+import 'package:pdfcraft/src/layout/layout/layout_result.dart';
 
-class CellRenderer extends BlockRenderer {
-  CellRenderer(Cell modelElement) : super(modelElement);
+class CraftCellRenderer extends CraftBlockRenderer {
+  CraftCellRenderer(CraftCell modelElement) : super(modelElement);
 
   // Cell specific layout logic if needed, e.g. vertical alignment.
   // For now, standard Block layout is sufficient for content INSIDE the cell.
@@ -14,9 +14,9 @@ class CellRenderer extends BlockRenderer {
   // The layout() method will be called with a constrained area defined by the Table.
 
   @override
-  LayoutResult? layout(LayoutContext layoutContext) {
+  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
     // Use block layout
-    LayoutResult? result = super.layout(layoutContext);
+    CraftLayoutResult? result = super.layout(layoutContext);
 
     // If result is full, we might need to ensure the occupied area matches the Cell's expected height?
     // Or TableRenderer handles that.

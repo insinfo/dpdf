@@ -1,6 +1,6 @@
 /// Compression constants for PdfStream.
-class CompressionConstants {
-  CompressionConstants._();
+class CraftCompressionConstants {
+  CraftCompressionConstants._();
 
   /// Undefined compression level.
   static const int undefinedCompression = -2147483648; // int.minValue

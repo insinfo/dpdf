@@ -1,99 +1,74 @@
 import 'gf_256_poly.dart';
 
-/// This class contains utility methods for performing mathematical operations over
-/// the Galois Field GF(256).
-class GF256 {
-  // x^8 + x^4 + x^3 + x^2 + 1
-  static final GF256 QR_CODE_FIELD = GF256._(0x011D);
+/// Byte-polynomial arithmetic using reduction modulo an irreducible polynomial.
+/// Multiplication operates on bits rather than using logarithm tables.
+class CraftGF256 {
+  static final CraftGF256 QR_CODE_FIELD = CraftGF256._(0x11d);
+  static final CraftGF256 DATA_MATRIX_FIELD = CraftGF256._(0x12d);
+  final int _modulus;
+  late final CraftGF256Poly _zero = CraftGF256Poly(this, [0]);
+  late final CraftGF256Poly _one = CraftGF256Poly(this, [1]);
 
-  // x^8 + x^5 + x^3 + x^2 + 1
-  static final GF256 DATA_MATRIX_FIELD = GF256._(0x012D);
+  CraftGF256._(this._modulus);
+  CraftGF256Poly getZero() => _zero;
+  CraftGF256Poly getOne() => _one;
 
-  late List<int> _expTable;
-  late List<int> _logTable;
-  late GF256Poly _zero;
-  late GF256Poly _one;
+  CraftGF256Poly buildMonomial(int degree, int coefficient) {
+    RangeError.checkNotNegative(degree, 'degree');
+    _checkByte(coefficient);
+    return coefficient == 0
+        ? _zero
+        : CraftGF256Poly(this, [coefficient, ...List<int>.filled(degree, 0)]);
+  }
 
-  GF256._(int primitive) {
-    _expTable = List<int>.filled(256, 0);
-    _logTable = List<int>.filled(256, 0);
-    int x = 1;
-    for (int i = 0; i < 256; i++) {
-      _expTable[i] = x;
-      // x = x * 2; we're assuming the generator alpha is 2
-      x <<= 1;
-      if (x >= 0x100) {
-        x ^= primitive;
+  static int addOrSubtract(int a, int b) => a ^ b;
+
+  int multiply(int a, int b) {
+    _checkByte(a);
+    _checkByte(b);
+    var product = 0;
+    for (var bit = 0; bit < 8; bit++) {
+      if ((b & (1 << bit)) != 0) product ^= a << bit;
+    }
+    for (var degree = 14; degree >= 8; degree--) {
+      if ((product & (1 << degree)) != 0) {
+        product ^= _modulus << (degree - 8);
       }
     }
-    for (int i = 0; i < 255; i++) {
-      _logTable[_expTable[i]] = i;
+    return product;
+  }
+
+  int _power(int value, int exponent) {
+    var result = 1;
+    while (exponent != 0) {
+      if (exponent.isOdd) result = multiply(result, value);
+      value = multiply(value, value);
+      exponent >>= 1;
     }
-    // logTable[0] == 0 but this should never be used
-    _zero = GF256Poly(this, [0]);
-    _one = GF256Poly(this, [1]);
+    return result;
   }
 
-  GF256Poly getZero() {
-    return _zero;
-  }
-
-  GF256Poly getOne() {
-    return _one;
-  }
-
-  /// Returns the monomial representing coefficient * x^degree
-  GF256Poly buildMonomial(int degree, int coefficient) {
-    if (degree < 0) {
-      throw ArgumentError();
-    }
-    if (coefficient == 0) {
-      return _zero;
-    }
-    List<int> coefficients = List<int>.filled(degree + 1, 0);
-    coefficients[0] = coefficient;
-    return GF256Poly(this, coefficients);
-  }
-
-  /// Implements both addition and subtraction -- they are the same in GF(256).
-  /// Returns sum/difference of a and b
-  static int addOrSubtract(int a, int b) {
-    return a ^ b;
-  }
-
-  /// Returns 2 to the power of a in GF(256)
   int exp(int a) {
-    return _expTable[a];
+    RangeError.checkValueInInterval(a, 0, 255, 'exponent');
+    return _power(2, a);
   }
 
-  /// Returns base 2 log of a in GF(256)
   int log(int a) {
-    if (a == 0) {
-      throw ArgumentError();
+    RangeError.checkValueInInterval(a, 1, 255, 'value');
+    var candidate = 1;
+    for (var exponent = 0; exponent < 255; exponent++) {
+      if (candidate == a) return exponent;
+      candidate = multiply(candidate, 2);
     }
-    return _logTable[a];
+    throw StateError('The field generator does not span this value.');
   }
 
-  /// Returns multiplicative inverse of a
   int inverse(int a) {
-    if (a == 0) {
-      throw Exception(
-          "ArithmeticException"); // Dart doesn't have ArithmeticException
-    }
-    return _expTable[255 - _logTable[a]];
+    RangeError.checkValueInInterval(a, 1, 255, 'value');
+    return _power(a, 254);
   }
 
-  /// Returns product of a and b in GF(256)
-  int multiply(int a, int b) {
-    if (a == 0 || b == 0) {
-      return 0;
-    }
-    if (a == 1) {
-      return b;
-    }
-    if (b == 1) {
-      return a;
-    }
-    return _expTable[(_logTable[a] + _logTable[b]) % 255];
+  static void _checkByte(int value) {
+    RangeError.checkValueInInterval(value, 0, 255, 'field element');
   }
 }

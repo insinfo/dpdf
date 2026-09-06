@@ -1,20 +1,20 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:dpdf/src/kernel/crypto/arcfour_encryption.dart';
-import 'package:dpdf/src/kernel/crypto/i_decryptor.dart';
-import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
-import 'package:dpdf/src/kernel/crypto/output_stream_standard_encryption.dart';
-import 'package:dpdf/src/kernel/crypto/securityhandler/standard_security_handler.dart';
-import 'package:dpdf/src/kernel/crypto/standard_decryptor.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
-import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
-import 'package:dpdf/src/kernel/exceptions/kernel_exception_message_constant.dart';
+import 'package:pdfcraft/src/kernel/crypto/arcfour_encryption.dart';
+import 'package:pdfcraft/src/kernel/crypto/decryptor.dart';
+import 'package:pdfcraft/src/kernel/crypto/output_stream_encryption.dart';
+import 'package:pdfcraft/src/kernel/crypto/output_stream_standard_encryption.dart';
+import 'package:pdfcraft/src/kernel/crypto/securityhandler/standard_security_handler.dart';
+import 'package:pdfcraft/src/kernel/crypto/standard_decryptor.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
+import 'package:pdfcraft/src/kernel/exceptions/pdf_exception.dart';
+import 'package:pdfcraft/src/kernel/exceptions/kernel_exception_message_constant.dart';
 
 /// Standard security handler using Standard 40 algorithm (RC4).
-class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
+class CraftStandardHandlerUsingStandard40 extends CraftStandardSecurityHandler {
   static final Uint8List pad = Uint8List.fromList([
     0x28,
     0xBF,
@@ -54,14 +54,14 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
 
   Uint8List? documentId;
   int keyLength = 40;
-  final ARCFOUREncryption arcfour = ARCFOUREncryption();
+  final CraftARCFOUREncryption arcfour = CraftARCFOUREncryption();
 
   static const int defaultKeyLengthValue = 40;
 
   bool _encryptMetadata = true;
 
-  StandardHandlerUsingStandard40(
-      PdfDictionary encryptionDictionary,
+  CraftStandardHandlerUsingStandard40(
+      CraftPdfDictionary encryptionDictionary,
       Uint8List? userPassword,
       Uint8List? ownerPassword,
       int permissions,
@@ -73,22 +73,25 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
         permissions, encryptMetadata, embeddedFilesOnly, documentId);
   }
 
-  StandardHandlerUsingStandard40.read(PdfDictionary encryptionDictionary,
-      Uint8List password, Uint8List? documentId, bool encryptMetadata) {
+  CraftStandardHandlerUsingStandard40.read(
+      CraftPdfDictionary encryptionDictionary,
+      Uint8List password,
+      Uint8List? documentId,
+      bool encryptMetadata) {
     this.keyLength = 40;
     this.documentId = documentId;
     this._encryptMetadata = encryptMetadata;
   }
 
-  Future<void> initForReading(PdfDictionary encryptionDictionary,
+  Future<void> initForReading(CraftPdfDictionary encryptionDictionary,
       Uint8List password, Uint8List? documentId) async {
-    final oObj = await encryptionDictionary.getAsString(PdfName.o);
-    final uObj = await encryptionDictionary.getAsString(PdfName.u);
-    final pObj = await encryptionDictionary.getAsNumber(PdfName.p);
+    final oObj = await encryptionDictionary.stringEntry(CraftPdfName.o);
+    final uObj = await encryptionDictionary.stringEntry(CraftPdfName.u);
+    final pObj = await encryptionDictionary.numberEntry(CraftPdfName.p);
 
     if (oObj == null || uObj == null || pObj == null) {
-      throw PdfException(
-          KernelExceptionMessageConstant.standardHandlerBadDictionary);
+      throw CraftPdfException(
+          CraftKernelExceptionMessageConstant.standardHandlerBadDictionary);
     }
 
     final oValue = oObj.getValueBytes();
@@ -100,8 +103,8 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
     this.keyLength = defaultKeyLengthValue;
 
     if (oValue == null || uValue == null) {
-      throw PdfException(
-          KernelExceptionMessageConstant.standardHandlerBadDictionary);
+      throw CraftPdfException(
+          CraftKernelExceptionMessageConstant.standardHandlerBadDictionary);
     }
 
     // Try as User Password
@@ -131,7 +134,8 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
       return;
     }
 
-    throw PdfException(KernelExceptionMessageConstant.badUserPassword);
+    throw CraftPdfException(
+        CraftKernelExceptionMessageConstant.badUserPassword);
   }
 
   bool _validateUserPassword(Uint8List uValue) {
@@ -143,18 +147,18 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
   }
 
   @override
-  OutputStreamEncryption getEncryptionStream(dynamic os) {
-    return OutputStreamStandardEncryption(
+  CraftOutputStreamEncryption getEncryptionStream(dynamic os) {
+    return CraftOutputStreamStandardEncryption(
         os, nextObjectKey!, 0, nextObjectKeySize);
   }
 
   @override
-  IDecryptor getDecryptor() {
-    return StandardDecryptor(nextObjectKey!, 0, nextObjectKeySize);
+  CraftDecryptor getDecryptor() {
+    return CraftStandardDecryptor(nextObjectKey!, 0, nextObjectKeySize);
   }
 
   void _initKeyAndFillDictionary(
-      PdfDictionary encryptionDictionary,
+      CraftPdfDictionary encryptionDictionary,
       Uint8List? userPassword,
       Uint8List? ownerPassword,
       int permissions,
@@ -178,8 +182,8 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
   }
 
   void calculatePermissions(int permissions) {
-    permissions |= StandardSecurityHandler.permsMask1ForRevision2;
-    permissions &= StandardSecurityHandler.permsMask2;
+    permissions |= CraftStandardSecurityHandler.permsMask1ForRevision2;
+    permissions &= CraftStandardSecurityHandler.permsMask2;
     this.permissions = permissions;
   }
 
@@ -223,10 +227,10 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
   }
 
   @override
-  void setSpecificHandlerDicEntries(PdfDictionary encryptionDictionary,
+  void setSpecificHandlerDicEntries(CraftPdfDictionary encryptionDictionary,
       bool encryptMetadata, bool embeddedFilesOnly) {
-    encryptionDictionary.put(PdfName.r, PdfNumber.fromInt(2));
-    encryptionDictionary.put(PdfName.v, PdfNumber.fromInt(1));
+    encryptionDictionary.put(CraftPdfName.r, CraftPdfNumber.fromInt(2));
+    encryptionDictionary.put(CraftPdfName.v, CraftPdfNumber.fromInt(1));
   }
 
   Uint8List padPassword(Uint8List? password) {
@@ -242,7 +246,7 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
     return userPad;
   }
 
-  int _getKeyLength(PdfDictionary encryptionDict) {
+  int _getKeyLength(CraftPdfDictionary encryptionDict) {
     // This is async in reality, but for now let's assume it's direct.
     // TODO: Fix this when dictionary handles sync access for known values.
     return defaultKeyLengthValue;

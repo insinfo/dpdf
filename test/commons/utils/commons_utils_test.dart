@@ -1,36 +1,36 @@
 import 'package:test/test.dart';
-import 'package:dpdf/src/commons/utils/message_format_util.dart';
-import 'package:dpdf/src/commons/utils/date_time_util.dart';
-import 'package:dpdf/src/commons/utils/mathematic_util.dart';
-import 'package:dpdf/src/commons/utils/string_util.dart';
-import 'package:dpdf/src/commons/utils/java_collections_util.dart';
+import 'package:pdfcraft/src/commons/utils/message_format_util.dart';
+import 'package:pdfcraft/src/commons/utils/date_time_util.dart';
+import 'package:pdfcraft/src/commons/utils/mathematic_util.dart';
+import 'package:pdfcraft/src/commons/utils/string_util.dart';
+import 'package:pdfcraft/src/commons/utils/collection_utils.dart';
 
 void main() {
   group('MessageFormatUtil', () {
     test('formats simple placeholders', () {
       expect(
-        MessageFormatUtil.format('Hello {0}!', ['World']),
+        CraftMessageFormatUtil.format('Hello {0}!', ['World']),
         equals('Hello World!'),
       );
     });
 
     test('formats multiple placeholders', () {
       expect(
-        MessageFormatUtil.format('{0} has {1} messages', ['John', 5]),
+        CraftMessageFormatUtil.format('{0} has {1} messages', ['John', 5]),
         equals('John has 5 messages'),
       );
     });
 
     test('handles null arguments', () {
       expect(
-        MessageFormatUtil.format('Value: {0}', [null]),
+        CraftMessageFormatUtil.format('Value: {0}', [null]),
         equals('Value: null'),
       );
     });
 
     test('handles repeated placeholders', () {
       expect(
-        MessageFormatUtil.format('{0} and {0}', ['test']),
+        CraftMessageFormatUtil.format('{0} and {0}', ['test']),
         equals('test and test'),
       );
     });
@@ -39,19 +39,19 @@ void main() {
   group('DateTimeUtil', () {
     test('getUtcMillisFromEpoch returns milliseconds', () {
       final epoch = DateTime.utc(1970, 1, 1, 0, 0, 0);
-      expect(DateTimeUtil.getUtcMillisFromEpoch(epoch), equals(0.0));
+      expect(CraftDateTimeUtil.getUtcMillisFromEpoch(epoch), equals(0.0));
 
       final later = DateTime.utc(1970, 1, 1, 0, 0, 1);
-      expect(DateTimeUtil.getUtcMillisFromEpoch(later), equals(1000.0));
+      expect(CraftDateTimeUtil.getUtcMillisFromEpoch(later), equals(1000.0));
     });
 
     test('getRelativeTime returns milliseconds', () {
       final date = DateTime.utc(1970, 1, 1, 0, 1, 0);
-      expect(DateTimeUtil.getRelativeTime(date), equals(60000));
+      expect(CraftDateTimeUtil.getRelativeTime(date), equals(60000));
     });
 
     test('createDateTime creates correct date', () {
-      final date = DateTimeUtil.createDateTime(2024, 12, 25, 10, 30, 0);
+      final date = CraftDateTimeUtil.createDateTime(2024, 12, 25, 10, 30, 0);
       expect(date.year, equals(2024));
       expect(date.month, equals(12));
       expect(date.day, equals(25));
@@ -61,17 +61,18 @@ void main() {
 
     test('createUtcDateTime uses 0-indexed months', () {
       // Month 0 = January
-      final date = DateTimeUtil.createUtcDateTime(2024, 0, 15, 12, 0, 0);
+      final date = CraftDateTimeUtil.createUtcDateTime(2024, 0, 15, 12, 0, 0);
       expect(date.month, equals(1));
     });
 
     test('formatWithDefaultPattern formats correctly', () {
       final date = DateTime(2024, 3, 15);
-      expect(DateTimeUtil.formatWithDefaultPattern(date), equals('2024-03-15'));
+      expect(CraftDateTimeUtil.formatWithDefaultPattern(date),
+          equals('2024-03-15'));
     });
 
     test('parseWithDefaultPattern parses correctly', () {
-      final date = DateTimeUtil.parseWithDefaultPattern('2024-03-15');
+      final date = CraftDateTimeUtil.parseWithDefaultPattern('2024-03-15');
       expect(date.year, equals(2024));
       expect(date.month, equals(3));
       expect(date.day, equals(15));
@@ -79,7 +80,7 @@ void main() {
 
     test('addMillisToDate adds time', () {
       final date = DateTime(2024, 1, 1, 0, 0, 0);
-      final result = DateTimeUtil.addMillisToDate(date, 3600000);
+      final result = CraftDateTimeUtil.addMillisToDate(date, 3600000);
       expect(result.hour, equals(1));
     });
 
@@ -87,12 +88,12 @@ void main() {
       final past = DateTime(2000, 1, 1);
       final future = DateTime(2100, 1, 1);
 
-      expect(DateTimeUtil.isInPast(past), isTrue);
-      expect(DateTimeUtil.isInPast(future), isFalse);
+      expect(CraftDateTimeUtil.isInPast(past), isTrue);
+      expect(CraftDateTimeUtil.isInPast(future), isFalse);
     });
 
     test('getTimeFromMillis converts from epoch', () {
-      final date = DateTimeUtil.getTimeFromMillis(86400000);
+      final date = CraftDateTimeUtil.getTimeFromMillis(86400000);
       expect(date.day, equals(2));
       expect(date.month, equals(1));
       expect(date.year, equals(1970));
@@ -116,94 +117,94 @@ void main() {
   group('StringUtil', () {
     test('replaceAll with regex', () {
       expect(
-        StringUtil.replaceAll('hello world', r'\s+', '-'),
+        CraftStringUtil.replaceAll('hello world', r'\s+', '-'),
         equals('hello-world'),
       );
     });
 
     test('split with single char', () {
-      final result = StringUtil.split('a,b,c', ',');
+      final result = CraftStringUtil.split('a,b,c', ',');
       expect(result, equals(['a', 'b', 'c']));
     });
 
     test('split with regex pattern', () {
-      final result = StringUtil.split('a  b   c', r'\s+');
+      final result = CraftStringUtil.split('a  b   c', r'\s+');
       expect(result, equals(['a', 'b', 'c']));
     });
 
     test('isNullOrEmpty checks correctly', () {
-      expect(StringUtil.isNullOrEmpty(null), isTrue);
-      expect(StringUtil.isNullOrEmpty(''), isTrue);
-      expect(StringUtil.isNullOrEmpty('hello'), isFalse);
+      expect(CraftStringUtil.isNullOrEmpty(null), isTrue);
+      expect(CraftStringUtil.isNullOrEmpty(''), isTrue);
+      expect(CraftStringUtil.isNullOrEmpty('hello'), isFalse);
     });
 
     test('isNullOrWhitespace checks correctly', () {
-      expect(StringUtil.isNullOrWhitespace(null), isTrue);
-      expect(StringUtil.isNullOrWhitespace(''), isTrue);
-      expect(StringUtil.isNullOrWhitespace('   '), isTrue);
-      expect(StringUtil.isNullOrWhitespace('hello'), isFalse);
+      expect(CraftStringUtil.isNullOrWhitespace(null), isTrue);
+      expect(CraftStringUtil.isNullOrWhitespace(''), isTrue);
+      expect(CraftStringUtil.isNullOrWhitespace('   '), isTrue);
+      expect(CraftStringUtil.isNullOrWhitespace('hello'), isFalse);
     });
   });
 
-  group('JavaCollectionsUtil', () {
+  group('CollectionUtils', () {
     test('emptyList returns empty list', () {
-      final list = JavaCollectionsUtil.emptyList<int>();
+      final list = CollectionUtils.emptyList<int>();
       expect(list, isEmpty);
     });
 
     test('singletonList returns single item', () {
-      final list = JavaCollectionsUtil.singletonList(42);
+      final list = CollectionUtils.singletonList(42);
       expect(list, equals([42]));
     });
 
     test('singletonMap returns single entry', () {
-      final map = JavaCollectionsUtil.singletonMap('key', 'value');
+      final map = CollectionUtils.singletonMap('key', 'value');
       expect(map, equals({'key': 'value'}));
     });
 
     test('reverse reverses list in place', () {
       final list = [1, 2, 3, 4, 5];
-      JavaCollectionsUtil.reverse(list);
+      CollectionUtils.reverse(list);
       expect(list, equals([5, 4, 3, 2, 1]));
     });
 
     test('sort sorts list in place', () {
       final list = [3, 1, 4, 1, 5, 9];
-      JavaCollectionsUtil.sort(list);
+      CollectionUtils.sort(list);
       expect(list, equals([1, 1, 3, 4, 5, 9]));
     });
 
     test('sort with comparator', () {
       final list = [3, 1, 4, 1, 5, 9];
-      JavaCollectionsUtil.sort(list, (a, b) => b.compareTo(a));
+      CollectionUtils.sort(list, (a, b) => b.compareTo(a));
       expect(list, equals([9, 5, 4, 3, 1, 1]));
     });
 
     test('frequency counts occurrences', () {
-      expect(JavaCollectionsUtil.frequency([1, 2, 1, 3, 1], 1), equals(3));
-      expect(JavaCollectionsUtil.frequency([1, 2, 1, 3, 1], 4), equals(0));
+      expect(CollectionUtils.frequency([1, 2, 1, 3, 1], 1), equals(3));
+      expect(CollectionUtils.frequency([1, 2, 1, 3, 1], 4), equals(0));
     });
 
     test('binarySearch finds element', () {
       final list = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
-      expect(JavaCollectionsUtil.binarySearch(list, 'c'), equals(2));
-      expect(JavaCollectionsUtil.binarySearch(list, 'a'), equals(0));
+      expect(CollectionUtils.binarySearch(list, 'c'), equals(2));
+      expect(CollectionUtils.binarySearch(list, 'a'), equals(0));
     });
 
     test('binarySearch returns negative for missing', () {
       final list = ['a', 'c', 'e', 'g'];
-      expect(JavaCollectionsUtil.binarySearch(list, 'b'), lessThan(0));
+      expect(CollectionUtils.binarySearch(list, 'b'), lessThan(0));
     });
 
     test('fill fills list', () {
       final list = [1, 2, 3, 4, 5];
-      JavaCollectionsUtil.fill(list, 0);
+      CollectionUtils.fill(list, 0);
       expect(list, equals([0, 0, 0, 0, 0]));
     });
 
     test('replaceAll replaces values', () {
       final list = [1, 2, 1, 3, 1];
-      final result = JavaCollectionsUtil.replaceAll(list, 1, 9);
+      final result = CollectionUtils.replaceAll(list, 1, 9);
       expect(result, isTrue);
       expect(list, equals([9, 2, 9, 3, 9]));
     });

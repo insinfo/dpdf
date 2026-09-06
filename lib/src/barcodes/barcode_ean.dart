@@ -9,12 +9,8 @@ import '../kernel/exceptions/pdf_exception.dart';
 
 import 'barcode_1d.dart';
 
-/// The implementation of the barcode EAN.
-///
-/// The International Article Number (also known as European Article Number or EAN) is a standard describing a barcode
-/// symbology and numbering system used in global trade to identify a specific retail product type, in a specific
-/// packaging configuration, from a specific manufacturer
-class BarcodeEAN extends Barcode1D {
+/// EAN and UPC retail symbols, including two- and five-digit supplements.
+class CraftBarcodeEAN extends CraftBarcode1D {
   /// A type of barcode
   static const int EAN13 = 1;
 
@@ -161,21 +157,18 @@ class BarcodeEAN extends Barcode1D {
     [EVEN, ODD, ODD, EVEN, ODD, EVEN]
   ];
 
-  /// Creates new [BarcodeEAN].
-  ///
-  /// To generate the font the [PdfDocument.getDefaultFont] will be implicitly called.
-  /// If you want to use this barcode in PDF/A documents, please consider using
-  /// [BarcodeEAN](PdfDocument document, PdfFont font).
-  factory BarcodeEAN(PdfDocument document, [PdfFont? font]) {
-    final resolvedFont = font ?? document.getDefaultFont();
+  /// Uses the supplied typeface or the document's configured default.
+  factory CraftBarcodeEAN(CraftPdfDocument document, [CraftPdfFont? font]) {
+    final resolvedFont = font ?? document.defaultTypeface();
     if (resolvedFont == null) {
-      throw PdfException(
+      throw CraftPdfException(
           'Could not create default font for barcode. Please provide a font explicitly.');
     }
-    return BarcodeEAN._internal(document, resolvedFont);
+    return CraftBarcodeEAN._internal(document, resolvedFont);
   }
 
-  BarcodeEAN._internal(PdfDocument document, PdfFont font) : super(document) {
+  CraftBarcodeEAN._internal(CraftPdfDocument document, CraftPdfFont font)
+      : super(document) {
     this.x = 0.8;
     this.font = font;
     this.size = 8;
@@ -186,506 +179,214 @@ class BarcodeEAN extends Barcode1D {
     this.code = "";
   }
 
-  /// Calculates the EAN parity character.
+  static List<int> _digits(String text, [int? length]) {
+    if (length != null && text.length != length) {
+      throw FormatException('Retail symbol requires $length digits');
+    }
+    final digits = text.codeUnits.map((unit) => unit - 48).toList();
+    if (digits.any((digit) => digit < 0 || digit > 9)) {
+      throw const FormatException('Retail symbol contains a nondigit');
+    }
+    return digits;
+  }
+
+  /// Computes the modulo-ten digit for the preceding payload.
   static int calculateEANParity(String code) {
-    int mul = 3;
-    int total = 0;
-    for (int k = code.length - 1; k >= 0; --k) {
-      int n = code.codeUnitAt(k) - 48; // '0'
-      total += mul * n;
-      mul ^= 2;
+    final digits = _digits(code).reversed.toList();
+    var sum = 0;
+    for (var index = 0; index < digits.length; index++) {
+      sum += digits[index] * (index.isEven ? 3 : 1);
     }
-    return (10 - (total % 10)) % 10;
+    return (-sum) % 10;
   }
 
-  /// Converts an UPCA code into an UPCE code.
-  ///
-  /// If the code can not be converted a [null] is returned.
+  /// Compresses a twelve-digit UPC-A when its zero runs permit UPC-E.
   static String? convertUPCAtoUPCE(String text) {
-    if (text.length != 12 || !(text.startsWith("0") || text.startsWith("1"))) {
+    if (text.length != 12 || !RegExp(r'^[01][0-9]{11}$').hasMatch(text))
       return null;
+    final manufacturer = text.substring(1, 6);
+    final product = text.substring(6, 11);
+    String? payload;
+    if (manufacturer.endsWith('00') &&
+        int.parse(manufacturer[2]) <= 2 &&
+        product.startsWith('00')) {
+      payload =
+          manufacturer.substring(0, 2) + product.substring(2) + manufacturer[2];
+    } else if (manufacturer.endsWith('00') &&
+        int.parse(manufacturer[2]) >= 3 &&
+        product.startsWith('000')) {
+      payload = manufacturer.substring(0, 3) + product.substring(3) + '3';
+    } else if (manufacturer.endsWith('0') &&
+        manufacturer[3] != '0' &&
+        product.startsWith('0000')) {
+      payload = manufacturer.substring(0, 4) + product[4] + '4';
+    } else if (manufacturer[4] != '0' &&
+        product.startsWith('0000') &&
+        int.parse(product[4]) >= 5) {
+      payload = manufacturer + product[4];
     }
-    if (text.substring(3, 6) == "000" ||
-        text.substring(3, 6) == "100" ||
-        text.substring(3, 6) == "200") {
-      if (text.substring(6, 8) == "00") {
-        return text.substring(0, 1) +
-            text.substring(1, 3) +
-            text.substring(8, 11) +
-            text.substring(3, 4) +
-            text.substring(11);
-      }
-    } else {
-      if (text.substring(4, 6) == "00") {
-        if (text.substring(6, 9) == "000") {
-          return text.substring(0, 1) +
-              text.substring(1, 4) +
-              text.substring(9, 11) +
-              "3" +
-              text.substring(11);
-        }
-      } else {
-        if (text.substring(5, 6) == "0") {
-          if (text.substring(6, 10) == "0000") {
-            return text.substring(0, 1) +
-                text.substring(1, 5) +
-                text.substring(10, 11) +
-                "4" +
-                text.substring(11);
-          }
-        } else {
-          if (text.codeUnitAt(10) >= 53) {
-            // '5'
-            if (text.substring(6, 10) == "0000") {
-              return text.substring(0, 1) +
-                  text.substring(1, 6) +
-                  text.substring(10, 11) +
-                  text.substring(11);
-            }
-          }
-        }
-      }
-    }
-    return null;
+    return payload == null ? null : text[0] + payload + text[11];
   }
 
-  /// Creates the bars for the barcode EAN13 and UPCA.
-  static Uint8List getBarsEAN13(String _code) {
-    List<int> code = List<int>.filled(_code.length, 0);
-    for (int k = 0; k < code.length; ++k) {
-      code[k] = _code.codeUnitAt(k) - 48; // '0'
-    }
-    Uint8List bars = Uint8List(TOTALBARS_EAN13);
-    int pb = 0;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    List<int> sequence = PARITY13[code[0]];
-    for (int k = 0; k < sequence.length; ++k) {
-      int c = code[k + 1];
-      List<int> stripes = BARS[c];
-      if (sequence[k] == ODD) {
-        bars[pb++] = stripes[0];
-        bars[pb++] = stripes[1];
-        bars[pb++] = stripes[2];
-        bars[pb++] = stripes[3];
-      } else {
-        bars[pb++] = stripes[3];
-        bars[pb++] = stripes[2];
-        bars[pb++] = stripes[1];
-        bars[pb++] = stripes[0];
-      }
-    }
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    for (int k = 7; k < 13; ++k) {
-      int c = code[k];
-      List<int> stripes = BARS[c];
-      bars[pb++] = stripes[0];
-      bars[pb++] = stripes[1];
-      bars[pb++] = stripes[2];
-      bars[pb++] = stripes[3];
-    }
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    return bars;
+  static Iterable<int> _segment(int digit, int parity) =>
+      parity == EVEN ? BARS[digit].reversed : BARS[digit];
+
+  static Uint8List _retail(List<int> left, List<int> right, List<int> parity) =>
+      Uint8List.fromList([
+        1,
+        1,
+        1,
+        for (var index = 0; index < left.length; index++)
+          ..._segment(left[index], parity[index]),
+        1,
+        1,
+        1,
+        1,
+        1,
+        for (final digit in right) ...BARS[digit],
+        1,
+        1,
+        1,
+      ]);
+
+  /// Alternating dark/light run widths, starting with a dark guard.
+  static Uint8List getBarsEAN13(String code) {
+    final digits = _digits(code, 13);
+    return _retail(
+        digits.sublist(1, 7), digits.sublist(7), PARITY13[digits.first]);
   }
 
-  /// Creates the bars for the barcode EAN8.
-  static Uint8List getBarsEAN8(String _code) {
-    List<int> code = List<int>.filled(_code.length, 0);
-    for (int k = 0; k < code.length; ++k) {
-      code[k] = _code.codeUnitAt(k) - 48;
-    }
-    Uint8List bars = Uint8List(TOTALBARS_EAN8);
-    int pb = 0;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    for (int k = 0; k < 4; ++k) {
-      int c = code[k];
-      List<int> stripes = BARS[c];
-      bars[pb++] = stripes[0];
-      bars[pb++] = stripes[1];
-      bars[pb++] = stripes[2];
-      bars[pb++] = stripes[3];
-    }
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    for (int k = 4; k < 8; ++k) {
-      int c = code[k];
-      List<int> stripes = BARS[c];
-      bars[pb++] = stripes[0];
-      bars[pb++] = stripes[1];
-      bars[pb++] = stripes[2];
-      bars[pb++] = stripes[3];
-    }
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    return bars;
+  static Uint8List getBarsEAN8(String code) {
+    final digits = _digits(code, 8);
+    return _retail(
+        digits.sublist(0, 4), digits.sublist(4), [ODD, ODD, ODD, ODD]);
   }
 
-  /// Creates the bars for the barcode UPCE.
-  static Uint8List getBarsUPCE(String _code) {
-    List<int> code = List<int>.filled(_code.length, 0);
-    for (int k = 0; k < code.length; ++k) {
-      code[k] = _code.codeUnitAt(k) - 48;
-    }
-    Uint8List bars = Uint8List(TOTALBARS_UPCE);
-    bool flip = (code[0] != 0);
-    int pb = 0;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    List<int> sequence = PARITYE[code[code.length - 1]];
-    for (int k = 1; k < code.length - 1; ++k) {
-      int c = code[k];
-      List<int> stripes = BARS[c];
-      if (sequence[k - 1] == (flip ? EVEN : ODD)) {
-        bars[pb++] = stripes[0];
-        bars[pb++] = stripes[1];
-        bars[pb++] = stripes[2];
-        bars[pb++] = stripes[3];
-      } else {
-        bars[pb++] = stripes[3];
-        bars[pb++] = stripes[2];
-        bars[pb++] = stripes[1];
-        bars[pb++] = stripes[0];
-      }
-    }
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    return bars;
+  static Uint8List getBarsUPCE(String code) {
+    final digits = _digits(code, 8);
+    if (digits.first > 1)
+      throw const FormatException('UPC-E number system must be zero or one');
+    final parity = PARITYE[digits.last];
+    return Uint8List.fromList([
+      1,
+      1,
+      1,
+      for (var index = 0; index < 6; index++)
+        ..._segment(digits[index + 1], parity[index] ^ digits.first),
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+    ]);
   }
 
-  /// Creates the bars for the barcode supplemental 2.
-  static Uint8List getBarsSupplemental2(String _code) {
-    List<int> code = List<int>.filled(2, 0);
-    for (int k = 0; k < code.length; ++k) {
-      code[k] = _code.codeUnitAt(k) - 48;
-    }
-    Uint8List bars = Uint8List(TOTALBARS_SUPP2);
-    int pb = 0;
-    int parity = (code[0] * 10 + code[1]) % 4;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 2;
-    List<int> sequence = PARITY2[parity];
-    for (int k = 0; k < sequence.length; ++k) {
-      if (k == 1) {
-        bars[pb++] = 1;
-        bars[pb++] = 1;
-      }
-      int c = code[k];
-      List<int> stripes = BARS[c];
-      if (sequence[k] == ODD) {
-        bars[pb++] = stripes[0];
-        bars[pb++] = stripes[1];
-        bars[pb++] = stripes[2];
-        bars[pb++] = stripes[3];
-      } else {
-        bars[pb++] = stripes[3];
-        bars[pb++] = stripes[2];
-        bars[pb++] = stripes[1];
-        bars[pb++] = stripes[0];
-      }
-    }
-    return bars;
+  static Uint8List _supplement(List<int> digits, List<int> parity) =>
+      Uint8List.fromList([
+        1,
+        1,
+        2,
+        for (var index = 0; index < digits.length; index++) ...[
+          if (index > 0) ...[1, 1],
+          ..._segment(digits[index], parity[index]),
+        ],
+      ]);
+
+  static Uint8List getBarsSupplemental2(String code) {
+    final digits = _digits(code, 2);
+    return _supplement(digits, PARITY2[int.parse(code) % 4]);
   }
 
-  /// Creates the bars for the barcode supplemental 5.
-  static Uint8List getBarsSupplemental5(String _code) {
-    List<int> code = List<int>.filled(5, 0);
-    for (int k = 0; k < code.length; ++k) {
-      code[k] = _code.codeUnitAt(k) - 48;
+  static Uint8List getBarsSupplemental5(String code) {
+    final digits = _digits(code, 5);
+    var check = 0;
+    for (var index = 0; index < digits.length; index++) {
+      check += digits[index] * (index.isEven ? 3 : 9);
     }
-    Uint8List bars = Uint8List(TOTALBARS_SUPP5);
-    int pb = 0;
-    int parity =
-        (((code[0] + code[2] + code[4]) * 3) + ((code[1] + code[3]) * 9)) % 10;
-    bars[pb++] = 1;
-    bars[pb++] = 1;
-    bars[pb++] = 2;
-    List<int> sequence = PARITY5[parity];
-    for (int k = 0; k < sequence.length; ++k) {
-      if (k != 0) {
-        bars[pb++] = 1;
-        bars[pb++] = 1;
-      }
-      int c = code[k];
-      List<int> stripes = BARS[c];
-      if (sequence[k] == ODD) {
-        bars[pb++] = stripes[0];
-        bars[pb++] = stripes[1];
-        bars[pb++] = stripes[2];
-        bars[pb++] = stripes[3];
-      } else {
-        bars[pb++] = stripes[3];
-        bars[pb++] = stripes[2];
-        bars[pb++] = stripes[1];
-        bars[pb++] = stripes[0];
-      }
-    }
-    return bars;
+    return _supplement(digits, PARITY5[check % 10]);
+  }
+
+  (Uint8List, List<int>) _pattern() => switch (codeType) {
+        EAN13 => (getBarsEAN13(code), GUARD_EAN13),
+        EAN8 => (getBarsEAN8(code), GUARD_EAN8),
+        UPCA => (getBarsEAN13('0$code'), GUARD_UPCA),
+        UPCE => (getBarsUPCE(code), GUARD_UPCE),
+        SUPP2 => (getBarsSupplemental2(code), GUARD_EMPTY),
+        SUPP5 => (getBarsSupplemental5(code), GUARD_EMPTY),
+        _ => throw CraftPdfException(
+            'Retail symbol type $codeType is not supported'),
+      };
+
+  bool get _outsideFirst =>
+      codeType == EAN13 || codeType == UPCA || codeType == UPCE;
+  bool get _outsideLast => codeType == UPCA || codeType == UPCE;
+  double _digitWidth(int index) => font?.getWidthPoint(code[index], size) ?? 0;
+  double get _leftTextWidth => _outsideFirst ? _digitWidth(0) : 0;
+
+  @override
+  CraftRectangle getBarcodeSize() {
+    final (runs, _) = _pattern();
+    final moduleCount = runs.fold<int>(0, (sum, run) => sum + run);
+    final textHeight = font == null
+        ? 0.0
+        : baseline > 0
+            ? baseline - getDescender()
+            : size - baseline;
+    final extraRight = _outsideLast ? _digitWidth(code.length - 1) : 0.0;
+    return CraftRectangle(0, 0, moduleCount * x + _leftTextWidth + extraRight,
+        barHeight + textHeight);
   }
 
   @override
-  Rectangle getBarcodeSize() {
-    double width = 0;
-    double height = barHeight;
-    if (font != null) {
-      if (baseline <= 0) {
-        height += -baseline + size;
-      } else {
-        height += baseline - getDescender();
+  Future<CraftRectangle> placeBarcode(CraftPdfCanvas canvas,
+      CraftColor? barColor, CraftColor? textColor) async {
+    final bounds = getBarcodeSize();
+    final (runs, guards) = _pattern();
+    final textY = font == null
+        ? 0.0
+        : baseline > 0
+            ? -getDescender()
+            : barHeight - baseline;
+    final barY = font != null && baseline > 0 ? textY + baseline : 0.0;
+    final extension =
+        font != null && baseline > 0 && guardBars ? baseline / 2 : 0.0;
+    final left = _leftTextWidth;
+    var cursor = left;
+    if (barColor != null) canvas.setFillColor(barColor);
+    for (var index = 0; index < runs.length; index++) {
+      final width = runs[index] * x;
+      if (index.isEven) {
+        final descent = guards.contains(index) ? extension : 0.0;
+        canvas.rectangle(
+            cursor, barY - descent, width - inkSpreading, barHeight + descent);
       }
-    }
-    switch (codeType) {
-      case EAN13:
-        {
-          width = x * (11 + 12 * 7);
-          if (font != null) {
-            width += font!.getWidthPoint(code.substring(0, 1), size);
-          }
-          break;
-        }
-
-      case EAN8:
-        {
-          width = x * (11 + 8 * 7);
-          break;
-        }
-
-      case UPCA:
-        {
-          width = x * (11 + 12 * 7);
-          if (font != null) {
-            width += font!.getWidthPoint(code.substring(0, 1), size) +
-                font!.getWidthPoint(code.substring(11, 12), size);
-          }
-          break;
-        }
-
-      case UPCE:
-        {
-          width = x * (9 + 6 * 7);
-          if (font != null) {
-            width += font!.getWidthPoint(code.substring(0, 1), size) +
-                font!.getWidthPoint(code.substring(7, 8), size);
-          }
-          break;
-        }
-
-      case SUPP2:
-        {
-          width = x * (6 + 2 * 7);
-          break;
-        }
-
-      case SUPP5:
-        {
-          width = x * (4 + 5 * 7 + 4 * 2);
-          break;
-        }
-
-      default:
-        {
-          throw PdfException("Invalid code type");
-        }
-    }
-    return Rectangle(0, 0, width, height);
-  }
-
-  @override
-  Future<Rectangle> placeBarcode(
-      PdfCanvas canvas, Color? barColor, Color? textColor) async {
-    Rectangle rect = getBarcodeSize();
-    double barStartX = 0;
-    double barStartY = 0;
-    double textStartY = 0;
-    if (font != null) {
-      if (baseline <= 0) {
-        textStartY = barHeight - baseline;
-      } else {
-        textStartY = -getDescender();
-        barStartY = textStartY + baseline;
-      }
-    }
-    switch (codeType) {
-      case EAN13:
-      case UPCA:
-      case UPCE:
-        {
-          if (font != null) {
-            barStartX += font!.getWidthPoint(code.substring(0, 1), size);
-          }
-          break;
-        }
-    }
-    Uint8List bars;
-    List<int> guard = GUARD_EMPTY;
-    switch (codeType) {
-      case EAN13:
-        {
-          bars = getBarsEAN13(code);
-          guard = GUARD_EAN13;
-          break;
-        }
-
-      case EAN8:
-        {
-          bars = getBarsEAN8(code);
-          guard = GUARD_EAN8;
-          break;
-        }
-
-      case UPCA:
-        {
-          bars = getBarsEAN13("0" + code);
-          guard = GUARD_UPCA;
-          break;
-        }
-
-      case UPCE:
-        {
-          bars = getBarsUPCE(code);
-          guard = GUARD_UPCE;
-          break;
-        }
-
-      case SUPP2:
-        {
-          bars = getBarsSupplemental2(code);
-          break;
-        }
-
-      case SUPP5:
-        {
-          bars = getBarsSupplemental5(code);
-          break;
-        }
-
-      default:
-        {
-          throw PdfException("Invalid code type");
-        }
-    }
-    double keepBarX = barStartX;
-    bool print = true;
-    double gd = 0;
-    if (font != null && baseline > 0 && guardBars) {
-      gd = baseline / 2;
-    }
-    if (barColor != null) {
-      canvas.setFillColor(barColor);
-    }
-    for (int k = 0; k < bars.length; ++k) {
-      double w = bars[k] * x;
-      if (print) {
-        if (guard.contains(k)) {
-          canvas.rectangle(
-              barStartX, barStartY - gd, w - inkSpreading, barHeight + gd);
-        } else {
-          canvas.rectangle(barStartX, barStartY, w - inkSpreading, barHeight);
-        }
-      }
-      print = !print;
-      barStartX += w;
+      cursor += width;
     }
     canvas.fill();
-    if (font != null) {
-      if (textColor != null) {
-        canvas.setFillColor(textColor);
+    if (font == null) return bounds;
+    if (textColor != null) canvas.setFillColor(textColor);
+    canvas.beginText();
+    await canvas.setFontAndSize(font!, size);
+    for (var index = 0; index < code.length; index++) {
+      double position;
+      if (_outsideFirst && index == 0) {
+        position = 0;
+      } else if (_outsideLast && index == code.length - 1) {
+        position = cursor;
+      } else {
+        final center = switch (codeType) {
+          EAN13 || UPCE => TEXTPOS_EAN13[index - 1],
+          UPCA => TEXTPOS_EAN13[index],
+          EAN8 => TEXTPOS_EAN8[index],
+          _ => 7.5 + index * 9,
+        };
+        position = left + center * x - _digitWidth(index) / 2;
       }
-      canvas.beginText();
-      await canvas.setFontAndSize(font!, size);
-      switch (codeType) {
-        case EAN13:
-          {
-            canvas.setTextMatrixSimple(0, textStartY);
-            canvas.showText(code.substring(0, 1));
-            for (int k = 1; k < 13; ++k) {
-              String c = code.substring(k, k + 1);
-              double len = font!.getWidthPoint(c, size);
-              double pX = keepBarX + TEXTPOS_EAN13[k - 1] * x - len / 2;
-              canvas.setTextMatrixSimple(pX, textStartY);
-              canvas.showText(c);
-            }
-            break;
-          }
-
-        case EAN8:
-          {
-            for (int k = 0; k < 8; ++k) {
-              String c = code.substring(k, k + 1);
-              double len = font!.getWidthPoint(c, size);
-              double pX = TEXTPOS_EAN8[k] * x - len / 2;
-              canvas.setTextMatrixSimple(pX, textStartY);
-              canvas.showText(c);
-            }
-            break;
-          }
-
-        case UPCA:
-          {
-            canvas.setTextMatrixSimple(0, textStartY);
-            canvas.showText(code.substring(0, 1));
-            for (int k = 1; k < 11; ++k) {
-              String c = code.substring(k, k + 1);
-              double len = font!.getWidthPoint(c, size);
-              double pX = keepBarX + TEXTPOS_EAN13[k] * x - len / 2;
-              canvas.setTextMatrixSimple(pX, textStartY);
-              canvas.showText(c);
-            }
-            canvas.setTextMatrixSimple(
-                keepBarX + x * (11 + 12 * 7), textStartY);
-            canvas.showText(code.substring(11, 12));
-            break;
-          }
-
-        case UPCE:
-          {
-            canvas.setTextMatrixSimple(0, textStartY);
-            canvas.showText(code.substring(0, 1));
-            for (int k = 1; k < 7; ++k) {
-              String c = code.substring(k, k + 1);
-              double len = font!.getWidthPoint(c, size);
-              double pX = keepBarX + TEXTPOS_EAN13[k - 1] * x - len / 2;
-              canvas.setTextMatrixSimple(pX, textStartY);
-              canvas.showText(c);
-            }
-            canvas.setTextMatrixSimple(keepBarX + x * (9 + 6 * 7), textStartY);
-            canvas.showText(code.substring(7, 8));
-            break;
-          }
-
-        case SUPP2:
-        case SUPP5:
-          {
-            for (int k = 0; k < code.length; ++k) {
-              String c = code.substring(k, k + 1);
-              double len = font!.getWidthPoint(c, size);
-              double pX = (7.5 + (9 * k)) * x - len / 2;
-              canvas.setTextMatrixSimple(pX, textStartY);
-              canvas.showText(c);
-            }
-            break;
-          }
-      }
-      canvas.endText();
+      canvas.setTextMatrixSimple(position, textY);
+      canvas.showText(code[index]);
     }
-    return rect;
+    canvas.endText();
+    return bounds;
   }
 }

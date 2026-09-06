@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-abstract class IExtraEncoding {
+abstract class CraftExtraEncoding {
   Uint8List charToByte(String text, String encoding);
   Uint8List charToByteChar(int char1, String encoding);
   String? byteToChar(Uint8List b, String encoding);
 }
 
-class PdfEncodings {
+class CraftPdfEncodings {
   static const String IDENTITY_H = "Identity-H";
   static const String IDENTITY_V = "Identity-V";
   static const String CP1250 = "Windows-1250";
@@ -24,6 +24,71 @@ class PdfEncodings {
   static const String UTF8 = "UTF-8";
 
   static const String EMPTY_STRING = "";
+
+  // Character assignments from ISO 32000-1:2008, Annex D, Table D.2.
+  // Undefined entries (including controls marked U) decode as U+FFFD.
+  static final List<int> _documentCharacters = _buildDocumentCharacters();
+  static final Map<int, int> _documentBytes = {
+    for (var byte = 0; byte < 256; byte++)
+      if (_documentCharacters[byte] != 0xfffd) _documentCharacters[byte]: byte,
+  };
+
+  static List<int> _buildDocumentCharacters() {
+    final characters = List<int>.filled(256, 0xfffd);
+    for (final byte in [9, 10, 13]) {
+      characters[byte] = byte;
+    }
+    for (var byte = 0x20; byte <= 0xff; byte++) {
+      if (byte < 0x7f || (byte > 0xa0 && byte != 0xad)) {
+        characters[byte] = byte;
+      }
+    }
+    characters.setRange(0x18, 0x20, const [
+      0x02d8,
+      0x02c7,
+      0x02c6,
+      0x02d9,
+      0x02dd,
+      0x02db,
+      0x02da,
+      0x02dc,
+    ]);
+    characters.setRange(0x80, 0x9f, const [
+      0x2022,
+      0x2020,
+      0x2021,
+      0x2026,
+      0x2014,
+      0x2013,
+      0x0192,
+      0x2044,
+      0x2039,
+      0x203a,
+      0x2212,
+      0x2030,
+      0x201e,
+      0x201c,
+      0x201d,
+      0x2018,
+      0x2019,
+      0x201a,
+      0x2122,
+      0xfb01,
+      0xfb02,
+      0x0141,
+      0x0152,
+      0x0160,
+      0x0178,
+      0x017d,
+      0x0131,
+      0x0142,
+      0x0153,
+      0x0161,
+      0x017e,
+    ]);
+    characters[0xa0] = 0x20ac;
+    return List<int>.unmodifiable(characters);
+  }
 
   static final List<int> winansiByteToChar = [
     0,
@@ -544,7 +609,7 @@ class PdfEncodings {
   ];
 
   static final Map<int, int> winansi = {};
-  static final Map<String, IExtraEncoding> extraEncodings = {};
+  static final Map<String, CraftExtraEncoding> extraEncodings = {};
 
   static void init() {
     if (winansi.isNotEmpty) return;
@@ -563,6 +628,19 @@ class PdfEncodings {
     init();
 
     var normalizedEncoding = encoding.toLowerCase();
+    if (normalizedEncoding == 'pdf') {
+      final result = BytesBuilder(copy: false);
+      for (final character in text.runes) {
+        final byte = _documentBytes[character];
+        if (byte == null) {
+          throw FormatException(
+            'PDFDocEncoding cannot represent U+${character.toRadixString(16).toUpperCase()}.',
+          );
+        }
+        result.addByte(byte);
+      }
+      return result.takeBytes();
+    }
     var extra = extraEncodings[normalizedEncoding];
     if (extra != null) {
       return extra.charToByte(text, encoding);
@@ -612,6 +690,10 @@ class PdfEncodings {
   }
 
   static String convertToString(Uint8List bytes, String? encoding) {
+    if (encoding?.toLowerCase() == 'pdf') {
+      return String.fromCharCodes(
+          bytes.map((byte) => _documentCharacters[byte]));
+    }
     if (encoding == null || encoding.isEmpty) {
       return String.fromCharCodes(bytes);
     }

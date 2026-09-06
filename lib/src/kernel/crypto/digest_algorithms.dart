@@ -1,10 +1,10 @@
-import 'package:dpdf/src/commons/digest/i_message_digest.dart';
-import 'package:dpdf/src/commons/digest/pointy_castle_digest.dart';
-import 'package:dpdf/src/kernel/crypto/oid.dart';
+import 'package:pdfcraft/src/commons/digest/message_digest.dart';
+import 'package:pdfcraft/src/commons/digest/sdk_message_digest.dart';
+import 'package:pdfcraft/src/kernel/crypto/oid.dart';
 
-/// Class that contains a map with the different message digest algorithms.
-class DigestAlgorithms {
-  DigestAlgorithms._();
+/// Digest algorithm identifier registry.
+class CraftDigestAlgorithms {
+  CraftDigestAlgorithms._();
 
   static const String sha1 = "SHA-1";
   static const String sha256 = "SHA-256";
@@ -20,10 +20,10 @@ class DigestAlgorithms {
     "1.2.840.113549.2.5": "MD5",
     "1.2.840.113549.2.2": "MD2",
     "1.3.14.3.2.26": "SHA1",
-    OID.sha224: "SHA224",
-    OID.sha256: "SHA256",
-    OID.sha384: "SHA384",
-    OID.sha512: "SHA512",
+    CraftOID.sha224: "SHA224",
+    CraftOID.sha256: "SHA256",
+    CraftOID.sha384: "SHA384",
+    CraftOID.sha512: "SHA512",
     "1.3.36.3.2.2": "RIPEMD128",
     "1.3.36.3.2.1": "RIPEMD160",
     "1.3.36.3.2.3": "RIPEMD256",
@@ -43,59 +43,43 @@ class DigestAlgorithms {
     "1.3.36.3.3.1.2": "RIPEMD160",
     "1.3.36.3.3.1.4": "RIPEMD256",
     "1.2.643.2.2.9": "GOST3411",
-    OID.sha3_224: "SHA3-224",
-    OID.sha3_256: "SHA3-256",
-    OID.sha3_384: "SHA3-384",
-    OID.sha3_512: "SHA3-512",
-    OID.shake256: "SHAKE256",
+    CraftOID.sha3_224: "SHA3-224",
+    CraftOID.sha3_256: "SHA3-256",
+    CraftOID.sha3_384: "SHA3-384",
+    CraftOID.sha3_512: "SHA3-512",
+    CraftOID.shake256: "SHAKE256",
   };
 
-  static const Map<String, int> _bitLengths = {
-    "MD2": 128,
-    "MD-2": 128,
-    "MD5": 128,
-    "MD-5": 128,
-    "SHA1": 160,
-    "SHA-1": 160,
-    "SHA224": 224,
-    "SHA-224": 224,
-    "SHA256": 256,
-    "SHA-256": 256,
-    "SHA384": 384,
-    "SHA-384": 384,
-    "SHA512": 512,
-    "SHA-512": 512,
-    "RIPEMD128": 128,
-    "RIPEMD-128": 128,
-    "RIPEMD160": 160,
-    "RIPEMD-160": 160,
-    "RIPEMD256": 256,
-    "RIPEMD-256": 256,
-    "SHA3-224": 224,
-    "SHA3-256": 256,
-    "SHA3-384": 384,
-    "SHA3-512": 512,
-    "SHAKE256": 512,
+  // Names and output sizes describe the algorithms, independently of a backend.
+  static const _profiles = <String, (String, int)>{
+    'MD2': ('MD2', 128),
+    'MD5': ('MD5', 128),
+    'SHA1': ('SHA-1', 160),
+    'SHA224': ('SHA-224', 224),
+    'SHA256': ('SHA-256', 256),
+    'SHA384': ('SHA-384', 384),
+    'SHA512': ('SHA-512', 512),
+    'RIPEMD128': ('RIPEMD-128', 128),
+    'RIPEMD160': ('RIPEMD-160', 160),
+    'RIPEMD256': ('RIPEMD-256', 256),
+    'SHA3224': ('SHA3-224', 224),
+    'SHA3256': ('SHA3-256', 256),
+    'SHA3384': ('SHA3-384', 384),
+    'SHA3512': ('SHA3-512', 512),
+    'SHAKE128': ('SHAKE128', 256),
+    'SHAKE256': ('SHAKE256', 512),
   };
 
-  /// Creates a MessageDigest object that can be used to create a hash.
-  static IMessageDigest getMessageDigest(String hashAlgorithm) {
-    // PointyCastle algorithm names are slightly different or need normalization
-    var alg = hashAlgorithm.toUpperCase().replaceAll("-", "");
-    if (alg == "SHA1") alg = "SHA-1";
-    if (alg == "SHA224") alg = "SHA-224";
-    if (alg == "SHA256") alg = "SHA-256";
-    if (alg == "SHA384") alg = "SHA-384";
-    if (alg == "SHA512") alg = "SHA-512";
-    if (alg == "MD5") alg = "MD5";
-    if (alg == "MD2") alg = "MD2";
-    if (alg == "RIPEMD160") alg = "RIPEMD-160";
-    if (alg == "RIPEMD128") alg = "RIPEMD-128";
-    if (alg == "RIPEMD256") alg = "RIPEMD-256";
-    // SHA3 in PointyCastle might be "SHA-3/256" or similar, but let's stick to standard names if supported
-    // For now, we assume PointyCastleDigest handles standard names if we pass them correctly.
+  static String _key(String name) =>
+      name.toUpperCase().replaceAll(RegExp(r'[-/]'), '');
 
-    return PointyCastleDigest(alg);
+  static MessageDigest getMessageDigest(String hashAlgorithm) {
+    final profile = _profiles[_key(hashAlgorithm)];
+    if (profile == null) {
+      throw ArgumentError.value(hashAlgorithm, 'hashAlgorithm',
+          'No local implementation is registered for this digest.');
+    }
+    return SdkMessageDigest(profile.$1);
   }
 
   /// Gets the digest name for a certain id.
@@ -103,8 +87,8 @@ class DigestAlgorithms {
     return _digestNames[oid] ?? oid;
   }
 
-  /// Retrieve the output length in bits of the given digest algorithm.
+  /// Returns the digest output size, measured in bits.
   static int getOutputBitLength(String name) {
-    return _bitLengths[name.toUpperCase()] ?? 0;
+    return _profiles[_key(name)]?.$2 ?? 0;
   }
 }

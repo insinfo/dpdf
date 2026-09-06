@@ -1,5 +1,5 @@
-/// Container for CSS context properties that influence CSS resolution.
-abstract class AbstractCssContext {
+/// Context values used while resolving CSS properties.
+abstract class CraftAbstractCssContext {
   int _quotesDepth = 0;
 
   /// Gets the quotes depth.

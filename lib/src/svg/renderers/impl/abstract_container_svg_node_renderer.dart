@@ -1,9 +1,9 @@
-import 'package:dpdf/src/svg/renderers/impl/abstract_branch_svg_node_renderer.dart';
-import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/svg/renderers/impl/abstract_branch_svg_node_renderer.dart';
+import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
 
-abstract class AbstractContainerSvgNodeRenderer
-    extends AbstractBranchSvgNodeRenderer {
+abstract class CraftAbstractContainerSvgNodeRenderer
+    extends CraftAbstractBranchSvgNodeRenderer {
   @override
   bool canConstructViewPort() => true;
 
@@ -11,14 +11,14 @@ abstract class AbstractContainerSvgNodeRenderer
   bool canElementFill() => false;
 
   @override
-  Future<void> doDraw(SvgDrawContext context) async {
+  Future<void> doDraw(CraftSvgDrawContext context) async {
     context.addViewPort(calculateViewPort(context));
     await super.doDraw(context);
   }
 
-  Rectangle calculateViewPort(SvgDrawContext context) {
+  CraftRectangle calculateViewPort(CraftSvgDrawContext context) {
     // Basic implementation for now, can be expanded to match C# logic
     // TODO: Fully implement nested viewport calculation
-    return context.getCurrentViewPort() ?? Rectangle(0, 0, 0, 0);
+    return context.getCurrentViewPort() ?? CraftRectangle(0, 0, 0, 0);
   }
 }

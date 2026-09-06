@@ -3,7 +3,7 @@ import 'tiff_constants.dart';
 import 'lzw_compressor.dart';
 
 /// Exports images as TIFF.
-class TiffWriter {
+class CraftTiffWriter {
   final Map<int, FieldBase> _ifd = {};
 
   /// Adds a field to the IFD.
@@ -60,7 +60,7 @@ class TiffWriter {
     int samplesPerPixel,
     int stride,
   ) {
-    final compressor = LZWCompressor(output, 8, true);
+    final compressor = CraftLZWCompressor(output, 8, true);
     final usePredictor =
         predictor == TiffConstants.predictorHorizontalDifferencing;
 
@@ -112,9 +112,9 @@ abstract class FieldBase {
 
   /// Writes the field entry.
   void writeField(BytesBuilder output) {
-    TiffWriter._writeShort(tag, output);
-    TiffWriter._writeShort(fieldType, output);
-    TiffWriter._writeLong(count, output);
+    CraftTiffWriter._writeShort(tag, output);
+    CraftTiffWriter._writeShort(fieldType, output);
+    CraftTiffWriter._writeLong(count, output);
 
     if (data.length <= 4) {
       output.add(data);
@@ -122,7 +122,7 @@ abstract class FieldBase {
         output.addByte(0);
       }
     } else {
-      TiffWriter._writeLong(_offset, output);
+      CraftTiffWriter._writeLong(_offset, output);
     }
   }
 

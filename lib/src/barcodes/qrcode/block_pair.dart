@@ -1,19 +1,19 @@
 import 'byte_array.dart';
 
-/// Helper class that groups a block of databytes with its corresponding block of error correction block
-class BlockPair {
-  final ByteArray _dataBytes;
-  final ByteArray _errorCorrectionBytes;
+/// Pairs a data block with its Reed-Solomon parity bytes.
+class CraftBlockPair {
+  final CraftByteArray _dataBytes;
+  final CraftByteArray _errorCorrectionBytes;
 
-  BlockPair(this._dataBytes, this._errorCorrectionBytes);
+  CraftBlockPair(this._dataBytes, this._errorCorrectionBytes);
 
   /// Returns data block of the pair
-  ByteArray getDataBytes() {
+  CraftByteArray getDataBytes() {
     return _dataBytes;
   }
 
   /// Returns error correction block of the pair
-  ByteArray getErrorCorrectionBytes() {
+  CraftByteArray getErrorCorrectionBytes() {
     return _errorCorrectionBytes;
   }
 }

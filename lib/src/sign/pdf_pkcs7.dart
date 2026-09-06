@@ -1,23 +1,24 @@
 import 'dart:typed_data';
 
 import '../kernel/pdf/pdf_name.dart';
-import 'i_crypto_key.dart';
-import 'i_external_digest.dart';
-import 'i_tsa_client.dart';
+import 'signing_key.dart';
+import 'external_digest.dart';
+import 'tsa_client.dart';
 
 import 'oid.dart';
 import 'digest_algorithms.dart';
 import 'signature_mechanisms.dart';
-import 'package:pointycastle/asymmetric/api.dart'; // For RSASignature
+import 'package:pdfcraft/src/pki/rsa.dart';
 
 import 'sign_utils.dart';
 import 'x509_certificate.dart';
-import 'i_x509_certificate.dart';
+import 'certificate_details.dart';
 import 'asn1_utils.dart';
+import 'der_objects.dart';
 
 /// This class does all the processing related to signing
 /// and verifying a PKCS#7 / CMS signature.
-class PdfPKCS7 {
+class CraftPdfPKCS7 {
   // Signature info
   String? _signName;
   String? _reason;
@@ -45,10 +46,10 @@ class PdfPKCS7 {
   Uint8List? _rawSignedData; // Raw PKCS#7 data
 
   // Message digest
-  IMessageDigest? _messageDigest;
+  SigningDigest? _messageDigest;
 
   // Filter subtype
-  PdfName? _filterSubtype;
+  CraftPdfName? _filterSubtype;
 
   /// Whether this is a timestamp signature
   bool _isTsp = false;
@@ -58,16 +59,21 @@ class PdfPKCS7 {
 
   // External digest interface
   // ignore: unused_field
-  IExternalDigest? _interfaceDigest;
+  CraftExternalDigest? _interfaceDigest;
 
   // Signer identification
   Uint8List? _signerIssuer; // DER encoded Issuer DN
   BigInt? _signerSerialNumber;
   Uint8List? _signerSubjectKeyIdentifier;
-  IX509Certificate? _signCert;
+  CertificateDetails? _signCert;
 
   // Verify result
   bool? _verifyResult;
+  Uint8List? _calculatedContentDigest;
+  bool _receivedContent = false;
+  bool _parseFailed = false;
+  String? _encapContentType;
+  final BytesBuilder _verificationContent = BytesBuilder();
 
   /// Creates a PdfPKCS7 for creating a new signature.
   ///
@@ -76,17 +82,17 @@ class PdfPKCS7 {
   /// @param hashAlgorithm the hash algorithm (e.g., "SHA-256")
   /// @param interfaceDigest the digest interface
   /// @param hasEncapContent true if using adbe.pkcs7.sha1 subfilter
-  PdfPKCS7.forSigning(
-    IPrivateKey? privKey,
+  CraftPdfPKCS7.forSigning(
+    SigningPrivateKey? privKey,
     List<Uint8List> certChain,
     String hashAlgorithm,
-    IExternalDigest interfaceDigest, {
+    CraftExternalDigest interfaceDigest, {
     bool hasEncapContent = false,
   }) {
     _interfaceDigest = interfaceDigest;
 
     // Get digest algorithm OID
-    _digestAlgorithmOid = DigestAlgorithms.getAllowedDigest(hashAlgorithm);
+    _digestAlgorithmOid = CraftDigestAlgorithms.getAllowedDigest(hashAlgorithm);
     if (_digestAlgorithmOid == null) {
       throw ArgumentError('Unknown hash algorithm: $hashAlgorithm');
     }
@@ -97,7 +103,7 @@ class PdfPKCS7 {
     // Find the signature algorithm
     if (privKey != null) {
       final signatureAlgo = privKey.getAlgorithm();
-      final mechanismOid = SignatureMechanisms.getSignatureMechanismOid(
+      final mechanismOid = CraftSignatureMechanisms.getSignatureMechanismOid(
           signatureAlgo, hashAlgorithm);
       if (mechanismOid == null) {
         throw ArgumentError(
@@ -110,7 +116,7 @@ class PdfPKCS7 {
     if (hasEncapContent) {
       _encapMessageContent = Uint8List(0);
       _messageDigest =
-          DigestAlgorithms.getMessageDigest(getDigestAlgorithmName());
+          CraftDigestAlgorithms.getMessageDigest(getDigestAlgorithmName());
     }
 
     // Link the private key to the signing certificate (assumed first in chain)
@@ -123,10 +129,11 @@ class PdfPKCS7 {
   ///
   /// @param contentsKey the /Contents key from the signature dictionary
   /// @param filterSubtype the filter subtype (e.g., ETSI.CAdES.detached)
-  PdfPKCS7.forVerifying(Uint8List contentsKey, PdfName filterSubtype) {
+  CraftPdfPKCS7.forVerifying(
+      Uint8List contentsKey, CraftPdfName filterSubtype) {
     _filterSubtype = filterSubtype;
-    _isTsp = filterSubtype == PdfName.etsiRfc3161;
-    _isCades = filterSubtype == PdfName.etsiCadesDetached;
+    _isTsp = filterSubtype == CraftPdfName.etsiRfc3161;
+    _isCades = filterSubtype == CraftPdfName.etsiCadesDetached;
     _rawSignedData = contentsKey;
 
     // Parse PKCS#7 SignedData structure
@@ -137,10 +144,10 @@ class PdfPKCS7 {
   ///
   /// @param contentsKey the /Contents key
   /// @param certsKey the /Cert key (DER-encoded certificates)
-  PdfPKCS7.forRsaSha1(Uint8List contentsKey, Uint8List certsKey) {
+  CraftPdfPKCS7.forRsaSha1(Uint8List contentsKey, Uint8List certsKey) {
     _signatureValue = contentsKey;
-    _digestAlgorithmOid = OID.sha1;
-    _signatureMechanismOid = OID.rsaSha1;
+    _digestAlgorithmOid = CraftOID.sha1;
+    _signatureMechanismOid = CraftOID.rsaSha1;
 
     // Parse certificates from certsKey
     _parseCertificates(certsKey);
@@ -149,6 +156,11 @@ class PdfPKCS7 {
   /// Parses PKCS#7 SignedData structure.
   void _parseSignedData(Uint8List data) {
     try {
+      final der = ASN1Parser(data);
+      der.nextObject();
+      if (data.skip(der.consumedBytes).any((b) => b != 0)) {
+        throw FormatException('Unexpected data following CMS object');
+      }
       // ContentInfo ::= SEQUENCE {
       //   contentType ContentType,
       //   content [0] EXPLICIT ANY DEFINED BY contentType }
@@ -158,27 +170,36 @@ class PdfPKCS7 {
       }
 
       final contentInfoElements = ASN1Utils.parseElements(contentInfo.content);
-      if (contentInfoElements.length < 2) {
+      if (contentInfoElements.length != 2) {
         throw FormatException('ContentInfo must have at least 2 elements');
       }
 
       // Check contentType is signedData
       final contentTypeOid = _parseOID(contentInfoElements[0].content);
-      if (contentTypeOid != OID.signedData) {
+      if (contentTypeOid != CraftOID.signedData) {
         throw FormatException('Expected signedData OID, got: $contentTypeOid');
       }
 
       // Get the SignedData content (tagged [0])
-      if (!contentInfoElements[1].isContextSpecific) {
+      if (!contentInfoElements[1].isContextSpecific ||
+          contentInfoElements[1].tagNumber != 0) {
         throw FormatException('Expected context-specific tag for content');
       }
 
       final signedDataSeq = ASN1Utils.parse(contentInfoElements[1].content);
-      if (!signedDataSeq.isSequence) {
+      if (signedDataSeq.tag != 0x30 ||
+          signedDataSeq.totalLength != contentInfoElements[1].content.length) {
         throw FormatException('Expected SEQUENCE for SignedData');
       }
 
       final signedDataElements = ASN1Utils.parseElements(signedDataSeq.content);
+      if (signedDataElements.length < 4 ||
+          !signedDataElements[0].isInteger ||
+          signedDataElements[1].tag != 0x31 ||
+          signedDataElements[2].tag != 0x30 ||
+          signedDataElements.last.tag != 0x31) {
+        throw FormatException('Incomplete SignedData');
+      }
 
       // SignedData ::= SEQUENCE {
       //   version CMSVersion,
@@ -189,6 +210,7 @@ class PdfPKCS7 {
       //   signerInfos SignerInfos }
 
       int idx = 0;
+      final advertisedDigests = <String>{};
 
       // Version
       if (signedDataElements[idx].isInteger) {
@@ -200,6 +222,13 @@ class PdfPKCS7 {
       if (idx < signedDataElements.length && signedDataElements[idx].isSet) {
         final digestAlgos =
             ASN1Utils.parseElements(signedDataElements[idx].content);
+        for (final algo in digestAlgos) {
+          final fields = ASN1Utils.parseElements(algo.content);
+          if (algo.tag != 0x30 || fields.isEmpty || !fields[0].isOid) {
+            throw FormatException('Invalid digest algorithm');
+          }
+          advertisedDigests.add(_parseOID(fields[0].content));
+        }
         if (digestAlgos.isNotEmpty) {
           final algoId = ASN1Utils.parseElements(digestAlgos[0].content);
           if (algoId.isNotEmpty && algoId[0].isOid) {
@@ -214,6 +243,12 @@ class PdfPKCS7 {
           signedDataElements[idx].isSequence) {
         final encapContent =
             ASN1Utils.parseElements(signedDataElements[idx].content);
+        if (encapContent.isEmpty ||
+            !encapContent[0].isOid ||
+            encapContent.length > 2) {
+          throw FormatException('Invalid encapsulated content info');
+        }
+        _encapContentType = _parseOID(encapContent[0].content);
         // Check if there's actual content (tag [0])
         if (encapContent.length > 1 && encapContent[1].isContextSpecific) {
           final contentOctet = ASN1Utils.parse(encapContent[1].content);
@@ -240,27 +275,38 @@ class PdfPKCS7 {
       if (idx < signedDataElements.length && signedDataElements[idx].isSet) {
         final signerInfos =
             ASN1Utils.parseElements(signedDataElements[idx].content);
-        if (signerInfos.isNotEmpty) {
-          _parseSignerInfo(signerInfos[0]);
-        }
+        if (signerInfos.length != 1)
+          throw FormatException('Exactly one signer is required');
+        _parseSignerInfo(signerInfos[0]);
+        idx++;
+      }
+      if (idx != signedDataElements.length ||
+          _signatureValue == null ||
+          _digestAlgorithmOid == null ||
+          _signatureMechanismOid == null ||
+          _encapContentType == null ||
+          !advertisedDigests.contains(_digestAlgorithmOid)) {
+        throw FormatException('Incomplete CMS signature');
       }
 
       // Initialize message digest if we have encapsulated content or signed attributes
       if (_encapMessageContent != null || _digestAttr != null) {
         _messageDigest =
-            DigestAlgorithms.getMessageDigest(getDigestAlgorithmName());
+            CraftDigestAlgorithms.getMessageDigest(getDigestAlgorithmName());
       }
     } catch (e) {
-      // If parsing fails, just store the signature value for basic verification
-      _signatureValue = data;
+      _parseFailed = true;
+      _signatureValue = null;
     }
   }
 
   /// Parses a SignerInfo structure.
   void _parseSignerInfo(ASN1ParseResult signerInfo) {
-    if (!signerInfo.isSequence) return;
+    if (signerInfo.tag != 0x30) throw FormatException('Invalid SignerInfo tag');
 
     final elements = ASN1Utils.parseElements(signerInfo.content);
+    if (elements.length < 5 || !elements[0].isInteger)
+      throw FormatException('Incomplete SignerInfo');
     int idx = 0;
 
     // Version
@@ -278,8 +324,11 @@ class PdfPKCS7 {
         if (sidElements.length > 1) {
           _signerIssuer = sidElements[0]
               .encodedBytes; // Use encoded bytes for comparison or Store element
-          _signerSerialNumber =
-              BigInt.from(_parseInteger(sidElements[1].content));
+          final serial = ASN1Parser(sidElements[1].encodedBytes).readSingle();
+          if (sidElements.length != 2 || serial is! ASN1Integer) {
+            throw FormatException('Invalid signer identifier');
+          }
+          _signerSerialNumber = serial.integer;
         }
       } else if (sid.isContextSpecific && sid.tagNumber == 0) {
         // SubjectKeyIdentifier [0] IMPLICIT OCTET STRING
@@ -301,8 +350,7 @@ class PdfPKCS7 {
     if (idx < elements.length &&
         elements[idx].isContextSpecific &&
         elements[idx].tagNumber == 0) {
-      _sigAttr = Uint8List.fromList(
-          [0x31, ...elements[idx].content]); // Re-encode as SET
+      _sigAttr = ASN1Utils.encodeTagged(0x31, elements[idx].content);
       _parseSignedAttributes(elements[idx].content);
       idx++;
     }
@@ -321,32 +369,52 @@ class PdfPKCS7 {
       _signatureValue = elements[idx].content;
       idx++;
     }
+    if (idx < elements.length &&
+        elements[idx].isContextSpecific &&
+        elements[idx].tagNumber == 1) idx++; // unsigned attributes
+    if (idx != elements.length ||
+        _signatureValue == null ||
+        (_signerIssuer == null && _signerSubjectKeyIdentifier == null)) {
+      throw FormatException('Incomplete SignerInfo');
+    }
   }
 
   /// Parses signed attributes.
   void _parseSignedAttributes(Uint8List content) {
-    try {
-      final attrs = ASN1Utils.parseElements(content);
-      for (final attr in attrs) {
-        if (!attr.isSequence) continue;
+    final attrs = ASN1Utils.parseElements(content);
+    var digestFound = false, contentTypeFound = false;
+    for (final attr in attrs) {
+      if (!attr.isSequence) throw FormatException('Invalid signed attribute');
 
-        final attrElements = ASN1Utils.parseElements(attr.content);
-        if (attrElements.length < 2) continue;
+      final attrElements = ASN1Utils.parseElements(attr.content);
+      if (attrElements.length != 2 || !attrElements[1].isSet)
+        throw FormatException('Invalid attribute values');
 
-        if (!attrElements[0].isOid) continue;
-        final attrOid = _parseOID(attrElements[0].content);
+      if (!attrElements[0].isOid)
+        throw FormatException('Invalid attribute identifier');
+      final attrOid = _parseOID(attrElements[0].content);
 
-        // Message digest attribute
-        if (attrOid == OID.messageDigest) {
-          final values = ASN1Utils.parseElements(attrElements[1].content);
-          if (values.isNotEmpty && values[0].isOctetString) {
-            _digestAttr = values[0].content;
-          }
+      // Message digest attribute
+      if (attrOid == CraftOID.messageDigest) {
+        final values = ASN1Utils.parseElements(attrElements[1].content);
+        if (digestFound || values.length != 1 || !values[0].isOctetString) {
+          throw FormatException('Invalid or repeated messageDigest');
         }
+        digestFound = true;
+        _digestAttr = values[0].content;
+      } else if (attrOid == CraftOID.contentType) {
+        final values = ASN1Utils.parseElements(attrElements[1].content);
+        if (contentTypeFound ||
+            values.length != 1 ||
+            !values[0].isOid ||
+            _parseOID(values[0].content) != _encapContentType) {
+          throw FormatException('Invalid or repeated contentType');
+        }
+        contentTypeFound = true;
       }
-    } catch (e) {
-      // Ignore parsing errors in attributes
     }
+    if (!digestFound || !contentTypeFound)
+      throw FormatException('Required signed attributes are absent');
   }
 
   /// Parses a certificate set.
@@ -423,7 +491,30 @@ class PdfPKCS7 {
     if (_verifyResult != null) return _verifyResult!;
 
     try {
-      if (_signatureValue == null) return false;
+      if (_parseFailed || _signatureValue == null || _isTsp) return false;
+      final digestName = getDigestAlgorithmName();
+      final expectedMechanism =
+          CraftSignatureMechanisms.getSignatureMechanismOid('RSA', digestName);
+      if (_signatureMechanismOid != CraftOID.rsa &&
+          _signatureMechanismOid != expectedMechanism &&
+          !(_signatureMechanismOid == CraftOID.rsaSha1 &&
+              digestName == 'SHA1')) {
+        return false;
+      }
+      if (_encapMessageContent != null) {
+        if (!_receivedContent) return false;
+        if (_filterSubtype == CraftPdfName.adbePkcs7Sha1) {
+          final digest = CraftDigestAlgorithms.getMessageDigest('SHA1')
+            ..update(_verificationContent.toBytes());
+          if (!_arraysEqual(digest.digest(), _encapMessageContent!))
+            return false;
+        } else if (_filterSubtype == CraftPdfName.adbePkcs7Detached ||
+            _filterSubtype == CraftPdfName.etsiCadesDetached ||
+            !_arraysEqual(
+                _verificationContent.toBytes(), _encapMessageContent!)) {
+          return false;
+        }
+      }
 
       // 1. Find Signing Certificate
       _findSigningCertificate();
@@ -434,39 +525,34 @@ class PdfPKCS7 {
       // 2. Prepare message digest
       if (_messageDigest == null) {
         _messageDigest =
-            DigestAlgorithms.getMessageDigest(getDigestAlgorithmName());
+            CraftDigestAlgorithms.getMessageDigest(getDigestAlgorithmName());
       }
 
-      // 3. Verify digest is consistent (integrity)
+      // Validate the document digest before authenticating signed attributes.
       if (_sigAttr != null) {
         if (_digestAttr == null) return false;
-
-        // Check if content hash matches digest attribute
         if (_encapMessageContent != null) {
           _messageDigest!.reset();
           _messageDigest!.update(_encapMessageContent!);
-          final hash = _messageDigest!.digest();
-          if (!_arraysEqual(hash, _digestAttr!)) {
-            return false;
-          }
+          _calculatedContentDigest = _messageDigest!.digest();
+        } else if (!_receivedContent) {
+          return false;
         }
-      } else {
-        // Signature verification over _encapMessageContent
-        if (_encapMessageContent != null) {
-          _messageDigest!.update(_encapMessageContent!);
-        }
+        _calculatedContentDigest ??= _currentContentDigest();
+        if (!_arraysEqual(_calculatedContentDigest!, _digestAttr!))
+          return false;
       }
 
       // 4. Verify Signature (Authenticity)
       final publicKeyInfo = _signCert!.getPublicKey();
       final publicKey =
-          SignUtils.parsePublicKeyFromSubjectPublicKeyInfo(publicKeyInfo);
+          CraftSignUtils.parsePublicKeyFromSubjectPublicKeyInfo(publicKeyInfo);
 
       if (publicKey == null) {
         return false;
       }
 
-      final signer = SignUtils.createSigner(
+      final signer = CraftSignUtils.createSigner(
           '${getDigestAlgorithmName()}withRSA', publicKey);
 
       if (signer == null) {
@@ -479,6 +565,9 @@ class PdfPKCS7 {
         _verifyResult = signer.verifySignature(_sigAttr!, sig);
       } else if (_encapMessageContent != null) {
         _verifyResult = signer.verifySignature(_encapMessageContent!, sig);
+      } else if (_receivedContent) {
+        _verifyResult =
+            signer.verifySignature(_verificationContent.toBytes(), sig);
       } else {
         _verifyResult = false;
       }
@@ -517,7 +606,9 @@ class PdfPKCS7 {
       }
     }
     // Fallback: if only 1 cert, assume it is the signer
-    if (_certsDer.length == 1) {
+    if (_certsDer.length == 1 &&
+        _signerIssuer == null &&
+        _signerSubjectKeyIdentifier == null) {
       _signCert = X509Certificate(_certsDer[0]);
     }
   }
@@ -565,7 +656,7 @@ class PdfPKCS7 {
   }
 
   /// Gets the version of the PKCS#7 object.
-  int getVersion() => _version;
+  int formatVersion() => _version;
 
   /// Gets the version of the PKCS#7 "SignerInfo" object.
   int getSigningInfoVersion() => _signerVersion;
@@ -578,7 +669,7 @@ class PdfPKCS7 {
     if (_digestAlgorithmOid == null) {
       return 'SHA-256';
     }
-    return DigestAlgorithms.getDigest(_digestAlgorithmOid!);
+    return CraftDigestAlgorithms.getDigest(_digestAlgorithmOid!);
   }
 
   /// Gets the signature mechanism OID.
@@ -591,14 +682,14 @@ class PdfPKCS7 {
     }
 
     switch (_signatureMechanismOid) {
-      case OID.ed25519:
+      case CraftOID.ed25519:
         return 'Ed25519';
-      case OID.ed448:
+      case CraftOID.ed448:
         return 'Ed448';
-      case OID.rsassaPss:
+      case CraftOID.rsassaPss:
         return 'RSASSA-PSS';
       default:
-        return SignatureMechanisms.getMechanism(
+        return CraftSignatureMechanisms.getMechanism(
             _signatureMechanismOid!, getDigestAlgorithmName());
     }
   }
@@ -608,11 +699,11 @@ class PdfPKCS7 {
     if (_signatureMechanismOid == null) {
       return 'RSA';
     }
-    return SignatureMechanisms.getAlgorithm(_signatureMechanismOid!);
+    return CraftSignatureMechanisms.getAlgorithm(_signatureMechanismOid!);
   }
 
   /// Gets the filter subtype.
-  PdfName? getFilterSubtype() => _filterSubtype;
+  CraftPdfName? getFilterSubtype() => _filterSubtype;
 
   /// Gets the DER-encoded certificates.
   List<Uint8List> getCertificatesDer() => List.unmodifiable(_certsDer);
@@ -632,9 +723,21 @@ class PdfPKCS7 {
   /// Updates the digest with the specified bytes.
   void update(Uint8List buf, [int offset = 0, int? length]) {
     final len = length ?? (buf.length - offset);
-    if (_encapMessageContent != null || _digestAttr != null || _isTsp) {
-      _messageDigest?.update(buf, offset, len);
-    }
+    RangeError.checkValidRange(offset, offset + len, buf.length);
+    _receivedContent = true;
+    _verifyResult = null;
+    _calculatedContentDigest = null;
+    _messageDigest ??=
+        CraftDigestAlgorithms.getMessageDigest(getDigestAlgorithmName());
+    _messageDigest!.update(buf, offset, len);
+    _verificationContent.add(buf.sublist(offset, offset + len));
+  }
+
+  Uint8List _currentContentDigest() {
+    final digest =
+        CraftDigestAlgorithms.getMessageDigest(getDigestAlgorithmName())
+          ..update(_verificationContent.toBytes());
+    return digest.digest();
   }
 
   /// Sets the signature to an externally calculated value.
@@ -651,7 +754,7 @@ class PdfPKCS7 {
     }
     if (signatureAlgorithm != null) {
       final digestAlgo = getDigestAlgorithmName();
-      final oid = SignatureMechanisms.getSignatureMechanismOid(
+      final oid = CraftSignatureMechanisms.getSignatureMechanismOid(
           signatureAlgorithm, digestAlgo);
       if (oid == null) {
         throw ArgumentError(
@@ -684,16 +787,16 @@ class PdfPKCS7 {
 
     // Content type attribute
     attrs.add(ASN1Utils.createSequence([
-      ASN1Utils.createOID(OID.contentType),
+      ASN1Utils.createOID(CraftOID.contentType),
       ASN1Utils.createSet([
-        ASN1Utils.createOID(OID.data),
+        ASN1Utils.createOID(CraftOID.data),
       ]),
     ]));
 
     // Signing time attribute
     if (_signDate != null) {
       attrs.add(ASN1Utils.createSequence([
-        ASN1Utils.createOID(OID.signingTime),
+        ASN1Utils.createOID(CraftOID.signingTime),
         ASN1Utils.createSet([
           ASN1Utils.createUtcTime(_signDate!),
         ]),
@@ -702,7 +805,7 @@ class PdfPKCS7 {
 
     // Message digest attribute
     attrs.add(ASN1Utils.createSequence([
-      ASN1Utils.createOID(OID.messageDigest),
+      ASN1Utils.createOID(CraftOID.messageDigest),
       ASN1Utils.createSet([
         ASN1Utils.createOctetString(secondDigest),
       ]),
@@ -714,7 +817,7 @@ class PdfPKCS7 {
   /// Gets the encoded PKCS#7 object.
   Future<Uint8List> getEncodedPKCS7(
     Uint8List secondDigest, {
-    ITSAClient? tsaClient,
+    CraftTSAClient? tsaClient,
     List<Uint8List>? ocsp,
     List<Uint8List>? crlBytes,
   }) async {
@@ -735,7 +838,7 @@ class PdfPKCS7 {
 
     // EncapsulatedContentInfo
     final encapContent = <Uint8List>[];
-    encapContent.add(ASN1Utils.createOID(OID.data));
+    encapContent.add(ASN1Utils.createOID(CraftOID.data));
     if (_encapMessageContent != null) {
       // [0] EXPLICIT OCTET STRING
       encapContent.add(ASN1Utils.encodeTagged(
@@ -765,7 +868,7 @@ class PdfPKCS7 {
         for (var o in ocsp) {
           // OCSP Response is added as OtherRevocationInfoFormat
           final other = <Uint8List>[];
-          other.add(ASN1Utils.createOID(OID.ocspResponse));
+          other.add(ASN1Utils.createOID(CraftOID.ocspResponse));
           // Wrap in EXPLICIT tag if needed or just add as is?
           // RFC 5652: otherRevInfo ANY DEFINED BY otherRevInfoFormat
           other.add(o);
@@ -790,7 +893,7 @@ class PdfPKCS7 {
 
     // ContentInfo: SEQUENCE { OID signedData, [0] EXPLICIT content }
     final elements = <Uint8List>[];
-    elements.add(ASN1Utils.createOID(OID.signedData));
+    elements.add(ASN1Utils.createOID(CraftOID.signedData));
     elements.add(ASN1Utils.encodeTagged(0xA0, content));
 
     return ASN1Utils.createSequence(elements);
@@ -798,7 +901,7 @@ class PdfPKCS7 {
 
   /// Builds the SignerInfo structure.
   Future<Uint8List> _buildSignerInfo(
-      Uint8List secondDigest, ITSAClient? tsaClient) async {
+      Uint8List secondDigest, CraftTSAClient? tsaClient) async {
     final elements = <Uint8List>[];
 
     // Version
@@ -830,7 +933,7 @@ class PdfPKCS7 {
 
     // SignatureAlgorithmIdentifier
     elements.add(ASN1Utils.createSequence([
-      ASN1Utils.createOID(_signatureMechanismOid ?? OID.rsaSha256),
+      ASN1Utils.createOID(_signatureMechanismOid ?? CraftOID.rsaSha256),
       ASN1Utils.createNull(),
     ]));
 
@@ -842,7 +945,7 @@ class PdfPKCS7 {
       final tsaToken = await tsaClient.getTimeStampToken(_signatureValue!);
 
       final attrContent = <Uint8List>[];
-      attrContent.add(ASN1Utils.createOID(OID.signatureTimeStampToken));
+      attrContent.add(ASN1Utils.createOID(CraftOID.signatureTimeStampToken));
       attrContent.add(ASN1Utils.createSet([tsaToken]));
 
       final attr = ASN1Utils.createSequence(attrContent);
@@ -863,11 +966,15 @@ class PdfPKCS7 {
   ///
   /// @return true if the digest matches
   bool verifyDigest() {
-    if (_digestAttr == null || _messageDigest == null) {
+    if (_parseFailed ||
+        !_receivedContent ||
+        _digestAttr == null ||
+        _messageDigest == null) {
       return false;
     }
 
-    final calculatedDigest = _messageDigest!.digest();
+    final calculatedDigest =
+        _calculatedContentDigest ??= _currentContentDigest();
 
     if (calculatedDigest.length != _digestAttr!.length) {
       return false;

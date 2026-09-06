@@ -1,0 +1,77 @@
+{
+  "scope": "Reviewed test assets only; no license claim for the legacy Dart engine.",
+  "assets": [
+    {
+      "file": "ABeeZee-Regular.ttf",
+      "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9",
+      "license": "OFL-1.1",
+      "source": "https://raw.githubusercontent.com/google/fonts/fffdadf0f0c9cc1ec8b407063424a8bfbee05611/ofl/abeezee/ABeeZee-Regular.ttf"
+    },
+    {
+      "file": "bee.png",
+      "sha256": "9d2640e78e7a4de863b0c6ddd75181e8adfbb220b08d2c7e3bff396090a80051",
+      "license": "MIT",
+      "source": "tool/generate_test_assets.py; test/assets/LICENSE.generated.txt"
+    },
+    {
+      "file": "bulb.gif",
+      "sha256": "02f9c1c91da3fd0cc83967a29a897a9b36d1b2d9995193f8ee2e1cc4f0a4bfbc",
+      "license": "MIT",
+      "source": "tool/generate_test_assets.py; test/assets/LICENSE.generated.txt"
+    },
+    {
+      "file": "Desert.jpg",
+      "sha256": "dfffc59196d2c2ab556486ba5f517375fb56dcce72758b442c93a160f153bbad",
+      "license": "MIT",
+      "source": "tool/generate_test_assets.py; test/assets/LICENSE.generated.txt"
+    },
+    {
+      "file": "image-2frames.gif",
+      "sha256": "8b1553f1f1f155d45f06458efe6ab5819823b8ae89725dd664ca81b991102dd9",
+      "license": "MIT",
+      "source": "tool/generate_test_assets.py; test/assets/LICENSE.generated.txt"
+    },
+    {
+      "file": "image.jb2",
+      "sha256": "b782ee33e650cae2d76d6a83094545b59c8aac7264196fc4cf474badaccee7e3",
+      "license": "MIT",
+      "source": "tool/generate_test_assets.py; test/assets/LICENSE.generated.txt"
+    },
+    {
+      "file": "LICENSE.generated.txt",
+      "sha256": "992187965761031b0077dce09a57e7f13e6a9c99df34e5d1c05d2bb270172edf",
+      "license": "MIT",
+      "source": "tool/generate_test_assets.py; test/assets/LICENSE.generated.txt"
+    },
+    {
+      "file": "OFL.txt",
+      "sha256": "6a93093e698838e9f066fe2267e5e01d1f67b6c56ea939895ff36957875e23d0",
+      "license": "OFL-1.1",
+      "source": "https://raw.githubusercontent.com/google/fonts/fffdadf0f0c9cc1ec8b407063424a8bfbee05611/ofl/abeezee/OFL.txt"
+    },
+    {
+      "file": "png_greyscale.png",
+      "sha256": "d54e53a11d9cdd6e45ca826c46a861714997d9d9ea1068894b736dd25dcd992a",
+      "license": "MIT",
+      "source": "tool/generate_test_assets.py; test/assets/LICENSE.generated.txt"
+    },
+    {
+      "file": "rootRsa.cer",
+      "sha256": "93900c50e79a2f201f2f6cfd5144799d429840da7de37c632764a6735f0bb95b",
+      "license": "MIT",
+      "source": "tool/generate_test_assets.py; test/assets/LICENSE.generated.txt"
+    },
+    {
+      "file": "test.pdf",
+      "sha256": "624f142e7208296f655d13ef8a710f6c3a603f34116e50f4452d8bdebf413c73",
+      "license": "MIT",
+      "source": "tool/generate_test_assets.py; test/assets/LICENSE.generated.txt"
+    },
+    {
+      "file": "WP_20140410_001.bmp",
+      "sha256": "120f649b4443568d0045eb3d4ca2f59704c23333655c4c7fc4f5e382e123ee37",
+      "license": "MIT",
+      "source": "tool/generate_test_assets.py; test/assets/LICENSE.generated.txt"
+    }
+  ]
+}

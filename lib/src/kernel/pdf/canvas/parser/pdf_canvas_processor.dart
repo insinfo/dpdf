@@ -1,64 +1,66 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/source/pdf_tokenizer.dart';
-import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
-import 'package:dpdf/src/kernel/geom/matrix.dart';
-import 'package:dpdf/src/kernel/pdf/canvas/canvas_graphics_state.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_literal.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_page.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_resources.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:pdfcraft/src/io/source/pdf_tokenizer.dart';
+import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
+import 'package:pdfcraft/src/kernel/geom/matrix.dart';
+import 'package:pdfcraft/src/kernel/pdf/canvas/canvas_graphics_state.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_literal.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_page.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_resources.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
 
-import 'i_content_operator.dart';
-import 'listener/i_event_listener.dart';
+import 'content_operator.dart';
+import 'listener/event_listener.dart';
 import 'standard_operators.dart';
 
 /// Processor for PDF content streams.
-class PdfCanvasProcessor {
-  final IEventListener _eventListener;
-  final Map<String, IContentOperator> _operators = {};
+class CraftPdfCanvasProcessor {
+  final CraftEventListener _eventListener;
+  final Map<String, CraftContentOperator> _operators = {};
 
-  final List<CanvasGraphicsState> _gsStack = [];
-  late CanvasGraphicsState _currentGs;
+  final List<CraftCanvasGraphicsState> _gsStack = [];
+  late CraftCanvasGraphicsState _currentGs;
 
-  Matrix _textMatrix = Matrix();
-  Matrix _textLineMatrix = Matrix();
+  CraftMatrix _textMatrix = CraftMatrix();
+  CraftMatrix _textLineMatrix = CraftMatrix();
 
-  PdfResources? _resources;
+  CraftPdfResources? _resources;
 
-  PdfCanvasProcessor(this._eventListener) {
-    _currentGs = CanvasGraphicsState();
+  CraftPdfCanvasProcessor(this._eventListener) {
+    _currentGs = CraftCanvasGraphicsState();
     _registerOperators();
   }
 
   /// Registers a content operator.
-  void registerContentOperator(String operatorName, IContentOperator operator) {
+  void registerContentOperator(
+      String operatorName, CraftContentOperator operator) {
     _operators[operatorName] = operator;
   }
 
   /// Gets the registered content operator.
-  IContentOperator? getContentOperator(String operatorName) {
+  CraftContentOperator? getContentOperator(String operatorName) {
     return _operators[operatorName];
   }
 
   /// Processes content from a page.
-  Future<void> processPageContent(PdfPage page) async {
-    _resources = await page.getResources();
-    final bytes = await page.getContentBytes();
+  Future<void> processPageContent(CraftPdfPage page) async {
+    _resources = await page.resourceDirectory();
+    final bytes = await page.contentPayload();
     await processContent(bytes, _resources);
   }
 
   /// Processes a content stream.
   Future<void> processContent(
-      Uint8List contentBytes, PdfResources? resources) async {
+      Uint8List contentBytes, CraftPdfResources? resources) async {
     _resources = resources;
-    final tokenizer = PdfTokenizer(RandomAccessFileOrArray(contentBytes));
-    final operands = <PdfObject>[];
+    final tokenizer =
+        CraftPdfTokenizer(CraftRandomAccessFileOrArray(contentBytes));
+    final operands = <CraftPdfObject>[];
 
     try {
       while (await tokenizer.nextToken()) {
@@ -66,7 +68,8 @@ class PdfCanvasProcessor {
           final operator = tokenizer.getStringValue();
           final op = _operators[operator];
           if (op != null) {
-            await op.invoke(this, PdfLiteral(operator), List.from(operands));
+            await op.invoke(
+                this, CraftPdfLiteral(operator), List.from(operands));
           } else {
             // Unknown operator or just unsupported
           }
@@ -80,11 +83,11 @@ class PdfCanvasProcessor {
     }
   }
 
-  Future<PdfObject> _readObject(PdfTokenizer tokenizer) async {
+  Future<CraftPdfObject> _readObject(CraftPdfTokenizer tokenizer) async {
     final type = tokenizer.getTokenType();
     switch (type) {
       case TokenType.startArray:
-        final array = PdfArray();
+        final array = CraftPdfArray();
         while (await tokenizer.nextToken()) {
           if (tokenizer.getTokenType() == TokenType.endArray) {
             break;
@@ -93,7 +96,7 @@ class PdfCanvasProcessor {
         }
         return array;
       case TokenType.startDic:
-        final dict = PdfDictionary();
+        final dict = CraftPdfDictionary();
         // Simple dictionary parsing - might need improvements for nested dicts/correct key/value
         // Dictionary in content stream is usually for inline image or marked content
         // This logic is simplified
@@ -104,35 +107,35 @@ class PdfCanvasProcessor {
           final key = await _readObject(tokenizer);
           if (await tokenizer.nextToken()) {
             final val = await _readObject(tokenizer);
-            if (key is PdfName) {
+            if (key is CraftPdfName) {
               dict.put(key, val);
             }
           }
         }
         return dict;
       case TokenType.number:
-        return PdfNumber.fromString(tokenizer.getStringValue());
+        return CraftPdfNumber.fromString(tokenizer.getStringValue());
       case TokenType.string:
         if (tokenizer.isHexString()) {
-          return PdfString.fromBytes(tokenizer.getByteContent())
+          return CraftPdfString.fromBytes(tokenizer.getByteContent())
             ..setHexWriting(true);
         } else {
-          return PdfString(tokenizer.getStringValue());
+          return CraftPdfString(tokenizer.getStringValue());
         }
       case TokenType.name:
-        return PdfName(tokenizer.getStringValue());
+        return CraftPdfName(tokenizer.getStringValue());
       case TokenType.ref:
         // Indirect reference in content stream? Possible but rare (e.g. XObject)
         // Usually references are just "1 0 R", which tokenizer might split into Number Number Other(R)
         // But PdfTokenizer might recognize Ref if implemented logic allows
         // Here simplified:
-        return PdfLiteral(tokenizer.getStringValue());
+        return CraftPdfLiteral(tokenizer.getStringValue());
       default:
-        return PdfLiteral(tokenizer.getStringValue());
+        return CraftPdfLiteral(tokenizer.getStringValue());
     }
   }
 
-  IEventListener getEventListener() {
+  CraftEventListener getEventListener() {
     return _eventListener;
   }
 
@@ -144,12 +147,12 @@ class PdfCanvasProcessor {
     registerContentOperator('Q', RestoreState());
   }
 
-  CanvasGraphicsState getGraphicsState() {
+  CraftCanvasGraphicsState getGraphicsState() {
     return _currentGs;
   }
 
   void saveGraphicsState() {
-    _gsStack.add(CanvasGraphicsState(_currentGs));
+    _gsStack.add(CraftCanvasGraphicsState(_currentGs));
   }
 
   void restoreGraphicsState() {
@@ -158,19 +161,19 @@ class PdfCanvasProcessor {
     }
   }
 
-  Matrix getTextMatrix() => _textMatrix;
+  CraftMatrix getTextMatrix() => _textMatrix;
 
-  Matrix getTextLineMatrix() => _textLineMatrix;
+  CraftMatrix getTextLineMatrix() => _textLineMatrix;
 
-  void setTextMatrix(Matrix matrix) {
+  void setTextMatrix(CraftMatrix matrix) {
     _textMatrix = matrix;
   }
 
-  void setTextLineMatrix(Matrix matrix) {
+  void setTextLineMatrix(CraftMatrix matrix) {
     _textLineMatrix = matrix;
   }
 
-  PdfResources? getResources() {
+  CraftPdfResources? resourceDirectory() {
     return _resources;
   }
 }

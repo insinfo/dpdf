@@ -1,20 +1,20 @@
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
-import 'package:dpdf/src/layout/element/area_break.dart';
+import 'package:pdfcraft/src/layout/layout/layout_area.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:pdfcraft/src/layout/element/area_break.dart';
 
-class LayoutResult {
+class CraftLayoutResult {
   static const int FULL = 1;
   static const int PARTIAL = 2;
   static const int NOTHING = 3;
 
   int status;
-  LayoutArea? occupiedArea;
-  IRenderer? splitRenderer;
-  IRenderer? overflowRenderer;
-  AreaBreak? areaBreak;
-  IRenderer? causeOfNothing;
+  CraftLayoutArea? occupiedArea;
+  CraftRenderer? splitRenderer;
+  CraftRenderer? overflowRenderer;
+  CraftAreaBreak? areaBreak;
+  CraftRenderer? causeOfNothing;
 
-  LayoutResult(
+  CraftLayoutResult(
       this.status, this.occupiedArea, this.splitRenderer, this.overflowRenderer,
       [this.causeOfNothing]);
 
@@ -26,36 +26,36 @@ class LayoutResult {
     this.status = status;
   }
 
-  LayoutArea? getOccupiedArea() {
+  CraftLayoutArea? getOccupiedArea() {
     return occupiedArea;
   }
 
-  IRenderer? getSplitRenderer() {
+  CraftRenderer? getSplitRenderer() {
     return splitRenderer;
   }
 
-  void setSplitRenderer(IRenderer splitRenderer) {
+  void setSplitRenderer(CraftRenderer splitRenderer) {
     this.splitRenderer = splitRenderer;
   }
 
-  IRenderer? getOverflowRenderer() {
+  CraftRenderer? getOverflowRenderer() {
     return overflowRenderer;
   }
 
-  void setOverflowRenderer(IRenderer overflowRenderer) {
+  void setOverflowRenderer(CraftRenderer overflowRenderer) {
     this.overflowRenderer = overflowRenderer;
   }
 
-  AreaBreak? getAreaBreak() {
+  CraftAreaBreak? getAreaBreak() {
     return areaBreak;
   }
 
-  LayoutResult setAreaBreak(AreaBreak areaBreak) {
+  CraftLayoutResult setAreaBreak(CraftAreaBreak areaBreak) {
     this.areaBreak = areaBreak;
     return this;
   }
 
-  IRenderer? getCauseOfNothing() {
+  CraftRenderer? getCauseOfNothing() {
     return causeOfNothing;
   }
 

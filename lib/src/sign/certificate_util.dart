@@ -1,15 +1,15 @@
 import 'dart:typed_data';
 import 'asn1_utils.dart';
-import 'i_x509_certificate.dart';
+import 'certificate_details.dart';
 import 'oid.dart';
 
 /// Utilities for extracting information from X.509 certificates.
-class CertificateUtil {
+class CraftCertificateUtil {
   /// Gets CRL URLs from the certificate's CRL Distribution Points extension.
-  static List<String> getCRLURLs(IX509Certificate certificate) {
+  static List<String> getCRLURLs(CertificateDetails certificate) {
     final urls = <String>[];
     final extensionValue =
-        certificate.getExtensionValue(OID.crlDistributionPoints);
+        certificate.getExtensionValue(CraftOID.crlDistributionPoints);
     if (extensionValue == null) return urls;
 
     try {
@@ -46,19 +46,19 @@ class CertificateUtil {
   }
 
   /// Gets the OCSP URL from the certificate's Authority Info Access extension.
-  static String? getOCSPURL(IX509Certificate certificate) {
+  static String? getOCSPURL(CertificateDetails certificate) {
     final extensionValue =
-        certificate.getExtensionValue(OID.authorityInfoAccess);
+        certificate.getExtensionValue(CraftOID.authorityInfoAccess);
     if (extensionValue == null) return null;
-    return _getAIAUrl(extensionValue, OID.ocsp);
+    return _getAIAUrl(extensionValue, CraftOID.ocsp);
   }
 
   /// Gets the CA Issuer URL from the certificate's Authority Info Access extension.
-  static String? getIssuerCertURL(IX509Certificate certificate) {
+  static String? getIssuerCertURL(CertificateDetails certificate) {
     final extensionValue =
-        certificate.getExtensionValue(OID.authorityInfoAccess);
+        certificate.getExtensionValue(CraftOID.authorityInfoAccess);
     if (extensionValue == null) return null;
-    return _getAIAUrl(extensionValue, OID.caIssuers);
+    return _getAIAUrl(extensionValue, CraftOID.caIssuers);
   }
 
   static String? _getAIAUrl(Uint8List extensionValue, String accessMethodOid) {

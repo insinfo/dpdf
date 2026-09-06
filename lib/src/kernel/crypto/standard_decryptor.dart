@@ -1,14 +1,14 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/kernel/crypto/arcfour_encryption.dart';
-import 'package:dpdf/src/kernel/crypto/i_decryptor.dart';
+import 'package:pdfcraft/src/kernel/crypto/arcfour_encryption.dart';
+import 'package:pdfcraft/src/kernel/crypto/decryptor.dart';
 
 /// Standard decryptor implementation (RC4).
-class StandardDecryptor implements IDecryptor {
-  late ARCFOUREncryption _arcfour;
+class CraftStandardDecryptor implements CraftDecryptor {
+  late CraftARCFOUREncryption _arcfour;
 
-  StandardDecryptor(Uint8List key, [int off = 0, int? len]) {
-    _arcfour = ARCFOUREncryption();
+  CraftStandardDecryptor(Uint8List key, [int off = 0, int? len]) {
+    _arcfour = CraftARCFOUREncryption();
     _arcfour.prepareARCFOURKey(key, off, len);
   }
 

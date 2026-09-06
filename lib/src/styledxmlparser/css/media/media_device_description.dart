@@ -1,3 +1,4 @@
-class MediaDeviceDescription {
-  static MediaDeviceDescription createDefault() => MediaDeviceDescription();
+class CraftMediaDeviceDescription {
+  static CraftMediaDeviceDescription createDefault() =>
+      CraftMediaDeviceDescription();
 }

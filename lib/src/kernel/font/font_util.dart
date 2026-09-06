@@ -1,10 +1,10 @@
 import 'dart:typed_data';
-import 'package:dpdf/src/io/font/otf/glyph.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
-import 'package:dpdf/src/io/font/cmap/cmap_content_parser.dart';
+import 'package:pdfcraft/src/io/font/otf/glyph.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
+import 'package:pdfcraft/src/io/font/cmap/cmap_content_parser.dart';
 
-class FontUtil {
-  static PdfStream? getToUnicodeStream(Iterable<Glyph> glyphs) {
+class CraftFontUtil {
+  static CraftPdfStream? getToUnicodeStream(Iterable<CraftGlyph> glyphs) {
     BytesBuilder builder = BytesBuilder();
     builder.add(utf8Encode("/CIDInit /ProcSet findresource begin\n"
         "12 dict begin\n"
@@ -20,9 +20,9 @@ class FontUtil {
         "<0000><FFFF>\n"
         "endcodespacerange\n"));
 
-    List<Glyph> glyphGroup = [];
+    List<CraftGlyph> glyphGroup = [];
     int bfranges = 0;
-    for (Glyph glyph in glyphs) {
+    for (CraftGlyph glyph in glyphs) {
       if (glyph.getChars() != null) {
         glyphGroup.add(glyph);
         if (glyphGroup.length == 100) {
@@ -40,16 +40,16 @@ class FontUtil {
         "CMapName currentdict /CMap defineresource pop\n"
         "end end\n"));
 
-    return PdfStream.withBytes(builder.toBytes());
+    return CraftPdfStream.withBytes(builder.toBytes());
   }
 
-  static int _writeBfrange(BytesBuilder builder, List<Glyph> range) {
+  static int _writeBfrange(BytesBuilder builder, List<CraftGlyph> range) {
     if (range.isEmpty) {
       return 0;
     }
     builder.add(utf8Encode("${range.length} beginbfrange\n"));
-    for (Glyph glyph in range) {
-      String fromTo = CMapContentParser.toHex(glyph.getCode());
+    for (CraftGlyph glyph in range) {
+      String fromTo = CraftCMapContentParser.toHex(glyph.getCode());
       builder.add(utf8Encode("$fromTo $fromTo <"));
       for (int ch in glyph.getChars()!) {
         builder.add(

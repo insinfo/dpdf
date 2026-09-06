@@ -1,9 +1,9 @@
 /// Utilities class to resolve URIs.
-class UriResolver {
+class CraftUriResolver {
   final Uri baseUrl;
   final bool isLocalBaseUri;
 
-  UriResolver(String? baseUri)
+  CraftUriResolver(String? baseUri)
       : baseUrl = _resolveBaseUri(baseUri),
         isLocalBaseUri = _isLocal(baseUri);
 

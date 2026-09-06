@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:dpdf/src/io/colors/icc_profile.dart';
-import 'package:dpdf/src/io/exceptions/io_exception.dart';
+import 'package:pdfcraft/src/io/colors/icc_profile.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
 
 void main() {
   group('IccProfile', () {
@@ -13,7 +13,7 @@ void main() {
       data[18] = 0x42; // B
       data[19] = 0x20; // space
 
-      final colorSpace = IccProfile.getIccColorSpaceName(data);
+      final colorSpace = CraftIccProfile.getIccColorSpaceName(data);
       expect(colorSpace, equals('RGB '));
     });
 
@@ -25,7 +25,7 @@ void main() {
       data[14] = 0x74; // t
       data[15] = 0x72; // r
 
-      final deviceClass = IccProfile.getIccDeviceClass(data);
+      final deviceClass = CraftIccProfile.getIccDeviceClass(data);
       expect(deviceClass, equals('mntr'));
     });
 
@@ -37,7 +37,7 @@ void main() {
       data[18] = 0x42; // B
       data[19] = 0x20; // space
 
-      expect(IccProfile.getIccNumberOfComponents(data), equals(3));
+      expect(CraftIccProfile.getIccNumberOfComponents(data), equals(3));
 
       // GRAY colorspace
       data[16] = 0x47; // G
@@ -45,7 +45,7 @@ void main() {
       data[18] = 0x41; // A
       data[19] = 0x59; // Y
 
-      expect(IccProfile.getIccNumberOfComponents(data), equals(1));
+      expect(CraftIccProfile.getIccNumberOfComponents(data), equals(1));
 
       // CMYK colorspace
       data[16] = 0x43; // C
@@ -53,19 +53,20 @@ void main() {
       data[18] = 0x59; // Y
       data[19] = 0x4B; // K
 
-      expect(IccProfile.getIccNumberOfComponents(data), equals(4));
+      expect(CraftIccProfile.getIccNumberOfComponents(data), equals(4));
     });
 
     test('getInstance throws for invalid profile', () {
       final badData = Uint8List(50);
-      expect(
-          () => IccProfile.getInstance(badData), throwsA(isA<IoException>()));
+      expect(() => CraftIccProfile.getInstance(badData),
+          throwsA(isA<IoException>()));
     });
 
     test('getInstance validates acsp signature', () {
       final data = Uint8List(128);
       // Missing 'acsp' signature
-      expect(() => IccProfile.getInstance(data), throwsA(isA<IoException>()));
+      expect(
+          () => CraftIccProfile.getInstance(data), throwsA(isA<IoException>()));
     });
 
     test('getInstance creates valid profile', () {
@@ -92,7 +93,7 @@ void main() {
       data[38] = 0x73; // s
       data[39] = 0x70; // p
 
-      final profile = IccProfile.getInstance(data);
+      final profile = CraftIccProfile.getInstance(data);
       expect(profile.getNumComponents(), equals(3));
       expect(profile.getData(), equals(data));
     });

@@ -1,18 +1,18 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:dpdf/src/kernel/crypto/aes_cipher.dart';
-import 'package:dpdf/src/kernel/crypto/i_decryptor.dart';
+import 'package:pdfcraft/src/kernel/crypto/aes_cipher.dart';
+import 'package:pdfcraft/src/kernel/crypto/decryptor.dart';
 
 /// AES decryptor implementation.
-class AesDecryptor implements IDecryptor {
-  AESCipher? _cipher;
+class CraftAesDecryptor implements CraftDecryptor {
+  CraftAESCipher? _cipher;
   final Uint8List _key;
   bool _initiated = false;
   final Uint8List _iv = Uint8List(16);
   int _ivptr = 0;
 
-  AesDecryptor(Uint8List key, [int off = 0, int? len])
+  CraftAesDecryptor(Uint8List key, [int off = 0, int? len])
       : _key = Uint8List.fromList(
             key.sublist(off, off + (len ?? (key.length - off))));
 
@@ -29,7 +29,7 @@ class AesDecryptor implements IDecryptor {
       _ivptr += left;
 
       if (_ivptr == _iv.length) {
-        _cipher = AESCipher(false, _key, _iv);
+        _cipher = CraftAESCipher(false, _key, _iv);
         _initiated = true;
         if (len > 0) {
           final res = _cipher!.update(b, off, len);

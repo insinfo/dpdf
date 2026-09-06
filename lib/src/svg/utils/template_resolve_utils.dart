@@ -1,32 +1,33 @@
-import 'package:dpdf/src/svg/renderers/i_branch_svg_node_renderer.dart';
-import 'package:dpdf/src/svg/renderers/i_svg_node_renderer.dart';
-import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
-import 'package:dpdf/src/svg/svg_constants.dart';
-import 'package:dpdf/src/svg/utils/svg_text_util.dart';
+import 'package:pdfcraft/src/svg/renderers/branch_svg_node_renderer.dart';
+import 'package:pdfcraft/src/svg/renderers/svg_node_renderer.dart';
+import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
+import 'package:pdfcraft/src/svg/svg_constants.dart';
+import 'package:pdfcraft/src/svg/utils/svg_text_util.dart';
 
 /// Utility class which contains methods related to href resolving
 class TemplateResolveUtils {
   TemplateResolveUtils._();
 
   /// Resolve href to other object within svg and fills renderer with its properties and children if needed.
-  static void resolve(IBranchSvgNodeRenderer renderer, SvgDrawContext context) {
-    String? href = renderer.getAttribute(SvgConstants.Attributes.HREF);
+  static void resolve(
+      CraftBranchSvgNodeRenderer renderer, CraftSvgDrawContext context) {
+    String? href = renderer.getAttribute(CraftSvgConstants.Attributes.HREF);
     if (href == null) {
-      href = renderer.getAttribute(SvgConstants.Attributes.XLINK_HREF);
+      href = renderer.getAttribute(CraftSvgConstants.Attributes.XLINK_HREF);
     }
     if (href == null || href.isEmpty || href[0] != '#') {
       return;
     }
-    String normalizedName = SvgTextUtil.filterReferenceValue(href);
-    ISvgNodeRenderer? template = context.getNamedObject(normalizedName);
-    if (template is! IBranchSvgNodeRenderer) {
+    String normalizedName = CraftSvgTextUtil.filterReferenceValue(href);
+    CraftSvgNodeRenderer? template = context.getNamedObject(normalizedName);
+    if (template is! CraftBranchSvgNodeRenderer) {
       return;
     }
-    IBranchSvgNodeRenderer namedObject =
-        template.createDeepCopy() as IBranchSvgNodeRenderer;
+    CraftBranchSvgNodeRenderer namedObject =
+        template.createDeepCopy() as CraftBranchSvgNodeRenderer;
     resolve(namedObject, context);
     if (renderer.getChildren().isEmpty) {
-      for (ISvgNodeRenderer child in namedObject.getChildren()) {
+      for (CraftSvgNodeRenderer child in namedObject.getChildren()) {
         renderer.addChild(child);
       }
     }

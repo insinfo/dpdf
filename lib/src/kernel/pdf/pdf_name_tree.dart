@@ -7,39 +7,40 @@ import 'pdf_array.dart';
 import 'generic_name_tree.dart';
 import 'pdf_catalog.dart';
 
-class PdfNameTree extends GenericNameTree {
-  final PdfCatalog _catalog;
-  final PdfName _treeType;
+class CraftPdfNameTree extends CraftGenericNameTree {
+  final CraftPdfCatalog _catalog;
+  final CraftPdfName _treeType;
 
-  PdfNameTree(PdfCatalog catalog, PdfName treeType)
+  CraftPdfNameTree(CraftPdfCatalog catalog, CraftPdfName treeType)
       : _catalog = catalog,
         _treeType = treeType,
-        super(catalog.getPdfObject().getIndirectReference()?.getDocument() ??
-            (throw PdfException("Catalog must be attached to a document")));
+        super(catalog.pdfRepresentation().indirectHandle()?.getDocument() ??
+            (throw CraftPdfException(
+                "Catalog must be attached to a document")));
 
   /// Creates a PdfNameTree and loads it from the catalog.
-  static Future<PdfNameTree> create(
-      PdfCatalog catalog, PdfName treeType) async {
-    final tree = PdfNameTree(catalog, treeType);
+  static Future<CraftPdfNameTree> create(
+      CraftPdfCatalog catalog, CraftPdfName treeType) async {
+    final tree = CraftPdfNameTree(catalog, treeType);
     final items = await tree._readFromCatalog();
     tree.setItems(items);
     return tree;
   }
 
-  Future<Map<PdfString, PdfObject>> _readFromCatalog() async {
+  Future<Map<CraftPdfString, CraftPdfObject>> _readFromCatalog() async {
     final namesDict =
-        await _catalog.getPdfObject().getAsDictionary(PdfName.names);
+        await _catalog.pdfRepresentation().dictionaryEntry(CraftPdfName.names);
     final treeRoot =
-        namesDict == null ? null : await namesDict.getAsDictionary(_treeType);
+        namesDict == null ? null : await namesDict.dictionaryEntry(_treeType);
 
-    Map<PdfString, PdfObject> items;
+    Map<CraftPdfString, CraftPdfObject> items;
     if (treeRoot == null) {
       items = {};
     } else {
-      items = await GenericNameTree.readTree(treeRoot);
+      items = await CraftGenericNameTree.readTree(treeRoot);
     }
 
-    if (PdfName.dests == _treeType) {
+    if (CraftPdfName.dests == _treeType) {
       await _normalizeDestinations(items);
       await _insertDestsEntriesFromCatalog(items);
     }
@@ -47,7 +48,8 @@ class PdfNameTree extends GenericNameTree {
     return items;
   }
 
-  Future<void> _normalizeDestinations(Map<PdfString, PdfObject> items) async {
+  Future<void> _normalizeDestinations(
+      Map<CraftPdfString, CraftPdfObject> items) async {
     final keys = items.keys.toList();
     for (final key in keys) {
       final arr = await _getDestArray(items[key]);
@@ -60,25 +62,26 @@ class PdfNameTree extends GenericNameTree {
   }
 
   Future<void> _insertDestsEntriesFromCatalog(
-      Map<PdfString, PdfObject> items) async {
+      Map<CraftPdfString, CraftPdfObject> items) async {
     final destinations =
-        await _catalog.getPdfObject().getAsDictionary(PdfName.dests);
+        await _catalog.pdfRepresentation().dictionaryEntry(CraftPdfName.dests);
     if (destinations != null) {
       final keys = destinations.getMap()?.keys.toList() ?? [];
       for (final key in keys) {
         final val = await destinations.get(key);
         final array = await _getDestArray(val);
         if (array == null) continue;
-        items[PdfString(key.getValue())] = array;
+        items[CraftPdfString(key.getValue())] = array;
       }
     }
   }
 
-  static Future<PdfArray?> _getDestArray(PdfObject? obj) async {
+  static Future<CraftPdfArray?> _getDestArray(CraftPdfObject? obj) async {
     if (obj == null) return null;
-    if (obj.isArray()) return obj as PdfArray;
+    if (obj.isArray()) return obj as CraftPdfArray;
     if (obj.isDictionary()) {
-      return await (obj as PdfDictionary).getAsArray(PdfName.d); // 'D'
+      return await (obj as CraftPdfDictionary)
+          .arrayEntry(CraftPdfName.d); // 'D'
     }
     return null;
   }

@@ -1,7 +1,7 @@
 import 'font_program.dart';
 import 'otf/glyph.dart';
 
-class Type3Font extends FontProgram {
+class CraftType3Font extends CraftFontProgram {
   int firstChar = 0;
   int lastChar = 0;
   List<double>? widths;
@@ -12,7 +12,7 @@ class Type3Font extends FontProgram {
   // CharProcs is a dictionary of streams, but here we might just store keys/names?
   // Or maybe we don't store CharProcs here but use them to create Glyphs.
 
-  Type3Font() {
+  CraftType3Font() {
     // Type3 fonts are typically FontSpecific
     encodingScheme = "FontSpecific";
   }
@@ -23,7 +23,7 @@ class Type3Font extends FontProgram {
   }
 
   @override
-  int getKerningByGlyph(Glyph first, Glyph second) {
+  int getKerningByGlyph(CraftGlyph first, CraftGlyph second) {
     return 0;
   }
 }

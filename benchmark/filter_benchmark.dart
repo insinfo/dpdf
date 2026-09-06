@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:dpdf/dpdf.dart';
+import 'package:pdfcraft/pdfcraft.dart';
 
 /// Simple benchmark for FilterHandlers
 ///
@@ -34,23 +34,23 @@ void main() {
 
     // Benchmark FlateDecode
     _benchmark('FlateDecode', iterations, () {
-      final dict = PdfDictionary();
-      dict.put(PdfName.filter, PdfName.flateDecodeFilter);
-      FilterHandlers.decodeBytes(Uint8List.fromList(compressed), dict);
+      final dict = CraftPdfDictionary();
+      dict.put(CraftPdfName.filter, CraftPdfName.flateDecodeFilter);
+      CraftFilterHandlers.decodeBytes(Uint8List.fromList(compressed), dict);
     });
 
     // Benchmark ASCIIHexDecode
     _benchmark('ASCIIHexDecode', iterations, () {
-      final dict = PdfDictionary();
-      dict.put(PdfName.filter, PdfName.asciiHexDecodeFilter);
-      FilterHandlers.decodeBytes(hexEncoded, dict);
+      final dict = CraftPdfDictionary();
+      dict.put(CraftPdfName.filter, CraftPdfName.asciiHexDecodeFilter);
+      CraftFilterHandlers.decodeBytes(hexEncoded, dict);
     });
 
     // Benchmark RunLengthDecode
     _benchmark('RunLengthDecode', iterations, () {
-      final dict = PdfDictionary();
-      dict.put(PdfName.filter, PdfName.runLengthDecodeFilter);
-      FilterHandlers.decodeBytes(rlEncoded, dict);
+      final dict = CraftPdfDictionary();
+      dict.put(CraftPdfName.filter, CraftPdfName.runLengthDecodeFilter);
+      CraftFilterHandlers.decodeBytes(rlEncoded, dict);
     });
 
     print('');

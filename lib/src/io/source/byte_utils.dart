@@ -3,26 +3,11 @@ import 'dart:typed_data';
 import 'byte_buffer.dart';
 
 /// Utility class for byte operations, especially for PDF number formatting.
-class ByteUtils {
-  ByteUtils._();
+class CraftByteUtils {
+  CraftByteUtils._();
 
   /// Whether to use high precision for double formatting.
   static bool highPrecision = false;
-
-  /// Hex digit bytes: 0-9, a-f.
-  static final Uint8List _bytes = Uint8List.fromList([
-    48, 49, 50, 51, 52, 53, 54, 55, 56, 57, // 0-9
-    97, 98, 99, 100, 101, 102, // a-f
-  ]);
-
-  /// Zero as bytes.
-  static final Uint8List _zero = Uint8List.fromList([48]); // '0'
-
-  /// One as bytes.
-  static final Uint8List _one = Uint8List.fromList([49]); // '1'
-
-  /// Negative one as bytes.
-  static final Uint8List _negOne = Uint8List.fromList([45, 49]); // '-1'
 
   /// Converts a string to ISO-8859-1 bytes.
   ///
@@ -67,213 +52,44 @@ class ByteUtils {
   }
 
   /// Converts an integer to ISO bytes.
-  static Uint8List getIsoBytesFromInt(int n, [ByteBuffer? buffer]) {
-    var negative = false;
-    if (n < 0) {
-      negative = true;
-      n = -n;
-    }
-    final intLen = _intSize(n);
-    final buf = buffer ?? ByteBuffer.withCapacity(intLen + (negative ? 1 : 0));
-    for (var i = 0; i < intLen; i++) {
-      buf.prepend(_bytes[n % 10]);
-      n ~/= 10;
-    }
-    if (negative) {
-      buf.prepend(45); // '-'
-    }
-    return buffer == null ? buf.getInternalBuffer() : Uint8List(0);
+  static Uint8List getIsoBytesFromInt(int n, [CraftByteBuffer? buffer]) {
+    return _deliver(n.toString(), buffer);
   }
 
-  /// Converts a double to ISO bytes.
-  static Uint8List getIsoBytesFromDouble(double d, [ByteBuffer? buffer]) {
-    return _getIsoBytesFromDoubleWithPrecision(d, buffer, highPrecision);
-  }
-
-  /// Converts a double to ISO bytes with specified precision.
-  static Uint8List _getIsoBytesFromDoubleWithPrecision(
-    double d,
-    ByteBuffer? buffer,
-    bool useHighPrecision,
-  ) {
-    if (useHighPrecision) {
-      if (d.abs() < 0.000001) {
-        if (buffer != null) {
-          buffer.prependBytes(_zero);
-          return Uint8List(0);
-        } else {
-          return _zero;
-        }
-      }
-      if (d.isNaN) {
-        // Log warning about NaN
-        d = 0;
-      }
-      final result = getIsoBytes(_formatNumber(d, 6));
-      if (buffer != null) {
-        buffer.prependBytes(result);
-        return Uint8List(0);
-      } else {
-        return result;
-      }
-    }
-
-    var negative = false;
-    if (d.abs() < 0.000015) {
-      if (buffer != null) {
-        buffer.prependBytes(_zero);
-        return Uint8List(0);
-      } else {
-        return _zero;
-      }
-    }
-
-    ByteBuffer buf;
-    if (d < 0) {
-      negative = true;
-      d = -d;
-    }
-
-    if (d < 1.0) {
-      d += 0.000005;
-      if (d >= 1) {
-        final result = negative ? _negOne : _one;
-        if (buffer != null) {
-          buffer.prependBytes(result);
-          return Uint8List(0);
-        } else {
-          return result;
-        }
-      }
-      var v = (d * 100000).toInt();
-      var len = 5;
-      for (; len > 0; len--) {
-        if (v % 10 != 0) {
-          break;
-        }
-        v ~/= 10;
-      }
-      buf = buffer ?? ByteBuffer.withCapacity(negative ? len + 3 : len + 2);
-      for (var i = 0; i < len; i++) {
-        buf.prepend(_bytes[v % 10]);
-        v ~/= 10;
-      }
-      buf.prepend(46); // '.'
-      buf.prepend(48); // '0'
-      if (negative) {
-        buf.prepend(45); // '-'
-      }
-    } else if (d <= 32767) {
-      d += 0.005;
-      var v = (d * 100).toInt();
-      int intLen;
-      if (v >= 1000000) {
-        intLen = 5;
-      } else if (v >= 100000) {
-        intLen = 4;
-      } else if (v >= 10000) {
-        intLen = 3;
-      } else if (v >= 1000) {
-        intLen = 2;
-      } else {
-        intLen = 1;
-      }
-
-      var fracLen = 0;
-      if (v % 100 != 0) {
-        // fracLen includes '.'
-        fracLen = 2;
-        if (v % 10 != 0) {
-          fracLen++;
-        } else {
-          v ~/= 10;
-        }
-      } else {
-        v ~/= 100;
-      }
-
-      buf = buffer ??
-          ByteBuffer.withCapacity(intLen + fracLen + (negative ? 1 : 0));
-      // -1 because fracLen includes '.'
-      for (var i = 0; i < fracLen - 1; i++) {
-        buf.prepend(_bytes[v % 10]);
-        v ~/= 10;
-      }
-      if (fracLen > 0) {
-        buf.prepend(46); // '.'
-      }
-      for (var i = 0; i < intLen; i++) {
-        buf.prepend(_bytes[v % 10]);
-        v ~/= 10;
-      }
-      if (negative) {
-        buf.prepend(45); // '-'
-      }
+  /// Writes a decimal PDF token without exponent notation.
+  /// Normal precision retains five fractional digits below one and two up to
+  /// 32767. Larger magnitudes round to integers, capped at signed 64-bit max.
+  static Uint8List getIsoBytesFromDouble(double value,
+      [CraftByteBuffer? buffer]) {
+    if (value.isNaN) return _deliver('0', buffer);
+    final magnitude = value.abs();
+    final cutoff = highPrecision ? 0.000001 : 0.000015;
+    if (magnitude < cutoff) return _deliver('0', buffer);
+    String text;
+    if (magnitude.isInfinite || (!highPrecision && magnitude > 32767)) {
+      final ceiling = (BigInt.one << 63) - BigInt.one;
+      final rounded =
+          magnitude.isInfinite ? ceiling : BigInt.from(magnitude + 0.5);
+      text = (rounded > ceiling ? ceiling : rounded).toString();
     } else {
-      d += 0.5;
-      int v;
-      if (d > 9223372036854775807) {
-        v = 9223372036854775807; // max int
+      final places = highPrecision ? 6 : (magnitude < 1 ? 5 : 2);
+      text = magnitude.toStringAsFixed(places);
+      if (text.contains('e') || text.contains('E')) {
+        text = BigInt.from(magnitude).toString();
       } else {
-        if (d.isNaN) {
-          // Log warning about NaN
-          d = 0;
-        }
-        v = d.toInt();
-      }
-      final intLen = _longSize(v);
-      buf = buffer ?? ByteBuffer.withCapacity(intLen + (negative ? 1 : 0));
-      for (var i = 0; i < intLen; i++) {
-        buf.prepend(_bytes[v % 10]);
-        v ~/= 10;
-      }
-      if (negative) {
-        buf.prepend(45); // '-'
+        text = text
+            .replaceFirst(RegExp(r'0+$'), '')
+            .replaceFirst(RegExp(r'\.$'), '');
       }
     }
-
-    return buffer == null ? buf.getInternalBuffer() : Uint8List(0);
+    return _deliver(value.isNegative && text != '0' ? '-$text' : text, buffer);
   }
 
-  /// Formats a number with specified decimal places.
-  static String _formatNumber(double d, int decimals) {
-    final str = d.toStringAsFixed(decimals);
-    // Remove trailing zeros after decimal point
-    if (str.contains('.')) {
-      var result = str;
-      while (result.endsWith('0')) {
-        result = result.substring(0, result.length - 1);
-      }
-      if (result.endsWith('.')) {
-        result = result.substring(0, result.length - 1);
-      }
-      return result;
-    }
-    return str;
-  }
-
-  /// Returns the number of digits in a long.
-  static int _longSize(int l) {
-    var m = 10;
-    for (var i = 1; i < 19; i++) {
-      if (l < m) {
-        return i;
-      }
-      m *= 10;
-    }
-    return 19;
-  }
-
-  /// Returns the number of digits in an int.
-  static int _intSize(int l) {
-    var m = 10;
-    for (var i = 1; i < 10; i++) {
-      if (l < m) {
-        return i;
-      }
-      m *= 10;
-    }
-    return 10;
+  static Uint8List _deliver(String text, CraftByteBuffer? destination) {
+    final bytes = Uint8List.fromList(text.codeUnits);
+    if (destination == null) return bytes;
+    destination.prependBytes(bytes);
+    return Uint8List(0);
   }
 
   /// Checks if two strings are equal, ignoring case.

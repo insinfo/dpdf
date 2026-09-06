@@ -1,8 +1,8 @@
-import '../../commons/exceptions/_exception.dart';
+import '../../commons/exceptions/pdfcraft_exception.dart';
 import 'io_exception_message_constant.dart';
 
 /// Exception class for exceptions in io module.
-class IoException extends Exception {
+class IoException extends PdfcraftException {
   /// Object for more details.
   Object? obj;
 
@@ -18,7 +18,7 @@ class IoException extends Exception {
   ///
   /// [cause] the cause of the exception.
   IoException.fromCause(Object cause)
-      : super(IoExceptionMessageConstant.unknownIoException, cause);
+      : super(CraftIoExceptionMessageConstant.unknownIoException, cause);
 
   /// Creates a new IoException with an object for details.
   ///

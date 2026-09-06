@@ -1,12 +1,12 @@
 import 'dart:math';
 
-import 'package:dpdf/src/io/font/constants/font_mac_style_flags.dart';
-import 'package:dpdf/src/io/font/font_identification.dart';
-import 'package:dpdf/src/io/font/font_metrics.dart';
-import 'package:dpdf/src/io/font/font_names.dart';
-import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:pdfcraft/src/io/font/constants/font_mac_style_flags.dart';
+import 'package:pdfcraft/src/io/font/font_identification.dart';
+import 'package:pdfcraft/src/io/font/font_metrics.dart';
+import 'package:pdfcraft/src/io/font/font_names.dart';
+import 'package:pdfcraft/src/io/font/otf/glyph.dart';
 
-abstract class FontProgram {
+abstract class CraftFontProgram {
   static const int HORIZONTAL_SCALING_FACTOR = 100;
   static const int DEFAULT_WIDTH = 1000;
   static const int UNITS_NORMALIZATION = 1000;
@@ -20,13 +20,13 @@ abstract class FontProgram {
   }
 
   // codeToGlyph: In case Type1: char code to glyph. In case TrueType: glyph index to glyph.
-  Map<int, Glyph> codeToGlyph = {};
-  Map<int, Glyph> unicodeToGlyph = {};
+  Map<int, CraftGlyph> codeToGlyph = {};
+  Map<int, CraftGlyph> unicodeToGlyph = {};
 
   bool isFontSpecific = false;
-  FontNames fontNames = FontNames();
-  FontMetrics fontMetrics = FontMetrics();
-  FontIdentification fontIdentification = FontIdentification();
+  CraftFontNames fontNames = CraftFontNames();
+  CraftFontMetrics fontMetrics = CraftFontMetrics();
+  CraftFontIdentification fontIdentification = CraftFontIdentification();
 
   int avgWidth = 0;
   String encodingScheme = "FontSpecific"; // FontEncoding.FONT_SPECIFIC
@@ -36,51 +36,51 @@ abstract class FontProgram {
     return max(codeToGlyph.length, unicodeToGlyph.length);
   }
 
-  FontNames getFontNames() => fontNames;
-  FontMetrics getFontMetrics() => fontMetrics;
-  FontIdentification getFontIdentification() => fontIdentification;
-  String? getRegistry() => registry;
+  CraftFontNames getFontNames() => fontNames;
+  CraftFontMetrics getFontMetrics() => fontMetrics;
+  CraftFontIdentification getFontIdentification() => fontIdentification;
+  String? characterRegistry() => registry;
 
   int getPdfFontFlags();
 
   bool getIsFontSpecific() => isFontSpecific;
 
   int getWidth(int unicode) {
-    Glyph? glyph = getGlyph(unicode);
+    CraftGlyph? glyph = getGlyph(unicode);
     return glyph != null ? glyph.getWidth() : 0;
   }
 
   int getAvgWidth() => avgWidth;
 
   List<int>? getCharBBox(int unicode) {
-    Glyph? glyph = getGlyph(unicode);
+    CraftGlyph? glyph = getGlyph(unicode);
     return glyph != null ? glyph.getBbox() : null;
   }
 
-  Glyph? getGlyph(int unicode) {
+  CraftGlyph? getGlyph(int unicode) {
     return unicodeToGlyph[unicode];
   }
 
-  Glyph? getGlyphByCode(int charCode) {
+  CraftGlyph? getGlyphByCode(int charCode) {
     return codeToGlyph[charCode];
   }
 
   bool hasKernPairs() => false;
 
   int getKerning(int first, int second) {
-    Glyph? g1 = unicodeToGlyph[first];
-    Glyph? g2 = unicodeToGlyph[second];
+    CraftGlyph? g1 = unicodeToGlyph[first];
+    CraftGlyph? g2 = unicodeToGlyph[second];
     if (g1 != null && g2 != null) {
       return getKerningByGlyph(g1, g2);
     }
     return 0;
   }
 
-  int getKerningByGlyph(Glyph first, Glyph second);
+  int getKerningByGlyph(CraftGlyph first, CraftGlyph second);
 
   bool isBuiltWith(String fontName) => false;
 
-  void setRegistry(String registry) {
+  void assignCharacterRegistry(String registry) {
     this.registry = registry;
   }
 
@@ -139,10 +139,11 @@ abstract class FontProgram {
 
   void setBold(bool isBold) {
     if (isBold) {
-      fontNames.setMacStyle(fontNames.getMacStyle() | FontMacStyleFlags.BOLD);
-    } else {
       fontNames
-          .setMacStyle(fontNames.getMacStyle() & (~FontMacStyleFlags.BOLD));
+          .setMacStyle(fontNames.getMacStyle() | CraftFontMacStyleFlags.BOLD);
+    } else {
+      fontNames.setMacStyle(
+          fontNames.getMacStyle() & (~CraftFontMacStyleFlags.BOLD));
     }
   }
 
@@ -162,7 +163,7 @@ abstract class FontProgram {
   }
 
   void fixSpaceIssue() {
-    Glyph? space = unicodeToGlyph[32]; // 32 is space
+    CraftGlyph? space = unicodeToGlyph[32]; // 32 is space
     if (space != null) {
       codeToGlyph[space.getCode()] = space;
     }

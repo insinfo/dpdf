@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 
-import 'i_external_digest.dart';
+import 'external_digest.dart';
 import 'oid.dart';
 import 'crypto_digest.dart';
 
-/// Class that contains a map with the different message digest algorithms.
-class DigestAlgorithms {
-  DigestAlgorithms._();
+/// Digest algorithm names and identifier mappings.
+class CraftDigestAlgorithms {
+  CraftDigestAlgorithms._();
 
   /// Algorithm available for signatures since PDF 1.3.
   static const String sha1 = 'SHA-1';
@@ -36,15 +36,15 @@ class DigestAlgorithms {
   /// The output length is fixed at 512 bits (64 bytes).
   static const String shake256 = 'SHAKE256';
 
-  /// Maps the digest IDs with the human-readable name of the digest algorithm.
+  /// Associates digest identifiers with readable algorithm labels.
   static final Map<String, String> _digestNames = {
     '1.2.840.113549.2.5': 'MD5',
     '1.2.840.113549.2.2': 'MD2',
     '1.3.14.3.2.26': 'SHA1',
-    OID.sha224: 'SHA224',
-    OID.sha256: 'SHA256',
-    OID.sha384: 'SHA384',
-    OID.sha512: 'SHA512',
+    CraftOID.sha224: 'SHA224',
+    CraftOID.sha256: 'SHA256',
+    CraftOID.sha384: 'SHA384',
+    CraftOID.sha512: 'SHA512',
     '1.3.36.3.2.2': 'RIPEMD128',
     '1.3.36.3.2.1': 'RIPEMD160',
     '1.3.36.3.2.3': 'RIPEMD256',
@@ -64,10 +64,10 @@ class DigestAlgorithms {
     '1.3.36.3.3.1.2': 'RIPEMD160',
     '1.3.36.3.3.1.4': 'RIPEMD256',
     '1.2.643.2.2.9': 'GOST3411',
-    OID.sha3_224: 'SHA3-224',
-    OID.sha3_256: 'SHA3-256',
-    OID.sha3_384: 'SHA3-384',
-    OID.sha3_512: 'SHA3-512',
+    CraftOID.sha3_224: 'SHA3-224',
+    CraftOID.sha3_256: 'SHA3-256',
+    CraftOID.sha3_384: 'SHA3-384',
+    CraftOID.sha3_512: 'SHA3-512',
   };
 
   /// Maps the name of a digest algorithm with its ID.
@@ -78,14 +78,14 @@ class DigestAlgorithms {
     'MD-5': '1.2.840.113549.2.5',
     'SHA1': '1.3.14.3.2.26',
     'SHA-1': '1.3.14.3.2.26',
-    'SHA224': OID.sha224,
-    'SHA-224': OID.sha224,
-    'SHA256': OID.sha256,
-    'SHA-256': OID.sha256,
-    'SHA384': OID.sha384,
-    'SHA-384': OID.sha384,
-    'SHA512': OID.sha512,
-    'SHA-512': OID.sha512,
+    'SHA224': CraftOID.sha224,
+    'SHA-224': CraftOID.sha224,
+    'SHA256': CraftOID.sha256,
+    'SHA-256': CraftOID.sha256,
+    'SHA384': CraftOID.sha384,
+    'SHA-384': CraftOID.sha384,
+    'SHA512': CraftOID.sha512,
+    'SHA-512': CraftOID.sha512,
     'RIPEMD128': '1.3.36.3.2.2',
     'RIPEMD-128': '1.3.36.3.2.2',
     'RIPEMD160': '1.3.36.3.2.1',
@@ -93,10 +93,10 @@ class DigestAlgorithms {
     'RIPEMD256': '1.3.36.3.2.3',
     'RIPEMD-256': '1.3.36.3.2.3',
     'GOST3411': '1.2.643.2.2.9',
-    'SHA3-224': OID.sha3_224,
-    'SHA3-256': OID.sha3_256,
-    'SHA3-384': OID.sha3_384,
-    'SHA3-512': OID.sha3_512,
+    'SHA3-224': CraftOID.sha3_224,
+    'SHA3-256': CraftOID.sha3_256,
+    'SHA3-384': CraftOID.sha3_384,
+    'SHA3-512': CraftOID.sha3_512,
   };
 
   /// Maps algorithm names to output lengths in bits.
@@ -129,21 +129,21 @@ class DigestAlgorithms {
   };
 
   /// Default digest implementation.
-  static const IExternalDigest _defaultDigest = CryptoDigest();
+  static const CraftExternalDigest _defaultDigest = CryptoDigest();
 
   /// Get a digest algorithm.
   ///
   /// @param digestOid oid of the digest algorithm
   /// @return MessageDigest object
-  static IMessageDigest getMessageDigestFromOid(String digestOid) {
+  static SigningDigest getMessageDigestFromOid(String digestOid) {
     return getMessageDigest(getDigest(digestOid));
   }
 
-  /// Creates a MessageDigest object that can be used to create a hash.
+  /// Constructs a digest calculator for subsequent hash operations.
   ///
   /// @param hashAlgorithm the algorithm you want to use to create a hash
   /// @return a MessageDigest object
-  static IMessageDigest getMessageDigest(String hashAlgorithm) {
+  static SigningDigest getMessageDigest(String hashAlgorithm) {
     return _defaultDigest.getMessageDigest(hashAlgorithm);
   }
 
@@ -185,7 +185,7 @@ class DigestAlgorithms {
     return ret;
   }
 
-  /// Returns the id of a digest algorithms that is allowed in PDF,
+  /// Looks up the PDF-supported identifier for a digest,
   /// or null if it isn't allowed.
   ///
   /// @param name the name of the digest algorithm
@@ -197,10 +197,10 @@ class DigestAlgorithms {
     return _allowedDigests[name.toUpperCase()];
   }
 
-  /// Retrieve the output length in bits of the given digest algorithm.
+  /// Reports the digest result size in bits.
   ///
   /// @param name the name of the digest algorithm
-  /// @return the length of the output of the algorithm in bits
+  /// @return digest bit length
   static int getOutputBitLength(String? name) {
     if (name == null) {
       throw ArgumentError('The name of the digest algorithm is null');

@@ -1,192 +1,107 @@
 import 'dart:typed_data';
 import '../exceptions/io_exception.dart';
 
-/// LZW decoder for TIFF images.
-/// This class performs LZW decompression for TIFF image data.
-/// Based on Sun Microsystems' TIFFLZWDecompressor.
-class TIFFLZWDecoder {
-  List<Uint8List?> _stringTable = List.filled(4096, null);
-  Uint8List? _data;
-  late Uint8List _uncompData;
-  int _tableIndex = 0;
-  int _bitsToGet = 9;
-  int _bytePointer = 0;
-  int _dstIndex = 0;
-  int _nextData = 0;
-  int _nextBits = 0;
-
-  final int _w;
-
+/// Decodes TIFF 6.0 LZW strips using prefix links and one-byte suffixes.
+/// All strip state belongs to the call, so a decoder can be reused.
+class CraftTIFFLZWDecoder {
+  final int _width;
   final int _predictor;
-  final int _samplesPerPixel;
+  final int _samples;
 
-  static const List<int> _andTable = [511, 1023, 2047, 4095];
+  CraftTIFFLZWDecoder(this._width, this._predictor, this._samples);
 
-  /// Creates a TIFF LZW decoder.
-  ///
-  /// [w] - Image width
-  /// [predictor] - Predictor mode (2 for horizontal differencing)
-  /// [samplesPerPixel] - Number of samples per pixel
-  TIFFLZWDecoder(this._w, this._predictor, this._samplesPerPixel);
-
-  /// Decodes LZW compressed data.
-  ///
-  /// [data] - The compressed data
-  /// [uncompData] - Array to receive uncompressed data
-  /// [h] - Number of rows the compressed data contains
-  ///
-  /// Returns the decoded data.
   Uint8List decode(Uint8List data, Uint8List uncompData, int h) {
-    if (data.length >= 2 && data[0] == 0x00 && data[1] == 0x01) {
-      throw IoException('TIFF 5.0-style LZW codes are not supported');
+    if (_predictor != 1 && _predictor != 2) {
+      throw ArgumentError.value(_predictor, 'predictor', 'Expected 1 or 2.');
+    }
+    if (_predictor == 2 &&
+        (_width <= 0 ||
+            _samples <= 0 ||
+            h < 0 ||
+            _width * _samples * h > uncompData.length)) {
+      throw ArgumentError(
+          'The output buffer must contain the requested pixel rows.');
+    }
+    if (data.length > 1 && data[0] == 0 && data[1] == 1) {
+      throw IoException('This strip uses the obsolete TIFF LZW bit order.');
     }
 
-    _initializeStringTable();
-    _data = data;
-    _uncompData = uncompData;
+    final prefixes = Uint16List(4096);
+    final suffixes = Uint8List(4096);
+    final stack = Uint8List(4096);
+    var available = 258;
+    var codeWidth = 9;
+    var previous = -1;
+    var bitOffset = 0;
+    var written = 0;
 
-    // Initialize pointers
-    _bytePointer = 0;
-    _dstIndex = 0;
-    _nextData = 0;
-    _nextBits = 0;
-
-    int code;
-    int oldCode = 0;
-    Uint8List? str;
-
-    while ((code = _getNextCode()) != 257 && _dstIndex < uncompData.length) {
-      if (code == 256) {
-        _initializeStringTable();
-        code = _getNextCode();
-        if (code == 257) {
-          break;
-        }
-        _writeString(_stringTable[code]!);
-        oldCode = code;
-      } else {
-        if (code < _tableIndex) {
-          str = _stringTable[code];
-          _writeString(str!);
-          _addStringToTableWithByte(_stringTable[oldCode]!, str[0]);
-          oldCode = code;
-        } else {
-          str = _stringTable[oldCode];
-          str = _composeString(str!, str[0]);
-          _writeString(str);
-          _addStringToTable(str);
-          oldCode = code;
-        }
+    while (written < uncompData.length &&
+        bitOffset + codeWidth <= data.length * 8) {
+      var symbol = 0;
+      for (var bit = 0; bit < codeWidth; bit++) {
+        final position = bitOffset++;
+        symbol =
+            (symbol << 1) | ((data[position ~/ 8] >> (7 - position % 8)) & 1);
       }
+      if (symbol == 257) break;
+      if (symbol == 256) {
+        available = 258;
+        codeWidth = 9;
+        previous = -1;
+        continue;
+      }
+      final special = symbol == available && previous >= 0;
+      if (symbol > available ||
+          (symbol == available && !special) ||
+          (previous < 0 && symbol >= 256)) {
+        throw IoException('LZW strip refers to an undefined dictionary entry.');
+      }
+
+      var cursor = special ? previous : symbol;
+      var depth = 0;
+      while (cursor >= 258) {
+        stack[depth++] = suffixes[cursor];
+        cursor = prefixes[cursor];
+      }
+      final firstByte = cursor;
+      stack[depth++] = firstByte;
+      while (depth > 0 && written < uncompData.length) {
+        uncompData[written++] = stack[--depth];
+      }
+      if (special && written < uncompData.length) {
+        uncompData[written++] = firstByte;
+      }
+
+      if (previous >= 0 && available < 4096) {
+        prefixes[available] = previous;
+        suffixes[available] = firstByte;
+        available++;
+        // TIFF changes code width one dictionary entry before a full power of 2.
+        if (codeWidth < 12 && available == (1 << codeWidth) - 1) codeWidth++;
+      }
+      previous = symbol;
     }
 
-    // Horizontal Differencing Predictor
     if (_predictor == 2) {
-      for (int j = 0; j < h; j++) {
-        int count = _samplesPerPixel * (j * _w + 1);
-        for (int i = _samplesPerPixel; i < _w * _samplesPerPixel; i++) {
-          uncompData[count] =
-              (uncompData[count] + uncompData[count - _samplesPerPixel]) & 0xFF;
-          count++;
+      final rowBytes = _width * _samples;
+      for (var row = 0; row < h; row++) {
+        final end = (row + 1) * rowBytes;
+        for (var position = row * rowBytes + _samples;
+            position < end;
+            position++) {
+          uncompData[position] =
+              (uncompData[position] + uncompData[position - _samples]) & 255;
         }
       }
     }
-
+    // Retain the previous API's tolerance of strips without a final EOI code.
     return uncompData;
-  }
-
-  /// Initialize the string table.
-  void _initializeStringTable() {
-    _stringTable = List.filled(4096, null);
-    for (int i = 0; i < 256; i++) {
-      _stringTable[i] = Uint8List.fromList([i]);
-    }
-    _tableIndex = 258;
-    _bitsToGet = 9;
-  }
-
-  /// Write out the string just uncompressed.
-  void _writeString(Uint8List str) {
-    int max = _uncompData.length - _dstIndex;
-    if (str.length < max) {
-      max = str.length;
-    }
-    _uncompData.setRange(_dstIndex, _dstIndex + max, str);
-    _dstIndex += max;
-  }
-
-  /// Add a new string to the string table.
-  void _addStringToTableWithByte(Uint8List oldString, int newByte) {
-    final length = oldString.length;
-    final str = Uint8List(length + 1);
-    str.setRange(0, length, oldString);
-    str[length] = newByte;
-
-    _stringTable[_tableIndex++] = str;
-    _updateBitsToGet();
-  }
-
-  /// Add a new string to the string table.
-  void _addStringToTable(Uint8List str) {
-    _stringTable[_tableIndex++] = str;
-    _updateBitsToGet();
-  }
-
-  void _updateBitsToGet() {
-    if (_tableIndex == 511) {
-      _bitsToGet = 10;
-    } else if (_tableIndex == 1023) {
-      _bitsToGet = 11;
-    } else if (_tableIndex == 2047) {
-      _bitsToGet = 12;
-    }
-  }
-
-  /// Append newByte to the end of oldString.
-  Uint8List _composeString(Uint8List oldString, int newByte) {
-    final length = oldString.length;
-    final str = Uint8List(length + 1);
-    str.setRange(0, length, oldString);
-    str[length] = newByte;
-    return str;
-  }
-
-  /// Returns the next 9, 10, 11 or 12 bits.
-  int _getNextCode() {
-    try {
-      _nextData = (_nextData << 8) | (_data![_bytePointer++] & 0xff);
-      _nextBits += 8;
-
-      if (_nextBits < _bitsToGet) {
-        _nextData = (_nextData << 8) | (_data![_bytePointer++] & 0xff);
-        _nextBits += 8;
-      }
-
-      int code =
-          (_nextData >> (_nextBits - _bitsToGet)) & _andTable[_bitsToGet - 9];
-      _nextBits -= _bitsToGet;
-      return code;
-    } on RangeError {
-      // Strip not terminated as expected: return EndOfInformation code.
-      return 257;
-    }
   }
 }
 
-/// Utility class for LZW decoding.
-class LZWDecoder {
-  LZWDecoder._();
+class CraftLZWDecoder {
+  CraftLZWDecoder._();
 
-  /// Decodes LZW compressed data.
-  ///
-  /// [data] - Compressed input data
-  /// [expectedSize] - Expected size of uncompressed output
-  /// [width] - Image width (for predictor)
-  /// [predictor] - Predictor mode (1 = none, 2 = horizontal differencing)
-  /// [samplesPerPixel] - Number of samples per pixel
-  /// [height] - Image height
-  ///
-  /// Returns decompressed data.
   static Uint8List decode(
     Uint8List data, {
     required int expectedSize,
@@ -195,8 +110,8 @@ class LZWDecoder {
     int samplesPerPixel = 1,
     int height = 1,
   }) {
-    final uncompData = Uint8List(expectedSize);
-    final decoder = TIFFLZWDecoder(width, predictor, samplesPerPixel);
-    return decoder.decode(data, uncompData, height);
+    RangeError.checkNotNegative(expectedSize, 'expectedSize');
+    return CraftTIFFLZWDecoder(width, predictor, samplesPerPixel)
+        .decode(data, Uint8List(expectedSize), height);
   }
 }

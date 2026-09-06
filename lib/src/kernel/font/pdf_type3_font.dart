@@ -1,26 +1,27 @@
-import 'package:dpdf/src/io/font/type3_font.dart';
-import 'package:dpdf/src/kernel/font/pdf_simple_font.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:pdfcraft/src/io/font/type3_font.dart';
+import 'package:pdfcraft/src/kernel/font/pdf_simple_font.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/io/font/otf/glyph.dart';
 
-class PdfType3Font extends PdfSimpleFont<Type3Font> {
-  PdfType3Font(PdfDictionary dictionary) : super(dictionary) {
-    setFontProgram(Type3Font());
+class CraftPdfType3Font extends CraftPdfSimpleFont<CraftType3Font> {
+  CraftPdfType3Font(CraftPdfDictionary dictionary) : super(dictionary) {
+    setFontProgram(CraftType3Font());
   }
 
   /// Creates a PdfType3Font from a given dictionary.
-  static PdfType3Font fromDictionary(PdfDictionary dictionary) {
-    return PdfType3Font(dictionary);
+  static CraftPdfType3Font fromDictionary(CraftPdfDictionary dictionary) {
+    return CraftPdfType3Font(dictionary);
   }
 
-  Future<void> initFromDictionary(PdfDictionary dictionary) async {
-    final firstCharObj = await dictionary.getAsInt(PdfName.firstChar);
-    final lastCharObj = await dictionary.getAsInt(PdfName.lastChar);
-    final widthsObj = await dictionary.getAsArray(PdfName.widths);
-    final fontMatrixObj = await dictionary.getAsArray(PdfName.fontMatrix);
-    final charProcsObj = await dictionary.getAsDictionary(PdfName.charProcs);
-    final bboxObj = await dictionary.getAsArray(PdfName.fontBBox);
+  Future<void> initFromDictionary(CraftPdfDictionary dictionary) async {
+    final firstCharObj = await dictionary.integerEntry(CraftPdfName.firstChar);
+    final lastCharObj = await dictionary.integerEntry(CraftPdfName.lastChar);
+    final widthsObj = await dictionary.arrayEntry(CraftPdfName.widths);
+    final fontMatrixObj = await dictionary.arrayEntry(CraftPdfName.fontMatrix);
+    final charProcsObj =
+        await dictionary.dictionaryEntry(CraftPdfName.charProcs);
+    final bboxObj = await dictionary.arrayEntry(CraftPdfName.fontBBox);
 
     if (firstCharObj != null &&
         lastCharObj != null &&
@@ -28,7 +29,7 @@ class PdfType3Font extends PdfSimpleFont<Type3Font> {
         fontMatrixObj != null &&
         charProcsObj != null &&
         bboxObj != null) {
-      final font = getFontProgram() as Type3Font?;
+      final font = getFontProgram() as CraftType3Font?;
       if (font != null) {
         font.firstChar = firstCharObj;
         font.lastChar = lastCharObj;
@@ -40,12 +41,12 @@ class PdfType3Font extends PdfSimpleFont<Type3Font> {
   }
 
   @override
-  Future<void> addFontStream(PdfDictionary fontDescriptor) async {
+  Future<void> addFontStream(CraftPdfDictionary fontDescriptor) async {
     // Type3 fonts don't use a stream in the descriptor usually, they define charProcs
   }
 
   @override
-  Glyph? getGlyph(int unicode) {
+  CraftGlyph? getGlyph(int unicode) {
     return getFontProgram()?.getGlyphByCode(unicode);
   }
 }

@@ -1,8 +1,8 @@
 /// Standard OIDs used in digital signatures.
 ///
 ///
-class OID {
-  OID._();
+class CraftOID {
+  CraftOID._();
 
   // RSA
   static const String rsa = '1.2.840.113549.1.1.1';

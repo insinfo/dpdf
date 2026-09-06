@@ -1,3 +1,4 @@
+import 'linear_symbol_painter.dart';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -14,7 +15,7 @@ import 'exceptions/barcodes_exception_message_constant.dart';
 /// BarCode 128 is a high-density linear barcode symbology defined in ISO/IEC 15417:2007.
 ///
 /// It is used for alphanumeric or numeric-only barcodes. It can encode all 128 characters of ASCII
-class Barcode128 extends Barcode1D {
+class CraftBarcode128 extends CraftBarcode1D {
   /// A type of barcode
   static const int CODE128 = 1;
 
@@ -179,29 +180,30 @@ class Barcode128 extends Barcode1D {
   /// To generate the font the [PdfDocument.getDefaultFont] will be implicitly called.
   /// If you want to use this barcode in PDF/A documents, please consider using
   /// [Barcode128.customFont].
-  factory Barcode128(PdfDocument document, [PdfFont? font]) {
-    final resolvedFont = font ?? document.getDefaultFont();
+  factory CraftBarcode128(CraftPdfDocument document, [CraftPdfFont? font]) {
+    final resolvedFont = font ?? document.defaultTypeface();
     if (resolvedFont == null) {
-      throw PdfException(
+      throw CraftPdfException(
           'Could not create default font for barcode. Please provide a font explicitly.');
     }
-    return Barcode128._internal(document, resolvedFont);
+    return CraftBarcode128._internal(document, resolvedFont);
   }
 
-  Barcode128._internal(PdfDocument document, PdfFont font) : super(document) {
+  CraftBarcode128._internal(CraftPdfDocument document, CraftPdfFont font)
+      : super(document) {
     this.x = 0.8;
     this.font = font;
     this.size = 8;
     this.baseline = size;
     this.barHeight = size * 3;
-    this.textAlignment = Barcode1D.ALIGN_CENTER;
+    this.textAlignment = CraftBarcode1D.ALIGN_CENTER;
     this.codeType = CODE128;
     _initializeAis();
   }
 
   static bool _aisInitialized = false;
 
-  void _initializeAis() {
+  static void _initializeAis() {
     if (_aisInitialized) return;
     ais[0] = 20;
     ais[1] = 16;
@@ -289,53 +291,55 @@ class Barcode128 extends Barcode1D {
     return buf.toString();
   }
 
-  /// Gets the human readable text of a sequence of AI.
+  /// Formats recognized GS1 application identifiers in parentheses.
+  /// Unknown or incomplete suffixes remain readable rather than being dropped.
   static String getHumanReadableUCCEAN(String code) {
-    StringBuffer buf = StringBuffer();
-    String fnc1 = String.fromCharCode(FNC1);
-    while (true) {
-      if (code.startsWith(fnc1)) {
-        code = code.substring(1);
+    _initializeAis();
+    final identifiers = <String, int>{
+      for (final entry in ais.entries)
+        if (entry.value != null && entry.value != 0)
+          entry.key.toString().padLeft(2, '0'): entry.value!,
+    };
+    final lengths = identifiers.keys.map((key) => key.length).toSet().toList()
+      ..sort();
+    final result = StringBuffer();
+    var position = 0;
+    while (position < code.length) {
+      if (code.codeUnitAt(position) == FNC1) {
+        position++;
         continue;
       }
-      int n = 0;
-      int idlen = 0;
-      for (int k = 2; k < 5; ++k) {
-        if (code.length < k) {
-          break;
-        }
-        int subcode = int.tryParse(code.substring(0, k)) ?? 0;
-        n = ais[subcode] ?? 0;
-        if (n != 0) {
-          idlen = k;
+      String? identifier;
+      for (final length in lengths) {
+        if (position + length > code.length) continue;
+        final candidate = code.substring(position, position + length);
+        if (identifiers.containsKey(candidate)) {
+          identifier = candidate;
           break;
         }
       }
-      if (idlen == 0) {
+      if (identifier == null) {
+        result.write(removeFNC1(code.substring(position)));
         break;
       }
-      buf.write('(');
-      buf.write(code.substring(0, idlen));
-      buf.write(')');
-      code = code.substring(idlen);
-      if (n > 0) {
-        n -= idlen;
-        if (code.length <= n) {
-          break;
-        }
-        buf.write(removeFNC1(code.substring(0, n)));
-        code = code.substring(n);
-      } else {
-        int idx = code.indexOf(fnc1);
-        if (idx < 0) {
-          break;
-        }
-        buf.write(code.substring(0, idx));
-        code = code.substring(idx + 1);
+      position += identifier.length;
+      final declared = identifiers[identifier]!;
+      final limit =
+          declared > 0 ? position + declared - identifier.length : code.length;
+      var end = position;
+      while (end < code.length && end < limit && code.codeUnitAt(end) != FNC1) {
+        end++;
+      }
+      result.write('($identifier)');
+      result.write(removeFNC1(code.substring(position, end)));
+      position = end;
+      if (declared > 0 && end < limit) {
+        // A truncated fixed-length field cannot identify subsequent fields safely.
+        result.write(removeFNC1(code.substring(position)));
+        break;
       }
     }
-    buf.write(removeFNC1(code));
-    return buf.toString();
+    return result.toString();
   }
 
   static String getRawText(String text, bool ucc,
@@ -353,7 +357,7 @@ class Barcode128 extends Barcode1D {
     for (int k = 0; k < tLen; ++k) {
       c = text.codeUnitAt(k);
       if (c > 127 && c != FNC1) {
-        throw PdfException(BarcodesExceptionMessageConstant
+        throw CraftPdfException(CraftBarcodesExceptionMessageConstant
             .THERE_ARE_ILLEGAL_CHARACTERS_FOR_BARCODE_128);
       }
     }
@@ -394,7 +398,7 @@ class Barcode128 extends Barcode1D {
     }
     if (codeSet != Barcode128CodeSet.AUTO &&
         currentCode != _getStartSymbol(codeSet)) {
-      throw PdfException(BarcodesExceptionMessageConstant
+      throw CraftPdfException(CraftBarcodesExceptionMessageConstant
           .THERE_ARE_ILLEGAL_CHARACTERS_FOR_BARCODE_128);
     }
     while (index < tLen) {
@@ -482,7 +486,7 @@ class Barcode128 extends Barcode1D {
       }
       if (codeSet != Barcode128CodeSet.AUTO &&
           currentCode != _getStartSymbol(codeSet)) {
-        throw PdfException(BarcodesExceptionMessageConstant
+        throw CraftPdfException(CraftBarcodesExceptionMessageConstant
             .THERE_ARE_ILLEGAL_CHARACTERS_FOR_BARCODE_128);
       }
     }
@@ -509,141 +513,35 @@ class Barcode128 extends Barcode1D {
     return Uint8List.fromList(bars);
   }
 
-  @override
-  Rectangle getBarcodeSize() {
-    double fontX = 0;
-    double fontY = 0;
-    String fullCode = "";
-    if (font != null) {
-      if (baseline > 0) {
-        fontY = baseline - getDescender();
-      } else {
-        fontY = -baseline + size;
-      }
-      if (codeType == CODE128_RAW) {
-        int idx = code.indexOf('\uffff');
-        if (idx < 0) {
-          fullCode = "";
-        } else {
-          fullCode = code.substring(idx + 1);
-        }
-      } else {
-        if (codeType == CODE128_UCC) {
-          fullCode = getHumanReadableUCCEAN(code);
-        } else {
-          fullCode = removeFNC1(code);
-        }
-      }
-      fontX = font!.getWidthPoint(altText != null ? altText! : fullCode, size);
-    }
-    if (codeType == CODE128_RAW) {
-      int idx = code.indexOf('\uffff');
-      if (idx >= 0) {
-        fullCode = code.substring(0, idx);
-      } else {
-        fullCode = code;
-      }
-    } else {
-      fullCode = getRawText(code, codeType == CODE128_UCC, _codeSet);
-    }
-    int len = fullCode.length;
-    double fullWidth = (len + 2) * 11 * x + 2 * x;
-    fullWidth = math.max(fullWidth, fontX);
-    double fullHeight = barHeight + fontY;
-    return Rectangle(0, 0, fullWidth, fullHeight);
+  (List<double>, String) _visualData() {
+    final separator = code.indexOf('\uffff');
+    final rawMode = codeType == CODE128_RAW;
+    final encoded = rawMode
+        ? (separator < 0 ? code : code.substring(0, separator))
+        : getRawText(code, codeType == CODE128_UCC, _codeSet);
+    final label = rawMode
+        ? (separator < 0 ? '' : code.substring(separator + 1))
+        : codeType == CODE128_UCC
+            ? getHumanReadableUCCEAN(code)
+            : removeFNC1(code);
+    return (
+      getBarsCode128Raw(encoded).map((run) => run * x).toList(),
+      altText ?? label
+    );
   }
 
   @override
-  Future<Rectangle> placeBarcode(
-      PdfCanvas canvas, Color? barColor, Color? textColor) async {
-    String fullCode;
-    if (codeType == CODE128_RAW) {
-      int idx = code.indexOf('\uffff');
-      if (idx < 0) {
-        fullCode = "";
-      } else {
-        fullCode = code.substring(idx + 1);
-      }
-    } else {
-      if (codeType == CODE128_UCC) {
-        fullCode = getHumanReadableUCCEAN(code);
-      } else {
-        fullCode = removeFNC1(code);
-      }
-    }
-    double fontX = 0;
-    if (font != null) {
-      fontX = font!.getWidthPoint(altText != null ? altText! : fullCode, size);
-    }
-    String bCode;
-    if (codeType == CODE128_RAW) {
-      int idx = code.indexOf('\uffff');
-      if (idx >= 0) {
-        bCode = code.substring(0, idx);
-      } else {
-        bCode = code;
-      }
-    } else {
-      bCode = getRawText(code, codeType == CODE128_UCC, _codeSet);
-    }
-    int len = bCode.length;
-    double fullWidth = (len + 2) * 11 * x + 2 * x;
-    double barStartX = 0;
-    double textStartX = 0;
-    switch (textAlignment) {
-      case Barcode1D.ALIGN_LEFT:
-        break;
-      case Barcode1D.ALIGN_RIGHT:
-        if (fontX > fullWidth) {
-          barStartX = fontX - fullWidth;
-        } else {
-          textStartX = fullWidth - fontX;
-        }
-        break;
-      default:
-        if (fontX > fullWidth) {
-          barStartX = (fontX - fullWidth) / 2;
-        } else {
-          textStartX = (fullWidth - fontX) / 2;
-        }
-        break;
-    }
-    double barStartY = 0;
-    double textStartY = 0;
-    if (font != null) {
-      if (baseline <= 0) {
-        textStartY = barHeight - baseline;
-      } else {
-        textStartY = -getDescender();
-        barStartY = textStartY + baseline;
-      }
-    }
-    Uint8List bars = getBarsCode128Raw(bCode);
-    bool print = true;
-    if (barColor != null) {
-      canvas.setFillColor(barColor);
-    }
-    for (int k = 0; k < bars.length; ++k) {
-      double w = bars[k] * x;
-      if (print) {
-        // inkSpreading logic
-        canvas.rectangle(barStartX, barStartY, w - inkSpreading, barHeight);
-      }
-      print = !print;
-      barStartX += w;
-    }
-    canvas.fill();
-    if (font != null) {
-      if (textColor != null) {
-        canvas.setFillColor(textColor);
-      }
-      canvas.beginText();
-      await canvas.setFontAndSize(font!, size);
-      canvas.moveText(textStartX, textStartY);
-      canvas.showText(altText != null ? altText! : fullCode);
-      canvas.endText();
-    }
-    return getBarcodeSize();
+  CraftRectangle getBarcodeSize() {
+    final (runs, label) = _visualData();
+    return measureLinearSymbol(this, runs, label);
+  }
+
+  @override
+  Future<CraftRectangle> placeBarcode(CraftPdfCanvas canvas,
+      CraftColor? barColor, CraftColor? textColor) async {
+    final (runs, label) = _visualData();
+    await drawLinearSymbol(this, canvas, runs, label, barColor, textColor);
+    return measureLinearSymbol(this, runs, label);
   }
 
   @override

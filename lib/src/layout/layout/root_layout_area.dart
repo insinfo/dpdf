@@ -1,12 +1,13 @@
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/layout/layout/layout_area.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
 
-class RootLayoutArea extends LayoutArea {
-  RootLayoutArea(int pageNumber, Rectangle bBox) : super(pageNumber, bBox);
+class CraftRootLayoutArea extends CraftLayoutArea {
+  CraftRootLayoutArea(int pageNumber, CraftRectangle bBox)
+      : super(pageNumber, bBox);
 
   // Clone needs to return RootLayoutArea?
   @override
-  LayoutArea clone() {
-    return RootLayoutArea(pageNumber, bBox.clone());
+  CraftLayoutArea clone() {
+    return CraftRootLayoutArea(pageNumber, bBox.clone());
   }
 }

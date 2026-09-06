@@ -8,7 +8,7 @@ import 'pdf_primitive_object.dart';
 ///
 /// PDF strings can be literal strings (in parentheses) or
 /// hexadecimal strings (in angle brackets).
-class PdfString extends PdfPrimitiveObject {
+class CraftPdfString extends CraftPdfPrimitiveObject {
   /// The raw value bytes.
   Uint8List? _value;
 
@@ -22,13 +22,13 @@ class PdfString extends PdfPrimitiveObject {
   String? _encoding;
 
   /// Creates a PdfString from a String.
-  PdfString(String value) {
+  CraftPdfString(String value) {
     _decodedValue = value;
     _value = latin1.encode(value);
   }
 
   /// Creates a PdfString from bytes.
-  PdfString.fromBytes(Uint8List value, [bool hexWriting = false]) {
+  CraftPdfString.fromBytes(Uint8List value, [bool hexWriting = false]) {
     _value = value;
     _hexWriting = hexWriting;
     setContent(
@@ -36,17 +36,17 @@ class PdfString extends PdfPrimitiveObject {
   }
 
   /// Creates an empty PdfString.
-  PdfString.empty() {
+  CraftPdfString.empty() {
     _value = Uint8List(0);
     setContent(_value);
   }
 
   @override
-  int getObjectType() => PdfObjectType.string;
+  int objectKind() => PdfObjectType.string;
 
   @override
-  PdfObject clone() {
-    final cloned = PdfString.fromBytes(
+  CraftPdfObject clone() {
+    final cloned = CraftPdfString.fromBytes(
       Uint8List.fromList(_value ?? []),
       _hexWriting,
     );
@@ -56,8 +56,8 @@ class PdfString extends PdfPrimitiveObject {
   }
 
   @override
-  PdfObject newInstance() {
-    return PdfString.empty();
+  CraftPdfObject newInstance() {
+    return CraftPdfString.empty();
   }
 
   /// Gets the raw value bytes.
@@ -82,7 +82,7 @@ class PdfString extends PdfPrimitiveObject {
   bool isHexWriting() => _hexWriting;
 
   /// Sets hex writing mode.
-  PdfString setHexWriting(bool hexWriting) {
+  CraftPdfString setHexWriting(bool hexWriting) {
     _hexWriting = hexWriting;
     return this;
   }
@@ -96,7 +96,7 @@ class PdfString extends PdfPrimitiveObject {
   }
 
   /// Converts to Unicode string.
-  String toUnicodeString() {
+  String decodeMappingText() {
     if (_value == null || _value!.isEmpty) {
       return '';
     }
@@ -185,7 +185,7 @@ class PdfString extends PdfPrimitiveObject {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! PdfString) return false;
+    if (other is! CraftPdfString) return false;
     return getValue() == other.getValue();
   }
 

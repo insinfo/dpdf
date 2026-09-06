@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:dpdf/src/io/image/png_image_helper.dart';
-import 'package:dpdf/src/io/image/png_image_data.dart';
-import 'package:dpdf/src/layout/properties/image_type.dart';
+import 'package:pdfcraft/src/io/image/png_image_helper.dart';
+import 'package:pdfcraft/src/io/image/png_image_data.dart';
+import 'package:pdfcraft/src/layout/properties/image_type.dart';
 
 void main() {
   group('PngImageHelper Tests', () {
@@ -11,15 +11,14 @@ void main() {
       expect(await file.exists(), isTrue);
 
       final bytes = await file.readAsBytes();
-      final image = PngImageData.fromBytes(bytes);
+      final image = CraftPngImageData.fromBytes(bytes);
 
       // Initially, PngImageData might not have all info until processed
-      PngImageHelper.processImage(image);
-
+      CraftPngImageHelper.processImage(image);
 
       expect(image.width, greaterThan(0));
       expect(image.height, greaterThan(0));
-      expect(image.getOriginalType(), ImageType.PNG);
+      expect(image.getOriginalType(), CraftImageType.PNG);
       expect(image.getData(), isNotNull);
     });
 
@@ -28,10 +27,9 @@ void main() {
       expect(await file.exists(), isTrue);
 
       final bytes = await file.readAsBytes();
-      final image = PngImageData.fromBytes(bytes);
+      final image = CraftPngImageData.fromBytes(bytes);
 
-      PngImageHelper.processImage(image);
-
+      CraftPngImageHelper.processImage(image);
 
       expect(image.width, greaterThan(0));
       expect(image.height, greaterThan(0));

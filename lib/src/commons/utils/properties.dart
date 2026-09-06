@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'dart:convert';
 
-/// Basic implementation of Java-style properties file parser.
+/// Parses key-value property files.
 class Properties extends IterableBase<MapEntry<String, String>> {
   final Map<String, String> _map = {};
 

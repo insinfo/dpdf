@@ -1,24 +1,24 @@
-import 'package:dpdf/src/layout/layout/layout_result.dart';
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
-import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
+import 'package:pdfcraft/src/layout/layout/layout_result.dart';
+import 'package:pdfcraft/src/layout/layout/layout_area.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:pdfcraft/src/layout/minmaxwidth/min_max_width.dart';
 
-class MinMaxWidthLayoutResult extends LayoutResult {
-  MinMaxWidth? minMaxWidth;
+class CraftMinMaxWidthLayoutResult extends CraftLayoutResult {
+  CraftMinMaxWidth? minMaxWidth;
 
-  MinMaxWidthLayoutResult(int status, LayoutArea? occupiedArea,
-      IRenderer? splitRenderer, IRenderer? overflowRenderer,
-      [IRenderer? causeOfNothing])
+  CraftMinMaxWidthLayoutResult(int status, CraftLayoutArea? occupiedArea,
+      CraftRenderer? splitRenderer, CraftRenderer? overflowRenderer,
+      [CraftRenderer? causeOfNothing])
       : super(status, occupiedArea, splitRenderer, overflowRenderer,
             causeOfNothing) {
-    minMaxWidth = MinMaxWidth();
+    minMaxWidth = CraftMinMaxWidth();
   }
 
-  MinMaxWidth? getMinMaxWidth() {
+  CraftMinMaxWidth? getMinMaxWidth() {
     return minMaxWidth;
   }
 
-  MinMaxWidthLayoutResult setMinMaxWidth(MinMaxWidth? minMaxWidth) {
+  CraftMinMaxWidthLayoutResult setMinMaxWidth(CraftMinMaxWidth? minMaxWidth) {
     this.minMaxWidth = minMaxWidth;
     return this;
   }

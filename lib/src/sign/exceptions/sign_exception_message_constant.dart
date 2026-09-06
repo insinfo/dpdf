@@ -1,177 +1,176 @@
-/// Sign module exception message constants.
-class SignExceptionMessageConstant {
-  SignExceptionMessageConstant._();
+/// Diagnostic templates for PDFCraft. Public identifiers and format slots are stable.
+class CraftSignExceptionMessageConstant {
+  CraftSignExceptionMessageConstant._();
 
   static const String algorithmsNotSupported =
-      'Signing algorithms {0} and {1} are not supported.';
+      'The signing combination {0} with {1} is unsupported.';
 
   static const String authenticatedAttributeIsMissingTheDigest =
-      'Authenticated attribute is missing the digest.';
+      'The authenticated attributes do not contain a message digest.';
 
   static const String availableSpaceIsNotEnoughForSignature =
-      'Available space is not enough for signature.';
+      'The reserved signature region is smaller than the signature data.';
 
   static const String tokenEstimationSizeIsNotLargeEnough =
-      'Timestamp token estimation size is not large enough to accommodate the '
-      'entire timestamp token. Timestamp token estimation size is: {0} bytes, '
-      'however real timestamp token size is: {1} bytes.';
+      'The timestamp token needs {1} bytes, exceeding the {0}-byte reservation.';
 
   static const String cannotDecodePkcs7SignedDataObject =
-      'Cannot decode PKCS#7 SignedData object.';
+      'The PKCS#7 SignedData structure could not be decoded.';
 
   static const String cannotFindSigningCertificateWithThisSerial =
-      'Cannot find signing certificate with serial {0}.';
+      'No signing certificate matches serial number {0}.';
 
   static const String cannotBeVerifiedCertificateChain =
-      'Cannot be verified against the KeyStore or the certificate chain.';
+      'Verification failed against both the keystore and the supplied certificate chain.';
 
   static const String
       certificationSignatureCreationFailedDocShallNotContainSigs =
-      'Certification signature creation failed. Document shall not contain any '
-      'certification or approval signatures before signing with certification signature.';
+      'A certification signature requires a document with no existing certification or approval signatures.';
 
   static const String certificateTemplateForExceptionMessage =
-      'Certificate {0} failed: {1}';
+      'Certificate {0} could not be processed: {1}.';
 
   static const String defaultClientsCannotBeCreated =
-      'Default implementation of OCSP and CRL clients cannot be created, '
-      'because signing certificate doesn\'t contain revocation data sources. '
-      'Please try to explicitly add OCSP or CRL client.';
+      'The signing certificate provides no revocation endpoints for default OCSP/CRL clients; supply an explicit OCSP or CRL client.';
 
   static const String dictionaryThisKeyIsNotAName =
-      'Dictionary key {0} is not a name.';
+      'Dictionary entry {0} must have a PDF name value.';
 
   static const String digestAlgorithmsAreNotSame =
-      'Digest algorithm used in the provided IExternalSignature shall be the '
-      'same as digest algorithm in the provided CMSContainer. Digest algorithm '
-      'in CMS container: "{0}". Digest algorithm in IExternalSignature: "{1}"';
+      'Digest mismatch: CMSContainer uses "{0}" while IExternalSignature uses "{1}"; both must select the same digest.';
 
   static const String documentAlreadyPreClosed =
-      'Document has been already pre closed.';
+      'The document has already completed signature pre-close.';
 
-  static const String documentMustBePreClosed = 'Document must be preClosed.';
+  static const String documentMustBePreClosed =
+      'Complete signature pre-close before this operation.';
 
-  static const String documentMustHaveReader = 'Document must have reader.';
+  static const String documentMustHaveReader =
+      'Signing requires a document backed by a PDF reader.';
 
   static const String failedToGetTsaResponse =
-      'Failed to get TSA response from {0}.';
+      'No TSA response could be obtained from {0}.';
 
-  static const String fieldAlreadySigned = 'Field has been already signed.';
+  static const String fieldAlreadySigned =
+      'The selected signature field already contains a signature.';
 
   static const String fieldNamesCannotContainADot =
-      'Field names cannot contain a dot.';
+      'A signature field name must not include a period.';
 
   static const String fieldTypeIsNotASignatureFieldType =
-      'Field type is not a signature field type.';
+      'The selected field is not a signature field.';
 
-  static const String invalidHttpResponse = 'Invalid http response {0}.';
+  static const String invalidHttpResponse =
+      'The HTTP response is invalid: {0}.';
 
   static const String invalidStateWhileCheckingCertChain =
-      'Invalid state. Possible circular certificate chain.';
+      'Certificate-chain traversal reached an invalid state, possibly because the chain is cyclic.';
 
-  static const String invalidTsaResponse = 'Invalid TSA {0} response code {1}.';
+  static const String invalidTsaResponse =
+      'TSA {0} returned an invalid response status {1}.';
 
   static const String noCryptoDictionaryDefined =
-      'No crypto dictionary defined.';
+      'A signature cryptographic dictionary has not been configured.';
 
   static const String noRevocationDataForSigningCertificate =
-      'Neither ocsp nor crl data are available for the signing certificate '
-      'or certificate is revoked.';
+      'The signing certificate is revoked, or neither OCSP nor CRL status data is available.';
 
   static const String noSignaturesToProlong =
-      'Document doesn\'t contain any signatures to prolong.';
+      'The document has no signatures eligible for prolongation.';
 
   static const String notAValidPkcs7ObjectNotASequence =
-      'Not a valid PKCS#7 object - not a sequence';
+      'PKCS#7 decoding requires an ASN.1 sequence at the root.';
 
   static const String notAValidPkcs7ObjectNotSignedData =
-      'Not a valid PKCS#7 object - not signed data.';
+      'The PKCS#7 content type is not SignedData.';
 
   static const String notEnoughSpace =
-      'Not enough space allocated for the signature.';
+      'The allocated signature placeholder cannot hold the encoded signature.';
 
   static const String notPossibleToEmbedMacToSignature =
-      'It was not possible to embed MAC token into signature. '
-      'Most likely signature container is empty.';
+      'Embedding the MAC token failed; check whether the signature container is empty.';
 
   static const String pathIsNotDirectory =
-      'Provided path: {0} is not a directory. Please provide a directory path '
-      'to store temporary pdf files which are required for signing.';
+      'Temporary signing files require a directory, but {0} is not a directory path.';
 
   static const String providedTsaClientIsNull =
-      'Provided TSA client is null. TSA client is required for timestamp signing.';
+      'Timestamp signing requires a TSA client; none was supplied.';
 
   static const String signatureWithThisNameIsNotTheLast =
-      'Signature with name {0} is not the last. It doesn\'t cover the whole document.';
+      'Signature {0} is not the final document signature and does not cover the complete current document.';
 
   static const String thereIsNoFieldInTheDocumentWithSuchName =
-      'There is no field in the document with such name: {0}.';
+      'The document has no field named {0}.';
 
   static const String thisPkcs7ObjectHasMultipleSignerInfos =
-      'This PKCS#7 object has multiple SignerInfos. Only one is supported at this time.';
+      'PKCS#7 contains multiple SignerInfos; this implementation accepts one.';
 
   static const String thisInstanceOfPdfSignerAlreadyClosed =
-      'This instance of PdfSigner has been already closed.';
+      'This PDF signer has finished and cannot be reused.';
 
   static const String thisTsaFailedToReturnTimeStampToken =
-      'TSA {0} failed to return time stamp token: {1}.';
+      'TSA {0} did not provide a timestamp token: {1}.';
 
-  static const String tooBigKey = 'The key is too big.';
+  static const String tooBigKey =
+      'The cryptographic key exceeds the supported size.';
 
   static const String tsaClientIsMissing =
-      'ITSAClient must be present to reach this PAdES level. '
-      'Please use setTSAClient method to provide it.';
+      'This PAdES level requires an ITSAClient; configure one with setTSAClient().';
 
-  static const String unexpectedCloseBracket = 'Unexpected close bracket.';
+  static const String unexpectedCloseBracket =
+      'A closing bracket appeared outside its matching structure.';
 
-  static const String unexpectedGtGt = 'unexpected >>.';
+  static const String unexpectedGtGt =
+      'A dictionary terminator (>>) appeared at an invalid position.';
 
-  static const String unknownHashAlgorithm = 'Unknown hash algorithm: {0}.';
+  static const String unknownHashAlgorithm =
+      'Hash algorithm {0} is unrecognized.';
 
   static const String couldNotDetermineSignatureMechanismOid =
-      'Could not determine OID for signature algorithm {0} with digest {1}.';
+      'No signature-mechanism OID was found for algorithm {0} and digest {1}.';
 
   static const String verificationAlreadyOutput =
-      'Verification already output.';
+      'Verification results have already been emitted.';
 
   static const String algoRequiresSpecificHash =
-      '{0} requires the document to be digested using {1}, not {2}';
+      'Algorithm {0} requires digest {1}; the supplied digest is {2}.';
 
   static const String onlyMgf1SupportedInRsassaPss =
-      'Only MGF1 is supported in RSASSA-PSS';
+      'RSASSA-PSS supports MGF1 here; other mask-generation functions are unavailable.';
 
   static const String rsassaPssDigestMismatch =
-      'Digest algorithm in RSASSA-PSS parameters is {0} while ambient digest algorithm is {1}';
+      'RSASSA-PSS parameters select digest {0}, conflicting with the active digest {1}.';
 
   static const String digestAlgorithmMgfMismatch =
-      'Digest algorithm in MGF1 parameters is {0} while ambient digest algorithm is {1}';
+      'MGF1 parameters select digest {0}, conflicting with the active digest {1}.';
 
-  static const String invalidArguments = 'Invalid parameters provided.';
+  static const String invalidArguments =
+      'The supplied arguments do not satisfy this operation\'s requirements.';
 
   static const String cmsSignerInfoReadonly =
-      'Updating the signed attributes of this SignerInfo instance is not '
-      'possible because it has been serialized or been initiated from a serialized version.';
+      'Signed attributes are immutable after SignerInfo serialization or construction from serialized data.';
 
   static const String cmsSignerInfoNotInitialized =
-      'Signer info is not yet initialized';
+      'Initialize the CMS signer information before using it.';
 
   static const String cmsInvalidContainerStructure =
-      'Provided data is not a CMS container';
+      'The supplied bytes do not describe a CMS container.';
 
   static const String cmsOnlyOneSignerAllowed =
-      'Only one signer per CMS container is allowed';
+      'A CMS container supports exactly one signer in this implementation.';
 
   static const String cmsCertificateNotFound =
-      'Signer certificate not found in list of certificates';
+      'The certificate list does not include the signer\'s certificate.';
 
   static const String cmsMissingCertificates =
-      'The certificate set must at least contains the signer certificate';
+      'The CMS certificate set must include at least the signing certificate.';
 
   static const String failedToRetrieveCertificate =
-      'Failed to retrieve certificates from binary data.';
+      'No certificates could be decoded from the supplied bytes.';
 
   static const String certificateHashMismatch =
-      'Certificate {0} hash mismatch.';
+      'The calculated hash does not match certificate {0}.';
 
-  static const String certificateHashNull = 'Hash was null.';
+  static const String certificateHashNull =
+      'A certificate hash is required but was not provided.';
 }

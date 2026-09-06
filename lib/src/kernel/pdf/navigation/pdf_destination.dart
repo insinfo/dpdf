@@ -6,23 +6,24 @@ import '../pdf_array.dart';
 import '../pdf_dictionary.dart';
 import '../pdf_number.dart';
 import '../pdf_page.dart';
-import '../i_pdf_name_tree_access.dart';
+import '../pdf_name_tree_access.dart';
 
 /// Abstract base class for PDF destinations.
-abstract class PdfDestination extends PdfObjectWrapper<PdfObject> {
-  PdfDestination(PdfObject pdfObject) : super(pdfObject);
+abstract class CraftPdfDestination
+    extends CraftPdfObjectWrapper<CraftPdfObject> {
+  CraftPdfDestination(CraftPdfObject pdfObject) : super(pdfObject);
 
-  Future<PdfObject?> getDestinationPage(IPdfNameTreeAccess names);
+  Future<CraftPdfObject?> getDestinationPage(CraftPdfNameTreeAccess names);
 
   /// Creates a PdfDestination from a PdfObject.
-  static Future<PdfDestination?> makeDestination(PdfObject pdfObject,
+  static Future<CraftPdfDestination?> makeDestination(CraftPdfObject pdfObject,
       {bool throwException = true}) async {
-    if (pdfObject.getObjectType() == PdfObjectType.string) {
-      return PdfStringDestination(pdfObject as PdfString);
-    } else if (pdfObject.getObjectType() == PdfObjectType.name) {
-      return PdfNamedDestination(pdfObject as PdfName);
-    } else if (pdfObject.getObjectType() == PdfObjectType.array) {
-      final destArray = pdfObject as PdfArray;
+    if (pdfObject.objectKind() == PdfObjectType.string) {
+      return CraftPdfStringDestination(pdfObject as CraftPdfString);
+    } else if (pdfObject.objectKind() == PdfObjectType.name) {
+      return CraftPdfNamedDestination(pdfObject as CraftPdfName);
+    } else if (pdfObject.objectKind() == PdfObjectType.array) {
+      final destArray = pdfObject as CraftPdfArray;
       if (destArray.isEmpty()) {
         if (throwException) {
           throw ArgumentError("Destination array cannot be empty");
@@ -32,20 +33,21 @@ abstract class PdfDestination extends PdfObjectWrapper<PdfObject> {
       }
       final firstObj = await destArray.get(0);
       if (firstObj != null) {
-        if (firstObj.getObjectType() == PdfObjectType.number) {
+        if (firstObj.objectKind() == PdfObjectType.number) {
           // TODO: PdfExplicitRemoteGoToDestination
           return null;
         }
         if (firstObj.isDictionary()) {
-          final dict = firstObj as PdfDictionary;
-          final type = await dict.getAsName(PdfName.type);
-          if (PdfName.page == type) {
-            return PdfExplicitDestination(destArray);
+          final dict = firstObj as CraftPdfDictionary;
+          final type = await dict.nameEntry(CraftPdfName.type);
+          if (CraftPdfName.page == type) {
+            return CraftPdfExplicitDestination(destArray);
           }
         }
         // Fallback or structure
         // return PdfStructureDestination(destArray);
-        return PdfExplicitDestination(destArray); // Assuming explicit for now
+        return CraftPdfExplicitDestination(
+            destArray); // Assuming explicit for now
       }
     } else {
       if (throwException) {
@@ -56,78 +58,89 @@ abstract class PdfDestination extends PdfObjectWrapper<PdfObject> {
   }
 }
 
-class PdfStringDestination extends PdfDestination {
-  PdfStringDestination(PdfString pdfObject) : super(pdfObject);
+class CraftPdfStringDestination extends CraftPdfDestination {
+  CraftPdfStringDestination(CraftPdfString pdfObject) : super(pdfObject);
 
-  PdfStringDestination.fromString(String s) : super(PdfString(s));
+  CraftPdfStringDestination.fromString(String s) : super(CraftPdfString(s));
 
   @override
-  Future<PdfObject?> getDestinationPage(IPdfNameTreeAccess names) async {
-    final destination = await names.getEntry(getPdfObject() as PdfString);
-    if (destination is PdfArray) {
+  Future<CraftPdfObject?> getDestinationPage(
+      CraftPdfNameTreeAccess names) async {
+    final destination =
+        await names.getEntry(pdfRepresentation() as CraftPdfString);
+    if (destination is CraftPdfArray) {
       return await destination.get(0);
-    } else if (destination is PdfDictionary) {
-      final d = await destination.getAsArray(PdfName.d);
+    } else if (destination is CraftPdfDictionary) {
+      final d = await destination.arrayEntry(CraftPdfName.d);
       return await d?.get(0);
     }
     return null;
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => false;
+  bool requiresIndirectStorage() => false;
 }
 
-class PdfNamedDestination extends PdfDestination {
-  PdfNamedDestination(PdfName pdfObject) : super(pdfObject);
+class CraftPdfNamedDestination extends CraftPdfDestination {
+  CraftPdfNamedDestination(CraftPdfName pdfObject) : super(pdfObject);
 
-  PdfNamedDestination.fromName(String name) : super(PdfName(name));
+  CraftPdfNamedDestination.fromName(String name) : super(CraftPdfName(name));
 
   @override
-  Future<PdfObject?> getDestinationPage(IPdfNameTreeAccess names) async {
-    final name = getPdfObject() as PdfName;
+  Future<CraftPdfObject?> getDestinationPage(
+      CraftPdfNameTreeAccess names) async {
+    final name = pdfRepresentation() as CraftPdfName;
     // Map Name to String for lookup if NameTree uses strings?
     // The C# code does names.GetEntry(name.GetValue());
     // IPdfNameTreeAccess has getEntryAsString(String key);
     final entry = await names.getEntryAsString(name.getValue());
-    if (entry is PdfArray) {
+    if (entry is CraftPdfArray) {
       return await entry.get(0);
     }
     return null;
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => false;
+  bool requiresIndirectStorage() => false;
 }
 
-class PdfExplicitDestination extends PdfDestination {
-  PdfExplicitDestination(PdfArray pdfObject) : super(pdfObject);
+class CraftPdfExplicitDestination extends CraftPdfDestination {
+  CraftPdfExplicitDestination(CraftPdfArray pdfObject) : super(pdfObject);
 
-  PdfExplicitDestination.empty() : super(PdfArray());
+  CraftPdfExplicitDestination.empty() : super(CraftPdfArray());
 
   @override
-  Future<PdfObject?> getDestinationPage(IPdfNameTreeAccess names) async {
-    return await (getPdfObject() as PdfArray).get(0);
+  Future<CraftPdfObject?> getDestinationPage(
+      CraftPdfNameTreeAccess names) async {
+    return await (pdfRepresentation() as CraftPdfArray).get(0);
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => false;
+  bool requiresIndirectStorage() => false;
 
   // Factory methods for creating explicit destinations
-  static PdfExplicitDestination createXYZ(
-      PdfPage page, double left, double top, double zoom) {
-    return _create(page, PdfName.xyz, left, double.nan, double.nan, top, zoom);
+  static CraftPdfExplicitDestination createXYZ(
+      CraftPdfPage page, double left, double top, double zoom) {
+    return _create(
+        page, CraftPdfName.xyz, left, double.nan, double.nan, top, zoom);
   }
 
-  static PdfExplicitDestination createFit(PdfPage page) {
-    return _create(page, PdfName.fit, double.nan, double.nan, double.nan,
+  static CraftPdfExplicitDestination createFit(CraftPdfPage page) {
+    return _create(page, CraftPdfName.fit, double.nan, double.nan, double.nan,
         double.nan, double.nan);
   }
 
   // ... other factory methods (FitH, FitV, etc) can be added as needed
 
-  static PdfExplicitDestination _create(PdfPage page, PdfName type, double left,
-      double bottom, double right, double top, double zoom) {
-    final dest = PdfExplicitDestination.empty();
+  static CraftPdfExplicitDestination _create(
+      CraftPdfPage page,
+      CraftPdfName type,
+      double left,
+      double bottom,
+      double right,
+      double top,
+      double zoom) {
+    final dest = CraftPdfExplicitDestination.empty();
     dest._addPage(page);
     dest._addName(type);
     dest._addNumber(left);
@@ -138,18 +151,18 @@ class PdfExplicitDestination extends PdfDestination {
     return dest;
   }
 
-  void _addPage(PdfPage page) {
-    (getPdfObject() as PdfArray)
-        .add(page.getPdfObject().getIndirectReference()!);
+  void _addPage(CraftPdfPage page) {
+    (pdfRepresentation() as CraftPdfArray)
+        .add(page.pdfRepresentation().indirectHandle()!);
   }
 
-  void _addName(PdfName name) {
-    (getPdfObject() as PdfArray).add(name);
+  void _addName(CraftPdfName name) {
+    (pdfRepresentation() as CraftPdfArray).add(name);
   }
 
   void _addNumber(double val) {
     if (!val.isNaN) {
-      (getPdfObject() as PdfArray).add(PdfNumber(val));
+      (pdfRepresentation() as CraftPdfArray).add(CraftPdfNumber(val));
     }
   }
 }

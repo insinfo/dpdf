@@ -1,37 +1,37 @@
-import 'package:dpdf/src/layout/element/abstract_element.dart';
-import 'package:dpdf/src/layout/element/leaf_element.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
-import 'package:dpdf/src/layout/renderer/image_renderer.dart';
-import 'package:dpdf/src/io/image/image_data.dart';
-import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
-import 'package:dpdf/src/layout/properties/property.dart';
-import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:pdfcraft/src/layout/element/abstract_element.dart';
+import 'package:pdfcraft/src/layout/element/leaf_element.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:pdfcraft/src/layout/renderer/image_renderer.dart';
+import 'package:pdfcraft/src/io/image/image_data.dart';
+import 'package:pdfcraft/src/kernel/pdf/tagutils/accessibility_properties.dart';
+import 'package:pdfcraft/src/layout/properties/property.dart';
+import 'package:pdfcraft/src/layout/properties/unit_value.dart';
 
-import 'package:dpdf/src/layout/tagging/i_accessible_element.dart';
+import 'package:pdfcraft/src/layout/tagging/accessible_element.dart';
 
-class Image extends AbstractElement<Image>
-    implements ILeafElement, IAccessibleElement {
-  final ImageData imageData;
+class CraftImage extends CraftAbstractElement<CraftImage>
+    implements CraftLeafContent, CraftAccessibleElement {
+  final CraftImageData imageData;
 
-  Image(this.imageData);
+  CraftImage(this.imageData);
 
   @override
-  IRenderer makeNewRenderer() {
-    return ImageRenderer(this);
+  CraftRenderer makeNewRenderer() {
+    return CraftImageRenderer(this);
   }
 
   @override
-  AccessibilityProperties getAccessibilityProperties() {
-    return AccessibilityProperties(); // TODO: Implement roles
+  CraftAccessibilityProperties getAccessibilityProperties() {
+    return CraftAccessibilityProperties(); // TODO: Implement roles
   }
 
-  Image setWidth(double width) {
-    setProperty(Property.WIDTH, UnitValue.createPointValue(width));
+  CraftImage setWidth(double width) {
+    setProperty(CraftProperty.WIDTH, CraftUnitValue.createPointValue(width));
     return this;
   }
 
-  Image setHeight(double height) {
-    setProperty(Property.HEIGHT, UnitValue.createPointValue(height));
+  CraftImage setHeight(double height) {
+    setProperty(CraftProperty.HEIGHT, CraftUnitValue.createPointValue(height));
     return this;
   }
 }

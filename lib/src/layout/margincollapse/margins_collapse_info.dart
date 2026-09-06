@@ -1,3 +1,3 @@
-class MarginsCollapseInfo {
+class CraftMarginsCollapseInfo {
   // TODO: Implement
 }

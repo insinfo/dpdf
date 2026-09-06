@@ -1,5 +1,6 @@
 import 'pdf_document.dart';
 import 'pdf_reader.dart';
+import 'pdf_object_copier.dart';
 
 /// PDF object type constants.
 class PdfObjectType {
@@ -40,7 +41,7 @@ class PdfObjectType {
 ///
 /// All PDF primitive types (boolean, numbers, strings, names, arrays,
 /// dictionaries, streams, null, and indirect references) extend this class.
-abstract class PdfObject {
+abstract class CraftPdfObject {
   /// Indicates if the object has been flushed.
   static const int flushed = 1;
 
@@ -71,8 +72,8 @@ abstract class PdfObject {
   /// Indicates that this object is not encrypted.
   static const int unencrypted = 1 << 9;
 
-  /// If object is flushed the indirect reference is kept here.
-  PdfIndirectReference? indirectReference;
+  /// Retains the indirect handle after the object is written.
+  CraftPdfIndirectReference? indirectReference;
 
   /// State flags for this object.
   int _state = 0;
@@ -81,7 +82,7 @@ abstract class PdfObject {
   int _offset = 0;
 
   /// Gets object type.
-  int getObjectType();
+  int objectKind();
 
   /// Gets the offset in the file.
   int getOffset() => _offset;
@@ -93,12 +94,12 @@ abstract class PdfObject {
 
   /// Flushes the object to the document.
   Future<void> flush([bool canBeInObjStm = true]) async {
-    if (isFlushed() || getIndirectReference() == null) {
+    if (hasBeenWritten() || indirectHandle() == null) {
       return;
     }
-    final doc = getIndirectReference()!.getDocument();
-    if (doc != null && !doc.isClosed()) {
-      final writer = doc.getWriter();
+    final doc = indirectHandle()!.getDocument();
+    if (doc != null && !doc.lifecycleClosed()) {
+      final writer = doc.outputWriter();
       if (writer != null) {
         await writer.writeObject(this, canBeInObjStm: canBeInObjStm);
       }
@@ -106,32 +107,37 @@ abstract class PdfObject {
   }
 
   /// Gets the indirect reference associated with the object.
-  PdfIndirectReference? getIndirectReference() {
+  CraftPdfIndirectReference? indirectHandle() {
     return indirectReference;
   }
 
   /// Checks if object is indirect.
-  bool isIndirect() {
+  bool usesIndirectStorage() {
     return indirectReference != null || checkState(mustBeIndirect);
   }
 
   /// Indicates if the object has been flushed.
-  bool isFlushed() {
-    final ref = getIndirectReference();
+  bool hasBeenWritten() {
+    final ref = indirectHandle();
     return ref != null && ref.checkState(flushed);
   }
 
   /// Indicates if the object has been modified.
-  bool isModified() {
-    final ref = getIndirectReference();
+  bool hasChanges() {
+    final ref = indirectHandle();
     return ref != null && ref.checkState(modified);
   }
 
   /// Creates a clone of the object.
-  PdfObject clone();
+  CraftPdfObject clone();
+
+  /// Deep-copies this object graph into a writable destination document.
+  /// Use PdfObjectCopier directly to share mappings across multiple roots.
+  Future<CraftPdfObject> copyTo(CraftPdfDocument document) =>
+      PdfObjectCopier(document).copy(this);
 
   /// Sets the modified flag.
-  PdfObject setModified() {
+  CraftPdfObject markChanged() {
     if (indirectReference != null) {
       indirectReference!.setState(modified);
       setState(forbidRelease);
@@ -156,53 +162,52 @@ abstract class PdfObject {
   }
 
   /// Checks if this is a PdfNull.
-  bool isNull() => getObjectType() == PdfObjectType.nullType;
+  bool isNull() => objectKind() == PdfObjectType.nullType;
 
   /// Checks if this is a PdfBoolean.
-  bool isBoolean() => getObjectType() == PdfObjectType.boolean;
+  bool isBoolean() => objectKind() == PdfObjectType.boolean;
 
   /// Checks if this is a PdfNumber.
-  bool isNumber() => getObjectType() == PdfObjectType.number;
+  bool isNumber() => objectKind() == PdfObjectType.number;
 
   /// Checks if this is a PdfString.
-  bool isString() => getObjectType() == PdfObjectType.string;
+  bool isString() => objectKind() == PdfObjectType.string;
 
   /// Checks if this is a PdfName.
-  bool isName() => getObjectType() == PdfObjectType.name;
+  bool isName() => objectKind() == PdfObjectType.name;
 
   /// Checks if this is a PdfArray.
-  bool isArray() => getObjectType() == PdfObjectType.array;
+  bool isArray() => objectKind() == PdfObjectType.array;
 
   /// Checks if this is a PdfDictionary.
-  bool isDictionary() => getObjectType() == PdfObjectType.dictionary;
+  bool isDictionary() => objectKind() == PdfObjectType.dictionary;
 
   /// Checks if this is a PdfStream.
-  bool isStream() => getObjectType() == PdfObjectType.stream;
+  bool isStream() => objectKind() == PdfObjectType.stream;
 
   /// Checks if this is a PdfIndirectReference.
-  bool isIndirectReference() =>
-      getObjectType() == PdfObjectType.indirectReference;
+  bool isIndirectReference() => objectKind() == PdfObjectType.indirectReference;
 
   /// Checks if this is a PdfLiteral.
-  bool isLiteral() => getObjectType() == PdfObjectType.literal;
+  bool isLiteral() => objectKind() == PdfObjectType.literal;
 
   /// Sets the indirect reference.
-  PdfObject setIndirectReference(PdfIndirectReference? ref) {
+  CraftPdfObject setIndirectReference(CraftPdfIndirectReference? ref) {
     indirectReference = ref;
     return this;
   }
 
   /// Makes the object indirect.
-  PdfObject makeIndirect(PdfDocument document) {
-    if (getIndirectReference() == null) {
-      setIndirectReference(document.createNextIndirectReference());
-      getIndirectReference()!.setRefersTo(this);
+  CraftPdfObject attachToDocument(CraftPdfDocument document) {
+    if (indirectHandle() == null) {
+      setIndirectReference(document.allocateObjectHandle());
+      indirectHandle()!.assignTargetObject(this);
     }
     return this;
   }
 
   /// Creates new instance of object.
-  PdfObject newInstance();
+  CraftPdfObject newInstance();
 
   /// Checks state of a flag.
   bool checkState(int state) {
@@ -210,19 +215,19 @@ abstract class PdfObject {
   }
 
   /// Sets state flags.
-  PdfObject setState(int state) {
+  CraftPdfObject setState(int state) {
     _state |= state;
     return this;
   }
 
   /// Clears state flags.
-  PdfObject clearState(int state) {
+  CraftPdfObject clearState(int state) {
     _state &= ~state;
     return this;
   }
 
   /// Copies content from another object.
-  void copyContent(PdfObject from, [dynamic document]) {
+  void copyContent(CraftPdfObject from, [dynamic document]) {
     // Override in subclasses
   }
 }
@@ -231,7 +236,7 @@ abstract class PdfObject {
 ///
 /// An indirect reference is a pointer to an object stored elsewhere
 /// in the PDF document.
-class PdfIndirectReference extends PdfObject {
+class CraftPdfIndirectReference extends CraftPdfObject {
   /// Object number.
   final int objNr;
 
@@ -239,7 +244,7 @@ class PdfIndirectReference extends PdfObject {
   int _genNr;
 
   /// The object this reference points to.
-  PdfObject? _refersTo;
+  CraftPdfObject? _refersTo;
 
   /// Offset in the file where the object is stored.
   int _offset = 0;
@@ -254,42 +259,42 @@ class PdfIndirectReference extends PdfObject {
   int _refState = 0;
 
   /// PdfDocument object belongs to.
-  PdfDocument? _pdfDocument;
+  CraftPdfDocument? _pdfDocument;
 
   /// PdfReader that created this reference.
-  PdfReader? _reader;
+  CraftPdfReader? _reader;
 
   /// Creates a new indirect reference.
-  PdfIndirectReference(this.objNr, [int genNr = 0, this._refersTo])
+  CraftPdfIndirectReference(this.objNr, [int genNr = 0, this._refersTo])
       : _genNr = genNr;
 
-  PdfDocument? getDocument() => _pdfDocument;
+  CraftPdfDocument? getDocument() => _pdfDocument;
 
-  void setDocument(PdfDocument? doc) {
+  void setDocument(CraftPdfDocument? doc) {
     _pdfDocument = doc;
   }
 
-  PdfReader? getReader() => _reader;
+  CraftPdfReader? inputReader() => _reader;
 
-  void setReader(PdfReader? reader) {
+  void setReader(CraftPdfReader? reader) {
     _reader = reader;
   }
 
   @override
-  int getObjectType() => PdfObjectType.indirectReference;
+  int objectKind() => PdfObjectType.indirectReference;
 
   @override
-  PdfObject clone() {
-    return PdfIndirectReference(objNr, _genNr, _refersTo);
+  CraftPdfObject clone() {
+    return CraftPdfIndirectReference(objNr, _genNr, _refersTo);
   }
 
   @override
-  PdfObject newInstance() {
-    return PdfIndirectReference(objNr, _genNr);
+  CraftPdfObject newInstance() {
+    return CraftPdfIndirectReference(objNr, _genNr);
   }
 
   /// Gets the object this reference points to.
-  Future<PdfObject?> getRefersTo([bool allowFlushed = false]) async {
+  Future<CraftPdfObject?> targetObject([bool allowFlushed = false]) async {
     if (_refersTo == null) {
       if (_pdfDocument != null) {
         _refersTo = await _pdfDocument!.readObject(this);
@@ -298,11 +303,11 @@ class PdfIndirectReference extends PdfObject {
       }
     }
 
-    if (_refersTo != null && _refersTo!.getIndirectReference() == null) {
+    if (_refersTo != null && _refersTo!.indirectHandle() == null) {
       _refersTo!.setIndirectReference(this);
     }
 
-    if (allowFlushed || !checkState(PdfObject.flushed)) {
+    if (allowFlushed || !checkState(CraftPdfObject.flushed)) {
       return _refersTo;
     }
     return null;
@@ -310,39 +315,39 @@ class PdfIndirectReference extends PdfObject {
 
   /// Gets the object this reference points to synchronously.
   /// If object is not loaded, it might return null.
-  PdfObject? getRefersToSync() {
+  CraftPdfObject? targetObjectSync() {
     return _refersTo;
   }
 
   /// Sets the object this reference points to.
-  void setRefersTo(PdfObject? obj) {
+  void assignTargetObject(CraftPdfObject? obj) {
     _refersTo = obj;
   }
 
   /// Checks if the reference is free.
   bool isFree() {
-    return checkState(PdfObject.free);
+    return checkState(CraftPdfObject.free);
   }
 
   /// Checks if the reference/object has been modified.
   /// Used in append mode to determine which objects need to be written.
   @override
-  bool isModified() {
-    return checkState(PdfObject.modified);
+  bool hasChanges() {
+    return checkState(CraftPdfObject.modified);
   }
 
   /// Marks this reference as modified.
   /// Used in append mode for incremental updates.
-  PdfIndirectReference markAsModified() {
-    setState(PdfObject.modified);
+  CraftPdfIndirectReference markAsModified() {
+    setState(CraftPdfObject.modified);
     return this;
   }
 
   /// Gets the object number.
-  int getObjNumber() => objNr;
+  int objectNumber() => objNr;
 
   /// Gets the generation number.
-  int getGenNumber() => _genNr;
+  int generationNumber() => _genNr;
 
   /// Increments the generation number.
   void incrementGenNumber() {
@@ -379,13 +384,13 @@ class PdfIndirectReference extends PdfObject {
   }
 
   @override
-  PdfObject setState(int state) {
+  CraftPdfObject setState(int state) {
     _refState |= state;
     return this;
   }
 
   @override
-  PdfObject clearState(int state) {
+  CraftPdfObject clearState(int state) {
     _refState &= ~state;
     return this;
   }
@@ -398,7 +403,7 @@ class PdfIndirectReference extends PdfObject {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! PdfIndirectReference) return false;
+    if (other is! CraftPdfIndirectReference) return false;
     return objNr == other.objNr && _genNr == other._genNr;
   }
 
@@ -410,14 +415,14 @@ class PdfIndirectReference extends PdfObject {
 class PdfObjectState {
   PdfObjectState._();
 
-  static const int flushed = PdfObject.flushed;
-  static const int free = PdfObject.free;
-  static const int reading = PdfObject.reading;
-  static const int modified = PdfObject.modified;
-  static const int originalObjectStream = PdfObject.originalObjectStream;
-  static const int mustBeFlushed = PdfObject.mustBeFlushed;
-  static const int mustBeIndirect = PdfObject.mustBeIndirect;
-  static const int forbidRelease = PdfObject.forbidRelease;
-  static const int readOnly = PdfObject.readOnly;
-  static const int unencrypted = PdfObject.unencrypted;
+  static const int flushed = CraftPdfObject.flushed;
+  static const int free = CraftPdfObject.free;
+  static const int reading = CraftPdfObject.reading;
+  static const int modified = CraftPdfObject.modified;
+  static const int originalObjectStream = CraftPdfObject.originalObjectStream;
+  static const int mustBeFlushed = CraftPdfObject.mustBeFlushed;
+  static const int mustBeIndirect = CraftPdfObject.mustBeIndirect;
+  static const int forbidRelease = CraftPdfObject.forbidRelease;
+  static const int readOnly = CraftPdfObject.readOnly;
+  static const int unencrypted = CraftPdfObject.unencrypted;
 }

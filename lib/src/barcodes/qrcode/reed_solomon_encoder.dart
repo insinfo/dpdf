@@ -1,56 +1,49 @@
 import 'gf_256.dart';
-import 'gf_256_poly.dart';
 
-/// Implements Reed-Solomon encoding, as the name implies.
-class ReedSolomonEncoder {
-  final GF256 _field;
-  late List<GF256Poly> _cachedGenerators;
+/// Appends systematic QR error-correction symbols using a feedback register.
+class CraftReedSolomonEncoder {
+  final CraftGF256 _field;
 
-  /// Creates a SolomonEncoder object based on a GF256 object.
-  ReedSolomonEncoder(this._field) {
-    if (GF256.QR_CODE_FIELD != _field) {
-      throw UnsupportedError("Only QR Code is supported at this time");
+  CraftReedSolomonEncoder(this._field) {
+    if (!identical(_field, CraftGF256.QR_CODE_FIELD)) {
+      throw ArgumentError('QR parity requires the field with modulus 0x11d.');
     }
-    _cachedGenerators = [];
-    _cachedGenerators.add(GF256Poly(_field, [1]));
   }
 
-  GF256Poly _buildGenerator(int degree) {
-    if (degree >= _cachedGenerators.length) {
-      GF256Poly lastGenerator = _cachedGenerators[_cachedGenerators.length - 1];
-      for (int d = _cachedGenerators.length; d <= degree; d++) {
-        GF256Poly nextGenerator =
-            lastGenerator.multiply(GF256Poly(_field, [1, _field.exp(d - 1)]));
-        _cachedGenerators.add(nextGenerator);
-        lastGenerator = nextGenerator;
+  /// Replaces the last [ecBytes] entries with parity; data entries are retained.
+  void encode(List<int> toEncode, int ecBytes) {
+    RangeError.checkValueInInterval(ecBytes, 1, 255, 'ecBytes');
+    final payloadSize = toEncode.length - ecBytes;
+    if (payloadSize < 1) {
+      throw ArgumentError(
+          'The parity buffer must follow at least one data byte.');
+    }
+    for (var index = 0; index < payloadSize; index++) {
+      RangeError.checkValueInInterval(toEncode[index], 0, 255, 'data byte');
+    }
+
+    // Ascending coefficients of the product (x + 2^i), i = 0 .. ecBytes-1.
+    var generator = <int>[1];
+    var root = 1;
+    for (var factor = 0; factor < ecBytes; factor++) {
+      final expanded = List<int>.filled(generator.length + 1, 0);
+      for (var degree = 0; degree < generator.length; degree++) {
+        expanded[degree] ^= _field.multiply(generator[degree], root);
+        expanded[degree + 1] ^= generator[degree];
+      }
+      generator = expanded;
+      root = _field.multiply(root, 2);
+    }
+
+    final parity = List<int>.filled(ecBytes, 0);
+    for (var index = 0; index < payloadSize; index++) {
+      final feedback = toEncode[index] ^ parity[0];
+      for (var slot = 0; slot < ecBytes; slot++) {
+        final shifted = slot + 1 < ecBytes ? parity[slot + 1] : 0;
+        parity[slot] =
+            shifted ^ _field.multiply(feedback, generator[ecBytes - slot - 1]);
       }
     }
-    return _cachedGenerators[degree];
-  }
-
-  /// Encodes the provided data.
-  ///
-  /// [toEncode] - data to encode (modified in place)
-  /// [ecBytes] - error correction bytes
-  void encode(List<int> toEncode, int ecBytes) {
-    if (ecBytes == 0) {
-      throw ArgumentError("No error correction bytes");
-    }
-    int dataBytes = toEncode.length - ecBytes;
-    if (dataBytes <= 0) {
-      throw ArgumentError("No data bytes provided");
-    }
-    GF256Poly generator = _buildGenerator(ecBytes);
-    List<int> infoCoefficients = List<int>.filled(dataBytes, 0);
-    List.copyRange(infoCoefficients, 0, toEncode, 0, dataBytes);
-    GF256Poly info = GF256Poly(_field, infoCoefficients);
-    info = info.multiplyByMonomial(ecBytes, 1);
-    GF256Poly remainder = info.divide(generator)[1];
-    List<int> coefficients = remainder.getCoefficients();
-    int numZeroCoefficients = ecBytes - coefficients.length;
-    for (int i = 0; i < numZeroCoefficients; i++) {
-      toEncode[dataBytes + i] = 0;
-    }
-    List.copyRange(toEncode, dataBytes + numZeroCoefficients, coefficients);
+    toEncode.setRange(payloadSize, toEncode.length, parity);
   }
 }

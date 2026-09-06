@@ -1,18 +1,18 @@
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
 
-class DrawContext {
-  PdfDocument document;
-  PdfCanvas canvas;
+class CraftDrawContext {
+  CraftPdfDocument document;
+  CraftPdfCanvas canvas;
   bool taggingEnabled = false;
 
-  DrawContext(this.document, this.canvas, [this.taggingEnabled = false]);
+  CraftDrawContext(this.document, this.canvas, [this.taggingEnabled = false]);
 
-  PdfDocument getDocument() {
+  CraftPdfDocument getDocument() {
     return document;
   }
 
-  PdfCanvas getCanvas() {
+  CraftPdfCanvas getCanvas() {
     return canvas;
   }
 

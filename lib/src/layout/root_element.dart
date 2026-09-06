@@ -1,26 +1,26 @@
-import 'package:dpdf/src/layout/element_property_container.dart';
-import 'package:dpdf/src/layout/properties/leading.dart';
-import 'package:dpdf/src/layout/element/i_block_element.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/layout/renderer/root_renderer.dart';
-import 'package:dpdf/src/layout/i_property_container.dart';
-import 'package:dpdf/src/layout/element/paragraph.dart';
-import 'package:dpdf/src/layout/element/text.dart';
-import 'package:dpdf/src/layout/element/div.dart';
-import 'package:dpdf/src/layout/properties/text_alignment.dart';
-import 'package:dpdf/src/layout/properties/vertical_alignment.dart';
-import 'package:dpdf/src/layout/properties/horizontal_alignment.dart';
-import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:pdfcraft/src/layout/element_property_container.dart';
+import 'package:pdfcraft/src/layout/properties/leading.dart';
+import 'package:pdfcraft/src/layout/element/block_content.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/layout/renderer/root_renderer.dart';
+import 'package:pdfcraft/src/layout/property_container.dart';
+import 'package:pdfcraft/src/layout/element/paragraph.dart';
+import 'package:pdfcraft/src/layout/element/text.dart';
+import 'package:pdfcraft/src/layout/element/div.dart';
+import 'package:pdfcraft/src/layout/properties/text_alignment.dart';
+import 'package:pdfcraft/src/layout/properties/vertical_alignment.dart';
+import 'package:pdfcraft/src/layout/properties/horizontal_alignment.dart';
+import 'package:pdfcraft/src/layout/properties/property.dart';
 
-abstract class RootElement<T extends IPropertyContainer>
-    extends ElementPropertyContainer<T> {
-  PdfDocument pdfDocument;
-  RootRenderer? rootRenderer;
+abstract class CraftRootElement<T extends CraftPropertyContainer>
+    extends CraftElementPropertyContainer<T> {
+  CraftPdfDocument pdfDocument;
+  CraftRootRenderer? rootRenderer;
   bool immediateFlush = true;
 
-  RootElement(this.pdfDocument);
+  CraftRootElement(this.pdfDocument);
 
-  Future<T> add(IBlockElement element) async {
+  Future<T> add(CraftBlockContent element) async {
     var renderer = element.createRendererSubTree();
     // In C#, CreateRendererSubTree returns IRenderer
     // We should add it to root renderer
@@ -28,20 +28,21 @@ abstract class RootElement<T extends IPropertyContainer>
     return this as T;
   }
 
-  RootRenderer ensureRootRendererNotNull();
+  CraftRootRenderer ensureRootRendererNotNull();
 
   Future<T> showTextAligned(
       {required String text,
       required double x,
       required double y,
-      required TextAlignment textAlign,
-      VerticalAlignment? vertAlign,
+      required CraftTextAlignment textAlign,
+      CraftVerticalAlignment? vertAlign,
       double angle = 0,
       int pageNumber = 0}) async {
-    Paragraph p = Paragraph();
-    p.add(Text(text));
+    CraftParagraph p = CraftParagraph();
+    p.add(CraftText(text));
     p.setMargin(0);
-    p.setProperty(Property.LEADING, Leading(Leading.MULTIPLIED, 1.0));
+    p.setProperty(
+        CraftProperty.LEADING, CraftLeading(CraftLeading.MULTIPLIED, 1.0));
 
     return await showTextAlignedParagraph(
         p: p,
@@ -54,16 +55,16 @@ abstract class RootElement<T extends IPropertyContainer>
   }
 
   Future<T> showTextAlignedParagraph(
-      {required Paragraph p,
+      {required CraftParagraph p,
       required double x,
       required double y,
-      required TextAlignment textAlign,
-      VerticalAlignment? vertAlign,
+      required CraftTextAlignment textAlign,
+      CraftVerticalAlignment? vertAlign,
       double angle = 0,
       int pageNumber = 0}) async {
     if (pageNumber == 0) pageNumber = 1;
 
-    Div div = Div();
+    CraftDiv div = CraftDiv();
     div.setTextAlignment(textAlign);
     if (vertAlign != null) {
       div.setVerticalAlignment(vertAlign);
@@ -71,24 +72,24 @@ abstract class RootElement<T extends IPropertyContainer>
     if (angle != 0) {
       div.setRotationAngle(angle);
     }
-    div.setProperty(Property.ROTATION_POINT_X, x);
-    div.setProperty(Property.ROTATION_POINT_Y, y);
+    div.setProperty(CraftProperty.ROTATION_POINT_X, x);
+    div.setProperty(CraftProperty.ROTATION_POINT_Y, y);
 
     double divSize = 5000;
     double divX = x;
     double divY = y;
 
-    if (textAlign == TextAlignment.center) {
+    if (textAlign == CraftTextAlignment.center) {
       divX = x - divSize / 2;
-      p.setHorizontalAlignment(HorizontalAlignment.center);
-    } else if (textAlign == TextAlignment.right) {
+      p.setHorizontalAlignment(CraftHorizontalAlignment.center);
+    } else if (textAlign == CraftTextAlignment.right) {
       divX = x - divSize;
-      p.setHorizontalAlignment(HorizontalAlignment.right);
+      p.setHorizontalAlignment(CraftHorizontalAlignment.right);
     }
 
-    if (vertAlign == VerticalAlignment.middle) {
+    if (vertAlign == CraftVerticalAlignment.middle) {
       divY = y - divSize / 2;
-    } else if (vertAlign == VerticalAlignment.top) {
+    } else if (vertAlign == CraftVerticalAlignment.top) {
       // Check enum case
       divY = y - divSize;
     }

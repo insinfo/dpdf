@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:dpdf/dpdf.dart';
+import 'package:pdfcraft/pdfcraft.dart';
 
 /// Helper to create tokenizer from string
-PdfTokenizer tokenizerFromString(String content) {
+CraftPdfTokenizer tokenizerFromString(String content) {
   final bytes = Uint8List.fromList(utf8.encode(content));
-  return PdfTokenizer(RandomAccessFileOrArray(bytes));
+  return CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
 }
 
 void main() {

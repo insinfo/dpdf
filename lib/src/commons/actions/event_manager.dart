@@ -1,76 +1,69 @@
-/// Interface for events in the  event system.
-abstract class IEvent {
-  /// Gets the type of event.
+/// A notification identified by its event type.
+abstract class CraftEvent {
   String get eventType;
 }
 
-/// Interface for event handlers.
-abstract class IEventHandler {
-  /// Handles the event.
-  void onEvent(IEvent event);
+/// A synchronous notification recipient.
+abstract class CraftEventHandler {
+  void onEvent(CraftEvent event);
 }
 
-/// Base class for  events.
-abstract class AbstractEvent implements IEvent {
+/// Uses the event's Dart runtime type as its default identifier.
+abstract class AbstractEvent implements CraftEvent {
   @override
   String get eventType => runtimeType.toString();
 }
 
-/// Simple event manager for the  library.
+/// Ordered synchronous event delivery shared within the current Dart isolate.
 ///
-/// This is a simplified version - the original has product tracking,
-/// context management, and statistics aggregation.
-class EventManager {
-  static final EventManager _instance = EventManager._();
+/// Registration changes take effect on the next dispatch. A nested dispatch
+/// takes its own snapshot and therefore sees the latest registrations. Handler
+/// errors propagate to the caller and stop delivery of the current event.
+class CraftEventManager {
+  static final CraftEventManager _shared = CraftEventManager._();
+  final Set<CraftEventHandler> _listeners = <CraftEventHandler>{};
 
-  final List<IEventHandler> _handlers = [];
+  CraftEventManager._();
+  static CraftEventManager get instance => _shared;
 
-  EventManager._();
+  /// Equal handlers are registered once, in insertion order.
+  void register(CraftEventHandler handler) => _listeners.add(handler);
 
-  /// Gets the singleton instance.
-  static EventManager get instance => _instance;
+  void unregister(CraftEventHandler handler) => _listeners.remove(handler);
 
-  /// Registers an event handler.
-  void register(IEventHandler handler) {
-    if (!_handlers.contains(handler)) {
-      _handlers.add(handler);
+  void onEvent(CraftEvent event) {
+    final recipients = List<CraftEventHandler>.of(_listeners, growable: false);
+    for (var index = 0; index < recipients.length; index++) {
+      recipients[index].onEvent(event);
     }
   }
 
-  /// Unregisters an event handler.
-  void unregister(IEventHandler handler) {
-    _handlers.remove(handler);
-  }
-
-  /// Dispatches an event to all handlers.
-  void onEvent(IEvent event) {
-    for (final handler in _handlers) {
-      handler.onEvent(event);
-    }
-  }
-
-  /// Clears all handlers.
-  void clear() {
-    _handlers.clear();
-  }
+  void clear() => _listeners.clear();
 }
 
-/// Product name constants.
-class ProductNameConstant {
-  ProductNameConstant._();
+/// Compatibility identifiers for callers of the event API.
+/// These strings do not install or advertise third-party product integrations.
+class CraftProductNameConstant {
+  CraftProductNameConstant._();
 
-  static const String Core = ' Core';
+  static const String Core = 'dpdf Core';
+  @Deprecated('Legacy product identifier retained for event compatibility.')
   static const String pdfHtml = 'pdfHTML';
+  @Deprecated('Legacy product identifier retained for event compatibility.')
   static const String pdfSweep = 'pdfSweep';
+  @Deprecated('Legacy product identifier retained for event compatibility.')
   static const String pdfOcr = 'pdfOCR';
+  @Deprecated('Legacy product identifier retained for event compatibility.')
   static const String pdfCalligraph = 'pdfCalligraph';
 }
 
-/// Namespace constants for  products.
-class NamespaceConstant {
-  NamespaceConstant._();
+/// Legacy event namespaces; values remain stable for existing subscribers.
+class CraftNamespaceConstant {
+  CraftNamespaceConstant._();
 
   static const String Core = 'com.pdf';
+  @Deprecated('Legacy namespace retained for event compatibility.')
   static const String pdfHtml = 'com.pdf.html2pdf';
+  @Deprecated('Legacy namespace retained for event compatibility.')
   static const String pdfOcr = 'com.pdf.pdfocr';
 }

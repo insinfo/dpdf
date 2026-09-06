@@ -1,11 +1,11 @@
 import 'dart:typed_data';
-import 'package:dpdf/src/io/font/adobe_glyph_list.dart';
-import 'package:dpdf/src/io/font/pdf_encodings.dart';
-import 'package:dpdf/src/io/font/otf/glyph_line.dart';
+import 'package:pdfcraft/src/io/font/adobe_glyph_list.dart';
+import 'package:pdfcraft/src/io/font/pdf_encodings.dart';
+import 'package:pdfcraft/src/io/font/otf/glyph_line.dart';
 
-import 'package:dpdf/src/io/util/text_util.dart';
+import 'package:pdfcraft/src/io/util/text_util.dart';
 
-class FontEncoding {
+class CraftFontEncoding {
   static const String NOTDEF = ".notdef";
   static const String FONT_SPECIFIC = "FontSpecific";
 
@@ -17,12 +17,12 @@ class FontEncoding {
   List<String?> differences = List.filled(256, null); // Array of strings
   Map<int, int> unicodeDifferences = {};
 
-  FontEncoding() {
+  CraftFontEncoding() {
     // Default init
   }
 
-  static FontEncoding createFontEncoding(String baseEncoding) {
-    FontEncoding encoding = FontEncoding();
+  static CraftFontEncoding createFontEncoding(String baseEncoding) {
+    CraftFontEncoding encoding = CraftFontEncoding();
     encoding.baseEncoding = normalizeEncoding(baseEncoding);
     if (encoding.baseEncoding!.startsWith("#")) {
       encoding.fillCustomEncoding();
@@ -32,8 +32,8 @@ class FontEncoding {
     return encoding;
   }
 
-  static FontEncoding createEmptyFontEncoding() {
-    FontEncoding encoding = FontEncoding();
+  static CraftFontEncoding createEmptyFontEncoding() {
+    CraftFontEncoding encoding = CraftFontEncoding();
     encoding.baseEncoding = null;
     encoding.fontSpecific = false;
     for (int ch = 0; ch < 256; ch++) {
@@ -42,14 +42,14 @@ class FontEncoding {
     return encoding;
   }
 
-  static FontEncoding createFontSpecificEncoding() {
-    FontEncoding encoding = FontEncoding();
+  static CraftFontEncoding createFontSpecificEncoding() {
+    CraftFontEncoding encoding = CraftFontEncoding();
     encoding.fontSpecific = true;
     fillFontEncoding(encoding);
     return encoding;
   }
 
-  static void fillFontEncoding(FontEncoding encoding) {
+  static void fillFontEncoding(CraftFontEncoding encoding) {
     for (int ch = 0; ch < 256; ch++) {
       encoding.unicodeToCode[ch] = ch;
       encoding.codeToUnicode[ch] = ch;
@@ -62,7 +62,7 @@ class FontEncoding {
 
   bool addSymbol(int code, int unicode) {
     if (code < 0 || code > 255) return false;
-    String? glyphName = AdobeGlyphList.unicodeToName(unicode);
+    String? glyphName = CraftAdobeGlyphList.unicodeToName(unicode);
     if (glyphName != null) {
       unicodeToCode[unicode] = code;
       codeToUnicode[code] = unicode;
@@ -78,9 +78,9 @@ class FontEncoding {
   int getUnicodeDifference(int index) => unicodeDifferences[index] ?? 0;
 
   bool hasDifferences() {
-    if (baseEncoding == PdfEncodings.WINANSI ||
-        baseEncoding == PdfEncodings.MACROMAN ||
-        baseEncoding == PdfEncodings.PDF_DOC_ENCODING) {
+    if (baseEncoding == CraftPdfEncodings.WINANSI ||
+        baseEncoding == CraftPdfEncodings.MACROMAN ||
+        baseEncoding == CraftPdfEncodings.PDF_DOC_ENCODING) {
       return false;
     }
     return true;
@@ -106,7 +106,7 @@ class FontEncoding {
     return Uint8List.fromList(bytes);
   }
 
-  Uint8List convertToBytesFromGlyphLine(GlyphLine glyphLine) {
+  Uint8List convertToBytesFromGlyphLine(CraftGlyphLine glyphLine) {
     int bytesCount = glyphLine.size();
     Uint8List result = Uint8List(bytesCount);
     for (int i = 0; i < bytesCount; i++) {
@@ -121,7 +121,7 @@ class FontEncoding {
 
   bool canEncode(int unicode) {
     return unicodeToCode.containsKey(unicode) ||
-        TextUtil.isNonPrintable(unicode);
+        CraftTextUtil.isNonPrintable(unicode);
   }
 
   bool canDecode(int code) {
@@ -141,20 +141,20 @@ class FontEncoding {
     String? enc = baseEncoding;
     if (enc == null) return;
 
-    PdfEncodings.convertToBytes(" ", enc); // check existence
+    CraftPdfEncodings.convertToBytes(" ", enc); // check existence
     // Note: stdEncoding var is used in C# logic logic for differences array, but here simplified.
     // If I remove stdEncoding, I should fix the warning.
 
     // Fill base
     List<int> b = List.generate(256, (i) => i);
-    String str = PdfEncodings.convertToString(Uint8List.fromList(b), enc);
+    String str = CraftPdfEncodings.convertToString(Uint8List.fromList(b), enc);
     List<int> encoded = str.codeUnits;
 
     for (int ch = 0; ch < 256; ++ch) {
       int uni = 0;
       if (ch < encoded.length) uni = encoded[ch];
 
-      String? name = AdobeGlyphList.unicodeToName(uni);
+      String? name = CraftAdobeGlyphList.unicodeToName(uni);
       if (name == null)
         name = NOTDEF;
       else {
@@ -170,10 +170,10 @@ class FontEncoding {
     if (enc == null) return "";
     String tmp = enc.toLowerCase();
     if (tmp == "winansi" || tmp == "winansiencoding")
-      return PdfEncodings.WINANSI;
+      return CraftPdfEncodings.WINANSI;
     if (tmp == "macroman" || tmp == "macromanencoding")
-      return PdfEncodings.MACROMAN;
-    if (tmp == "zapfdingbatsencoding") return PdfEncodings.ZAPFDINGBATS;
+      return CraftPdfEncodings.MACROMAN;
+    if (tmp == "zapfdingbatsencoding") return CraftPdfEncodings.ZAPFDINGBATS;
     return enc;
   }
 }

@@ -1,4 +1,4 @@
-class Property {
+class CraftProperty {
   static const int ACTION = 1;
   static const int ALIGN_CONTENT = 130;
   static const int ALIGN_ITEMS = 134;

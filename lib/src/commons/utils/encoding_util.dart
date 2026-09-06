@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 /// Helper class for internal usage only.
 
-class EncodingUtil {
-  EncodingUtil._();
+class CraftEncodingUtil {
+  CraftEncodingUtil._();
 
   /// Latin-1 (ISO-8859-1) encoding.
   static const Encoding iso_8859_1 = latin1;
@@ -29,7 +29,7 @@ class EncodingUtil {
     return convertToBytes(text, encoding);
   }
 
-  /// Converts to String an array of bytes, taking the provided encoding into account.
+  /// Decodes bytes using the supplied character encoding.
   static String convertToString(Uint8List bytes, String encoding) {
     final upperName = encoding.toUpperCase();
 

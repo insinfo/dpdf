@@ -13,57 +13,60 @@ import 'pdf_object.dart';
 
 /// Document outline object.
 /// See ISO-320001, 12.3.3 Document Outline.
-class PdfOutline extends PdfObjectWrapper<PdfDictionary> {
-  /// A flag for displaying the outline item’s text with italic font.
+class CraftPdfOutline extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+  /// Displays the outline label in italics.
   static const int flagItalic = 1;
 
-  /// A flag for displaying the outline item’s text with bold font.
+  /// Displays the outline label in bold.
   static const int flagBold = 2;
 
-  final List<PdfOutline> _children = [];
+  final List<CraftPdfOutline> _children = [];
   String? _title;
-  PdfDestination? _destination;
-  PdfOutline? _parent;
-  final PdfDocument? _pdfDoc;
+  CraftPdfDestination? _destination;
+  CraftPdfOutline? _parent;
+  final CraftPdfDocument? _pdfDoc;
 
   // Internal constructors
 
-  PdfOutline._child(String title, PdfDictionary content, PdfOutline parent, {bool makeIndirect = true})
+  CraftPdfOutline._child(
+      String title, CraftPdfDictionary content, CraftPdfOutline parent,
+      {bool attachToDocument = true})
       : _title = title,
         _parent = parent,
         _pdfDoc = parent._pdfDoc,
         super(content) {
-    if (makeIndirect && parent._pdfDoc != null) {
-      content.makeIndirect(parent._pdfDoc);
+    if (attachToDocument && parent._pdfDoc != null) {
+      content.attachToDocument(parent._pdfDoc);
     }
   }
 
   /// This constructor creates root outline in the document.
-  PdfOutline.createRoot(PdfDocument doc)
+  CraftPdfOutline.createRoot(CraftPdfDocument doc)
       : _pdfDoc = doc,
-        super(PdfDictionary()) {
-    getPdfObject().put(PdfName.type, PdfName.outlines);
-    getPdfObject().makeIndirect(doc);
-    doc.getCatalog().put(PdfName.outlines, getPdfObject());
+        super(CraftPdfDictionary()) {
+    pdfRepresentation().put(CraftPdfName.type, CraftPdfName.outlines);
+    pdfRepresentation().attachToDocument(doc);
+    doc.rootCatalog().put(CraftPdfName.outlines, pdfRepresentation());
   }
 
   /// Wrap existing dictionary
-  PdfOutline.wrap(PdfDictionary content, PdfDocument? pdfDocument)
+  CraftPdfOutline.wrap(
+      CraftPdfDictionary content, CraftPdfDocument? pdfDocument)
       : _pdfDoc = pdfDocument,
         super(content) {
-    final titleObj = content.getMap()?[PdfName.title];
-    if (titleObj is PdfString) {
-      _title = titleObj.toUnicodeString();
-    } else if (titleObj is PdfIndirectReference) {
-      final resolved = titleObj.getRefersToSync();
-      if (resolved is PdfString) {
-        _title = resolved.toUnicodeString();
+    final titleObj = content.getMap()?[CraftPdfName.title];
+    if (titleObj is CraftPdfString) {
+      _title = titleObj.decodeMappingText();
+    } else if (titleObj is CraftPdfIndirectReference) {
+      final resolved = titleObj.targetObjectSync();
+      if (resolved is CraftPdfString) {
+        _title = resolved.decodeMappingText();
       }
     }
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => true;
+  bool requiresIndirectStorage() => true;
 
   /// Gets title of the outline.
   String? getTitle() {
@@ -73,28 +76,29 @@ class PdfOutline extends PdfObjectWrapper<PdfDictionary> {
   /// Sets title of the outline with [PdfEncodings.unicodeBig] encoding.
   void setTitle(String title) {
     _title = title;
-    getPdfObject().put(PdfName.title, PdfString(title));
+    pdfRepresentation().put(CraftPdfName.title, CraftPdfString(title));
   }
 
   /// Sets color for the outline entry’s text.
-  void setColor(Color color) {
-    getPdfObject().put(PdfName.c, PdfArray.fromDoubles(color.getColorValue()));
+  void setColor(CraftColor color) {
+    pdfRepresentation()
+        .put(CraftPdfName.c, CraftPdfArray.fromDoubles(color.getColorValue()));
   }
 
   /// Gets color for the outline entry's text.
-  Future<Color?> getColor() async {
-    final colorArray = await getPdfObject().getAsArray(PdfName.c);
+  Future<CraftColor?> getColor() async {
+    final colorArray = await pdfRepresentation().arrayEntry(CraftPdfName.c);
     if (colorArray == null) {
       return null;
     }
     final floats = <double>[];
     for (int i = 0; i < colorArray.size(); i++) {
-      final n = await colorArray.getAsNumber(i);
+      final n = await colorArray.numberEntry(i);
       if (n != null) floats.add(n.getValue());
     }
-    final cs = await PdfColorSpace.makeColorSpace(PdfName.deviceRgb);
+    final cs = await CraftPdfColorSpace.makeColorSpace(CraftPdfName.deviceRgb);
     if (cs != null) {
-      return Color.makeColor(cs, floats);
+      return CraftColor.makeColor(cs, floats);
     }
     return null;
   }
@@ -102,49 +106,49 @@ class PdfOutline extends PdfObjectWrapper<PdfDictionary> {
   /// Sets text style for the outline entry’s text.
   void setStyle(int style) {
     if (style == flagBold || style == flagItalic) {
-      getPdfObject().put(PdfName.f, PdfNumber.fromInt(style));
+      pdfRepresentation().put(CraftPdfName.f, CraftPdfNumber.fromInt(style));
     }
   }
 
   /// Gets text style for the outline entry's text.
   Future<int?> getStyle() async {
-    return await getPdfObject().getAsInt(PdfName.f);
+    return await pdfRepresentation().integerEntry(CraftPdfName.f);
   }
 
   /// Gets content dictionary.
-  PdfDictionary getContent() {
-    return getPdfObject();
+  CraftPdfDictionary getContent() {
+    return pdfRepresentation();
   }
 
   /// Gets list of children outlines.
-  List<PdfOutline> getAllChildren() {
+  List<CraftPdfOutline> getAllChildren() {
     return _children;
   }
 
   /// Gets parent outline.
-  PdfOutline? getParent() {
+  CraftPdfOutline? getParent() {
     return _parent;
   }
 
   /// Gets [PdfDestination].
-  PdfDestination? getDestination() {
+  CraftPdfDestination? getDestination() {
     return _destination;
   }
 
   /// Adds [PdfDestination] for the outline.
-  void addDestination(PdfDestination destination) {
+  void addDestination(CraftPdfDestination destination) {
     setDestination(destination);
-    getPdfObject().put(PdfName.dest, destination.getPdfObject());
-    
+    pdfRepresentation().put(CraftPdfName.dest, destination.pdfRepresentation());
+
     // Register this outline with the catalog for page removal tracking
-    if (_pdfDoc != null && destination is PdfExplicitDestination) {
-      final destArray = destination.getPdfObject() as PdfArray;
+    if (_pdfDoc != null && destination is CraftPdfExplicitDestination) {
+      final destArray = destination.pdfRepresentation() as CraftPdfArray;
       if (!destArray.isEmpty()) {
         final pageRef = destArray.toList()[0];
-        if (pageRef is PdfIndirectReference) {
-          final pageObj = pageRef.getRefersToSync();
+        if (pageRef is CraftPdfIndirectReference) {
+          final pageObj = pageRef.targetObjectSync();
           if (pageObj != null) {
-            _pdfDoc.getCatalog().registerOutlineWithPage(this, pageObj);
+            _pdfDoc.rootCatalog().registerOutlineWithPage(this, pageObj);
           }
         }
       }
@@ -152,77 +156,80 @@ class PdfOutline extends PdfObjectWrapper<PdfDictionary> {
   }
 
   /// Adds [PdfAction] for the outline.
-  Future<void> addAction(PdfAction action) async {
-    final actionType = await action.getPdfObject().getAsName(PdfName.s);
-    if (PdfName.goTo == actionType) {
-      final d = await action.getPdfObject().get(PdfName.d); // Destination
+  Future<void> addAction(CraftPdfAction action) async {
+    final actionType =
+        await action.pdfRepresentation().nameEntry(CraftPdfName.s);
+    if (CraftPdfName.goTo == actionType) {
+      final d =
+          await action.pdfRepresentation().get(CraftPdfName.d); // Destination
       if (d != null) {
-        final dest = await PdfDestination.makeDestination(d);
+        final dest = await CraftPdfDestination.makeDestination(d);
         if (dest != null) setDestination(dest);
       }
     }
-    getPdfObject().put(PdfName.a, action.getPdfObject());
+    pdfRepresentation().put(CraftPdfName.a, action.pdfRepresentation());
   }
 
   void setOpen(bool open) {
     if (!open) {
-      getPdfObject().put(PdfName.count, PdfNumber.fromInt(-1));
+      pdfRepresentation().put(CraftPdfName.count, CraftPdfNumber.fromInt(-1));
     } else {
       if (_children.isNotEmpty) {
-        getPdfObject().put(PdfName.count, PdfNumber.fromInt(_children.length));
+        pdfRepresentation()
+            .put(CraftPdfName.count, CraftPdfNumber.fromInt(_children.length));
       } else {
-        getPdfObject().remove(PdfName.count);
+        pdfRepresentation().remove(CraftPdfName.count);
       }
     }
   }
 
   Future<bool> isOpen() async {
-    final count = await getPdfObject().getAsInt(PdfName.count);
+    final count = await pdfRepresentation().integerEntry(CraftPdfName.count);
     return count == null || count >= 0;
   }
 
   /// Adds a new [PdfOutline] as a child.
-  Future<PdfOutline> addOutline(String title, {int position = -1}) async {
+  Future<CraftPdfOutline> addOutline(String title, {int position = -1}) async {
     if (position == -1) {
       position = _children.length;
     }
-    final dictionary = PdfDictionary();
-    final outline = PdfOutline._child(title, dictionary, this);
+    final dictionary = CraftPdfDictionary();
+    final outline = CraftPdfOutline._child(title, dictionary, this);
 
-    dictionary.put(PdfName.title, PdfString(title));
-    dictionary.put(PdfName.parent, getPdfObject());
+    dictionary.put(CraftPdfName.title, CraftPdfString(title));
+    dictionary.put(CraftPdfName.parent, pdfRepresentation());
 
     if (_children.isNotEmpty) {
       if (position != 0) {
         final prevContent = _children[position - 1].getContent();
-        dictionary.put(PdfName.prev, prevContent);
-        prevContent.put(PdfName.next, dictionary);
+        dictionary.put(CraftPdfName.prev, prevContent);
+        prevContent.put(CraftPdfName.next, dictionary);
       }
       if (position != _children.length) {
         final nextContent = _children[position].getContent();
-        dictionary.put(PdfName.next, nextContent);
-        nextContent.put(PdfName.prev, dictionary);
+        dictionary.put(CraftPdfName.next, nextContent);
+        nextContent.put(CraftPdfName.prev, dictionary);
       }
     }
 
     if (position == 0) {
-      getPdfObject().put(PdfName.first, dictionary);
+      pdfRepresentation().put(CraftPdfName.first, dictionary);
     }
     if (position == _children.length) {
-      getPdfObject().put(PdfName.last, dictionary);
+      pdfRepresentation().put(CraftPdfName.last, dictionary);
     }
 
-    final count = await getPdfObject().getAsNumber(PdfName.count);
+    final count = await pdfRepresentation().numberEntry(CraftPdfName.count);
     if (count == null || count.getValue() != -1) {
-      getPdfObject()
-          .put(PdfName.count, PdfNumber.fromInt(_children.length + 1));
+      pdfRepresentation().put(
+          CraftPdfName.count, CraftPdfNumber.fromInt(_children.length + 1));
     }
 
     _children.insert(position, outline);
     return outline;
   }
 
-  void setDestination(PdfDestination destination) {
+  void setDestination(CraftPdfDestination destination) {
     _destination = destination;
   }
 
@@ -237,31 +244,35 @@ class PdfOutline extends PdfObjectWrapper<PdfDictionary> {
       final parentContent = parent.getContent();
 
       if (parent._children.isEmpty) {
-        parentContent.remove(PdfName.first);
-        parentContent.remove(PdfName.last);
-        parentContent.remove(PdfName.count);
+        parentContent.remove(CraftPdfName.first);
+        parentContent.remove(CraftPdfName.last);
+        parentContent.remove(CraftPdfName.count);
       } else {
-        final first = parentContent.getMap()?[PdfName.first];
-        if (first == getPdfObject()) {
-          parentContent.put(PdfName.first, parent._children[0].getContent());
-        }
-        final last = parentContent.getMap()?[PdfName.last];
-        if (last == getPdfObject()) {
+        final first = parentContent.getMap()?[CraftPdfName.first];
+        if (first == pdfRepresentation()) {
           parentContent.put(
-              PdfName.last, parent._children[parent._children.length - 1].getContent());
+              CraftPdfName.first, parent._children[0].getContent());
         }
-        final count = parentContent.getMap()?[PdfName.count];
-        if (count is PdfNumber && count.intValue() > 0) {
-          parentContent.put(PdfName.count, PdfNumber.fromInt(parent._children.length));
+        final last = parentContent.getMap()?[CraftPdfName.last];
+        if (last == pdfRepresentation()) {
+          parentContent.put(CraftPdfName.last,
+              parent._children[parent._children.length - 1].getContent());
+        }
+        final count = parentContent.getMap()?[CraftPdfName.count];
+        if (count is CraftPdfNumber && count.intValue() > 0) {
+          parentContent.put(CraftPdfName.count,
+              CraftPdfNumber.fromInt(parent._children.length));
         }
 
         if (index > 0) {
           // Link previous child to the next child
           final prevChild = parent._children[index - 1];
           if (index < parent._children.length) {
-            prevChild.getContent().put(PdfName.next, parent._children[index].getContent());
+            prevChild
+                .getContent()
+                .put(CraftPdfName.next, parent._children[index].getContent());
           } else {
-            prevChild.getContent().remove(PdfName.next);
+            prevChild.getContent().remove(CraftPdfName.next);
           }
         }
 
@@ -269,16 +280,17 @@ class PdfOutline extends PdfObjectWrapper<PdfDictionary> {
           // Link next child to the previous child
           final nextChild = parent._children[index];
           if (index > 0) {
-            nextChild.getContent().put(PdfName.prev, parent._children[index - 1].getContent());
+            nextChild.getContent().put(
+                CraftPdfName.prev, parent._children[index - 1].getContent());
           } else {
-            nextChild.getContent().remove(PdfName.prev);
+            nextChild.getContent().remove(CraftPdfName.prev);
           }
         }
       }
 
-      final ref = getPdfObject().getIndirectReference();
+      final ref = pdfRepresentation().indirectHandle();
       if (ref != null) {
-        ref.setState(PdfObject.free);
+        ref.setState(CraftPdfObject.free);
       }
     }
   }

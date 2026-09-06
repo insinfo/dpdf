@@ -1,4 +1,4 @@
-enum ImageType {
+enum CraftImageType {
   JPEG,
   PNG,
   GIF,

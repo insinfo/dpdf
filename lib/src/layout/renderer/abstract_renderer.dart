@@ -1,90 +1,92 @@
-import 'package:dpdf/src/layout/i_property_container.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
+import 'package:pdfcraft/src/layout/property_container.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
 
-import 'package:dpdf/src/layout/layout/layout_context.dart';
-import 'package:dpdf/src/layout/layout/layout_result.dart';
-import 'package:dpdf/src/layout/renderer/draw_context.dart';
-import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:pdfcraft/src/layout/layout/layout_context.dart';
+import 'package:pdfcraft/src/layout/layout/layout_result.dart';
+import 'package:pdfcraft/src/layout/renderer/draw_context.dart';
+import 'package:pdfcraft/src/layout/layout/layout_area.dart';
 
-import 'package:dpdf/src/layout/properties/unit_value.dart';
-import 'package:dpdf/src/layout/properties/property.dart';
-import 'package:dpdf/src/layout/properties/background.dart';
-import 'package:dpdf/src/layout/borders/border.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
+import 'package:pdfcraft/src/layout/properties/unit_value.dart';
+import 'package:pdfcraft/src/layout/properties/property.dart';
+import 'package:pdfcraft/src/layout/properties/background.dart';
+import 'package:pdfcraft/src/layout/borders/border.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:pdfcraft/src/layout/minmaxwidth/min_max_width.dart';
 
-abstract class AbstractRenderer implements IRenderer {
-  IPropertyContainer? modelElement;
-  List<IRenderer> childRenderers = [];
-  IRenderer? parent;
+abstract class CraftAbstractRenderer implements CraftRenderer {
+  CraftPropertyContainer? modelElement;
+  List<CraftRenderer> childRenderers = [];
+  CraftRenderer? parent;
   Map<int, dynamic> properties = {};
-  LayoutArea? occupiedArea;
+  CraftLayoutArea? occupiedArea;
 
-  AbstractRenderer(this.modelElement);
+  CraftAbstractRenderer(this.modelElement);
 
   @override
   @override
-  IPropertyContainer? getModelElement() {
+  CraftPropertyContainer? getModelElement() {
     return modelElement;
   }
 
   @override
-  void addChild(IRenderer renderer) {
+  void addChild(CraftRenderer renderer) {
     childRenderers.add(renderer);
     renderer.setParent(this);
   }
 
   @override
-  List<IRenderer> getChildRenderers() {
+  List<CraftRenderer> getChildRenderers() {
     return childRenderers;
   }
 
   @override
-  void setParent(IRenderer? parent) {
+  void setParent(CraftRenderer? parent) {
     this.parent = parent;
   }
 
   @override
-  LayoutArea? getOccupiedArea() {
+  CraftLayoutArea? getOccupiedArea() {
     return occupiedArea;
   }
 
   @override
-  IRenderer? getNextRenderer() {
+  CraftRenderer? getNextRenderer() {
     return null;
   }
 
-  AbstractRenderer createSplitRenderer(int layoutResult) {
-    AbstractRenderer splitRenderer = getNextRenderer() as AbstractRenderer;
+  CraftAbstractRenderer createSplitRenderer(int layoutResult) {
+    CraftAbstractRenderer splitRenderer =
+        getNextRenderer() as CraftAbstractRenderer;
     splitRenderer.modelElement = modelElement;
     splitRenderer.parent = parent;
     splitRenderer.occupiedArea = occupiedArea;
     return splitRenderer;
   }
 
-  AbstractRenderer createOverflowRenderer(int layoutResult) {
-    AbstractRenderer overflowRenderer = getNextRenderer() as AbstractRenderer;
+  CraftAbstractRenderer createOverflowRenderer(int layoutResult) {
+    CraftAbstractRenderer overflowRenderer =
+        getNextRenderer() as CraftAbstractRenderer;
     overflowRenderer.modelElement = modelElement;
     overflowRenderer.parent = parent;
     return overflowRenderer;
   }
 
   @override
-  Future<void> draw(DrawContext drawContext) async {
+  Future<void> draw(CraftDrawContext drawContext) async {
     drawBackground(drawContext);
     drawBorder(drawContext);
     await drawChildren(drawContext);
   }
 
-  void drawBackground(DrawContext drawContext) {
-    Background? background = getProperty(Property.BACKGROUND);
+  void drawBackground(CraftDrawContext drawContext) {
+    CraftBackground? background = getProperty(CraftProperty.BACKGROUND);
     if (background != null &&
         background.color != null &&
         occupiedArea != null) {
-      Rectangle box = applyMargins(occupiedArea!.getBBox(), false);
+      CraftRectangle box = applyMargins(occupiedArea!.getBBox(), false);
 
-      PdfCanvas canvas = drawContext.getCanvas();
+      CraftPdfCanvas canvas = drawContext.getCanvas();
       canvas.saveState();
       canvas.setFillColor(background.color!);
       canvas.rectangle(box.getX(), box.getY(), box.getWidth(), box.getHeight());
@@ -93,16 +95,16 @@ abstract class AbstractRenderer implements IRenderer {
     }
   }
 
-  void drawBorder(DrawContext drawContext) {
+  void drawBorder(CraftDrawContext drawContext) {
     if (occupiedArea == null) return;
-    Rectangle box = applyMargins(occupiedArea!.getBBox(), true);
+    CraftRectangle box = applyMargins(occupiedArea!.getBBox(), true);
 
-    Border? bt = getProperty(Property.BORDER_TOP);
-    Border? bb = getProperty(Property.BORDER_BOTTOM);
-    Border? bl = getProperty(Property.BORDER_LEFT);
-    Border? br = getProperty(Property.BORDER_RIGHT);
+    CraftBorder? bt = getProperty(CraftProperty.BORDER_TOP);
+    CraftBorder? bb = getProperty(CraftProperty.BORDER_BOTTOM);
+    CraftBorder? bl = getProperty(CraftProperty.BORDER_LEFT);
+    CraftBorder? br = getProperty(CraftProperty.BORDER_RIGHT);
 
-    PdfCanvas canvas = drawContext.getCanvas();
+    CraftPdfCanvas canvas = drawContext.getCanvas();
     canvas.saveState();
 
     // Simplified border drawing
@@ -138,19 +140,19 @@ abstract class AbstractRenderer implements IRenderer {
     canvas.restoreState();
   }
 
-  Rectangle applyMargins(Rectangle rect, bool applyBorders) {
+  CraftRectangle applyMargins(CraftRectangle rect, bool applyBorders) {
     double parentWidth = rect.getWidth();
 
-    double mt = getResolvedProperty(Property.MARGIN_TOP, parentWidth);
-    double mb = getResolvedProperty(Property.MARGIN_BOTTOM, parentWidth);
-    double ml = getResolvedProperty(Property.MARGIN_LEFT, parentWidth);
-    double mr = getResolvedProperty(Property.MARGIN_RIGHT, parentWidth);
+    double mt = getResolvedProperty(CraftProperty.MARGIN_TOP, parentWidth);
+    double mb = getResolvedProperty(CraftProperty.MARGIN_BOTTOM, parentWidth);
+    double ml = getResolvedProperty(CraftProperty.MARGIN_LEFT, parentWidth);
+    double mr = getResolvedProperty(CraftProperty.MARGIN_RIGHT, parentWidth);
 
-    return Rectangle(rect.getX() + ml, rect.getY() + mb,
+    return CraftRectangle(rect.getX() + ml, rect.getY() + mb,
         rect.getWidth() - ml - mr, rect.getHeight() - mt - mb);
   }
 
-  Future<void> drawChildren(DrawContext drawContext) async {
+  Future<void> drawChildren(CraftDrawContext drawContext) async {
     for (var child in childRenderers) {
       await child.draw(drawContext);
     }
@@ -158,7 +160,7 @@ abstract class AbstractRenderer implements IRenderer {
 
   // Define layout as abstract (no body needed in abstract class)
   @override
-  LayoutResult? layout(LayoutContext layoutContext);
+  CraftLayoutResult? layout(CraftLayoutContext layoutContext);
 
   // Property methods
   @override
@@ -224,7 +226,7 @@ abstract class AbstractRenderer implements IRenderer {
   double? getPropertyAsFloat(int property) {
     var val = getProperty(property);
     if (val is num) return val.toDouble();
-    if (val is UnitValue && val.isPointValue()) return val.getValue();
+    if (val is CraftUnitValue && val.isPointValue()) return val.getValue();
     return null;
   }
 
@@ -233,7 +235,7 @@ abstract class AbstractRenderer implements IRenderer {
       [double defaultValue = 0]) {
     var val = getProperty(property);
     if (val is num) return val.toDouble();
-    if (val is UnitValue) {
+    if (val is CraftUnitValue) {
       if (val.isPointValue()) return val.getValue();
       if (val.isPercentValue()) return val.getValue() * parentWidth / 100.0;
     }
@@ -241,8 +243,8 @@ abstract class AbstractRenderer implements IRenderer {
   }
 
   @override
-  MinMaxWidth? getMinMaxWidth() {
-    return MinMaxWidth(0);
+  CraftMinMaxWidth? getMinMaxWidth() {
+    return CraftMinMaxWidth(0);
   }
 
   @override
@@ -255,7 +257,7 @@ abstract class AbstractRenderer implements IRenderer {
   double? getFirstYLineRecursively() {
     // Basic implementation for block-like renderers
     for (var child in childRenderers) {
-      if (child is AbstractRenderer) {
+      if (child is CraftAbstractRenderer) {
         double? y = child.getFirstYLineRecursively();
         if (y != null) return y;
       }

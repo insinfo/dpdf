@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
 
 void main() {
   group('PdfDocument Info Tests', () {
@@ -14,18 +14,20 @@ void main() {
       }
       final outPath = 'test/tmp/pdf_document_info_test.pdf';
 
-      final writer = PdfWriter.toFile(outPath);
-      final doc = PdfDocument(writer: writer);
+      final writer = CraftPdfWriter.toFile(outPath);
+      final doc = CraftPdfDocument(writer: writer);
 
-      final info = await doc.getDocumentInfo();
+      final info = await doc.documentDetails();
       info.setTitle('Test Title');
       info.setAuthor('Test Author');
 
-      final title = await info.getPdfObject().getAsString(PdfName.title);
-      expect(title?.toUnicodeString(), 'Test Title');
+      final title =
+          await info.pdfRepresentation().stringEntry(CraftPdfName.title);
+      expect(title?.decodeMappingText(), 'Test Title');
 
-      final author = await info.getPdfObject().getAsString(PdfName.author);
-      expect(author?.toUnicodeString(), 'Test Author');
+      final author =
+          await info.pdfRepresentation().stringEntry(CraftPdfName.author);
+      expect(author?.decodeMappingText(), 'Test Author');
 
       await doc.close();
     });
@@ -36,12 +38,12 @@ void main() {
         outDir.createSync(recursive: true);
       }
       final outPath = 'test/tmp/pdf_document_id_test.pdf';
-      final writer = PdfWriter.toFile(outPath);
-      final doc = PdfDocument(writer: writer);
+      final writer = CraftPdfWriter.toFile(outPath);
+      final doc = CraftPdfDocument(writer: writer);
 
       // IDs should be generated
-      final originalId = doc.getOriginalDocumentId();
-      final modifiedId = doc.getModifiedDocumentId();
+      final originalId = doc.initialDocumentIdentifier();
+      final modifiedId = doc.revisionIdentifier();
 
       expect(originalId, isNotNull);
       expect(modifiedId, isNotNull);
@@ -50,11 +52,11 @@ void main() {
       await doc.close();
 
       // Read back
-      final reader = await PdfReader.fromFile(outPath);
-      final docRead = await PdfDocument.open(reader);
+      final reader = await CraftPdfReader.fromFile(outPath);
+      final docRead = await CraftPdfDocument.open(reader);
 
-      final readOriginalId = docRead.getOriginalDocumentId();
-      final readModifiedId = docRead.getModifiedDocumentId();
+      final readOriginalId = docRead.initialDocumentIdentifier();
+      final readModifiedId = docRead.revisionIdentifier();
 
       expect(
           readOriginalId.getValueBytes(), equals(originalId.getValueBytes()));

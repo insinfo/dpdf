@@ -1,22 +1,22 @@
-import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:dpdf/src/kernel/pdf/xobject/pdf_form_x_object.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/svg/renderers/i_svg_node_renderer.dart';
-import 'package:dpdf/src/svg/renderers/i_branch_svg_node_renderer.dart';
-import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
-import 'package:dpdf/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
-import 'package:dpdf/src/svg/renderers/impl/marker_svg_node_renderer.dart';
+import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:pdfcraft/src/kernel/pdf/xobject/pdf_form_x_object.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/svg/renderers/svg_node_renderer.dart';
+import 'package:pdfcraft/src/svg/renderers/branch_svg_node_renderer.dart';
+import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
+import 'package:pdfcraft/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
+import 'package:pdfcraft/src/svg/renderers/impl/marker_svg_node_renderer.dart';
 
-abstract class AbstractBranchSvgNodeRenderer extends AbstractSvgNodeRenderer
-    implements IBranchSvgNodeRenderer {
-  final List<ISvgNodeRenderer> _children = [];
+abstract class CraftAbstractBranchSvgNodeRenderer
+    extends CraftAbstractSvgNodeRenderer implements CraftBranchSvgNodeRenderer {
+  final List<CraftSvgNodeRenderer> _children = [];
 
   @override
-  Future<void> doDraw(SvgDrawContext context) async {
+  Future<void> doDraw(CraftSvgDrawContext context) async {
     if (_children.isNotEmpty) {
-      Rectangle currentViewPort = context.getCurrentViewPort()!;
-      PdfFormXObject xObject = PdfFormXObject(currentViewPort);
-      PdfCanvas newCanvas = await PdfCanvas.fromFormXObject(
+      CraftRectangle currentViewPort = context.getCurrentViewPort()!;
+      CraftPdfFormXObject xObject = CraftPdfFormXObject(currentViewPort);
+      CraftPdfCanvas newCanvas = await CraftPdfCanvas.fromFormXObject(
           xObject, context.getCurrentCanvas().getDocument()!);
 
       // TODO: Apply ViewBox
@@ -24,7 +24,7 @@ abstract class AbstractBranchSvgNodeRenderer extends AbstractSvgNodeRenderer
       context.pushCanvas(newCanvas);
 
       for (var child in _children) {
-        if (child is! MarkerSvgNodeRenderer) {
+        if (child is! CraftMarkerSvgNodeRenderer) {
           await child.draw(context);
         }
       }
@@ -38,23 +38,23 @@ abstract class AbstractBranchSvgNodeRenderer extends AbstractSvgNodeRenderer
   }
 
   @override
-  void addChild(ISvgNodeRenderer child) {
+  void addChild(CraftSvgNodeRenderer child) {
     _children.add(child);
   }
 
   @override
-  List<ISvgNodeRenderer> getChildren() {
+  List<CraftSvgNodeRenderer> getChildren() {
     return List.unmodifiable(_children);
   }
 
-  void deepCopyChildren(AbstractBranchSvgNodeRenderer deepCopy) {
+  void deepCopyChildren(CraftAbstractBranchSvgNodeRenderer deepCopy) {
     for (var child in _children) {
-      ISvgNodeRenderer newChild = child.createDeepCopy();
+      CraftSvgNodeRenderer newChild = child.createDeepCopy();
       newChild.setParent(deepCopy);
       deepCopy.addChild(newChild);
     }
   }
 
   @override
-  ISvgNodeRenderer createDeepCopy();
+  CraftSvgNodeRenderer createDeepCopy();
 }

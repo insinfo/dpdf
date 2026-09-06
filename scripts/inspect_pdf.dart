@@ -1,10 +1,9 @@
-
 import 'dart:io';
-import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
 
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
 
 void main() async {
   final filePath = r'C:\MyDartProjects\pdfcraft\documento_assinado.pdf';
@@ -16,42 +15,43 @@ void main() async {
 
   print('Reading file: ${file.lengthSync()} bytes');
   final bytes = await file.readAsBytes();
-  final reader = PdfReader.fromBytes(bytes);
+  final reader = CraftPdfReader.fromBytes(bytes);
   // Do not call PdfDocument.open(reader) as it crashes
-  
+
   print('Reader created. Reading document structure...');
   await reader.read();
   print('Document structure read.');
-  
-  final trailer = reader.getTrailer();
+
+  final trailer = reader.fileTrailer();
   print('Trailer: $trailer');
-  
-  final rootRef = await trailer?.get(PdfName.root);
+
+  final rootRef = await trailer?.get(CraftPdfName.root);
   print('Root ref: $rootRef');
-  
+
   if (rootRef == null) {
-      print('Root is missing!');
-      return;
+    print('Root is missing!');
+    return;
   }
-  
-  final rootObj = await reader.readObject((rootRef as PdfIndirectReference).getObjNumber());
+
+  final rootObj = await reader
+      .readObject((rootRef as CraftPdfIndirectReference).objectNumber());
   print('Root object: $rootObj');
-  
-  if (rootObj is! PdfDictionary) {
-      print('Root is not a dictionary!');
-      return;
+
+  if (rootObj is! CraftPdfDictionary) {
+    print('Root is not a dictionary!');
+    return;
   }
-  
-  final pagesRef = await rootObj.get(PdfName.pages);
+
+  final pagesRef = await rootObj.get(CraftPdfName.pages);
   print('Pages ref: $pagesRef');
-  
-  if (pagesRef is PdfIndirectReference) {
-      final pagesObj = await reader.readObject(pagesRef.getObjNumber());
-      print('Pages object (read via ref): $pagesObj');
-      print('Type: ${pagesObj?.getObjectType()}');
+
+  if (pagesRef is CraftPdfIndirectReference) {
+    final pagesObj = await reader.readObject(pagesRef.objectNumber());
+    print('Pages object (read via ref): $pagesObj');
+    print('Type: ${pagesObj?.objectKind()}');
   } else {
-      print('Pages is immediate: $pagesRef');
+    print('Pages is immediate: $pagesRef');
   }
-  
+
   reader.close();
 }

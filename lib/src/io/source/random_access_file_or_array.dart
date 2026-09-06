@@ -1,15 +1,16 @@
+import '../../platform/int64.dart';
 import 'dart:typed_data';
-import 'dart:io';
+import '../../platform/io.dart';
 
-class RandomAccessFileOrArray {
+class CraftRandomAccessFileOrArray {
   final Uint8List _data;
   int _position = 0;
   int? _back;
 
-  RandomAccessFileOrArray(Uint8List data) : _data = data;
+  CraftRandomAccessFileOrArray(Uint8List data) : _data = data;
 
-  factory RandomAccessFileOrArray.fromFile(File file) {
-    return RandomAccessFileOrArray(file.readAsBytesSync());
+  factory CraftRandomAccessFileOrArray.fromFile(File file) {
+    return CraftRandomAccessFileOrArray(file.readAsBytesSync());
   }
 
   Uint8List getBytes() => _data;
@@ -173,8 +174,8 @@ class RandomAccessFileOrArray {
     return _data[_position];
   }
 
-  RandomAccessFileOrArray createView() {
-    return RandomAccessFileOrArray(_data);
+  CraftRandomAccessFileOrArray createView() {
+    return CraftRandomAccessFileOrArray(_data);
   }
 
   String? readLine() {
@@ -253,57 +254,27 @@ class RandomAccessFileOrArray {
     return ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + ch1);
   }
 
-  int readLong() {
-    int i1 = readInt();
-    int i2 = readInt(); // Signed? Usually readLong reads 8 bytes.
-    // readInt reads 4 bytes.
-    // In Java readLong reads 8 bytes.
-    // We should read 8 bytes.
-    return (i1 << 32) + (i2 & 0xFFFFFFFF);
+  /// Reads a signed eight-byte integer without losing precision on JavaScript.
+  BigInt readBigInt64({Endian endian = Endian.big}) {
+    final bytes = Uint8List(8);
+    readFully(bytes);
+    return signedWord64(ByteData.sublistView(bytes), 0, endian);
   }
 
-  // Re-implementing readLong properly to match 8-byte read
-  int readLong8() {
-    int ch1 = read();
-    int ch2 = read();
-    int ch3 = read();
-    int ch4 = read();
-    int ch5 = read();
-    int ch6 = read();
-    int ch7 = read();
-    int ch8 = read();
-    if ((ch1 | ch2 | ch3 | ch4 | ch5 | ch6 | ch7 | ch8) < 0)
-      throw Exception("EOF");
-    return (ch1 << 56) +
-        (ch2 << 48) +
-        (ch3 << 40) +
-        (ch4 << 32) +
-        (ch5 << 24) +
-        (ch6 << 16) +
-        (ch7 << 8) +
-        ch8;
+  int _exactInteger64(Endian endian) {
+    final value = readBigInt64(endian: endian);
+    final integer = value.toInt();
+    if (BigInt.from(integer) != value) {
+      throw RangeError('The integer requires readBigInt64 on this target.');
+    }
+    return integer;
   }
 
-  int readLongLE() {
-    int ch1 = read();
-    int ch2 = read();
-    int ch3 = read();
-    int ch4 = read();
-    int ch5 = read();
-    int ch6 = read();
-    int ch7 = read();
-    int ch8 = read();
-    if ((ch1 | ch2 | ch3 | ch4 | ch5 | ch6 | ch7 | ch8) < 0)
-      throw Exception("EOF");
-    return (ch8 << 56) +
-        (ch7 << 48) +
-        (ch6 << 40) +
-        (ch5 << 32) +
-        (ch4 << 24) +
-        (ch3 << 16) +
-        (ch2 << 8) +
-        ch1;
-  }
+  int readLong() => _exactInteger64(Endian.big);
+
+  int readLong8() => _exactInteger64(Endian.big);
+
+  int readLongLE() => _exactInteger64(Endian.little);
 
   double readFloat() {
     int i = readInt(); // Gets signed 32-bit int
@@ -326,19 +297,15 @@ class RandomAccessFileOrArray {
     return buffer.getFloat32(0, Endian.little);
   }
 
-  double readDouble() {
-    int i = readLong8();
-    var buffer = ByteData(8);
-    buffer.setInt64(0, i, Endian.big);
-    return buffer.getFloat64(0, Endian.big);
+  double _readFloating64(Endian endian) {
+    final bytes = Uint8List(8);
+    readFully(bytes);
+    return ByteData.sublistView(bytes).getFloat64(0, endian);
   }
 
-  double readDoubleLE() {
-    int i = readLongLE();
-    var buffer = ByteData(8);
-    buffer.setInt64(0, i, Endian.little);
-    return buffer.getFloat64(0, Endian.little);
-  }
+  double readDouble() => _readFloating64(Endian.big);
+
+  double readDoubleLE() => _readFloating64(Endian.little);
 
   void skip(int n) {
     skipBytes(n);

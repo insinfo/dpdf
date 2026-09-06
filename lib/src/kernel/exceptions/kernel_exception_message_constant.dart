@@ -1,179 +1,259 @@
-/// Class that bundles all kernel exception message templates as constants.
-class KernelExceptionMessageConstant {
-  KernelExceptionMessageConstant._();
+/// Diagnostic templates for PDFCraft. Public identifiers and format slots are stable.
+class CraftKernelExceptionMessageConstant {
+  CraftKernelExceptionMessageConstant._();
 
-  // Basic errors
-  static const String alreadyClosed = 'Already closed';
-  static const String argShouldNotBeNull = '{0} should not be null.';
+  static const String alreadyClosed = 'The resource has already been closed.';
 
-  // PDF Array conversions
+  static const String argShouldNotBeNull =
+      'Argument {0} requires a non-null value.';
+
   static const String cannotConvertPdfArrayToAnArrayOfBooleans =
-      'Cannot convert PdfArray to an array of booleans';
+      'PDF array contents cannot be represented as boolean values.';
+
   static const String cannotConvertPdfArrayToDoubleArray =
-      'Cannot convert PdfArray to an array of doubles.';
+      'PDF array contents cannot be represented as double-precision values.';
+
   static const String cannotConvertPdfArrayToFloatArray =
-      'Cannot convert PdfArray to an array of floats.';
+      'PDF array contents cannot be represented as floating-point values.';
+
   static const String cannotConvertPdfArrayToIntArray =
-      'Cannot convert PdfArray to an array of integers.';
+      'PDF array contents cannot be represented as integer values.';
+
   static const String cannotConvertPdfArrayToLongArray =
-      'Cannot convert PdfArray to an array of longs.';
+      'PDF array contents cannot be represented as long integer values.';
+
   static const String cannotConvertPdfArrayToRectangle =
-      'Cannot convert PdfArray to Rectangle.';
+      'PDF array contents do not describe a valid rectangle.';
 
-  // Document operations
-  static const String cannotCloseDocument = 'Cannot close document.';
-  static const String cannotOpenDocument = 'Cannot open document.';
-  static const String cannotCopyFlushedObject = 'Cannot copy flushed object.';
-  static const String cannotCopyObjectContent = 'Cannot copy object content.';
-  static const String cannotFlushObject = 'Cannot flush object.';
+  static const String cannotCloseDocument = 'Closing the PDF document failed.';
+
+  static const String cannotOpenDocument = 'Opening the PDF document failed.';
+
+  static const String cannotCopyFlushedObject =
+      'An object already written to the output cannot be copied.';
+
+  static const String cannotCopyObjectContent =
+      'Copying the PDF object\'s content failed.';
+
+  static const String cannotFlushObject =
+      'Writing the PDF object to the output failed.';
+
   static const String documentHasNotBeenReadYet =
-      'The PDF document has not been read yet. Document reading occurs in PdfDocument class constructor';
+      'The PDF has not been read; complete PdfDocument initialization before this operation.';
+
   static const String documentClosedItIsImpossibleToExecuteAction =
-      'Document was closed. It is impossible to execute action.';
+      'This operation requires an open document; the document is closed.';
 
-  // Stream operations
   static const String cannotCreatePdfstreamByInputStreamWithoutPdfDocument =
-      'Cannot create pdfstream by InputStream without PdfDocument.';
+      'Creating a PDF stream from an input stream requires a PdfDocument.';
+
   static const String cannotOperateWithFlushedPdfStream =
-      'Cannot operate with the flushed PdfStream.';
+      'The PDF stream was already written and is no longer available for this operation.';
+
   static const String cannotSetDataToPdfStreamWhichWasCreatedByInputStream =
-      'Cannot set data to PdfStream which was created by InputStream.';
-  static const String cannotGetPdfStreamBytes = 'Cannot get PdfStream bytes.';
+      'A PDF stream backed by an input stream cannot accept replacement byte data.';
+
+  static const String cannotGetPdfStreamBytes =
+      'The bytes of this PDF stream could not be obtained.';
+
   static const String cannotReadAStreamInOrderToAppendNewBytes =
-      'Cannot read a stream in order to append new bytes.';
+      'Appending bytes failed because the existing stream data could not be read.';
+
   static const String streamShallEndWithEndstream =
-      'Stream shall end with endstream keyword.';
+      'The PDF stream is missing its required endstream terminator.';
+
   static const String unableToReadStreamBytes =
-      'Unable to read stream bytes because stream is null.';
+      'No stream was supplied from which to read bytes.';
 
-  // PDF reading errors
-  static const String cannotReadPdfObject = 'Cannot read PdfObject.';
-  static const String trailerNotFound = 'Trailer not found.';
-  static const String unexpectedEndOfFile = 'Unexpected end of file.';
-  static const String unexpectedToken = 'unexpected {0} was encountered.';
-  static const String pdfStartxrefNotFound = 'PDF startxref not found.';
+  static const String cannotReadPdfObject =
+      'The PDF object could not be parsed from the input.';
+
+  static const String trailerNotFound =
+      'The PDF trailer dictionary could not be located.';
+
+  static const String unexpectedEndOfFile =
+      'Input ended before the current PDF structure was complete.';
+
+  static const String unexpectedToken =
+      'Token {0} is not valid at this position.';
+
+  static const String pdfStartxrefNotFound =
+      'The PDF input has no startxref marker.';
+
   static const String pdfStartxrefIsNotFollowedByANumber =
-      'PDF startxref is not followed by a number.';
-  static const String invalidXrefStream = 'Invalid xref stream.';
-  static const String invalidXrefTable = 'Invalid xref table.';
-  static const String xrefSubsectionNotFound = 'xref subsection not found.';
+      'An integer offset is required immediately after startxref.';
+
+  static const String invalidXrefStream =
+      'The cross-reference stream has an invalid structure.';
+
+  static const String invalidXrefTable =
+      'The cross-reference table has an invalid structure.';
+
+  static const String xrefSubsectionNotFound =
+      'The cross-reference subsection header could not be located.';
+
   static const String numberOfEntriesInThisXrefSubsectionNotFound =
-      'Number of entries in this xref subsection not found.';
+      'The xref subsection header is missing its entry count.';
+
   static const String objectNumberOfTheFirstObjectInThisXrefSubsectionNotFound =
-      'Object number of the first object in this xref subsection not found.';
+      'The xref subsection header is missing its first object number.';
+
   static const String invalidCrossReferenceEntryInThisXrefSubsection =
-      'Invalid cross reference entry in this xref subsection.';
+      'An entry in the cross-reference subsection is malformed.';
+
   static const String invalidIndirectReference =
-      'Invalid indirect reference {0} {1} R.';
+      'Malformed object reference: {0} {1} R.';
+
   static const String invalidOffsetForThisObject =
-      'Invalid offset for object {0}.';
+      'Object {0} has an invalid byte offset.';
+
   static const String corruptedRootEntryInTrailer =
-      'The trailer is corrupted: the catalog is corrupted or cannot be referenced from the file\'s trailer. The PDF cannot be opened.';
+      'The trailer cannot resolve a valid catalog through /Root; the PDF cannot be opened.';
 
-  // Filter errors
-  static const String thisFilterIsNotSupported = 'Filter {0} is not supported.';
+  static const String thisFilterIsNotSupported =
+      'Stream filter {0} has no supported decoder.';
+
   static const String thisDecodeParameterTypeIsNotSupported =
-      'Decode parameter type {0} is not supported.';
+      'Decode parameter type {0} is not implemented.';
+
   static const String filterIsNotANameOrArray =
-      'filter is not a name or array.';
+      'The /Filter entry must be a PDF name or an array of names.';
+
   static const String illegalCharacterInAscii85Decode =
-      'Illegal character in ASCII85Decode.';
+      'ASCII85 input contains a character outside the permitted alphabet.';
+
   static const String illegalCharacterInAsciiHexDecode =
-      'illegal character in ASCIIHexDecode.';
-  static const String lzwDecoderException = 'LZW decoder exception.';
-  static const String lzwFlavourNotSupported = 'LZW flavour not supported.';
-  static const String pngFilterUnknown = 'PNG filter unknown.';
+      'ASCIIHex input contains a non-hexadecimal character.';
 
-  // Object stream errors
+  static const String lzwDecoderException = 'LZW stream decompression failed.';
+
+  static const String lzwFlavourNotSupported =
+      'The stream uses an unsupported LZW coding variant.';
+
+  static const String pngFilterUnknown =
+      'The predictor specifies an unrecognized PNG filter.';
+
   static const String errorWhileReadingObjectStream =
-      'Error while reading Object Stream.';
+      'Parsing an object stream failed.';
+
   static const String unableToReadObjectStream =
-      'Unable to read object stream.';
+      'Object-stream contents could not be loaded.';
+
   static const String invalidObjectStreamNumber =
-      'Unable to read object {0} with object stream number {1} and index {2} from object stream.';
+      'Object {0} could not be read from object stream {1} at index {2}.';
+
   static const String pdfObjectStreamReachMaxSize =
-      'PdfObjectStream reached max size.';
+      'The object stream cannot accept more objects because it reached its size limit.';
 
-  // Page errors
   static const String requestedPageNumberIsOutOfBounds =
-      'Requested page number {0} is out of bounds.';
+      'Page {0} lies outside the document\'s page range.';
+
   static const String cannotRetrieveMediaBoxAttribute =
-      'Invalid PDF. There is no media box attribute for page or its parents.';
-  static const String invalidPageStructure = 'Invalid page structure {0}.';
+      'The page and its ancestors have no /MediaBox; page dimensions cannot be determined.';
+
+  static const String invalidPageStructure =
+      'The page tree contains an invalid structure: {0}.';
+
   static const String invalidPageStructurePagesMustBePdfDictionary =
-      'Invalid page structure. /Pages must be PdfDictionary.';
+      'The page-tree /Pages entry must reference a PDF dictionary.';
 
-  // Encryption errors
   static const String badUserPassword =
-      'Bad user password. Password is not provided or wrong password provided.';
+      'The PDF password is missing or does not unlock the document.';
+
   static const String noCompatibleEncryptionFound =
-      'No compatible encryption found.';
+      'No supported encryption handler matches this document.';
+
   static const String unknownEncryptionTypeR =
-      'Unknown encryption type R == {0}.';
+      'Unsupported encryption revision /R: {0}.';
+
   static const String unknownEncryptionTypeV =
-      'Unknown encryption type V == {0}.';
-  static const String cfNotFoundEncryption = '/CF not found (encryption)';
-  static const String stdcfNotFoundEncryption = '/StdCF not found (encryption)';
+      'Unsupported encryption algorithm /V: {0}.';
+
+  static const String cfNotFoundEncryption =
+      'The encryption dictionary is missing /CF.';
+
+  static const String stdcfNotFoundEncryption =
+      'The encryption crypt-filter dictionary is missing /StdCF.';
+
   static const String defaultCryptFilterNotFoundEncryption =
-      '/DefaultCryptFilter not found (encryption).';
+      'The encryption dictionary is missing /DefaultCryptFilter.';
+
   static const String standardHandlerBadDictionary =
-      'Standard Handler bad dictionary.';
+      'The standard security handler received a malformed encryption dictionary.';
 
-  // Font errors
   static const String cannotCreateFontFromNullPdfDictionary =
-      'Cannot create font from null pdf dictionary.';
+      'Font creation requires a non-null PDF dictionary.';
+
   static const String dictionaryDoesNotHaveSupportedFontData =
-      'Dictionary doesn\'t have supported font data.';
-  static const String fontEmbeddingIssue = 'Font embedding issue.';
+      'The dictionary contains no font data supported by this implementation.';
+
+  static const String fontEmbeddingIssue =
+      'The font could not be embedded in the PDF.';
+
   static const String missingRequiredFieldInFontDictionary =
-      'Missing required field {0} in font dictionary.';
+      'The font dictionary is missing mandatory entry {0}.';
 
-  // Color space errors
-  static const String colorSpaceNotFound = 'ColorSpace not found.';
+  static const String colorSpaceNotFound =
+      'The requested PDF color space could not be located.';
+
   static const String colorSpaceIsNotSupported =
-      'The color space {0} is not supported.';
-  static const String unexpectedColorSpace = 'Unexpected ColorSpace: {0}.';
+      'Color space {0} is not implemented.';
+
+  static const String unexpectedColorSpace =
+      'Color space {0} is not valid for this operation.';
+
   static const String incorrectNumberOfComponents =
-      'Incorrect number of components.';
+      'The component count does not match the required color space.';
 
-  // Image errors
-  static const String cannotFindImageDataOrEi = 'Cannot find image data or EI.';
+  static const String cannotFindImageDataOrEi =
+      'Inline image parsing found neither image data nor an EI terminator.';
+
   static const String endOfContentStreamReachedBeforeEndOfImageData =
-      'End of content stream reached before end of image data.';
+      'The content stream ended while inline image data was still being read.';
+
   static const String operatorEiNotFoundAfterEndOfImageData =
-      'Operator EI not found after the end of image data.';
+      'Inline image data is not followed by the required EI operator.';
 
-  // Tagged PDF errors
-  static const String mustBeATaggedDocument = 'Must be a tagged document.';
+  static const String mustBeATaggedDocument =
+      'This operation requires a tagged PDF document.';
+
   static const String documentDoesNotContainStructTreeRoot =
-      'Document doesn\'t contain StructTreeRoot.';
+      'The document catalog has no /StructTreeRoot entry.';
 
-  // I/O errors
-  static const String ioException = 'I/O exception.';
+  static const String ioException = 'An input/output operation failed.';
+
   static const String ioExceptionWhileCreatingFont =
-      'I/O exception while creating Font';
-  static const String unknownPdfException = 'Unknown PdfException.';
+      'Font creation failed during an input/output operation.';
 
-  // Memory errors
+  static const String unknownPdfException =
+      'PDF processing failed without a more specific diagnosis.';
+
   static const String
       duringDecompressionSingleStreamOccupiedMoreMemoryThanAllowed =
-      'During decompression a single stream occupied more memory than allowed.';
+      'Decompressing this stream exceeded the memory limit for one stream.';
+
   static const String
       duringDecompressionMultipleStreamsInSumOccupiedMoreMemoryThanAllowed =
-      'During decompression multiple streams in sum occupied more memory than allowed.';
+      'Combined decompressed streams exceeded the total memory limit.';
 
-  // Misc errors
   static const String appendModeRequiresADocumentWithoutErrors =
-      'Append mode requires a document without errors, even if recovery is possible.';
-  static const String pdfVersionIsNotValid = 'PDF version is not valid.';
-  static const String illegalLengthValue = 'Illegal length value.';
-  static const String invalidRangeArray = 'Invalid range array.';
-  static const String invalidLength =
-      'The offset + length must be lower than or equal to the length of the byte array.';
+      'Incremental append requires an error-free source PDF, including errors that could otherwise be recovered.';
 
-  // Wrapper errors
+  static const String pdfVersionIsNotValid =
+      'The supplied PDF version identifier is invalid.';
+
+  static const String illegalLengthValue =
+      'The supplied length is outside its valid range.';
+
+  static const String invalidRangeArray =
+      'The range array has an invalid structure or bounds.';
+
+  static const String invalidLength =
+      'The requested offset plus length exceeds the byte buffer size.';
+
   static const String toFlushThisWrapperUnderlyingObjectMustBeAddedToDocument =
-      'To flush this wrapper, underlying object must be added to document.';
+      'Add the wrapped PDF object to a document before flushing the wrapper.';
+
   static const String objectMustBeIndirectToWorkWithThisWrapper =
-      'Object must be indirect to work with this wrapper.';
+      'This wrapper requires an object with an indirect reference.';
 }

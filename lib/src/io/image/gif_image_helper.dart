@@ -1,42 +1,43 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/exceptions/io_exception.dart';
-import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
-import 'package:dpdf/src/io/image/gif_image_data.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:pdfcraft/src/io/image/gif_image_data.dart';
 
-import 'package:dpdf/src/io/image/raw_image_data.dart';
-import 'package:dpdf/src/io/image/raw_image_helper.dart';
-import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
-import 'package:dpdf/src/io/font/pdf_encodings.dart';
-import 'package:dpdf/src/layout/properties/image_type.dart';
+import 'package:pdfcraft/src/io/image/raw_image_data.dart';
+import 'package:pdfcraft/src/io/image/raw_image_helper.dart';
+import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
+import 'package:pdfcraft/src/io/font/pdf_encodings.dart';
+import 'package:pdfcraft/src/layout/properties/image_type.dart';
 
-class GifImageHelper {
+class CraftGifImageHelper {
   static const int _maxStackSize = 4096;
 
-  /// Reads image source and fills GifImage object with parameters (frames, width, height)
-  static void processImage(GifImageData image, [int lastFrameNumber = -1]) {
+  /// Decodes the canvas dimensions and requested frames from GIF bytes.
+  static void processImage(CraftGifImageData image,
+      [int lastFrameNumber = -1]) {
     final gif = GifParameters(image);
     try {
       if (image.getData() == null) {
         // Assuming data is loaded or available
         throw IoException("Image data is null");
       }
-      final stream = RandomAccessFileOrArray(image.getData()!);
+      final stream = CraftRandomAccessFileOrArray(image.getData()!);
       _process(stream, gif, lastFrameNumber);
       stream.close();
     } catch (e) {
       if (e is IoException) rethrow;
-      throw IoException(IoExceptionMessageConstant.gifImageException, e);
+      throw IoException(CraftIoExceptionMessageConstant.gifImageException, e);
     }
   }
 
-  static void _process(
-      RandomAccessFileOrArray stream, GifParameters gif, int lastFrameNumber) {
+  static void _process(CraftRandomAccessFileOrArray stream, GifParameters gif,
+      int lastFrameNumber) {
     gif.input = stream;
     _readHeader(gif);
     _readContents(gif, lastFrameNumber);
     if (gif.currentFrame <= lastFrameNumber) {
-      throw IoException(IoExceptionMessageConstant.cannotFindFrame);
+      throw IoException(CraftIoExceptionMessageConstant.cannotFindFrame);
     }
   }
 
@@ -46,7 +47,7 @@ class GifImageHelper {
       id.writeCharCode(gif.input!.read());
     }
     if (!id.toString().startsWith("GIF8")) {
-      throw IoException(IoExceptionMessageConstant.gifSignatureNotFound);
+      throw IoException(CraftIoExceptionMessageConstant.gifSignatureNotFound);
     }
     _readLSD(gif);
     if (gif.gctFlag) {
@@ -83,8 +84,6 @@ class GifImageHelper {
     int count = gif.input!.readBufferInto(gif.block, 0, gif.blockSize);
     gif.blockSize = count;
     return count;
-    // Note: C# uses JRead which handles EOF differently?
-    // here we assume it reads what's available.
   }
 
   static Uint8List _readColorTable(int bpc, GifParameters gif) {
@@ -92,8 +91,6 @@ class GifImageHelper {
     int nbytes = 3 * ncolors;
     bpc = _newBpc(bpc);
     Uint8List table = Uint8List((1 << bpc) * 3);
-    // StreamUtil.readFully equivalent.
-    // RandomAccessFileOrArray has readFullyInto
     gif.input!.readFullyInto(table, 0, nbytes);
     return table;
   }
@@ -184,7 +181,6 @@ class GifImageHelper {
 
     if (gif.transparency && gif.mBpc == 1 && gif.mCurrTable != null) {
       Uint8List tp = Uint8List(12);
-      // Array.Copy
       for (int k = 0; k < 6; k++) {
         if (k < gif.mCurrTable!.length) tp[k] = gif.mCurrTable![k];
       }
@@ -203,15 +199,16 @@ class GifImageHelper {
       colorspace[1] = "/DeviceRGB";
       int len = gif.mCurrTable!.length;
       colorspace[2] = (len ~/ 3) - 1;
-      colorspace[3] = PdfEncodings.convertToString(gif.mCurrTable!, null);
+      colorspace[3] = CraftPdfEncodings.convertToString(gif.mCurrTable!, null);
 
       Map<String, Object> ad = {};
       ad["ColorSpace"] = colorspace;
 
-      RawImageData img = RawImageData.fromBytes(gif.mOut!, ImageType.GIF);
-      RawImageHelper.updateRawImageParameters(
+      CraftRawImageData img =
+          CraftRawImageData.fromBytes(gif.mOut!, CraftImageType.GIF);
+      CraftRawImageHelper.updateRawImageParameters(
           img, gif.iw, gif.ih, 1, gif.mBpc, gif.mOut!);
-      RawImageHelper.updateImageAttributes(img, ad);
+      CraftRawImageHelper.updateImageAttributes(img, ad);
       gif.image.addFrame(img);
 
       if (gif.transparency) {
@@ -219,161 +216,83 @@ class GifImageHelper {
       }
     } catch (e) {
       if (e is IoException) rethrow;
-      throw IoException(IoExceptionMessageConstant.gifImageException, e);
+      throw IoException(CraftIoExceptionMessageConstant.gifImageException, e);
     }
   }
 
   static bool _decodeImageData(GifParameters gif) {
-    int nullCode = -1;
-    int npix = gif.iw * gif.ih;
-    int available;
-    int clear;
-    int codeMask;
-    int codeSize;
-    int endOfInformation;
-    int inCode;
-    int oldCode;
-    int bits;
-    int code;
-    int count;
-    int i;
-    int datum;
-    int dataSize;
-    int first;
-    int top;
-    int bi;
-    bool skipZero = false;
-
-    if (gif.prefix == null) {
-      gif.prefix = Int16List(_maxStackSize);
+    final minimum = gif.input!.read();
+    if (minimum < 2 || minimum > 8) {
+      throw IoException('GIF code width must be between two and eight bits.');
     }
-    if (gif.suffix == null) {
-      gif.suffix = Uint8List(_maxStackSize);
+    final compressed = BytesBuilder();
+    while (_readBlock(gif) > 0) {
+      compressed.add(gif.block.sublist(0, gif.blockSize));
     }
-    if (gif.pixelStack == null) {
-      gif.pixelStack = Uint8List(_maxStackSize + 1);
+    final payload = compressed.takeBytes();
+    final clear = 1 << minimum;
+    final end = clear + 1;
+    var table = <Uint8List>[];
+    var width = minimum + 1;
+    void reset() {
+      table = [
+        for (var value = 0; value < clear; value++) Uint8List.fromList([value]),
+        Uint8List(0),
+        Uint8List(0)
+      ];
+      width = minimum + 1;
     }
 
+    reset();
+    final rowOrder = <int>[];
+    for (final (first, step) in gif.interlace
+        ? const [(0, 8), (4, 8), (2, 4), (1, 2)]
+        : const [(0, 1)]) {
+      for (var row = first; row < gif.ih; row += step) {
+        rowOrder.add(row);
+      }
+    }
     gif.mLineStride = (gif.iw * gif.mBpc + 7) ~/ 8;
     gif.mOut = Uint8List(gif.mLineStride * gif.ih);
-
-    int pass = 1;
-    int inc = gif.interlace ? 8 : 1;
-    int line = 0;
-    int xpos = 0;
-
-    dataSize = gif.input!.read();
-    clear = 1 << dataSize;
-    endOfInformation = clear + 1;
-    available = clear + 2;
-    oldCode = nullCode;
-    codeSize = dataSize + 1;
-    codeMask = (1 << codeSize) - 1;
-
-    for (code = 0; code < clear; code++) {
-      gif.prefix![code] = 0;
-      gif.suffix![code] = code;
-    }
-
-    datum = bits = count = first = top = bi = 0;
-    for (i = 0; i < npix;) {
-      if (top == 0) {
-        if (bits < codeSize) {
-          if (count == 0) {
-            count = _readBlock(gif);
-            if (count <= 0) {
-              skipZero = true;
-              break;
-            }
-            bi = 0;
-          }
-          datum += (gif.block[bi] & 0xff) << bits;
-          bits += 8;
-          bi++;
-          count--;
-          continue;
-        }
-        code = datum & codeMask;
-        datum >>= codeSize;
-        bits -= codeSize;
-
-        if (code > available || code == endOfInformation) {
-          break;
-        }
-        if (code == clear) {
-          codeSize = dataSize + 1;
-          codeMask = (1 << codeSize) - 1;
-          available = clear + 2;
-          oldCode = nullCode;
-          continue;
-        }
-        if (oldCode == nullCode) {
-          gif.pixelStack![top++] = gif.suffix![code];
-          oldCode = code;
-          first = code;
-          continue;
-        }
-        inCode = code;
-        if (code == available) {
-          gif.pixelStack![top++] = first;
-          code = oldCode;
-        }
-        while (code > clear) {
-          gif.pixelStack![top++] = gif.suffix![code];
-          code = gif.prefix![code];
-        }
-        first = gif.suffix![code] & 0xff;
-
-        if (available >= _maxStackSize) {
-          break;
-        }
-        gif.pixelStack![top++] = first;
-        gif.prefix![available] = oldCode;
-        gif.suffix![available] = first;
-        available++;
-
-        if ((available & codeMask) == 0 && available < _maxStackSize) {
-          codeSize++;
-          codeMask += available;
-        }
-        oldCode = inCode;
+    var bit = 0, pixels = 0;
+    Uint8List? previous;
+    while (bit + width <= payload.length * 8) {
+      var code = 0;
+      for (var digit = 0; digit < width; digit++, bit++) {
+        code |= ((payload[bit ~/ 8] >> (bit % 8)) & 1) << digit;
       }
-      top--;
-      i++;
-      _setPixel(xpos, line, gif.pixelStack![top], gif);
-      xpos++;
-      if (xpos >= gif.iw) {
-        xpos = 0;
-        line += inc;
-        if (line >= gif.ih) {
-          if (gif.interlace) {
-            do {
-              pass++;
-              switch (pass) {
-                case 2:
-                  line = 4;
-                  break;
-                case 3:
-                  line = 2;
-                  inc = 4;
-                  break;
-                case 4:
-                  line = 1;
-                  inc = 2;
-                  break;
-                default:
-                  line = gif.ih - 1;
-                  inc = 0;
-              }
-            } while (line >= gif.ih);
-          } else {
-            line = gif.ih - 1;
-            inc = 0;
-          }
-        }
+      if (code == clear) {
+        reset();
+        previous = null;
+        continue;
       }
+      if (code == end) break;
+      final Uint8List word;
+      if (code < table.length && table[code].isNotEmpty) {
+        word = table[code];
+      } else if (code == table.length && previous != null) {
+        word = Uint8List.fromList([...previous, previous.first]);
+      } else {
+        throw IoException('GIF references an unavailable dictionary entry.');
+      }
+      if (pixels + word.length > gif.iw * gif.ih) {
+        throw IoException('GIF decoded pixels exceed the frame dimensions.');
+      }
+      for (final value in word) {
+        _setPixel(pixels % gif.iw, rowOrder[pixels ~/ gif.iw], value, gif);
+        pixels++;
+      }
+      if (previous != null && table.length < _maxStackSize) {
+        table.add(Uint8List.fromList([...previous, word.first]));
+        if (table.length == 1 << width && width < 12) width++;
+      }
+      previous = word;
     }
-    return skipZero;
+    if (pixels != gif.iw * gif.ih) {
+      throw IoException('GIF frame does not contain its declared pixels.');
+    }
+    // The sub-block terminator was consumed while collecting the payload.
+    return true;
   }
 
   static void _setPixel(int x, int y, int v, GifParameters gif) {
@@ -413,8 +332,8 @@ class GifImageHelper {
 }
 
 class GifParameters {
-  GifImageData image;
-  RandomAccessFileOrArray? input;
+  CraftGifImageData image;
+  CraftRandomAccessFileOrArray? input;
   bool gctFlag = false;
   int bgIndex = 0;
   int bgColor = 0;

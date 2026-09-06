@@ -1,55 +1,55 @@
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
-import 'package:dpdf/src/layout/layout/layout_context.dart';
-import 'package:dpdf/src/layout/layout/layout_result.dart';
-import 'package:dpdf/src/layout/renderer/draw_context.dart';
-import 'package:dpdf/src/layout/element/i_element.dart';
-import 'package:dpdf/src/layout/element/area_break.dart';
-import 'package:dpdf/src/commons/_log_manager.dart';
-import 'package:dpdf/src/layout/logs/layout_log_message_constant.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:pdfcraft/src/layout/layout/layout_context.dart';
+import 'package:pdfcraft/src/layout/layout/layout_result.dart';
+import 'package:pdfcraft/src/layout/renderer/draw_context.dart';
+import 'package:pdfcraft/src/layout/element/element.dart';
+import 'package:pdfcraft/src/layout/element/area_break.dart';
+import 'package:pdfcraft/src/commons/pdfcraft_log_manager.dart';
+import 'package:pdfcraft/src/layout/logs/layout_log_message_constant.dart';
 
-import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
+import 'package:pdfcraft/src/layout/minmaxwidth/min_max_width.dart';
 
-import 'package:dpdf/src/layout/renderer/abstract_renderer.dart';
+import 'package:pdfcraft/src/layout/renderer/abstract_renderer.dart';
 
-class AreaBreakRenderer extends AbstractRenderer {
+class CraftAreaBreakRenderer extends CraftAbstractRenderer {
   static final _logger = LogManager.getLoggerByName('AreaBreakRenderer');
-  AreaBreak areaBreak;
+  CraftAreaBreak areaBreak;
 
-  AreaBreakRenderer(this.areaBreak) : super(areaBreak);
+  CraftAreaBreakRenderer(this.areaBreak) : super(areaBreak);
 
   @override
-  void addChild(IRenderer renderer) {
-    _logger.logWarning(LayoutLogMessageConstant.areaBreakUnexpected);
+  void addChild(CraftRenderer renderer) {
+    _logger.logWarning(CraftLayoutLogMessageConstant.areaBreakUnexpected);
   }
 
   @override
-  void setParent(IRenderer? parent) {
+  void setParent(CraftRenderer? parent) {
     // Do nothing or store if needed
   }
 
   @override
-  LayoutResult? layout(LayoutContext layoutContext) {
-    return LayoutResult(LayoutResult.NOTHING, null, null, null, this)
+  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
+    return CraftLayoutResult(CraftLayoutResult.NOTHING, null, null, null, this)
         .setAreaBreak(areaBreak);
   }
 
   @override
-  Future<void> draw(DrawContext drawContext) async {
-    _logger.logWarning(LayoutLogMessageConstant.areaBreakUnexpected);
+  Future<void> draw(CraftDrawContext drawContext) async {
+    _logger.logWarning(CraftLayoutLogMessageConstant.areaBreakUnexpected);
   }
 
   @override
-  IElement? getModelElement() {
+  CraftElement? getModelElement() {
     return null;
   }
 
   @override
-  IRenderer? getNextRenderer() {
+  CraftRenderer? getNextRenderer() {
     return null;
   }
 
   @override
-  MinMaxWidth? getMinMaxWidth() {
-    return MinMaxWidth(0);
+  CraftMinMaxWidth? getMinMaxWidth() {
+    return CraftMinMaxWidth(0);
   }
 }

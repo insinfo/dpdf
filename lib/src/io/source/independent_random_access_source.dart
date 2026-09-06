@@ -1,17 +1,17 @@
 import 'dart:typed_data';
 
-import 'i_random_access_source.dart';
+import 'random_access_source.dart';
 
 /// A RandomAccessSource that wraps another RandomAccessSource but does not propagate close().
 ///
 /// This is useful when passing a RandomAccessSource to a method that would
 /// normally close the source.
-class IndependentRandomAccessSource implements IRandomAccessSource {
+class CraftIndependentRandomAccessSource implements CraftRandomAccessSource {
   /// The underlying source.
-  final IRandomAccessSource _source;
+  final CraftRandomAccessSource _source;
 
   /// Constructs a new IndependentRandomAccessSource object.
-  IndependentRandomAccessSource(this._source);
+  CraftIndependentRandomAccessSource(this._source);
 
   @override
   Future<int> get(int position) {

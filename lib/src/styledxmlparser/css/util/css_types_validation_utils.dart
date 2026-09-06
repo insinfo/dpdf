@@ -1,33 +1,33 @@
-import 'package:dpdf/src/styledxmlparser/css/common_css_constants.dart';
+import 'package:pdfcraft/src/styledxmlparser/css/common_css_constants.dart';
 
 /// Utilities class for CSS types validating operations.
-class CssTypesValidationUtils {
-  CssTypesValidationUtils._();
+class CraftCssTypesValidationUtils {
+  CraftCssTypesValidationUtils._();
 
   static const List<String> ANGLE_MEASUREMENTS_VALUES = [
-    CommonCssConstants.DEG,
-    CommonCssConstants.GRAD,
-    CommonCssConstants.RAD
+    CraftCommonCssConstants.DEG,
+    CraftCommonCssConstants.GRAD,
+    CraftCommonCssConstants.RAD
   ];
 
   static const List<String> RELATIVE_MEASUREMENTS_VALUES = [
-    CommonCssConstants.PERCENTAGE,
-    CommonCssConstants.EM,
-    CommonCssConstants.EX,
-    CommonCssConstants.REM
+    CraftCommonCssConstants.PERCENTAGE,
+    CraftCommonCssConstants.EM,
+    CraftCommonCssConstants.EX,
+    CraftCommonCssConstants.REM
   ];
 
   static const List<String> METRIC_MEASUREMENTS_VALUES = [
-    CommonCssConstants.PX,
-    CommonCssConstants.IN,
-    CommonCssConstants.CM,
-    CommonCssConstants.MM,
-    CommonCssConstants.PC,
-    CommonCssConstants.PT,
-    CommonCssConstants.Q
+    CraftCommonCssConstants.PX,
+    CraftCommonCssConstants.IN,
+    CraftCommonCssConstants.CM,
+    CraftCommonCssConstants.MM,
+    CraftCommonCssConstants.PC,
+    CraftCommonCssConstants.PT,
+    CraftCommonCssConstants.Q
   ];
 
-  /// Checks whether a string contains an allowed metric unit in HTML/CSS; rad, deg and grad.
+  /// Recognizes angular CSS units: rad, deg and grad.
   static bool isAngleValue(String? valueArgument) {
     if (valueArgument == null) return false;
     String value = valueArgument.trim();
@@ -40,25 +40,25 @@ class CssTypesValidationUtils {
     return false;
   }
 
-  /// Checks whether a string contains an allowed value relative to parent value.
+  /// Recognizes values expressed relative to the parent.
   static bool isEmValue(String? valueArgument) {
     if (valueArgument == null) return false;
     String value = valueArgument.trim();
-    return value.endsWith(CommonCssConstants.EM) &&
-        isNumber(
-            value.substring(0, value.length - CommonCssConstants.EM.length));
+    return value.endsWith(CraftCommonCssConstants.EM) &&
+        isNumber(value.substring(
+            0, value.length - CraftCommonCssConstants.EM.length));
   }
 
-  /// Checks whether a string contains an allowed value relative to element font height.
+  /// Recognizes values relative to the element's font height.
   static bool isExValue(String? valueArgument) {
     if (valueArgument == null) return false;
     String value = valueArgument.trim();
-    return value.endsWith(CommonCssConstants.EX) &&
-        isNumber(
-            value.substring(0, value.length - CommonCssConstants.EX.length));
+    return value.endsWith(CraftCommonCssConstants.EX) &&
+        isNumber(value.substring(
+            0, value.length - CraftCommonCssConstants.EX.length));
   }
 
-  /// Checks whether a string contains an allowed metric unit in HTML/CSS; px, in, cm, mm, pc, Q or pt.
+  /// Recognizes absolute CSS lengths: px, in, cm, mm, pc, Q and pt.
   static bool isMetricValue(String? valueArgument) {
     if (valueArgument == null) return false;
     String value = valueArgument.trim();
@@ -83,12 +83,12 @@ class CssTypesValidationUtils {
   static bool isPercentageValue(String? valueArgument) {
     if (valueArgument == null) return false;
     String value = valueArgument.trim();
-    return value.endsWith(CommonCssConstants.PERCENTAGE) &&
+    return value.endsWith(CraftCommonCssConstants.PERCENTAGE) &&
         isNumber(value.substring(
-            0, value.length - CommonCssConstants.PERCENTAGE.length));
+            0, value.length - CraftCommonCssConstants.PERCENTAGE.length));
   }
 
-  /// Checks whether a string contains an allowed value relative to previously set value.
+  /// Recognizes values relative to the previous value.
   static bool isRelativeValue(String? valueArgument) {
     if (valueArgument == null) return false;
     String value = valueArgument.trim();
@@ -101,13 +101,13 @@ class CssTypesValidationUtils {
     return false;
   }
 
-  /// Checks whether a string contains an allowed value relative to previously set root value.
+  /// Recognizes values relative to the root's previous value.
   static bool isRemValue(String? valueArgument) {
     if (valueArgument == null) return false;
     String value = valueArgument.trim();
-    return value.endsWith(CommonCssConstants.REM) &&
-        isNumber(
-            value.substring(0, value.length - CommonCssConstants.REM.length));
+    return value.endsWith(CraftCommonCssConstants.REM) &&
+        isNumber(value.substring(
+            0, value.length - CraftCommonCssConstants.REM.length));
   }
 
   static bool isNegativeValue(String? value) {

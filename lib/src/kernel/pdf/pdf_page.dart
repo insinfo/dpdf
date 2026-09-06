@@ -14,109 +14,113 @@ import 'pdf_pages.dart';
 import 'annot/pdf_annotation.dart';
 
 /// Wrapper class that represents a page in a PDF document.
-class PdfPage extends PdfObjectWrapper<PdfDictionary> {
-  PdfResources? _resources;
-  PdfPages? _parentPages;
+class CraftPdfPage extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+  CraftPdfResources? _resources;
+  CraftPdfPages? _parentPages;
 
-  PdfPage(PdfDictionary pdfObject) : super(pdfObject) {
-    pdfObject.put(PdfName.type, PdfName.page);
+  CraftPdfPage(CraftPdfDictionary pdfObject) : super(pdfObject) {
+    pdfObject.put(CraftPdfName.type, CraftPdfName.page);
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => true;
+  bool requiresIndirectStorage() => true;
 
-  Future<PdfResources> getResources() async {
+  Future<CraftPdfResources> resourceDirectory() async {
     if (_resources == null) {
-      final resDict = await getPdfObject().getAsDictionary(PdfName.resources);
+      final resDict =
+          await pdfRepresentation().dictionaryEntry(CraftPdfName.resources);
       if (resDict != null) {
-        _resources = PdfResources(resDict);
+        _resources = CraftPdfResources(resDict);
         await _resources!.init();
       } else {
-        _resources = PdfResources();
-        getPdfObject().put(PdfName.resources, _resources!.getPdfObject());
+        _resources = CraftPdfResources();
+        pdfRepresentation()
+            .put(CraftPdfName.resources, _resources!.pdfRepresentation());
       }
     }
     return _resources!;
   }
 
-  PdfPages? get parentPages => _parentPages;
-  set parentPages(PdfPages? value) => _parentPages = value;
+  CraftPdfPages? get parentPages => _parentPages;
+  set parentPages(CraftPdfPages? value) => _parentPages = value;
 
   /// Gets the media box for this page.
-  Future<Rectangle> getMediaBox() async {
-    final array = await getPdfObject().getAsArray(PdfName.mediaBox);
+  Future<CraftRectangle> mediaBounds() async {
+    final array = await pdfRepresentation().arrayEntry(CraftPdfName.mediaBox);
     return array != null
-        ? await Rectangle.fromPdfArray(array) ?? PageSize.defaultSize
-        : PageSize.defaultSize;
+        ? await CraftRectangle.fromPdfArray(array) ?? CraftPageSize.defaultSize
+        : CraftPageSize.defaultSize;
   }
 
   /// Sets the media box for this page.
-  void setMediaBox(Rectangle rect) {
-    getPdfObject().put(PdfName.mediaBox, rect.toPdfArray());
+  void setMediaBounds(CraftRectangle rect) {
+    pdfRepresentation().put(CraftPdfName.mediaBox, rect.toPdfArray());
   }
 
   /// Gets the crop box for this page.
-  Future<Rectangle> getCropBox() async {
-    final array = await getPdfObject().getAsArray(PdfName.cropBox);
+  Future<CraftRectangle> cropBounds() async {
+    final array = await pdfRepresentation().arrayEntry(CraftPdfName.cropBox);
     if (array != null) {
-      final rect = await Rectangle.fromPdfArray(array);
+      final rect = await CraftRectangle.fromPdfArray(array);
       if (rect != null) return rect;
     }
-    return await getMediaBox();
+    return await mediaBounds();
   }
 
   /// Sets the crop box for this page.
-  void setCropBox(Rectangle rect) {
-    getPdfObject().put(PdfName.cropBox, rect.toPdfArray());
+  void setCropBounds(CraftRectangle rect) {
+    pdfRepresentation().put(CraftPdfName.cropBox, rect.toPdfArray());
   }
 
   /// Gets the rotation for this page.
-  Future<int> getRotation() async {
-    final rotate = await getPdfObject().getAsNumber(PdfName.rotate);
+  Future<int> rotationDegrees() async {
+    final rotate = await pdfRepresentation().numberEntry(CraftPdfName.rotate);
     return rotate != null ? rotate.intValue() % 360 : 0;
   }
 
   /// Sets the rotation for this page.
-  void setRotation(int rotate) {
-    getPdfObject().put(PdfName.rotate, PdfNumber.fromInt(rotate));
+  void setRotationDegrees(int rotate) {
+    pdfRepresentation()
+        .put(CraftPdfName.rotate, CraftPdfNumber.fromInt(rotate));
   }
 
   /// Gets the content stream at the specified index.
-  Future<PdfObject?> getContentStream(int index) async {
-    final contents = await getPdfObject().get(PdfName.contents, true);
-    if (contents is PdfStream) {
+  Future<CraftPdfObject?> contentSegmentAt(int index) async {
+    final contents = await pdfRepresentation().get(CraftPdfName.contents, true);
+    if (contents is CraftPdfStream) {
       return index == 0 ? contents : null;
-    } else if (contents is PdfArray) {
+    } else if (contents is CraftPdfArray) {
       return await contents.get(index);
     }
     return null;
   }
 
   /// Gets the count of content streams.
-  Future<int> getContentStreamCount() async {
-    final contents = await getPdfObject().get(PdfName.contents, true);
-    if (contents is PdfStream) {
+  Future<int> contentSegmentCount() async {
+    final contents = await pdfRepresentation().get(CraftPdfName.contents, true);
+    if (contents is CraftPdfStream) {
       return 1;
-    } else if (contents is PdfArray) {
+    } else if (contents is CraftPdfArray) {
       return contents.size();
     }
     return 0;
   }
 
   /// Adds an annotation to the page.
-  Future<void> addAnnotation(PdfAnnotation annotation) async {
-    PdfArray? annots = await getPdfObject().getAsArray(PdfName.annots);
+  Future<void> addAnnotation(CraftPdfAnnotation annotation) async {
+    CraftPdfArray? annots =
+        await pdfRepresentation().arrayEntry(CraftPdfName.annots);
     if (annots == null) {
-      annots = PdfArray();
-      getPdfObject().put(PdfName.annots, annots);
+      annots = CraftPdfArray();
+      pdfRepresentation().put(CraftPdfName.annots, annots);
     }
-    annots.add(annotation.getPdfObject());
+    annots.add(annotation.pdfRepresentation());
     annotation.setPage(this);
-    
+
     // Mark page as modified for incremental updates (append mode)
-    getPdfObject().setModified();
-    
-    if (annotation.getPdfObject().isIndirectReference()) {
+    pdfRepresentation().markChanged();
+
+    if (annotation.pdfRepresentation().isIndirectReference()) {
       // ensure indirect?
     } else {
       // if we want to ensure it is indirect, we should check/make it.
@@ -125,15 +129,15 @@ class PdfPage extends PdfObjectWrapper<PdfDictionary> {
   }
 
   /// Gets the logical content of the page as a byte array.
-  Future<Uint8List> getContentBytes() async {
-    final contents = await getPdfObject().get(PdfName.contents, true);
-    if (contents is PdfStream) {
+  Future<Uint8List> contentPayload() async {
+    final contents = await pdfRepresentation().get(CraftPdfName.contents, true);
+    if (contents is CraftPdfStream) {
       return (await contents.getBytes()) ?? Uint8List(0);
-    } else if (contents is PdfArray) {
+    } else if (contents is CraftPdfArray) {
       final buffer = <int>[];
       for (var i = 0; i < contents.size(); i++) {
         final content = await contents.get(i);
-        if (content is PdfStream) {
+        if (content is CraftPdfStream) {
           buffer.addAll((await content.getBytes()) ?? Uint8List(0));
           // Separate streams with whitespace if needed, PDF ref says concatenation.
           // Usually a whitespace or newline is safer to prevent operator merging.
@@ -149,11 +153,12 @@ class PdfPage extends PdfObjectWrapper<PdfDictionary> {
   Future<int> getNextMcid() async {
     final doc = getDocument();
     if (doc == null) return -1;
-    return await doc.getStructTreeRoot().getNextMcidForPage(this);
+    return await doc.structureRoot().getNextMcidForPage(this);
   }
 
   /// Gets the StructParents entry for this page.
   Future<int?> getStructParents() async {
-    return (await getPdfObject().getAsNumber(PdfName.structParents))?.intValue();
+    return (await pdfRepresentation().numberEntry(CraftPdfName.structParents))
+        ?.intValue();
   }
 }

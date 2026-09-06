@@ -1,66 +1,61 @@
-/// Log message constants for Kernel module.
-class KernelLogMessageConstant {
-  KernelLogMessageConstant._();
+/// Diagnostic templates for PDFCraft. Public identifiers and format slots are stable.
+class CraftKernelLogMessageConstant {
+  CraftKernelLogMessageConstant._();
 
   static const String corruptedOutlineDictionaryHasInfiniteLoop =
-      'Document outline dictionary is corrupted: some outline (PDF object: "{0}") has wrong first/next link entry. '
-      'Next outlines in this dictionary will be unprocessed.';
+      'Outline object "{0}" has an invalid first/next link; stopping traversal of the remaining entries to avoid a cycle.';
 
   static const String dctdecodeFilterDecoding =
-      'DCTDecode filter decoding into the bit map is not supported. The stream data would be left in JPEG baseline format';
+      'DCTDecode raster decoding is unavailable; retaining the baseline JPEG stream.';
 
   static const String errorWhileFinalizingAesCipher =
-      'Exception finalizing AES cipher.';
+      'The AES cipher could not complete its final block.';
 
   static const String featureIsNotSupported =
-      'Exception was thrown: {0}. The feature {1} is probably not supported by your XML processor.';
+      'XML processing failed with {0}; the processor may lack support for feature {1}.';
 
   static const String fullCompressionAppendModeXrefTableInconsistency =
-      'Full compression mode requested in append mode but the original document has cross-reference table, '
-      'not cross-reference stream. Falling back to cross-reference table in appended document and switching full compression off';
+      'The original PDF uses an xref table. Incremental output will keep that format and disable the requested full compression.';
 
   static const String fullCompressionAppendModeXrefStreamInconsistency =
-      'Full compression mode was requested to be switched off in append mode but the original document has '
-      'cross-reference stream, not cross-reference table. Falling back to cross-reference stream in appended document and switching full compression on';
+      'The original PDF uses an xref stream. Incremental output will keep that format and enable full compression despite the requested setting.';
 
   static const String jpxdecodeFilterDecoding =
-      'JPXDecode filter decoding into the bit map is not supported. The stream data would be left in JPEG2000 format';
+      'JPXDecode raster decoding is unavailable; retaining the JPEG2000 stream.';
 
   static const String md5IsNotFipsCompliant =
-      'MD5 hash algorithm is not FIPS compliant. However we still use this algorithm since it is required according to the PDF specification.';
+      'This PDF operation requires MD5, which is outside FIPS-approved hashing algorithms.';
 
   static const String unableToParseColorWithinColorspace =
-      'Unable to parse color {0} within {1} color space';
+      'Color {0} cannot be interpreted using color space {1}.';
 
   static const String cannotMergeEntry =
-      'Cannot merge entry {0}, entry with such key already exists.';
+      'Merge skipped key {0} because an entry with that key is already present.';
 
   static const String unknownProductInvolved =
-      'Unknown product {0} was involved into PDF processing. It will be ignored';
+      'Ignoring unrecognized processing product {0}.';
 
   static const String unconfirmedEvent =
-      'Event for the product {0} with type {1} was reported but was not confirmed. Probably appropriate process fail';
+      'Product {0} event {1} was reported without confirmation; processing may have failed.';
 
   static const String flatteningIsNotYetSupported =
-      'Flattening annotation type {0} is not yet supported, it will not be removed from the page';
+      'Annotation type {0} has no flattening implementation; leaving the annotation on its page.';
 
   static const String formfieldAnnotationWillNotBeFlattened =
-      'Form field annotation flattening is not supported. Use the PdfAcroForm#flattenFields() method instead.';
+      'Field annotations require PdfAcroForm.flattenFields(); the annotation flattener will leave this field unchanged.';
 
   static const String invalidDdictionaryFieldValue =
-      'The default configuration dictionary field {0} has a value of {1}, which is not the required value for this field. The field will not be processed.';
+      'Skipping default-configuration field {0}: value {1} does not meet this field\'s requirements.';
 
   static const String structParentIndexMissedAndRecreated =
-      'StructParent index not found in tagged object, so index is recreated.';
+      'Assigning a new StructParent index because the tagged object has none.';
 
   static const String xobjectStructParentIndexMissedAndRecreated =
-      'XObject has no StructParents index in its stream, so index is recreated';
-
-
+      'Assigning a new StructParents index because the XObject stream has none.';
 
   static const String algorithmNotFromSpec =
-      'Requested algorithm might not be supported by the pdf specification.';
+      'The selected algorithm may not be defined for this PDF version.';
 
   static const String memorylimitawarehandlerOverrideCreatenewinstanceMethod =
-      'MemoryLimitsAwareHandler#createNewInstance method must be overriden.';
+      'Subclasses of MemoryLimitsAwareHandler must implement createNewInstance().';
 }

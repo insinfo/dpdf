@@ -1,28 +1,28 @@
-import 'package:dpdf/src/layout/element_property_container.dart';
-import 'package:dpdf/src/layout/element/i_element.dart';
-import 'package:dpdf/src/layout/element/i_abstract_element.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
+import 'package:pdfcraft/src/layout/element_property_container.dart';
+import 'package:pdfcraft/src/layout/element/element.dart';
+import 'package:pdfcraft/src/layout/element/element_model.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
 
-abstract class AbstractElement<T extends IElement>
-    extends ElementPropertyContainer<T> implements IAbstractElement {
-  IRenderer? nextRenderer;
-  final List<IElement> childElements = [];
+abstract class CraftAbstractElement<T extends CraftElement>
+    extends CraftElementPropertyContainer<T> implements CraftElementModel {
+  CraftRenderer? nextRenderer;
+  final List<CraftElement> childElements = [];
 
   @override
-  List<IElement> getChildren() => childElements;
+  List<CraftElement> getChildren() => childElements;
 
-  T add(IElement element) {
+  T add(CraftElement element) {
     childElements.add(element);
     return this as T;
   }
 
   @override
-  void setNextRenderer(IRenderer renderer) {
+  void setNextRenderer(CraftRenderer renderer) {
     nextRenderer = renderer;
   }
 
   @override
-  IRenderer? getRenderer() {
+  CraftRenderer? getRenderer() {
     if (nextRenderer != null) {
       return nextRenderer;
     }
@@ -30,13 +30,13 @@ abstract class AbstractElement<T extends IElement>
   }
 
   @override
-  IRenderer? createRendererSubTree() {
-    IRenderer? renderer = getRenderer();
+  CraftRenderer? createRendererSubTree() {
+    CraftRenderer? renderer = getRenderer();
     for (var child in childElements) {
       renderer?.addChild(child.createRendererSubTree()!);
     }
     return renderer;
   }
 
-  IRenderer makeNewRenderer();
+  CraftRenderer makeNewRenderer();
 }

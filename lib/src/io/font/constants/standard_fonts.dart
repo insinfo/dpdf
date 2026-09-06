@@ -1,4 +1,4 @@
-class StandardFonts {
+class CraftStandardFonts {
   static const String COURIER = "Courier";
   static const String COURIER_BOLD = "Courier-Bold";
   static const String COURIER_OBLIQUE = "Courier-Oblique";

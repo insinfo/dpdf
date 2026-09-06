@@ -1,18 +1,18 @@
-import 'package:dpdf/src/layout/root_element.dart';
-import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_page.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/layout/renderer/root_renderer.dart';
-import 'package:dpdf/src/layout/renderer/canvas_renderer.dart';
+import 'package:pdfcraft/src/layout/root_element.dart';
+import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_page.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/layout/renderer/root_renderer.dart';
+import 'package:pdfcraft/src/layout/renderer/canvas_renderer.dart';
 
-class Canvas extends RootElement<Canvas> {
-  PdfCanvas? pdfCanvas;
-  Rectangle? rootArea;
-  PdfPage? page;
+class CraftCanvas extends CraftRootElement<CraftCanvas> {
+  CraftPdfCanvas? pdfCanvas;
+  CraftRectangle? rootArea;
+  CraftPdfPage? page;
   bool isCanvasOfPage = false;
 
-  Canvas(PdfCanvas pdfCanvas, Rectangle rootArea)
+  CraftCanvas(CraftPdfCanvas pdfCanvas, CraftRectangle rootArea)
       : super(pdfCanvas.getDocument()!) {
     this.pdfCanvas = pdfCanvas;
     this.rootArea = rootArea;
@@ -22,16 +22,17 @@ class Canvas extends RootElement<Canvas> {
   // TODO: Add other constructors and methods
 
   @override
-  RootRenderer ensureRootRendererNotNull() {
+  CraftRootRenderer ensureRootRendererNotNull() {
     if (rootRenderer == null) {
-      rootRenderer = CanvasRenderer(this);
+      rootRenderer = CraftCanvasRenderer(this);
     }
     return rootRenderer!;
   }
 
-  static Future<Canvas> fromPage(PdfPage page, Rectangle? rootArea) async {
-    final pdfCanvas = await PdfCanvas.fromPage(page);
-    return Canvas(pdfCanvas, rootArea ?? (await page.getMediaBox()));
+  static Future<CraftCanvas> fromPage(
+      CraftPdfPage page, CraftRectangle? rootArea) async {
+    final pdfCanvas = await CraftPdfCanvas.fromPage(page);
+    return CraftCanvas(pdfCanvas, rootArea ?? (await page.mediaBounds()));
   }
 
   Future<void> flush() async {
@@ -46,15 +47,15 @@ class Canvas extends RootElement<Canvas> {
     }
   }
 
-  PdfDocument getPdfDocument() {
+  CraftPdfDocument getPdfDocument() {
     return pdfDocument;
   }
 
-  PdfCanvas getPdfCanvas() {
+  CraftPdfCanvas getPdfCanvas() {
     return pdfCanvas!;
   }
 
-  PdfPage? getPage() {
+  CraftPdfPage? pageAt() {
     return page;
   }
 
@@ -62,7 +63,7 @@ class Canvas extends RootElement<Canvas> {
     return isCanvasOfPage;
   }
 
-  Rectangle? getRootArea() {
+  CraftRectangle? getRootArea() {
     return rootArea;
   }
 }

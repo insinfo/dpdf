@@ -1,4 +1,4 @@
-class PdfNameUtil {
+class CraftPdfNameUtil {
   static String decodeName(List<int> content) {
     StringBuffer buf = StringBuffer();
     try {

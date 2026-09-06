@@ -1,18 +1,18 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/codec/jbig2_segment_reader.dart';
-import 'package:dpdf/src/io/exceptions/io_exception.dart';
-import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
-import 'package:dpdf/src/io/image/image_data.dart';
-import 'package:dpdf/src/io/image/jbig2_image_data.dart';
-import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:pdfcraft/src/io/codec/jbig2_segment_reader.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:pdfcraft/src/io/image/image_data.dart';
+import 'package:pdfcraft/src/io/image/jbig2_image_data.dart';
+import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
 
-import 'package:dpdf/src/layout/properties/image_type.dart';
+import 'package:pdfcraft/src/layout/properties/image_type.dart';
 
-class Jbig2ImageHelper {
-  static Uint8List? getGlobalSegment(RandomAccessFileOrArray ra) {
+class CraftJbig2ImageHelper {
+  static Uint8List? getGlobalSegment(CraftRandomAccessFileOrArray ra) {
     try {
-      Jbig2SegmentReader sr = Jbig2SegmentReader(ra);
+      CraftJbig2SegmentReader sr = CraftJbig2SegmentReader(ra);
       sr.read();
       return sr.getGlobal(true);
     } catch (e) {
@@ -20,11 +20,11 @@ class Jbig2ImageHelper {
     }
   }
 
-  static void processImage(ImageData jbig2) {
-    if (jbig2.getOriginalType() != ImageType.JBIG2) {
+  static void processImage(CraftImageData jbig2) {
+    if (jbig2.getOriginalType() != CraftImageType.JBIG2) {
       throw ArgumentError("JBIG2 image expected");
     }
-    Jbig2ImageData image = jbig2 as Jbig2ImageData;
+    CraftJbig2ImageData image = jbig2 as CraftJbig2ImageData;
     try {
       // Load data if needed (ImageData.loadData is usually protected/implicit?
       // In Dart port ImageData usually has bytes set if loaded?)
@@ -36,12 +36,12 @@ class Jbig2ImageHelper {
         // ImageData has loadData()?
       }
 
-      final raf = RandomAccessFileOrArray(image.getData()!);
-      Jbig2SegmentReader sr = Jbig2SegmentReader(raf);
+      final raf = CraftRandomAccessFileOrArray(image.getData()!);
+      CraftJbig2SegmentReader sr = CraftJbig2SegmentReader(raf);
       sr.read();
-      Jbig2Page? p = sr.getPage(image.getPage());
+      Jbig2Page? p = sr.pageAt(image.pageAt());
       if (p == null) {
-        throw IoException("Page ${image.getPage()} not found in JBIG2 file.");
+        throw IoException("Page ${image.pageAt()} not found in JBIG2 file.");
       }
       raf.close();
 
@@ -65,7 +65,7 @@ class Jbig2ImageHelper {
       image.setBpc(1);
       image.setData(p.getData(true));
     } catch (e) {
-      throw IoException(IoExceptionMessageConstant.jbig2ImageException, e);
+      throw IoException(CraftIoExceptionMessageConstant.jbig2ImageException, e);
     }
   }
 }

@@ -1,17 +1,17 @@
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_color_space.dart';
 
-abstract class PdfDeviceCs extends PdfColorSpace {
-  PdfDeviceCs(PdfName pdfObject) : super(pdfObject);
+abstract class CraftPdfDeviceCs extends CraftPdfColorSpace {
+  CraftPdfDeviceCs(CraftPdfName pdfObject) : super(pdfObject);
 
   @override
-  bool isWrappedObjectMustBeIndirect() {
+  bool requiresIndirectStorage() {
     return false;
   }
 }
 
-class PdfDeviceCsGray extends PdfDeviceCs {
-  PdfDeviceCsGray() : super(PdfName.deviceGray);
+class PdfDeviceCsGray extends CraftPdfDeviceCs {
+  PdfDeviceCsGray() : super(CraftPdfName.deviceGray);
 
   @override
   int getNumberOfComponents() {
@@ -19,13 +19,13 @@ class PdfDeviceCsGray extends PdfDeviceCs {
   }
 
   @override
-  PdfName getName() {
-    return PdfName.deviceGray;
+  CraftPdfName getName() {
+    return CraftPdfName.deviceGray;
   }
 }
 
-class PdfDeviceCsRgb extends PdfDeviceCs {
-  PdfDeviceCsRgb() : super(PdfName.deviceRgb);
+class PdfDeviceCsRgb extends CraftPdfDeviceCs {
+  PdfDeviceCsRgb() : super(CraftPdfName.deviceRgb);
 
   @override
   int getNumberOfComponents() {
@@ -33,13 +33,13 @@ class PdfDeviceCsRgb extends PdfDeviceCs {
   }
 
   @override
-  PdfName getName() {
-    return PdfName.deviceRgb;
+  CraftPdfName getName() {
+    return CraftPdfName.deviceRgb;
   }
 }
 
-class PdfDeviceCsCmyk extends PdfDeviceCs {
-  PdfDeviceCsCmyk() : super(PdfName.deviceCmyk);
+class PdfDeviceCsCmyk extends CraftPdfDeviceCs {
+  PdfDeviceCsCmyk() : super(CraftPdfName.deviceCmyk);
 
   @override
   int getNumberOfComponents() {
@@ -47,7 +47,7 @@ class PdfDeviceCsCmyk extends PdfDeviceCs {
   }
 
   @override
-  PdfName getName() {
-    return PdfName.deviceCmyk;
+  CraftPdfName getName() {
+    return CraftPdfName.deviceCmyk;
   }
 }

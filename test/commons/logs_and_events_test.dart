@@ -1,29 +1,30 @@
 import 'package:test/test.dart';
-import 'package:dpdf/src/commons/logs/commons_log_message_constant.dart';
-import 'package:dpdf/src/commons/actions/event_manager.dart';
-import 'package:dpdf/src/io/logs/io_log_message_constant.dart';
-import 'package:dpdf/src/kernel/logs/kernel_log_message_constant.dart';
+import 'package:pdfcraft/src/commons/logs/commons_log_message_constant.dart';
+import 'package:pdfcraft/src/commons/actions/event_manager.dart';
+import 'package:pdfcraft/src/io/logs/io_log_message_constant.dart';
+import 'package:pdfcraft/src/kernel/logs/kernel_log_message_constant.dart';
 
 void main() {
   group('CommonsLogMessageConstant', () {
     test('contains base64 exception message', () {
-      expect(CommonsLogMessageConstant.base64Exception, isNotEmpty);
+      expect(CraftCommonsLogMessageConstant.base64Exception, isNotEmpty);
     });
 
     test('contains placeholder patterns', () {
-      expect(CommonsLogMessageConstant.invalidStatisticsName, contains('{0}'));
+      expect(CraftCommonsLogMessageConstant.invalidStatisticsName,
+          contains('{0}'));
     });
   });
 
   group('EventManager', () {
     test('singleton instance', () {
-      final em1 = EventManager.instance;
-      final em2 = EventManager.instance;
+      final em1 = CraftEventManager.instance;
+      final em2 = CraftEventManager.instance;
       expect(identical(em1, em2), isTrue);
     });
 
     test('register and dispatch event', () {
-      final manager = EventManager.instance;
+      final manager = CraftEventManager.instance;
       manager.clear();
 
       String? receivedType;
@@ -40,7 +41,7 @@ void main() {
     });
 
     test('unregister handler', () {
-      final manager = EventManager.instance;
+      final manager = CraftEventManager.instance;
       manager.clear();
 
       int callCount = 0;
@@ -57,41 +58,42 @@ void main() {
   });
 
   group('ProductNameConstant', () {
-    test('contains pdfcraft Core', () {
-      expect(ProductNameConstant.pdfcraftCore, equals('pdfcraft Core'));
+    test('contains dpdf Core', () {
+      expect(CraftProductNameConstant.Core, equals('dpdf Core'));
     });
   });
 
   group('IoLogMessageConstant', () {
     test('contains action message', () {
-      expect(IoLogMessageConstant.actionWasSetToLinkAnnotationWithDestination,
+      expect(
+          CraftIoLogMessageConstant.actionWasSetToLinkAnnotationWithDestination,
           isNotEmpty);
     });
 
     test('contains font messages', () {
-      expect(IoLogMessageConstant.fontSubsetIssue, contains('subset'));
+      expect(CraftIoLogMessageConstant.fontSubsetIssue, contains('subset'));
     });
   });
 
   group('KernelLogMessageConstant', () {
     test('contains filter decoding messages', () {
-      expect(KernelLogMessageConstant.dctdecodeFilterDecoding,
+      expect(CraftKernelLogMessageConstant.dctdecodeFilterDecoding,
           contains('DCTDecode'));
-      expect(KernelLogMessageConstant.jpxdecodeFilterDecoding,
+      expect(CraftKernelLogMessageConstant.jpxdecodeFilterDecoding,
           contains('JPEG2000'));
     });
   });
 }
 
-class _TestEvent extends AbstractpdfcraftEvent {
+class _TestEvent extends AbstractEvent {
   final String type;
   _TestEvent(this.type);
 }
 
-class _TestEventHandler implements IEventHandler {
-  final void Function(IEvent) callback;
+class _TestEventHandler implements CraftEventHandler {
+  final void Function(CraftEvent) callback;
   _TestEventHandler(this.callback);
 
   @override
-  void onEvent(IEvent event) => callback(event);
+  void onEvent(CraftEvent event) => callback(event);
 }

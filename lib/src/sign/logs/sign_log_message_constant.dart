@@ -1,51 +1,43 @@
-/// Sign module log message constants.
-class SignLogMessageConstant {
-  SignLogMessageConstant._();
+/// Diagnostic templates for PDFCraft. Public identifiers and format slots are stable.
+class CraftSignLogMessageConstant {
+  CraftSignLogMessageConstant._();
 
   static const String countrySpecificFetchingFailed =
-      'Country specific Lotl fetching with schema name "{0}" failed because of:\n "{1}"';
+      'Fetching the national LOTL for schema "{0}" failed: {1}.';
 
   static const String exceptionWithoutMessage =
-      'Unexpected exception without message was thrown during keystore processing';
+      'Keystore processing raised an exception with no diagnostic message.';
 
   static const String unableToParseAiaCert =
-      'Unable to parse certificates coming from authority info access extension. '
-      'Those won\'t be included into the certificate chain.';
+      'Certificates from the Authority Information Access extension could not be decoded; omitting them from the chain.';
 
   static const String revocationDataNotAddedValidityAssured =
-      'Revocation data for certificate: "{0}" is not added due to validity '
-      'assured - short term extension.';
+      'Certificate "{0}" declares the short-term validity-assured extension; omitting its revocation data.';
 
   static const String unableToParseRevInfo =
-      'Unable to parse signed data revocation info item since it is incorrect '
-      'or unsupported (e.g. SCVP Request and Response).';
+      'SignedData contains malformed or unsupported revocation information; SCVP request/response items cannot be parsed here.';
 
   static const String validCertificateIsRevoked =
-      'The certificate was valid on the verification date, but has been revoked since {0}.';
+      'The certificate was valid at the verification time but was subsequently revoked on {0}.';
 
   static const String updatingMainLotlToCacheFailed =
-      'Unable to update cache with main Lotl file. '
-      'Downloading of the main Lotl file failed.\n{0}';
+      'The main LOTL download failed, so its cache entry was not updated: {0}.';
 
   static const String updatingPivotToCacheFailed =
-      'Unable to pivot files because of pivot file fetching failure.\n{0}';
+      'Pivot processing stopped because a pivot file could not be fetched: {0}.';
 
   static const String failedToFetchCountrySpecificLotl =
-      'Problem occurred while fetching country specific Lotl files.\n{0}';
+      'Fetching national LOTL files failed: {0}.';
 
   static const String noCountrySpecificLotlFetched =
-      'Zero country specific Lotl files were fetched.';
+      'No national LOTL files were retrieved.';
 
   static const String failedToFetchEuJournalCertificates =
-      'Problem occurred while fetching EU Journal certificates.\n{0}';
+      'Fetching EU Official Journal certificates failed: {0}.';
 
   static const String ojTransitionPeriod =
-      'Main LOTL file contains two Official Journal of European Union links. '
-      'This usually indicates that transition period for Official Journal has started. '
-      'Newest version of Official Journal should be used from now on '
-      'to retrieve trusted certificates and LOTL location.';
+      'Two EU Official Journal links appear in the main LOTL, indicating a possible transition. Use the newer journal for trusted certificates and the LOTL address.';
 
   static const String countryNotRequiredByConfiguration =
-      'Country "{0}" is not required by lotlFetchingProperties, '
-      'and not be used when validating.';
+      'Country "{0}" is excluded by lotlFetchingProperties and will not participate in validation.';
 }

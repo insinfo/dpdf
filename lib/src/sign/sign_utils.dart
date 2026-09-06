@@ -1,31 +1,50 @@
 import 'dart:typed_data';
 
-import 'package:pointycastle/asn1.dart';
-import 'package:pointycastle/api.dart'; // For Signer, PublicKeyParameter
-import 'package:pointycastle/asymmetric/api.dart'; // For RSAPublicKey
+import 'package:pdfcraft/src/sign/der_objects.dart';
+import 'package:pdfcraft/src/pki/rsa.dart';
 
-import 'i_x509_certificate.dart';
+import 'certificate_details.dart';
+import '../commons/digest/digest_bytes.dart';
 
 /// Utilities for cryptographic signature operations.
-class SignUtils {
+class CraftSignUtils {
   /// Generates a CertificateID for OCSP.
   ///
   /// This is a simplified implementation. Real implementation needs hashing of Issuer Name and PublicKey.
   /// Returns encoded CertificateID.
-  static ASN1Sequence generateCertificateId(
-      IX509Certificate issuerCert, BigInt serialNumber, String hashAlgorithm) {
+  static ASN1Sequence generateCertificateId(CertificateDetails issuerCert,
+      BigInt serialNumber, String hashAlgorithm) {
     // CertificateID ::= SEQUENCE {
     //    hashAlgorithm       AlgorithmIdentifier,
     //    issuerNameHash      OCTET STRING, -- Hash of Issuer's DN
     //    issuerKeyHash       OCTET STRING, -- Hash of Issuer's public key
     //    serialNumber        CertificateSerialNumber }
 
-    // TODO: Implement actual hashing
-    // For now returning a dummy sequence to satisfy type
+    const oids = {
+      'SHA1': '1.3.14.3.2.26',
+      'SHA256': '2.16.840.1.101.3.4.2.1',
+      'SHA384': '2.16.840.1.101.3.4.2.2',
+      'SHA512': '2.16.840.1.101.3.4.2.3'
+    };
+    final oid = oids[hashAlgorithm.toUpperCase().replaceAll('-', '')];
+    if (oid == null)
+      throw UnsupportedError('Unsupported OCSP hash $hashAlgorithm');
+    final spki =
+        ASN1Parser(issuerCert.getPublicKey()).nextObject() as ASN1Sequence;
+    final publicBits = spki.elements![1] as ASN1BitString;
+    final certificate =
+        ASN1Parser(issuerCert.getEncoded()).nextObject() as ASN1Sequence;
+    final tbs = certificate.elements!.first as ASN1Sequence;
+    final start = tbs.elements!.first.tag == 0xa0 ? 1 : 0;
+    final subject = tbs.elements![start + 4].encode();
     return ASN1Sequence(elements: [
-      ASN1Sequence(), // AlgorithmIdentifier
-      ASN1OctetString(octets: Uint8List(0)), // issuerNameHash
-      ASN1OctetString(octets: Uint8List(0)), // issuerKeyHash
+      ASN1Sequence(elements: [
+        ASN1ObjectIdentifier.fromIdentifierString(oid),
+        ASN1Null()
+      ]),
+      ASN1OctetString(octets: DigestBytes.compute(hashAlgorithm, subject)),
+      ASN1OctetString(
+          octets: DigestBytes.compute(hashAlgorithm, publicBits.stringValues)),
       ASN1Integer(serialNumber),
     ]);
   }
@@ -46,22 +65,20 @@ class SignUtils {
     //     reqCert                     CertID,
     //     singleRequestExtensions     [0] EXPLICIT Extensions OPTIONAL }
 
-    final request = ASN1Sequence(elements: [
-      certificateId,
+    final nonce = RsaMath.randomBytes(16);
+    final extension = ASN1Sequence(elements: [
+      ASN1ObjectIdentifier.fromIdentifierString('1.3.6.1.5.5.7.48.1.2'),
+      ASN1OctetString(octets: ASN1OctetString(octets: nonce).encode()),
     ]);
-
-    final schema = ASN1Sequence(elements: [request]);
-
     final tbsRequest = ASN1Sequence(elements: [
-      schema // requestList
-      // extensions with Nonce
+      ASN1Sequence(elements: [
+        ASN1Sequence(elements: [certificateId])
+      ]),
+      ASN1Sequence(tag: 0xa2, elements: [
+        ASN1Sequence(elements: [extension])
+      ]),
     ]);
-
-    final ocspRequest = ASN1Sequence(elements: [
-      tbsRequest,
-    ]);
-
-    return ocspRequest.encodedBytes!;
+    return ASN1Sequence(elements: [tbsRequest]).encode();
   }
 
   /// Parses an RSA Public Key from SubjectPublicKeyInfo bytes.
@@ -77,17 +94,7 @@ class SignUtils {
 
       final bitString = seq.elements![1];
       if (bitString is ASN1BitString) {
-        final keyBytes = bitString.stringValues
-            as Uint8List; // or .content, depending on version
-        // PC's ASN1BitString usually exposes bytes.
-        // Actually bitString.contentBytes or similar.
-        // Let's assume we can get bytes.
-        // In some versions, 'elements' or 'valueBytes'
-        // Let's retry parsing the inner sequence (RSAPublicKey)
-
-        // For now, let's look at how X509Certificate does it, it just returns the Sequence bytes.
-        // If 'encoded' is the full SubjectPublicKeyInfo Sequence:
-
+        final keyBytes = bitString.stringValues;
         final rsaParser = ASN1Parser(keyBytes);
         final rsaSeq = rsaParser.nextObject() as ASN1Sequence;
         if (rsaSeq.elements!.length < 2) return null;
@@ -106,8 +113,10 @@ class SignUtils {
   /// Creates a signer for the given algorithm name and public key.
   static Signer? createSigner(String algorithm, RSAPublicKey publicKey) {
     try {
-      // Algorithm naming convention in PointyCastle: 'SHA-256/RSA'
-      final signer = Signer(algorithm);
+      // Digest and RSA scheme are resolved by the local signer.
+      final normalized = algorithm.replaceFirst(
+          RegExp(r'withRSA$', caseSensitive: false), '/RSA');
+      final signer = Signer(normalized);
       signer.init(
           false, PublicKeyParameter(publicKey)); // false for verification
       return signer;

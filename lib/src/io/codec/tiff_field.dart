@@ -95,7 +95,7 @@ class TiffField implements Comparable<TiffField> {
     return data as List<List<int>>;
   }
 
-  int getAsInt(int index) {
+  int integerEntry(int index) {
     switch (type) {
       case TIFF_BYTE:
       case TIFF_UNDEFINED:
@@ -136,7 +136,7 @@ class TiffField implements Comparable<TiffField> {
     }
   }
 
-  double getAsFloat(int index) {
+  double decimalEntry(int index) {
     switch (type) {
       case TIFF_FLOAT:
         return (data as Float32List)[index];
@@ -154,7 +154,7 @@ class TiffField implements Comparable<TiffField> {
   }
 
   double getAsDouble(int index) {
-    return getAsFloat(index); // Simplification
+    return decimalEntry(index); // Simplification
   }
 
   @override

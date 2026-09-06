@@ -15,7 +15,8 @@ import '../../commons/utils/encoding_util.dart';
 
 import 'pdf_form_field.dart';
 
-abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionary> {
+abstract class CraftAbstractPdfFormField
+    extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   static const int defaultFontSize = 12;
   static const int minFontSize = 4;
 
@@ -23,51 +24,51 @@ abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionary> {
   static const int _daSize = 1;
   static const int _daColor = 2;
 
-  PdfFont? _font;
+  CraftPdfFont? _font;
   double _fontSize = -1;
-  Color? _color;
-  PdfFormField? _parent;
+  CraftColor? _color;
+  CraftPdfFormField? _parent;
 
-  AbstractPdfFormField(PdfDictionary pdfObject) : super(pdfObject) {
-    if (isWrappedObjectMustBeIndirect()) {
-      PdfObjectWrapper.markObjectAsIndirect(pdfObject);
+  CraftAbstractPdfFormField(CraftPdfDictionary pdfObject) : super(pdfObject) {
+    if (requiresIndirectStorage()) {
+      CraftPdfObjectWrapper.markObjectAsIndirect(pdfObject);
     }
     setForbidRelease();
     _retrieveStyles();
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => true;
+  bool requiresIndirectStorage() => true;
 
-  void setParent(PdfFormField parent) {
-    put(PdfName.parent, parent.getPdfObject());
+  void setParent(CraftPdfFormField parent) {
+    put(CraftPdfName.parent, parent.pdfRepresentation());
     _parent = parent;
   }
 
-  Future<PdfDictionary?> getParent() async {
-    final p = await getPdfObject().getAsDictionary(PdfName.parent);
+  Future<CraftPdfDictionary?> getParent() async {
+    final p = await pdfRepresentation().dictionaryEntry(CraftPdfName.parent);
     if (p != null) return p;
-    return _parent?.getPdfObject();
+    return _parent?.pdfRepresentation();
   }
 
-  PdfFormField? getParentField() => _parent;
+  CraftPdfFormField? getParentField() => _parent;
 
-  Future<PdfString?> getFieldName() async {
-    return getPdfObject().getAsString(PdfName.t); // T = Terminal Name
+  Future<CraftPdfString?> getFieldName() async {
+    return pdfRepresentation().stringEntry(CraftPdfName.t); // T = Terminal Name
   }
 
-  Future<PdfString?> getDefaultAppearance() async {
+  Future<CraftPdfString?> getDefaultAppearance() async {
     // Inheritable
-    PdfString? da = await getPdfObject().getAsString(PdfName.da);
+    CraftPdfString? da = await pdfRepresentation().stringEntry(CraftPdfName.da);
     if (da == null && _parent != null) {
       return await _parent!.getDefaultAppearance();
     }
     return da;
   }
 
-  PdfFont? getFont() => _font;
+  CraftPdfFont? resolveTypeface() => _font;
   double getFontSize() => _fontSize;
-  Color? getColor() => _color;
+  CraftColor? getColor() => _color;
 
   void _retrieveStyles() async {
     final da = await getDefaultAppearance();
@@ -75,7 +76,7 @@ abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionary> {
       final fontData = await _splitDAelements(da.getValue());
       if (fontData[_daSize] != null && fontData[_daFont] != null) {
         _fontSize = (fontData[_daSize] as num).toDouble();
-        _color = fontData[_daColor] as Color?;
+        _color = fontData[_daColor] as CraftColor?;
         final fontName = fontData[_daFont] as String;
         _font = await resolveFontName(fontName);
       }
@@ -83,8 +84,8 @@ abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionary> {
   }
 
   static Future<List<Object?>> _splitDAelements(String da) async {
-    final bytes = EncodingUtil.convertToBytes(da, "Latin1");
-    final tokenizer = PdfTokenizer(RandomAccessFileOrArray(bytes));
+    final bytes = CraftEncodingUtil.convertToBytes(da, "Latin1");
+    final tokenizer = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
     final stack = <String>[];
     final ret = List<Object?>.filled(3, null);
 
@@ -104,7 +105,7 @@ abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionary> {
               if (stack.isNotEmpty) {
                 final gray = double.tryParse(stack.last) ?? 0.0;
                 if (gray != 0) {
-                  ret[_daColor] = DeviceGray(gray);
+                  ret[_daColor] = CraftDeviceGray(gray);
                 }
               }
               break;
@@ -113,7 +114,7 @@ abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionary> {
                 final r = double.tryParse(stack[stack.length - 3]) ?? 0.0;
                 final g = double.tryParse(stack[stack.length - 2]) ?? 0.0;
                 final b = double.tryParse(stack.last) ?? 0.0;
-                ret[_daColor] = DeviceRgb(r, g, b);
+                ret[_daColor] = CraftDeviceRgb(r, g, b);
               }
               break;
             case "k":
@@ -122,7 +123,7 @@ abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionary> {
                 final m = double.tryParse(stack[stack.length - 3]) ?? 0.0;
                 final y = double.tryParse(stack[stack.length - 2]) ?? 0.0;
                 final k = double.tryParse(stack.last) ?? 0.0;
-                ret[_daColor] = DeviceCmyk(c, m, y, k);
+                ret[_daColor] = CraftDeviceCmyk(c, m, y, k);
               }
               break;
             default:
@@ -139,38 +140,39 @@ abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionary> {
     return ret;
   }
 
-  Future<PdfFont?> resolveFontName(String fontName) async {
+  Future<CraftPdfFont?> resolveFontName(String fontName) async {
     final doc = getDocument();
     if (doc == null) return null;
 
-    final catalog = doc.getCatalog();
-    final acroFormDict =
-        await catalog.getPdfObject().getAsDictionary(PdfName.acroForm);
+    final catalog = doc.rootCatalog();
+    final acroFormDict = await catalog
+        .pdfRepresentation()
+        .dictionaryEntry(CraftPdfName.acroForm);
     if (acroFormDict == null) return null;
 
-    final dr = await acroFormDict.getAsDictionary(PdfName.dr);
+    final dr = await acroFormDict.dictionaryEntry(CraftPdfName.dr);
     if (dr == null) return null;
 
-    final fontDict = await dr.getAsDictionary(PdfName.font);
+    final fontDict = await dr.dictionaryEntry(CraftPdfName.font);
     if (fontDict == null) return null;
 
-    final daFontDict = await fontDict.getAsDictionary(PdfName(fontName));
+    final daFontDict = await fontDict.dictionaryEntry(CraftPdfName(fontName));
     if (daFontDict != null) {
-      return await doc.getFont(daFontDict);
+      return await doc.resolveTypeface(daFontDict);
     }
     return null;
   }
 
   @override
-  PdfDocument? getDocument() {
-    final ref = getPdfObject().getIndirectReference();
+  CraftPdfDocument? getDocument() {
+    final ref = pdfRepresentation().indirectHandle();
     return ref?.getDocument();
   }
 
-  PdfObject put(PdfName key, PdfObject value) {
-    getPdfObject().put(key, value);
-    setModified();
-    return getPdfObject();
+  CraftPdfObject put(CraftPdfName key, CraftPdfObject value) {
+    pdfRepresentation().put(key, value);
+    markChanged();
+    return pdfRepresentation();
   }
 
   Future<bool> regenerateField();

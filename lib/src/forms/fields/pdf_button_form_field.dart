@@ -9,37 +9,40 @@ import '../../kernel/pdf/pdf_number.dart';
 import '../../kernel/pdf/pdf_document.dart';
 import '../../kernel/geom/rectangle.dart';
 
-class PdfButtonFormField extends PdfFormField {
+class CraftPdfButtonFormField extends CraftPdfFormField {
   static const int ffNoToggleToOff = 1 << 14; // Bit 15, PDF Spec
   static const int ffRadio = 1 << 15; // Bit 16
   static const int ffPushButton = 1 << 16; // Bit 17
   static const int ffRadiosInUnison = 1 << 25; // Bit 26
 
-  PdfButtonFormField(PdfDictionary pdfObject) : super(pdfObject);
+  CraftPdfButtonFormField(CraftPdfDictionary pdfObject) : super(pdfObject);
 
   // Factory methods to create specific button types (Push, Radio, Checkbox)
   // These are typically in PdfFormCreator in C# but useful to have helpers here or there.
 
   // Factory methods
-  static PdfButtonFormField createRadioGroup(
-      PdfDocument document, String name, String? value) {
-    PdfDictionary dict = PdfDictionary();
-    dict.put(PdfName.ft, PdfName.btn);
-    dict.put(PdfName.t, PdfString(name));
+  static CraftPdfButtonFormField createRadioGroup(
+      CraftPdfDocument document, String name, String? value) {
+    CraftPdfDictionary dict = CraftPdfDictionary();
+    dict.put(CraftPdfName.ft, CraftPdfName.btn);
+    dict.put(CraftPdfName.t, CraftPdfString(name));
     if (value != null) {
-      dict.put(PdfName.v, PdfName(value));
+      dict.put(CraftPdfName.v, CraftPdfName(value));
     }
-    dict.put(PdfName.ff, PdfNumber(ffRadio.toDouble()));
+    dict.put(CraftPdfName.ff, CraftPdfNumber(ffRadio.toDouble()));
 
-    PdfButtonFormField field = PdfButtonFormField(dict);
-    field.makeIndirect(document);
+    CraftPdfButtonFormField field = CraftPdfButtonFormField(dict);
+    field.attachToDocument(document);
     return field;
   }
 
-  static Future<PdfWidgetAnnotation> createRadioButton(PdfDocument document,
-      Rectangle rect, PdfButtonFormField group, String value) async {
-    PdfWidgetAnnotation widget = PdfWidgetAnnotation.fromRect(rect);
-    widget.put(PdfName.as, PdfName(value));
+  static Future<CraftPdfWidgetAnnotation> createRadioButton(
+      CraftPdfDocument document,
+      CraftRectangle rect,
+      CraftPdfButtonFormField group,
+      String value) async {
+    CraftPdfWidgetAnnotation widget = CraftPdfWidgetAnnotation.fromRect(rect);
+    widget.put(CraftPdfName.as, CraftPdfName(value));
 
     await group.addKid(widget);
 
@@ -47,8 +50,8 @@ class PdfButtonFormField extends PdfFormField {
   }
 
   @override
-  Future<PdfName?> getFormType() async {
-    return PdfName.btn;
+  Future<CraftPdfName?> getFormType() async {
+    return CraftPdfName.btn;
   }
 
   Future<bool> isRadio() async {
@@ -84,20 +87,23 @@ class PdfButtonFormField extends PdfFormField {
   }
 
   @override
-  Future<void> addKid(PdfWidgetAnnotation kid) async {
+  Future<void> addKid(CraftPdfWidgetAnnotation kid) async {
     await super.addKid(kid);
 
     if (await isRadio()) {
-      PdfName? appearanceState = await kid.getPdfObject().getAsName(PdfName.as);
-      PdfObject? valueObj = await getPdfObject().get(PdfName.v, true);
+      CraftPdfName? appearanceState =
+          await kid.pdfRepresentation().nameEntry(CraftPdfName.as);
+      CraftPdfObject? valueObj =
+          await pdfRepresentation().get(CraftPdfName.v, true);
 
       if (appearanceState != null &&
-          valueObj is PdfName &&
+          valueObj is CraftPdfName &&
           appearanceState != valueObj) {
-        kid.getPdfObject().put(PdfName.as, PdfName("Off"));
+        kid.pdfRepresentation().put(CraftPdfName.as, CraftPdfName("Off"));
       }
 
-      PdfFormAnnotation formAnnot = PdfFormAnnotation(kid.getPdfObject());
+      CraftPdfFormAnnotation formAnnot =
+          CraftPdfFormAnnotation(kid.pdfRepresentation());
       await formAnnot.drawRadioButtonAndSaveAppearance(
           appearanceState?.getValue() ?? "Yes");
     }

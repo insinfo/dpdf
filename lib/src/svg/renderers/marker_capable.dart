@@ -1,0 +1,13 @@
+import 'package:pdfcraft/src/svg/marker_vertex_type.dart';
+import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
+
+/// Interface implemented by elements that support marker drawing.
+abstract class CraftMarkerCapable {
+  /// Draws a marker in the specified context.
+  void drawMarker(
+      CraftSvgDrawContext context, CraftMarkerVertexType markerVertexType);
+
+  /// Calculates marker orientation angle if orient attribute is set to auto
+  double getAutoOrientAngle(dynamic marker,
+      bool reverse); // Using dynamic for MarkerSvgNodeRenderer for now
+}

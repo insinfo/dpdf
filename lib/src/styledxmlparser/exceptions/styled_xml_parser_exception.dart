@@ -1,18 +1,18 @@
-class StyledXMLParserException implements Exception {
+class CraftStyledXMLParserException implements Exception {
   static const String INVALID_GRADIENT_FUNCTION_ARGUMENTS_LIST =
-      "Invalid gradient function arguments list: {0}";
+      "Cannot interpret these gradient arguments: {0}";
   static const String INVALID_GRADIENT_TO_SIDE_OR_CORNER_STRING =
-      "Invalid direction string: {0}";
+      "The gradient direction is not recognized: {0}";
   static const String INVALID_GRADIENT_COLOR_STOP_VALUE =
-      "Invalid color stop value: {0}";
-  static const String NAN = "The passed value (@{0}) is not a number";
+      "Cannot interpret this gradient stop: {0}";
+  static const String NAN = "A numeric CSS value was expected at @{0}.";
   static const String FontProviderContainsZeroFonts =
-      "Font Provider contains zero fonts. At least one font shall be present";
+      "Rendering requires a font, but the provider has none registered.";
   static const String UnsupportedEncodingException =
-      "Unsupported encoding exception.";
+      "The requested text encoding has no available implementation.";
 
   final String message;
-  StyledXMLParserException(this.message);
+  CraftStyledXMLParserException(this.message);
 
   @override
   String toString() => 'StyledXMLParserException: $message';

@@ -1,11 +1,11 @@
 import 'dart:typed_data';
-import 'package:dpdf/src/kernel/pdf/tagging/pdf_struct_elem.dart';
+import 'package:pdfcraft/src/kernel/pdf/tagging/pdf_struct_elem.dart';
 import 'package:test/test.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
 
 void main() {
   group('PdfStructTreeRoot Tests', () {
@@ -13,13 +13,14 @@ void main() {
       // TODO porque não usar arquivo? tem que usar arquivo para ver se esta funcionando corretamente a gravação em arquivo
       // Use BytesBuilder instead of file for more reliable async handling
       final builder = BytesBuilder();
-      final writer = PdfWriter.fromBytesBuilder(builder);
-      final doc = PdfDocument(writer: writer);
-      await doc.addNewPage();
+      final writer = CraftPdfWriter.fromBytesBuilder(builder);
+      final doc = CraftPdfDocument(writer: writer);
+      await doc.appendBlankPage();
 
-      final structTreeRoot = doc.getStructTreeRoot();
-      final docElem = PdfStructElem.withRole(doc, PdfName('Document'));
-      final pElem = PdfStructElem.withRole(doc, PdfName('P'));
+      final structTreeRoot = doc.structureRoot();
+      final docElem =
+          CraftPdfStructElem.withRole(doc, CraftPdfName('Document'));
+      final pElem = CraftPdfStructElem.withRole(doc, CraftPdfName('P'));
 
       await docElem.addKid(pElem);
       await structTreeRoot.addKid(docElem);
@@ -27,27 +28,27 @@ void main() {
 
       final pdfBytes = builder.toBytes();
       expect(pdfBytes.isNotEmpty, isTrue);
-      
+
       // Verify PDF starts with header
       final headerStr = String.fromCharCodes(pdfBytes.take(8));
       expect(headerStr, startsWith('%PDF-'));
 
-      final reader = PdfReader.fromBytes(pdfBytes);
-      final readDoc = await PdfDocument.open(reader);
-      
-      final readRoot = await readDoc.getStructTreeRootAsync();
+      final reader = CraftPdfReader.fromBytes(pdfBytes);
+      final readDoc = await CraftPdfDocument.open(reader);
+
+      final readRoot = await readDoc.loadStructureRoot();
       expect(readRoot, isNotNull);
 
       final rootK = await readRoot!.getKids();
       expect(rootK.length, 1);
-      
+
       // getKids returns PdfObject, wrap to PdfStructElem
       final firstKid = rootK[0];
-      expect(firstKid is PdfDictionary, isTrue);
-      
-      final firstKidElem = PdfStructElem(firstKid as PdfDictionary);
+      expect(firstKid is CraftPdfDictionary, isTrue);
+
+      final firstKidElem = CraftPdfStructElem(firstKid as CraftPdfDictionary);
       final role = await firstKidElem.getRole();
-      expect(role, equals(PdfName('Document')));
+      expect(role, equals(CraftPdfName('Document')));
 
       await readDoc.close();
     });

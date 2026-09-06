@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:dpdf/src/io/codec/tiff_writer.dart';
+import 'package:pdfcraft/src/io/codec/tiff_writer.dart';
 
 void main() {
   group('TiffWriter', () {
     test('writes TIFF header correctly', () {
-      final writer = TiffWriter();
+      final writer = CraftTiffWriter();
       writer.addField(FieldShort(256, 100)); // ImageWidth
       writer.addField(FieldShort(257, 80)); // ImageHeight
 
@@ -45,9 +45,9 @@ void main() {
 
     test('FieldAscii includes null terminator', () {
       final field = FieldAscii(305, 'pdfcraft');
-      expect(field.count, equals(6)); // 5 chars + null
-      expect(field.data.length, equals(6));
-      expect(field.data[5], equals(0)); // Null terminator
+      expect(field.count, equals(9)); // 8 ASCII characters + terminator
+      expect(field.data.length, equals(9));
+      expect(field.data[8], equals(0));
     });
 
     test('FieldRational encodes numerator/denominator', () {
@@ -56,7 +56,7 @@ void main() {
     });
 
     test('getIfdSize calculates correctly', () {
-      final writer = TiffWriter();
+      final writer = CraftTiffWriter();
       writer.addField(FieldShort(256, 100));
       writer.addField(FieldShort(257, 80));
 

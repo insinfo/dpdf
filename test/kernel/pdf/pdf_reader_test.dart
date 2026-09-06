@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:dpdf/dpdf.dart';
+import 'package:pdfcraft/pdfcraft.dart';
 
 /// Creates a minimal valid PDF for testing
 Uint8List createMinimalPdf() {
@@ -106,7 +106,7 @@ void main() {
   group('PdfReader', () {
     group('Header', () {
       test('reads PDF version from header', () async {
-        final reader = PdfReader.fromBytes(createMinimalPdf());
+        final reader = CraftPdfReader.fromBytes(createMinimalPdf());
         await reader.read();
 
         // PDF version is extracted from "PDF-1.4" -> "1.4"
@@ -117,7 +117,7 @@ void main() {
 
     group('Xref Table', () {
       test('reads xref entries', () async {
-        final reader = PdfReader.fromBytes(createMinimalPdf());
+        final reader = CraftPdfReader.fromBytes(createMinimalPdf());
         await reader.read();
 
         // Should have 4 objects (0-3)
@@ -140,14 +140,15 @@ void main() {
 
     group('Trailer', () {
       test('reads trailer dictionary', () async {
-        final reader = PdfReader.fromBytes(createMinimalPdf());
+        final reader = CraftPdfReader.fromBytes(createMinimalPdf());
         await reader.read();
 
         expect(reader.trailer, isNotNull);
-        expect(await reader.trailer!.getAsInt(PdfName.size), equals(4));
+        expect(
+            await reader.trailer!.integerEntry(CraftPdfName.size), equals(4));
 
-        final root = await reader.trailer!.get(PdfName.root);
-        expect(root, isA<PdfIndirectReference>());
+        final root = await reader.trailer!.get(CraftPdfName.root);
+        expect(root, isA<CraftPdfIndirectReference>());
 
         await reader.close();
       });
@@ -155,12 +156,13 @@ void main() {
 
     group('Catalog', () {
       test('reads catalog dictionary', () async {
-        final reader = PdfReader.fromBytes(createMinimalPdf());
+        final reader = CraftPdfReader.fromBytes(createMinimalPdf());
         await reader.read();
 
-        final catalog = await reader.getCatalog();
+        final catalog = await reader.rootCatalog();
         expect(catalog, isNotNull);
-        expect(await catalog!.getAsName(PdfName.type), equals(PdfName.catalog));
+        expect(await catalog!.nameEntry(CraftPdfName.type),
+            equals(CraftPdfName.catalog));
 
         await reader.close();
       });
@@ -168,10 +170,10 @@ void main() {
 
     group('Pages', () {
       test('gets number of pages', () async {
-        final reader = PdfReader.fromBytes(createMinimalPdf());
+        final reader = CraftPdfReader.fromBytes(createMinimalPdf());
         await reader.read();
 
-        final numPages = await reader.getNumberOfPages();
+        final numPages = await reader.pageTotal();
         expect(numPages, equals(1));
 
         await reader.close();
@@ -180,16 +182,16 @@ void main() {
 
     group('Info Dictionary', () {
       test('reads info dictionary', () async {
-        final reader = PdfReader.fromBytes(createPdfWithInfo());
+        final reader = CraftPdfReader.fromBytes(createPdfWithInfo());
         await reader.read();
 
         final info = await reader.getInfo();
         expect(info, isNotNull);
 
-        final title = await info!.getAsString(PdfName('Title'));
+        final title = await info!.stringEntry(CraftPdfName('Title'));
         expect(title?.getValue(), equals('Test Document'));
 
-        final author = await info.getAsString(PdfName('Author'));
+        final author = await info.stringEntry(CraftPdfName('Author'));
         expect(author?.getValue(), equals('pdfcraft Dart'));
 
         await reader.close();
@@ -198,29 +200,31 @@ void main() {
 
     group('Object Reading', () {
       test('reads individual objects', () async {
-        final reader = PdfReader.fromBytes(createMinimalPdf());
+        final reader = CraftPdfReader.fromBytes(createMinimalPdf());
         await reader.read();
 
         // Read object 1 (Catalog)
         final obj1 = await reader.readObject(1);
-        expect(obj1, isA<PdfDictionary>());
+        expect(obj1, isA<CraftPdfDictionary>());
 
-        final dict1 = obj1 as PdfDictionary;
-        expect(await dict1.getAsName(PdfName.type), equals(PdfName.catalog));
+        final dict1 = obj1 as CraftPdfDictionary;
+        expect(await dict1.nameEntry(CraftPdfName.type),
+            equals(CraftPdfName.catalog));
 
         // Read object 2 (Pages)
         final obj2 = await reader.readObject(2);
-        expect(obj2, isA<PdfDictionary>());
+        expect(obj2, isA<CraftPdfDictionary>());
 
-        final dict2 = obj2 as PdfDictionary;
-        expect(await dict2.getAsName(PdfName.type), equals(PdfName.pages));
-        expect(await dict2.getAsInt(PdfName.count), equals(1));
+        final dict2 = obj2 as CraftPdfDictionary;
+        expect(await dict2.nameEntry(CraftPdfName.type),
+            equals(CraftPdfName.pages));
+        expect(await dict2.integerEntry(CraftPdfName.count), equals(1));
 
         await reader.close();
       });
 
       test('returns null for free object', () async {
-        final reader = PdfReader.fromBytes(createMinimalPdf());
+        final reader = CraftPdfReader.fromBytes(createMinimalPdf());
         await reader.read();
 
         // Object 0 is always free
@@ -231,7 +235,7 @@ void main() {
       });
 
       test('returns null for non-existent object', () async {
-        final reader = PdfReader.fromBytes(createMinimalPdf());
+        final reader = CraftPdfReader.fromBytes(createMinimalPdf());
         await reader.read();
 
         // Object 100 doesn't exist
@@ -244,7 +248,7 @@ void main() {
 
     group('Encryption', () {
       test('detects unencrypted document', () async {
-        final reader = PdfReader.fromBytes(createMinimalPdf());
+        final reader = CraftPdfReader.fromBytes(createMinimalPdf());
         await reader.read();
 
         expect(reader.encrypted, isFalse);

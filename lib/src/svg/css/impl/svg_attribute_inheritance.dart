@@ -1,28 +1,28 @@
-import 'package:dpdf/src/styledxmlparser/css/resolve/i_style_inheritance.dart';
-import 'package:dpdf/src/svg/svg_constants.dart';
+import 'package:pdfcraft/src/styledxmlparser/css/resolve/style_inheritance.dart';
+import 'package:pdfcraft/src/svg/svg_constants.dart';
 
-/// Helper class that allows you to check if a property is inheritable.
-class SvgAttributeInheritance implements IStyleInheritance {
+/// Determines whether an SVG attribute can be inherited.
+class CraftSvgAttributeInheritance implements CraftStyleInheritance {
   /// Set of inheritable SVG style attributes in accordance with "https://www.w3.org/TR/SVG2/propidx.html".
   static final Set<String> _inheritableProperties = {
-    SvgConstants.Attributes.DIRECTION,
-    SvgConstants.Attributes.FILL,
-    SvgConstants.Attributes.FILL_OPACITY,
-    SvgConstants.Attributes.FILL_RULE,
-    SvgConstants.Attributes.MARKER,
-    SvgConstants.Attributes.MARKER_MID,
-    SvgConstants.Attributes.MARKER_END,
-    SvgConstants.Attributes.MARKER_START,
-    SvgConstants.Attributes.STROKE,
-    SvgConstants.Attributes.STROKE_DASHARRAY,
-    SvgConstants.Attributes.STROKE_DASHOFFSET,
-    SvgConstants.Attributes.STROKE_LINECAP,
-    SvgConstants.Attributes.STROKE_LINEJOIN,
-    SvgConstants.Attributes.STROKE_MITERLIMIT,
-    SvgConstants.Attributes.STROKE_OPACITY,
-    SvgConstants.Attributes.STROKE_WIDTH,
-    SvgConstants.Attributes.TEXT_ANCHOR,
-    SvgConstants.Attributes.CLIP_RULE,
+    CraftSvgConstants.Attributes.DIRECTION,
+    CraftSvgConstants.Attributes.FILL,
+    CraftSvgConstants.Attributes.FILL_OPACITY,
+    CraftSvgConstants.Attributes.FILL_RULE,
+    CraftSvgConstants.Attributes.MARKER,
+    CraftSvgConstants.Attributes.MARKER_MID,
+    CraftSvgConstants.Attributes.MARKER_END,
+    CraftSvgConstants.Attributes.MARKER_START,
+    CraftSvgConstants.Attributes.STROKE,
+    CraftSvgConstants.Attributes.STROKE_DASHARRAY,
+    CraftSvgConstants.Attributes.STROKE_DASHOFFSET,
+    CraftSvgConstants.Attributes.STROKE_LINECAP,
+    CraftSvgConstants.Attributes.STROKE_LINEJOIN,
+    CraftSvgConstants.Attributes.STROKE_MITERLIMIT,
+    CraftSvgConstants.Attributes.STROKE_OPACITY,
+    CraftSvgConstants.Attributes.STROKE_WIDTH,
+    CraftSvgConstants.Attributes.TEXT_ANCHOR,
+    CraftSvgConstants.Attributes.CLIP_RULE,
   };
 
   @override

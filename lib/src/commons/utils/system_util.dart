@@ -1,8 +1,8 @@
 import 'dart:math';
 
 /// Helper class for internal usage only.
-class SystemUtil {
-  SystemUtil._();
+class CraftSystemUtil {
+  CraftSystemUtil._();
 
   /// Gets a time-based seed for random number generation.
   static int getTimeBasedSeed() {
@@ -16,9 +16,9 @@ class SystemUtil {
     return 1024 * 1024 * 1024; // Mock 1GB
   }
 
-  /// Gets a random long (64-bit int).
+  /// Gets a random integer within the exact range shared by all Dart targets.
   static int getRandomLong() {
     final random = Random();
-    return random.nextInt(0xFFFFFFFF) << 32 | random.nextInt(0xFFFFFFFF);
+    return random.nextInt(1 << 21) * 4294967296 + random.nextInt(4294967296);
   }
 }

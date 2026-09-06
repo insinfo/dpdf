@@ -1,125 +1,71 @@
 import 'dart:typed_data';
-import 'package:crypto/crypto.dart';
+import '../commons/digest/digest_bytes.dart';
+import 'external_digest.dart';
 
-import 'i_external_digest.dart';
-
-/// Implementation of message digest using Dart's crypto package.
-class CryptoMessageDigest implements IMessageDigest {
+/// Incremental input collection for the local PDF digest implementations.
+class CryptoMessageDigest implements SigningDigest {
   final String _algorithmName;
-  final List<int> _buffer = [];
+  final int _size;
+  final BytesBuilder _input = BytesBuilder();
 
-  CryptoMessageDigest._(this._algorithmName);
-
-  /// Creates a message digest for SHA-1.
-  factory CryptoMessageDigest.sha1() => CryptoMessageDigest._('SHA-1');
-
-  /// Creates a message digest for SHA-256.
-  factory CryptoMessageDigest.sha256() => CryptoMessageDigest._('SHA-256');
-
-  /// Creates a message digest for SHA-384.
-  factory CryptoMessageDigest.sha384() => CryptoMessageDigest._('SHA-384');
-
-  /// Creates a message digest for SHA-512.
-  factory CryptoMessageDigest.sha512() => CryptoMessageDigest._('SHA-512');
-
-  /// Creates a message digest for MD5.
-  factory CryptoMessageDigest.md5() => CryptoMessageDigest._('MD5');
+  CryptoMessageDigest._(this._algorithmName, this._size);
+  factory CryptoMessageDigest.sha1() => CryptoMessageDigest._('SHA-1', 20);
+  factory CryptoMessageDigest.sha256() => CryptoMessageDigest._('SHA-256', 32);
+  factory CryptoMessageDigest.sha384() => CryptoMessageDigest._('SHA-384', 48);
+  factory CryptoMessageDigest.sha512() => CryptoMessageDigest._('SHA-512', 64);
+  factory CryptoMessageDigest.md5() => CryptoMessageDigest._('MD5', 16);
 
   @override
   void update(Uint8List input, [int offset = 0, int? length]) {
-    final len = length ?? (input.length - offset);
-    if (offset == 0 && len == input.length) {
-      _buffer.addAll(input);
-    } else {
-      _buffer.addAll(input.sublist(offset, offset + len));
-    }
+    final end = offset + (length ?? input.length - offset);
+    RangeError.checkValidRange(offset, end, input.length);
+    _input.add(Uint8List.sublistView(input, offset, end));
   }
 
   @override
-  Uint8List digest() {
-    final data = Uint8List.fromList(_buffer);
-    _buffer.clear();
-
-    Digest result;
-    switch (_algorithmName.toUpperCase()) {
-      case 'SHA-1':
-      case 'SHA1':
-        result = sha1.convert(data);
-        break;
-      case 'SHA-256':
-      case 'SHA256':
-        result = sha256.convert(data);
-        break;
-      case 'SHA-384':
-      case 'SHA384':
-        result = sha384.convert(data);
-        break;
-      case 'SHA-512':
-      case 'SHA512':
-        result = sha512.convert(data);
-        break;
-      case 'MD5':
-        result = md5.convert(data);
-        break;
-      default:
-        throw UnsupportedError('Unsupported digest algorithm: $_algorithmName');
-    }
-    return Uint8List.fromList(result.bytes);
-  }
+  Uint8List digest() => DigestBytes.compute(_algorithmName, _input.takeBytes());
 
   @override
   String getAlgorithmName() => _algorithmName;
 
   @override
-  int getDigestSize() {
-    switch (_algorithmName.toUpperCase()) {
-      case 'SHA-1':
-      case 'SHA1':
-        return 20;
-      case 'SHA-256':
-      case 'SHA256':
-        return 32;
-      case 'SHA-384':
-      case 'SHA384':
-        return 48;
-      case 'SHA-512':
-      case 'SHA512':
-        return 64;
-      case 'MD5':
-        return 16;
-      default:
-        throw UnsupportedError('Unsupported digest algorithm: $_algorithmName');
-    }
-  }
+  int getDigestSize() => _size;
 
   @override
-  void reset() {
-    _buffer.clear();
-  }
+  void reset() => _input.clear();
 }
 
-/// Implementation of IExternalDigest using Dart's crypto package.
-///
-/// TODO: Consider using pointycastle for more algorithms (RIPEMD160, SHA3, etc.)
-class CryptoDigest implements IExternalDigest {
+/// Selects supported SDK-only digests without loading an external provider.
+class CryptoDigest implements CraftExternalDigest {
   const CryptoDigest();
 
+  static const _algorithms = <String, (String, int)>{
+    'MD2': ('MD2', 16),
+    'MD5': ('MD5', 16),
+    'SHA1': ('SHA-1', 20),
+    'SHA224': ('SHA-224', 28),
+    'SHA256': ('SHA-256', 32),
+    'SHA384': ('SHA-384', 48),
+    'SHA512': ('SHA-512', 64),
+    'RIPEMD128': ('RIPEMD128', 16),
+    'RIPEMD160': ('RIPEMD160', 20),
+    'RIPEMD256': ('RIPEMD256', 32),
+    'SHA3224': ('SHA3-224', 28),
+    'SHA3256': ('SHA3-256', 32),
+    'SHA3384': ('SHA3-384', 48),
+    'SHA3512': ('SHA3-512', 64),
+    'SHAKE128': ('SHAKE128', 32),
+    'SHAKE256': ('SHAKE256', 64),
+  };
+
   @override
-  IMessageDigest getMessageDigest(String hashAlgorithm) {
-    final algo = hashAlgorithm.toUpperCase().replaceAll('-', '');
-    switch (algo) {
-      case 'SHA1':
-        return CryptoMessageDigest.sha1();
-      case 'SHA256':
-        return CryptoMessageDigest.sha256();
-      case 'SHA384':
-        return CryptoMessageDigest.sha384();
-      case 'SHA512':
-        return CryptoMessageDigest.sha512();
-      case 'MD5':
-        return CryptoMessageDigest.md5();
-      default:
-        throw UnsupportedError('Unsupported hash algorithm: $hashAlgorithm');
+  SigningDigest getMessageDigest(String hashAlgorithm) {
+    final key = hashAlgorithm.toUpperCase().replaceAll(RegExp(r'[-/]'), '');
+    final specification = _algorithms[key];
+    if (specification == null) {
+      throw UnsupportedError(
+          'No PDF digest implementation for $hashAlgorithm.');
     }
+    return CryptoMessageDigest._(specification.$1, specification.$2);
   }
 }

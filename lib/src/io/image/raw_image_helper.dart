@@ -1,14 +1,14 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/codec/ccitt_g4_encoder.dart';
-import 'package:dpdf/src/io/codec/tiff_fax_decoder.dart';
-import 'package:dpdf/src/io/image/raw_image_data.dart';
-import 'package:dpdf/src/io/exceptions/io_exception.dart';
-import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:pdfcraft/src/io/codec/ccitt_g4_encoder.dart';
+import 'package:pdfcraft/src/io/codec/tiff_fax_decoder.dart';
+import 'package:pdfcraft/src/io/image/raw_image_data.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
 
-class RawImageHelper {
+class CraftRawImageHelper {
   static void updateImageAttributes(
-      RawImageData image, Map<String, Object>? additional) {
+      CraftRawImageData image, Map<String, Object>? additional) {
     if (!image.isRawImage()) {
       throw ArgumentError("Raw image expected.");
     }
@@ -23,21 +23,21 @@ class RawImageHelper {
       image.setBpc(1);
       image.setFilter("CCITTFaxDecode");
 
-      int k = typeCCITT - RawImageData.ccittg31d;
+      int k = typeCCITT - CraftRawImageData.ccittg31d;
       Map<String, Object> decodeparms = {};
       if (k != 0) {
         decodeparms["K"] = k;
       }
-      if ((colorSpace & RawImageData.ccittBlackis1) != 0) {
+      if ((colorSpace & CraftRawImageData.ccittBlackis1) != 0) {
         decodeparms["BlackIs1"] = true;
       }
-      if ((colorSpace & RawImageData.ccittEncodedbytealign) != 0) {
+      if ((colorSpace & CraftRawImageData.ccittEncodedbytealign) != 0) {
         decodeparms["EncodedByteAlign"] = true;
       }
-      if ((colorSpace & RawImageData.ccittEndofline) != 0) {
+      if ((colorSpace & CraftRawImageData.ccittEndofline) != 0) {
         decodeparms["EndOfLine"] = true;
       }
-      if ((colorSpace & RawImageData.ccittEndofblock) != 0) {
+      if ((colorSpace & CraftRawImageData.ccittEndofblock) != 0) {
         decodeparms["EndOfBlock"] = false;
       }
       decodeparms["Columns"] = image.getWidth();
@@ -74,19 +74,26 @@ class RawImageHelper {
     }
   }
 
-  static void updateRawImageParameters(RawImageData image, int width,
+  static void updateRawImageParameters(CraftRawImageData image, int width,
       int height, int components, int bpc, Uint8List data,
       [Uint8List? transparency]) {
     if (transparency != null && transparency.length != components * 2) {
-      throw IoException(IoExceptionMessageConstant
+      throw IoException(CraftIoExceptionMessageConstant
           .transparencyLengthMustBeEqualTo2WithCcittImages);
     }
 
     if (components == 1 && bpc == 1) {
       // Compress with G4
-      Uint8List g4 = CCITTG4Encoder.compress(data, width, height);
-      updateRawImageParametersCCITT(image, width, height, false,
-          RawImageData.ccittg4, RawImageData.ccittBlackis1, g4, transparency);
+      Uint8List g4 = CraftCCITTG4Encoder.compress(data, width, height);
+      updateRawImageParametersCCITT(
+          image,
+          width,
+          height,
+          false,
+          CraftRawImageData.ccittg4,
+          CraftRawImageData.ccittBlackis1,
+          g4,
+          transparency);
     } else {
       updateRawImageParametersBasic(
           image, width, height, components, bpc, data);
@@ -94,15 +101,16 @@ class RawImageHelper {
     }
   }
 
-  static void updateRawImageParametersBasic(RawImageData image, int width,
+  static void updateRawImageParametersBasic(CraftRawImageData image, int width,
       int height, int components, int bpc, Uint8List data) {
     image.setHeight(height.toDouble());
     image.setWidth(width.toDouble());
     if (components != 1 && components != 3 && components != 4) {
-      throw IoException(IoExceptionMessageConstant.componentsMustBe134);
+      throw IoException(CraftIoExceptionMessageConstant.componentsMustBe134);
     }
     if (bpc != 1 && bpc != 2 && bpc != 4 && bpc != 8) {
-      throw IoException(IoExceptionMessageConstant.bitsPerComponentMustBe1248);
+      throw IoException(
+          CraftIoExceptionMessageConstant.bitsPerComponentMustBe1248);
     }
     image.setColorEncodingComponentsNumber(components);
     image.setBpc(bpc);
@@ -110,7 +118,7 @@ class RawImageHelper {
   }
 
   static void updateRawImageParametersCCITT(
-      RawImageData image,
+      CraftRawImageData image,
       int width,
       int height,
       bool reverseBits,
@@ -119,7 +127,7 @@ class RawImageHelper {
       Uint8List data,
       [Uint8List? transparency]) {
     if (transparency != null && transparency.length != 2) {
-      throw IoException(IoExceptionMessageConstant
+      throw IoException(CraftIoExceptionMessageConstant
           .transparencyLengthMustBeEqualTo2WithCcittImages);
     }
     updateCcittImageParameters(
@@ -128,21 +136,21 @@ class RawImageHelper {
   }
 
   static void updateCcittImageParameters(
-      RawImageData image,
+      CraftRawImageData image,
       int width,
       int height,
       bool reverseBits,
       int typeCcitt,
       int parameters,
       Uint8List data) {
-    if (typeCcitt != RawImageData.ccittg4 &&
-        typeCcitt != RawImageData.ccittg31d &&
-        typeCcitt != RawImageData.ccittg32d) {
-      throw IoException(IoExceptionMessageConstant
+    if (typeCcitt != CraftRawImageData.ccittg4 &&
+        typeCcitt != CraftRawImageData.ccittg31d &&
+        typeCcitt != CraftRawImageData.ccittg32d) {
+      throw IoException(CraftIoExceptionMessageConstant
           .ccittCompressionTypeMustBeCcittg4Ccittg31dOrCcittg32d);
     }
     if (reverseBits) {
-      TIFFFaxDecoder.reverseBits(data);
+      CraftTIFFFaxDecoder.reverseBits(data);
     }
     image.setHeight(height.toDouble());
     image.setWidth(width.toDouble());

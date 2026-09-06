@@ -1,9 +1,9 @@
 import 'dart:typed_data';
-import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
-import 'package:dpdf/src/io/font/pdf_encodings.dart';
-import 'package:dpdf/src/commons/utils/tuple2.dart';
-import 'package:dpdf/src/io/exceptions/io_exception.dart';
-import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
+import 'package:pdfcraft/src/io/font/pdf_encodings.dart';
+import 'package:pdfcraft/src/commons/utils/tuple2.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
 
 abstract class AbstractTrueTypeFontModifier {
   static const List<String> TABLE_NAMES_SUBSET = [
@@ -68,7 +68,7 @@ abstract class AbstractTrueTypeFontModifier {
   late Map<String, List<int>> tableDirectory;
   late Map<int, Uint8List> glyphDataMap;
   final Map<String, Uint8List> modifiedTables = {};
-  late RandomAccessFileOrArray raf;
+  late CraftRandomAccessFileOrArray raf;
   late int directoryOffset;
   final String fontName;
   late Map<int, Uint8List> horizontalMetricMap;
@@ -182,7 +182,7 @@ abstract class AbstractTrueTypeFontModifier {
     raf.seek(directoryOffset);
     int id = raf.readInt();
     if (id != 0x00010000) {
-      throw IoException(IoExceptionMessageConstant.notAtTrueTypeFile)
+      throw IoException(CraftIoExceptionMessageConstant.notAtTrueTypeFile)
           .setMessageParams([fontName]);
     }
     int numTables = raf.readUnsignedShort();
@@ -200,7 +200,7 @@ abstract class AbstractTrueTypeFontModifier {
   bool _isLocaShortTable() {
     List<int>? tableLocation = tableDirectory["head"];
     if (tableLocation == null) {
-      throw IoException(IoExceptionMessageConstant.tableDoesNotExistsIn)
+      throw IoException(CraftIoExceptionMessageConstant.tableDoesNotExistsIn)
           .setMessageParams(["head", fontName]);
     }
     raf.seek(tableLocation[TABLE_OFFSET] + HEAD_LOCA_FORMAT_OFFSET);
@@ -270,7 +270,7 @@ abstract class AbstractTrueTypeFontModifier {
   String _readTag() {
     Uint8List buf = Uint8List(4);
     raf.readFully(buf);
-    return PdfEncodings.convertToString(buf, PdfEncodings.WINANSI);
+    return CraftPdfEncodings.convertToString(buf, CraftPdfEncodings.WINANSI);
   }
 
   static void _writeToLoca(
@@ -326,7 +326,8 @@ class _FontRawData {
 
   Uint8List getData() => _data;
 
-  void writeFontTableFromRaf(RandomAccessFileOrArray raf, int tableLength) {
+  void writeFontTableFromRaf(
+      CraftRandomAccessFileOrArray raf, int tableLength) {
     raf.readFullyInto(_data, _ptr, tableLength);
     _ptr += (tableLength + 3) & ~3;
   }
@@ -349,7 +350,8 @@ class _FontRawData {
   }
 
   void writeFontString(String s) {
-    Uint8List b = PdfEncodings.convertToBytes(s, PdfEncodings.WINANSI);
+    Uint8List b =
+        CraftPdfEncodings.convertToBytes(s, CraftPdfEncodings.WINANSI);
     _data.setRange(_ptr, _ptr + b.length, b);
     _ptr += b.length;
   }

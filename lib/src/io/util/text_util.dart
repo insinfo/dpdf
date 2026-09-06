@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-class TextUtil {
+class CraftTextUtil {
   static const int CHARACTER_MIN_SUPPLEMENTARY_CODE_POINT = 0x010000;
 
-  static const Set<int> _javaNonUnicodeCategoryWhiteSpaceChars = {
+  static const Set<int> _additionalWhitespaceCodes = {
     0x0009, // HORIZONTAL TABULATION
     0x000A, // LINE FEED
     0x000B, // VERTICAL TABULATION
@@ -157,9 +157,8 @@ class TextUtil {
     // Dart's regex \s matches whitespaces
     // return RegExp(r'\s').hasMatch(String.fromCharCode(unicode));
 
-    // Explicit check for common ones + java set
-    if (unicode <= 0xFFFF &&
-        _javaNonUnicodeCategoryWhiteSpaceChars.contains(unicode)) {
+    // Check the explicitly supported whitespace codes.
+    if (unicode <= 0xFFFF && _additionalWhitespaceCodes.contains(unicode)) {
       return true;
     }
 

@@ -1,20 +1,20 @@
 import 'dart:typed_data';
 import '../../source/pdf_tokenizer.dart';
 import '../../source/random_access_file_or_array.dart';
-import 'i_cmap_location.dart';
+import 'cmap_location.dart';
 
-class CMapLocationFromBytes implements ICMapLocation {
+class CraftCMapLocationFromBytes implements CraftCMapLocation {
   final Uint8List data;
 
-  CMapLocationFromBytes(this.data);
+  CraftCMapLocationFromBytes(this.data);
 
   @override
-  Future<PdfTokenizer> getLocation(String location) async {
-    return PdfTokenizer(RandomAccessFileOrArray(data));
+  Future<CraftPdfTokenizer> getLocation(String location) async {
+    return CraftPdfTokenizer(CraftRandomAccessFileOrArray(data));
   }
 
   @override
-  PdfTokenizer getLocationSync(String location) {
-    return PdfTokenizer(RandomAccessFileOrArray(data));
+  CraftPdfTokenizer getLocationSync(String location) {
+    return CraftPdfTokenizer(CraftRandomAccessFileOrArray(data));
   }
 }

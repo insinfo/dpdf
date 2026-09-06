@@ -7,9 +7,9 @@ import '../forms/pdf_acro_form.dart';
 import 'pdf_signature.dart';
 import 'pdf_pkcs7.dart';
 
-/// Utility class that provides several convenience methods concerning digital signatures.
-class SignatureUtil {
-  final PdfDocument _document;
+/// Queries PDF signature fields and their associated data.
+class CraftSignatureUtil {
+  final CraftPdfDocument _document;
 
   // Cached signature names
   Map<String, _SignatureFieldInfo>? _sigNames;
@@ -19,16 +19,16 @@ class SignatureUtil {
   /// Creates a SignatureUtil instance.
   ///
   /// @param document PdfDocument to be inspected
-  SignatureUtil(this._document);
+  CraftSignatureUtil(this._document);
 
   /// Get PdfSignature dictionary based on the provided name.
   ///
   /// @param name signature name
   /// @return PdfSignature instance corresponding to the provided name, null otherwise
-  Future<PdfSignature?> getSignature(String name) async {
+  Future<CraftPdfSignature?> getSignature(String name) async {
     final sigDict = await getSignatureDictionary(name);
     if (sigDict != null) {
-      return PdfSignature.fromDictionary(sigDict);
+      return CraftPdfSignature.fromDictionary(sigDict);
     }
     return null;
   }
@@ -37,11 +37,11 @@ class SignatureUtil {
   ///
   /// @param name the field name
   /// @return the signature dictionary keyed by /V or null if the field is not a signature
-  Future<PdfDictionary?> getSignatureDictionary(String name) async {
+  Future<CraftPdfDictionary?> getSignatureDictionary(String name) async {
     final merged = await getSignatureFormFieldDictionary(name);
     if (merged == null) return null;
 
-    final v = await merged.getAsDictionary(PdfName.v);
+    final v = await merged.dictionaryEntry(CraftPdfName.v);
     return v;
   }
 
@@ -49,7 +49,8 @@ class SignatureUtil {
   ///
   /// @param name the field name
   /// @return the form field dictionary or null
-  Future<PdfDictionary?> getSignatureFormFieldDictionary(String name) async {
+  Future<CraftPdfDictionary?> getSignatureFormFieldDictionary(
+      String name) async {
     await getSignatureNames();
 
     if (_sigNames == null || !_sigNames!.containsKey(name)) {
@@ -59,9 +60,9 @@ class SignatureUtil {
     return _sigNames![name]!.fieldDict;
   }
 
-  /// Gets the field names that have signatures and are signed.
+  /// Lists fields containing populated signatures.
   ///
-  /// @return List containing the field names that have signatures and are signed
+  /// @return names of populated signature fields
   Future<List<String>> getSignatureNames() async {
     if (_sigNames != null) {
       return List.from(_orderedSignatureNames!);
@@ -77,22 +78,22 @@ class SignatureUtil {
 
   /// Gets the field names that have blank signatures.
   ///
-  /// @return List containing the field names that have blank signatures
+  /// @return names of unsigned signature fields
   Future<List<String>> getBlankSignatureNames() async {
     await getSignatureNames();
 
     final blankSigs = <String>[];
 
     try {
-      final acroForm = await PdfAcroForm.getAcroForm(_document, false);
+      final acroForm = await CraftPdfAcroForm.getAcroForm(_document, false);
       final fields = await acroForm.getFormFields();
 
       for (final entry in fields.entries) {
-        final fieldDict = entry.value.getPdfObject();
-        final ft = await fieldDict.getAsName(PdfName.ft);
-        if (ft == PdfName.sig) {
+        final fieldDict = entry.value.pdfRepresentation();
+        final ft = await fieldDict.nameEntry(CraftPdfName.ft);
+        if (ft == CraftPdfName.sig) {
           // Check if it has a value
-          final v = await fieldDict.getAsDictionary(PdfName.v);
+          final v = await fieldDict.dictionaryEntry(CraftPdfName.v);
           if (v == null) {
             blankSigs.add(entry.key);
           }
@@ -130,7 +131,7 @@ class SignatureUtil {
   /// Checks if the signature covers the entire document (except for signature's Contents).
   ///
   /// @param name the signature field name
-  /// @return true if the signature covers the entire document, false if it doesn't
+  /// @return whether the signed byte ranges span the whole document
   Future<bool> signatureCoversWholeDocument(String name) async {
     await getSignatureNames();
 
@@ -173,7 +174,7 @@ class SignatureUtil {
   ///
   /// @param signatureFieldName the signature field name
   /// @return a PdfPKCS7 instance or null
-  Future<PdfPKCS7?> readSignatureData(String signatureFieldName) async {
+  Future<CraftPdfPKCS7?> readSignatureData(String signatureFieldName) async {
     final signature = await getSignature(signatureFieldName);
     if (signature == null) {
       return null;
@@ -191,7 +192,23 @@ class SignatureUtil {
       if (contentsBytes == null) {
         return null;
       }
-      return PdfPKCS7.forVerifying(contentsBytes, sub);
+      final ranges = await getByteRange(signatureFieldName);
+      final source = _document.inputReader()?.getOriginalBytes();
+      if (source == null ||
+          ranges == null ||
+          ranges.length != 4 ||
+          ranges[0] != 0 ||
+          ranges[1] < 0 ||
+          ranges[2] < ranges[1] ||
+          ranges[3] < 0 ||
+          ranges[2] > source.length ||
+          ranges[3] > source.length - ranges[2]) {
+        return null;
+      }
+      final verifier = CraftPdfPKCS7.forVerifying(contentsBytes, sub);
+      verifier.update(source, ranges[0], ranges[1]);
+      verifier.update(source, ranges[2], ranges[3]);
+      return verifier;
     } catch (e) {
       // Signature parsing failed
       return null;
@@ -201,27 +218,27 @@ class SignatureUtil {
   /// Populates the signature names from the AcroForm.
   Future<void> _populateSignatureNames() async {
     try {
-      final acroForm = await PdfAcroForm.getAcroForm(_document, false);
+      final acroForm = await CraftPdfAcroForm.getAcroForm(_document, false);
       final fields = await acroForm.getFormFields();
 
       final signedFields = <_SignatureFieldInfo>[];
 
       for (final entry in fields.entries) {
-        final fieldDict = entry.value.getPdfObject();
-        final ft = await fieldDict.getAsName(PdfName.ft);
+        final fieldDict = entry.value.pdfRepresentation();
+        final ft = await fieldDict.nameEntry(CraftPdfName.ft);
 
-        if (ft == PdfName.sig) {
+        if (ft == CraftPdfName.sig) {
           // Check if it has a value (is signed)
-          final v = await fieldDict.getAsDictionary(PdfName.v);
+          final v = await fieldDict.dictionaryEntry(CraftPdfName.v);
           if (v != null) {
             // Get byte range
-            final byteRangeArray = await v.getAsArray(PdfName.byteRange);
+            final byteRangeArray = await v.arrayEntry(CraftPdfName.byteRange);
             List<int>? byteRange;
 
             if (byteRangeArray != null) {
               byteRange = [];
               for (int i = 0; i < byteRangeArray.size(); i++) {
-                final num = await byteRangeArray.getAsNumber(i);
+                final num = await byteRangeArray.numberEntry(i);
                 if (num != null) {
                   byteRange.add(num.intValue());
                 }
@@ -290,7 +307,7 @@ class SignatureUtil {
     }
 
     // The revision ends at byteRange[2] + byteRange[3]
-    final reader = _document.getReader();
+    final reader = _document.inputReader();
     if (reader == null) return null;
 
     final raf = reader.getSafeFile();
@@ -335,8 +352,8 @@ class SignatureUtil {
 
 /// Internal class to hold signature field information.
 class _SignatureFieldInfo {
-  final PdfDictionary fieldDict;
-  final PdfDictionary sigDict;
+  final CraftPdfDictionary fieldDict;
+  final CraftPdfDictionary sigDict;
   final List<int>? byteRange;
   final int revision;
 

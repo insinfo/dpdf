@@ -1,9 +1,9 @@
 /// A class containing constant values signifying the property names of tags, attribute, CSS-style
 /// and certain values in SVG XML.
-class SvgConstants {
-  SvgConstants._();
+class CraftSvgConstants {
+  CraftSvgConstants._();
 
-  /// Class containing the constant property names for the tags in the SVG spec
+  /// Names of SVG elements.
   static get Tags => SvgTags;
 
   static get Attributes => SvgAttributes;
@@ -11,14 +11,14 @@ class SvgConstants {
   static get Values => SvgValues;
 }
 
-/// Class containing the constant property names for the tags in the SVG spec
+/// Names of SVG elements.
 class SvgTags {
   SvgTags._();
 
   /// Tag defining a Hyperlink.
   static const String A = "a";
 
-  /// Alternate glyphs to be used instead of regular grlyphs, e.g. ligatures, Asian scripts, ...
+  /// Alternative glyph selection, including ligatures and script variants.
   static const String ALT_GLYPH = "altGlyph";
 
   /// Defines a set of glyph substitions.
@@ -51,7 +51,7 @@ class SvgTags {
   /// Not supported in PDF
   static const String CURSOR = "cursor";
 
-  /// Tag defining objects that can be reused from another context
+  /// Reusable SVG object definitions.
   static const String DEFS = "defs";
 
   /// Tag defining the description of its parent element
@@ -63,7 +63,7 @@ class SvgTags {
   /// Tag defining how to blend two objects together.
   static const String FE_BLEND = "feBlend";
 
-  /// Tag defining the color matrix transformations that can be performed.
+  /// Color-matrix filter operation.
   static const String FE_COLOR_MATRIX = "feColorMatrix";
 
   /// Tag defining color component remapping.
@@ -87,16 +87,16 @@ class SvgTags {
   /// Tag defining the fill of a subregion.
   static const String FE_FLOOD = "feFlood";
 
-  /// Tag defining the transfer function for the Alpha component.
+  /// Transfer function for alpha values.
   static const String FE_FUNC_A = "feFuncA";
 
-  /// Tag defining the transfer function for the Blue component.
+  /// Transfer function for blue values.
   static const String FE_FUNC_B = "feFuncB";
 
-  /// Tag defining the transfer function for the Green component.
+  /// Transfer function for green values.
   static const String FE_FUNC_G = "feFuncG";
 
-  /// Tag defining the transfer function for the Red component.
+  /// Transfer function for red values.
   static const String FE_FUNC_R = "feFuncR";
 
   /// Tag defining the blur values.
@@ -105,7 +105,7 @@ class SvgTags {
   /// Tag defining a image data from a source.
   static const String FE_IMAGE = "feImage";
 
-  /// Tag defining that filters will be applied concurrently instead of sequentially.
+  /// Combines filter outputs in parallel.
   static const String FE_MERGE = "feMerge";
 
   /// Tag defining a node in a merge.
@@ -165,7 +165,7 @@ class SvgTags {
   /// Tag defining a sigle glyph for altGlyph.
   static const String GLYPH_REF = "glyphRef";
 
-  /// Tag defining the horizontal kerning values in between two glyphs.
+  /// Horizontal adjustment between glyph pairs.
   static const String HKERN = "hkern";
 
   /// Tag defining an image.
@@ -180,7 +180,7 @@ class SvgTags {
   /// Tag defining a link
   static const String LINK = "link";
 
-  /// Tag defining the graphics (arrowheads or polymarkers) to be drawn at the end of paths, lines, etc.
+  /// Marker graphics attached to path vertices.
   static const String MARKER = "marker";
 
   /// Tag defining a mask.
@@ -189,7 +189,7 @@ class SvgTags {
   /// Tag defining metadata.
   static const String METADATA = "metadata";
 
-  /// Tag defining content to be rendered if a glyph is missing from the font.
+  /// Fallback content for unavailable glyphs.
   static const String MISSING_GLYPH = "missing-glyph";
 
   /// Not supported in PDF
@@ -237,7 +237,7 @@ class SvgTags {
   /// Tag defining a switch element.
   static const String SWITCH = "switch";
 
-  /// Tag defining graphical templates that can be reused by the use tag.
+  /// Reusable symbol definition referenced by a use element.
   static const String SYMBOL = "symbol";
 
   /// Tag defining text to be drawn on a page/screen.
@@ -261,27 +261,27 @@ class SvgTags {
   /// Tag defining how to view the image.
   static const String VIEW = "view";
 
-  /// Tag defining the vertical kerning values in between two glyphs.
+  /// Vertical adjustment between glyph pairs.
   static const String VKERN = "vkern";
 
   /// Tag defining the xml stylesheet declaration.
   static const String XML_STYLESHEET = "xml-stylesheet";
 }
 
-/// Class containing the constant property names for the attributes of tags in the SVG spec
+/// Names of SVG attributes.
 class SvgAttributes {
   SvgAttributes._();
 
-  /// Attribute defining the clipping path to be applied to a specific shape or group of shapes.
+  /// Clipping-path reference for a shape or group.
   static const String CLIP_PATH = "clip-path";
 
-  /// Attribute defining the clipping rule in a clipping path (or element thereof).
+  /// Interior rule used by a clipping path.
   static const String CLIP_RULE = "clip-rule";
 
-  /// Attribute defining the x value of the center of a circle or ellipse.
+  /// Horizontal coordinate of a circle or ellipse center.
   static const String CX = "cx";
 
-  /// Attribute defining the y value of the center of a circle or ellipse.
+  /// Vertical coordinate of a circle or ellipse center.
   static const String CY = "cy";
 
   /// Attribute defining the outline of a shape.
@@ -290,10 +290,10 @@ class SvgAttributes {
   /// Attribute defining the direction used by the text
   static const String DIRECTION = "direction";
 
-  /// Attribute defining the relative x-translation of a text-element
+  /// Horizontal displacement of positioned text.
   static const String DX = "dx";
 
-  /// Attribute defining the relative y-translation of a text-element
+  /// Vertical displacement of positioned text.
   static const String DY = "dy";
 
   /// Attribute defining the fill color.
@@ -323,7 +323,7 @@ class SvgAttributes {
   /// The Constant BOLD.
   static const String BOLD = "bold";
 
-  /// Attribute defining the units relation for a color gradient.
+  /// Coordinate units for gradient geometry.
   static const String GRADIENT_UNITS = "gradientUnits";
 
   /// Attribute defining the transformations for a color gradient.
@@ -338,31 +338,31 @@ class SvgAttributes {
   /// Attribute defining the unique id of an element.
   static const String ID = "id";
 
-  /// Attribute defining the marker to use at the end of a path, line, polygon or polyline
+  /// Marker assigned to the final path vertex.
   static const String MARKER_END = "marker-end";
 
-  /// Attribute defining the height of the viewport in which the marker is to be fitted
+  /// Height of the marker viewport.
   static const String MARKER_HEIGHT = "markerHeight";
 
   /// Attribute defining shorthand for marker-start/marker-mid/marker-end
   static const String MARKER = "marker";
 
-  /// Attribute defining the marker drawn at every other vertex but the start and end of a path, line, polygon or polyline
+  /// Marker assigned to internal path vertices.
   static const String MARKER_MID = "marker-mid";
 
-  /// Attribute defining the marker to use at the start of a path, line, polygon or polyline
+  /// Marker assigned to the initial path vertex.
   static const String MARKER_START = "marker-start";
 
-  /// Attribute defining the width of the viewport in which the marker is to be fitted
+  /// Width of the marker viewport.
   static const String MARKER_WIDTH = "markerWidth";
 
-  /// Attribute defining the coordinate system for attributes ‘markerWidth’, ‘markerHeight’ and the contents of the ‘marker’.
+  /// Units used for marker geometry and its viewport dimensions.
   static const String MARKER_UNITS = "markerUnits";
 
-  /// Attribute defining the offset of a stop color for gradients.
+  /// Location of a gradient color stop.
   static const String OFFSET = "offset";
 
-  /// Attribute defining the opacity of a group or graphic element.
+  /// Opacity of an element or group.
   static const String OPACITY = "opacity";
 
   /// Attribute defining the orientation of a marker
@@ -437,37 +437,37 @@ class SvgAttributes {
   /// Relative Quadratic CurveTo Path Operator.
   static const String PATH_DATA_REL_QUAD_CURVE_TO = "q";
 
-  /// Attribute defining the coordinate system for the pattern content.
+  /// Units used inside the pattern definition.
   static const String PATTERN_CONTENT_UNITS = "patternContentUnits";
 
-  /// Attribute defining list of transform definitions for the pattern element.
+  /// Transformations applied to a pattern.
   static const String PATTERN_TRANSFORM = "patternTransform";
 
-  /// Attribute defining the coordinate system for attributes x, y, width , and height in pattern.
+  /// Units for pattern position and dimensions.
   static const String PATTERN_UNITS = "patternUnits";
 
   /// Attribute defining the points of a polyline or polygon.
   static const String POINTS = "points";
 
-  /// Attribute defining how to preserve the aspect ratio when scaling.
+  /// Aspect-ratio handling during scaling.
   static const String PRESERVE_ASPECT_RATIO = "preserveAspectRatio";
 
   /// Attribute defining the radius of a circle.
   static const String R = "r";
 
-  /// Attribute defining the x-axis coordinate of the reference point which is to be aligned exactly at the marker position.
+  /// Horizontal marker reference coordinate.
   static const String REFX = "refX";
 
-  /// Attribute defining the y-axis coordinate of the reference point which is to be aligned exactly at the marker position.
+  /// Vertical marker reference coordinate.
   static const String REFY = "refY";
 
-  /// Attribute defining the x-axis of an ellipse or the x-axis radius of rounded rectangles.
+  /// Horizontal radius for an ellipse or rounded corner.
   static const String RX = "rx";
 
-  /// Attribute defining the y-axis of an ellipse or the y-axis radius of rounded rectangles.
+  /// Vertical radius for an ellipse or rounded corner.
   static const String RY = "ry";
 
-  /// Attribute defining the spread method for a color gradient.
+  /// Gradient behavior outside its stop interval.
   static const String SPREAD_METHOD = "spreadMethod";
 
   /// Attribute defining the stroke color.
@@ -503,7 +503,7 @@ class SvgAttributes {
   /// Attribute defining the text anchor used by the text
   static const String TEXT_ANCHOR = "text-anchor";
 
-  /// Attribute defining a transformation that needs to be applied.
+  /// Transformation applied to the element.
   static const String TRANSFORM = "transform";
 
   /// Attribute defining the viewbox of an element.
@@ -515,10 +515,10 @@ class SvgAttributes {
   /// Attribute defining the x value of an element.
   static const String X = "x";
 
-  /// Attribute defining the first x coordinate value of a line.
+  /// Horizontal coordinate of the line's initial endpoint.
   static const String X1 = "x1";
 
-  /// Attribute defining the second x coordinate value of a line.
+  /// Horizontal coordinate of the line's final endpoint.
   static const String X2 = "x2";
 
   /// Attribute defining image source.
@@ -533,10 +533,10 @@ class SvgAttributes {
   /// Attribute defining the y value of an element.
   static const String Y = "y";
 
-  /// Attribute defining the first y coordinate value of a line.
+  /// Vertical coordinate of the line's initial endpoint.
   static const String Y1 = "y1";
 
-  /// Attribute defining the second y coordinate value of a line.
+  /// Vertical coordinate of the line's final endpoint.
   static const String Y2 = "y2";
 
   /// Attribute defining vector-effect.
@@ -546,17 +546,17 @@ class SvgAttributes {
   static const String VERSION = "version";
 }
 
-/// Class containing the constants for values appearing in SVG tags and attributes
+/// Standard values used by SVG attributes and elements.
 class SvgValues {
   SvgValues._();
 
-  /// Value representing automatic orientation for the marker attribute orient.
+  /// Automatic marker orientation.
   static const String AUTO = "auto";
 
-  /// Value representing reverse automatic orientation for the start marker.
+  /// Automatic orientation with reversal at the initial vertex.
   static const String AUTO_START_REVERSE = "auto-start-reverse";
 
-  /// Value representing the default value for the stroke linecap.
+  /// Default stroke cap value.
   static const String BUTT = "butt";
 
   /// Value representing the default aspect ratio: xmidymid.
@@ -571,7 +571,7 @@ class SvgValues {
   /// Default width and height value.
   static const String DEFAULT_WIDTH_AND_HEIGHT_VALUE = "100%";
 
-  /// Value representing how to preserve the aspect ratio when dealing with images.
+  /// Aspect-ratio handling for image placement.
   static const String DEFER = "defer";
 
   /// Value representing the fill rule "even odd".
@@ -580,7 +580,7 @@ class SvgValues {
   /// Value representing the fill rule "nonzero".
   static const String FILL_RULE_NONZERO = "nonzero";
 
-  /// Value representing the meet for preserve aspect ratio calculations.
+  /// Fits the entire source within the destination bounds.
   static const String MEET = "meet";
 
   /// Value representing the "none" value.
@@ -592,16 +592,16 @@ class SvgValues {
   /// Value representing the units relation "objectBoundingBox".
   static const String OBJECT_BOUNDING_BOX = "objectBoundingBox";
 
-  /// The value representing slice for the preserve aspect ratio calculations;
+  /// Scales to cover the destination bounds;
   static const String SLICE = "slice";
 
-  /// Value representing the text-alignment end for text objects
+  /// Text anchored at its end.
   static const String TEXT_ANCHOR_END = "end";
 
-  /// Value representing the text-alignment middle for text objects
+  /// Text anchored at its midpoint.
   static const String TEXT_ANCHOR_MIDDLE = "middle";
 
-  /// Value representing the text-alignment start for text objects
+  /// Text anchored at its start.
   static const String TEXT_ANCHOR_START = "start";
 
   /// Value representing the gradient spread method "pad".
@@ -613,7 +613,7 @@ class SvgValues {
   /// Value representing the gradient spread method "reflect".
   static const String SPREAD_METHOD_REFLECT = "reflect";
 
-  /// The value for markerUnits that represent values in a coordinate system which has a single unit equal the size in user units of the current stroke width.
+  /// Marker units expressed as multiples of the current stroke width.
   static const String STROKEWIDTH = "strokeWidth";
 
   /// Value representing the units relation "userSpaceOnUse".

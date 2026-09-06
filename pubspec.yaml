@@ -1,18 +1,11 @@
-name: dpdf
+name: pdfcraft
 version: 1.0.0
 
 environment:
   sdk: ^3.6.0
 
-dependencies:
-  pointycastle: ^4.0.0
-  crypto: ^3.0.7
-  archive: ^4.0.7
-  collection: ^1.19.1
-  asn1lib: ^1.6.5
-  xml: ^6.5.0
-  #ffi: ^2.1.3
-  
-
 dev_dependencies:
   test: ^1.26.3
+  # Independent test oracle; never imported by the runtime library.
+  crypto: ^3.0.7
+  pointycastle: ^4.0.0

@@ -1,17 +1,17 @@
-import 'package:dpdf/src/io/font/font_program.dart';
+import 'package:pdfcraft/src/io/font/font_program.dart';
 import 'dart:typed_data';
-import 'package:crypto/crypto.dart';
+import '../../commons/digest/digest_bytes.dart';
 
-class FontCacheKey {
+class CraftFontCacheKey {
   final String? name;
   final Uint8List? bytes;
 
-  FontCacheKey(this.name, [this.bytes]);
+  CraftFontCacheKey(this.name, [this.bytes]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! FontCacheKey) return false;
+    if (other is! CraftFontCacheKey) return false;
     if (name != null && other.name != null) return name == other.name;
     if (bytes != null && other.bytes != null) {
       // Hash comparison of bytes for performance
@@ -28,18 +28,21 @@ class FontCacheKey {
   }
 
   static String _hashBytes(Uint8List bytes) {
-    return sha1.convert(bytes).toString();
+    return DigestBytes.compute('SHA-1', bytes)
+        .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+        .join();
   }
 }
 
-class FontCache {
-  static final Map<FontCacheKey, FontProgram> _cache = {};
+class CraftFontCache {
+  static final Map<CraftFontCacheKey, CraftFontProgram> _cache = {};
 
-  static FontProgram? getFont(FontCacheKey key) {
+  static CraftFontProgram? resolveTypeface(CraftFontCacheKey key) {
     return _cache[key];
   }
 
-  static FontProgram saveFont(FontProgram font, FontCacheKey key) {
+  static CraftFontProgram saveFont(
+      CraftFontProgram font, CraftFontCacheKey key) {
     _cache[key] = font;
     return font;
   }

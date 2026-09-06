@@ -4,29 +4,29 @@ import 'pdf_object.dart';
 import 'pdf_primitive_object.dart';
 
 /// Represents a PDF null object.
-class PdfNull extends PdfPrimitiveObject {
+class CraftPdfNull extends CraftPdfPrimitiveObject {
   /// Singleton instance.
-  static final PdfNull pdfNull = PdfNull._internal();
+  static final CraftPdfNull pdfNull = CraftPdfNull._internal();
 
   static final Uint8List _nullBytes =
       Uint8List.fromList([110, 117, 108, 108]); // 'null'
 
   /// Private constructor for singleton.
-  PdfNull._internal() {
+  CraftPdfNull._internal() {
     setContent(_nullBytes);
   }
 
   /// Returns the singleton null instance.
-  factory PdfNull() => pdfNull;
+  factory CraftPdfNull() => pdfNull;
 
   @override
-  int getObjectType() => PdfObjectType.nullType;
+  int objectKind() => PdfObjectType.nullType;
 
   @override
-  PdfObject clone() => pdfNull;
+  CraftPdfObject clone() => CraftPdfNull._internal();
 
   @override
-  PdfObject newInstance() => pdfNull;
+  CraftPdfObject newInstance() => pdfNull;
 
   @override
   void generateContent() {
@@ -37,7 +37,7 @@ class PdfNull extends PdfPrimitiveObject {
   String toString() => 'null';
 
   @override
-  bool operator ==(Object other) => other is PdfNull;
+  bool operator ==(Object other) => other is CraftPdfNull;
 
   @override
   int get hashCode => 0;

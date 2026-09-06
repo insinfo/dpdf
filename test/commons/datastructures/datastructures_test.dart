@@ -1,13 +1,13 @@
 import 'package:test/test.dart';
-import 'package:dpdf/src/commons/datastructures/bi_map.dart';
-import 'package:dpdf/src/commons/datastructures/null_unlimited_list.dart';
-import 'package:dpdf/src/commons/datastructures/simple_array_list.dart';
-import 'package:dpdf/src/commons/datastructures/tuple.dart';
+import 'package:pdfcraft/src/commons/datastructures/bi_map.dart';
+import 'package:pdfcraft/src/commons/datastructures/null_unlimited_list.dart';
+import 'package:pdfcraft/src/commons/datastructures/simple_array_list.dart';
+import 'package:pdfcraft/src/commons/datastructures/tuple.dart';
 
 void main() {
   group('BiMap', () {
     test('put and getByKey', () {
-      final biMap = BiMap<String, int>();
+      final biMap = CraftBiMap<String, int>();
       biMap.put('one', 1);
       biMap.put('two', 2);
 
@@ -17,7 +17,7 @@ void main() {
     });
 
     test('getByValue', () {
-      final biMap = BiMap<String, int>();
+      final biMap = CraftBiMap<String, int>();
       biMap.put('one', 1);
       biMap.put('two', 2);
 
@@ -27,7 +27,7 @@ void main() {
     });
 
     test('removeByKey', () {
-      final biMap = BiMap<String, int>();
+      final biMap = CraftBiMap<String, int>();
       biMap.put('one', 1);
       biMap.removeByKey('one');
 
@@ -36,7 +36,7 @@ void main() {
     });
 
     test('removeByValue', () {
-      final biMap = BiMap<String, int>();
+      final biMap = CraftBiMap<String, int>();
       biMap.put('one', 1);
       biMap.removeByValue(1);
 
@@ -45,7 +45,7 @@ void main() {
     });
 
     test('size and isEmpty', () {
-      final biMap = BiMap<String, int>();
+      final biMap = CraftBiMap<String, int>();
       expect(biMap.isEmpty(), isTrue);
       expect(biMap.size(), equals(0));
 
@@ -55,7 +55,7 @@ void main() {
     });
 
     test('containsKey and containsValue', () {
-      final biMap = BiMap<String, int>();
+      final biMap = CraftBiMap<String, int>();
       biMap.put('one', 1);
 
       expect(biMap.containsKey('one'), isTrue);
@@ -65,7 +65,7 @@ void main() {
     });
 
     test('overwrite existing key', () {
-      final biMap = BiMap<String, int>();
+      final biMap = CraftBiMap<String, int>();
       biMap.put('one', 1);
       biMap.put('one', 999);
 
@@ -75,7 +75,7 @@ void main() {
     });
 
     test('overwrite existing value', () {
-      final biMap = BiMap<String, int>();
+      final biMap = CraftBiMap<String, int>();
       biMap.put('one', 1);
       biMap.put('new_one', 1);
 

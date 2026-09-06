@@ -1,28 +1,29 @@
 import 'glyph.dart';
 
-class GlyphLine {
+class CraftGlyphLine {
   int start = 0;
   int end = 0;
   int idx = 0;
-  List<Glyph> glyphs;
+  List<CraftGlyph> glyphs;
   List<ActualText?>? actualText;
 
-  GlyphLine(this.glyphs)
+  CraftGlyphLine(this.glyphs)
       : start = 0,
         end = glyphs.length;
 
-  GlyphLine.fromSlice(this.glyphs, this.start, this.end);
+  CraftGlyphLine.fromSlice(this.glyphs, this.start, this.end);
 
-  GlyphLine.withActualText(this.glyphs, this.actualText, this.start, this.end);
+  CraftGlyphLine.withActualText(
+      this.glyphs, this.actualText, this.start, this.end);
 
-  GlyphLine.copy(GlyphLine other)
+  CraftGlyphLine.copy(CraftGlyphLine other)
       : glyphs = other.glyphs,
         actualText = other.actualText,
         start = other.start,
         end = other.end,
         idx = other.idx;
 
-  GlyphLine.copySlice(GlyphLine other, int start, int end)
+  CraftGlyphLine.copySlice(CraftGlyphLine other, int start, int end)
       : glyphs = other.glyphs.sublist(start, end),
         actualText = other.actualText?.sublist(start, end),
         start = 0,
@@ -38,14 +39,14 @@ class GlyphLine {
   int getIdx() => idx;
   void setIdx(int idx) => this.idx = idx;
 
-  Glyph get(int index) => glyphs[index];
+  CraftGlyph get(int index) => glyphs[index];
 
-  Glyph set(int index, Glyph glyph) {
+  CraftGlyph set(int index, CraftGlyph glyph) {
     glyphs[index] = glyph;
     return glyph;
   }
 
-  void add(Glyph glyph) {
+  void add(CraftGlyph glyph) {
     glyphs.add(glyph);
     if (actualText != null) {
       actualText!.add(null);
@@ -107,19 +108,19 @@ class ActualText {
 
 // Helper classes for iteration
 class ActualTextIterable extends Iterable<GlyphLinePart> {
-  final GlyphLine glyphLine;
+  final CraftGlyphLine glyphLine;
   ActualTextIterable(this.glyphLine);
 
   @override
-  Iterator<GlyphLinePart> get iterator => ActualTextIterator(glyphLine);
+  Iterator<GlyphLinePart> get iterator => CraftActualTextIterator(glyphLine);
 }
 
-class ActualTextIterator implements Iterator<GlyphLinePart> {
-  final GlyphLine glyphLine;
+class CraftActualTextIterator implements Iterator<GlyphLinePart> {
+  final CraftGlyphLine glyphLine;
   int pos;
   GlyphLinePart? _current;
 
-  ActualTextIterator(this.glyphLine) : pos = glyphLine.getStart();
+  CraftActualTextIterator(this.glyphLine) : pos = glyphLine.getStart();
 
   @override
   GlyphLinePart get current => _current!;

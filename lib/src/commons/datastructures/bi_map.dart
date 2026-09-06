@@ -1,19 +1,19 @@
 /// A simple bi-directional map.
 ///
 /// Allows lookup by both key and value in O(1) time.
-class BiMap<K, V> {
+class CraftBiMap<K, V> {
   final Map<K, V> _map = {};
   final Map<V, K> _inverseMap = {};
 
   /// Creates a new BiMap instance.
-  BiMap();
+  CraftBiMap();
 
   /// Puts the entry into the map.
   ///
-  /// If the key already exists, the value will be overwritten.
-  /// If the value already exists, the key will be overwritten.
-  /// If both key and value already exist, the entry will be overwritten.
-  /// If neither key nor value already exist, the entry will be added.
+  /// An existing key receives the replacement value.
+  /// An existing value receives the replacement key.
+  /// Conflicting key and value associations are replaced.
+  /// A previously absent association is inserted.
   void put(K k, V v) {
     // Remove old mappings if they exist
     if (_map.containsKey(k)) {

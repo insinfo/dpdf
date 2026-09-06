@@ -1,34 +1,34 @@
-import 'package:dpdf/src/layout/element/block_element.dart';
-import 'package:dpdf/src/layout/element/i_element.dart';
-import 'package:dpdf/src/layout/element/text.dart';
-import 'package:dpdf/src/layout/renderer/i_renderer.dart';
-import 'package:dpdf/src/layout/renderer/paragraph_renderer.dart';
-import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
+import 'package:pdfcraft/src/layout/element/block_element.dart';
+import 'package:pdfcraft/src/layout/element/element.dart';
+import 'package:pdfcraft/src/layout/element/text.dart';
+import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:pdfcraft/src/layout/renderer/paragraph_renderer.dart';
+import 'package:pdfcraft/src/kernel/pdf/tagutils/accessibility_properties.dart';
 
-class Paragraph extends BlockElement<Paragraph> {
-  Paragraph([String? text]) {
+class CraftParagraph extends CraftBlockElement<CraftParagraph> {
+  CraftParagraph([String? text]) {
     if (text != null) {
       addText(text);
     }
   }
 
-  Paragraph add(IElement element) {
+  CraftParagraph add(CraftElement element) {
     childElements.add(element);
     return this;
   }
 
-  Paragraph addText(String text) {
-    childElements.add(Text(text));
+  CraftParagraph addText(String text) {
+    childElements.add(CraftText(text));
     return this;
   }
 
   @override
-  IRenderer makeNewRenderer() {
-    return ParagraphRenderer(this);
+  CraftRenderer makeNewRenderer() {
+    return CraftParagraphRenderer(this);
   }
 
   @override
-  AccessibilityProperties getAccessibilityProperties() {
-    return AccessibilityProperties(); // Stub
+  CraftAccessibilityProperties getAccessibilityProperties() {
+    return CraftAccessibilityProperties(); // Stub
   }
 }

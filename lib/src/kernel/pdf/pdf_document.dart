@@ -12,6 +12,7 @@ import 'pdf_array.dart';
 import 'pdf_stream.dart';
 import 'pdf_boolean.dart';
 import 'pdf_object.dart';
+import 'pdf_object_copier.dart';
 import 'pdf_page.dart';
 import 'pdf_pages_tree.dart';
 import 'pdf_reader.dart';
@@ -19,7 +20,7 @@ import 'pdf_writer.dart';
 import 'pdf_xref_table.dart';
 import 'pdf_version.dart';
 import 'pdf_output_intent.dart';
-import 'package:dpdf/src/commons/_log_manager.dart';
+import 'package:pdfcraft/src/commons/pdfcraft_log_manager.dart';
 import 'stamping_properties.dart';
 import '../geom/page_size.dart';
 import '../exceptions/pdf_exception.dart';
@@ -34,46 +35,43 @@ import 'tagging/tag_structure_context.dart';
 import 'filespec/pdf_file_spec.dart';
 import 'pdf_outline.dart';
 
-/// Main entry point to work with PDF document.
-///
-/// This is a port of 's PdfDocument class from C# to Dart.
-class PdfDocument {
+/// Document operations, page access and serialization lifecycle.
+class CraftPdfDocument {
   /// PDF names to remove from original trailer (used in append mode)
   // ignore: unused_field
-  static final List<PdfName> _pdfNamesToRemoveFromOriginalTrailer = [
-    PdfName.encrypt,
-    PdfName.size,
-    PdfName.prev,
-    PdfName.root,
-    PdfName.info,
-    PdfName.id,
+  static final List<CraftPdfName> _pdfNamesToRemoveFromOriginalTrailer = [
+    CraftPdfName.encrypt,
+    CraftPdfName.size,
+    CraftPdfName.prev,
+    CraftPdfName.root,
+    CraftPdfName.info,
+    CraftPdfName.id,
   ];
 
   /// List of loaded fonts to prevent duplication and enable flushing.
-  final Map<PdfIndirectReference, PdfFont> _documentFonts = {};
+  final Map<CraftPdfIndirectReference, CraftPdfFont> _documentFonts = {};
 
   /// List of indirect objects used in the document.
-  PdfXrefTable? _xrefTable;
+  CraftPdfXrefTable? _xrefTable;
 
   /// PdfWriter associated with the document.
   static final _logger = LogManager.getLoggerByName('PdfDocument');
-  final PdfWriter? _writer;
+  final CraftPdfWriter? _writer;
 
   /// PdfReader associated with the document.
-  PdfReader? _reader;
+  CraftPdfReader? _reader;
 
   /// Document catalog.
-  PdfCatalog? _catalog;
+  CraftPdfCatalog? _catalog;
 
   /// Document trailer.
-  PdfDictionary? _trailer;
+  CraftPdfDictionary? _trailer;
 
   /// Document version.
-  PdfVersion? _version;
+  CraftPdfVersion? _version;
 
   /// Encryption handler.
-  PdfEncryption? _encryption;
-
+  CraftPdfEncryption? _encryption;
 
   /// Whether the document is closed.
   bool _closed = false;
@@ -82,41 +80,41 @@ class PdfDocument {
   bool _isClosing = false;
 
   /// Default page size.
-  PageSize _defaultPageSize = PageSize.defaultSize;
+  CraftPageSize _defaultPageSize = CraftPageSize.defaultSize;
 
   /// Default font - lazy initialized.
-  PdfFont? _defaultFont;
+  CraftPdfFont? _defaultFont;
 
   /// Stamping properties.
-  final StampingProperties? _properties;
+  final CraftStampingProperties? _properties;
 
   /// Original document ID.
-  PdfString? _originalDocumentId;
+  CraftPdfString? _originalDocumentId;
 
   /// Modified document ID.
-  PdfString? _modifiedDocumentId;
+  CraftPdfString? _modifiedDocumentId;
 
   /// Document info - lazy initialized.
-  PdfDocumentInfo? _info;
+  CraftPdfDocumentInfo? _info;
 
   /// XMP Metadata bytes for the document.
   Uint8List? _xmpMetadataBytes;
 
   /// XMP Metadata which is used to prevent bytes deserialization for a few times on the same bytes.
-  XMPMeta? _xmpMetadata;
+  CraftXMPMeta? _xmpMetadata;
 
   // Event handlers map
-  final Map<String, List<IEventHandler>> _handlers = {};
+  final Map<String, List<CraftEventHandler>> _handlers = {};
 
   /// Document fingerprints.
   // ignore: unused_field
-  FingerPrint? _fingerPrint;
+  CraftFingerPrint? _fingerPrint;
 
   /// Tag structure context.
-  TagStructureContext? _tagStructureContext;
+  CraftTagStructureContext? _tagStructureContext;
 
   /// Root of the structure tree.
-  PdfStructTreeRoot? _structTreeRoot;
+  CraftPdfStructTreeRoot? _structTreeRoot;
 
   /// Index for next struct parent.
   int _structParentIndex = 0;
@@ -126,7 +124,7 @@ class PdfDocument {
   /// Opens PDF document in reading mode.
   ///
   /// [reader] - PDF reader.
-  PdfDocument.fromReader(PdfReader reader)
+  CraftPdfDocument.fromReader(CraftPdfReader reader)
       : _reader = reader,
         _writer = null,
         _properties = null {
@@ -137,7 +135,7 @@ class PdfDocument {
   /// Document has no pages when initialized.
   ///
   /// [writer] - PDF writer.
-  PdfDocument.fromWriter(PdfWriter writer)
+  CraftPdfDocument.fromWriter(CraftPdfWriter writer)
       : _writer = writer,
         _reader = null,
         _properties = null {
@@ -146,7 +144,7 @@ class PdfDocument {
   }
 
   void _initCatalog() {
-     _catalog?.init();
+    _catalog?.init();
   }
 
   /// Opens PDF document in stamping mode.
@@ -154,10 +152,10 @@ class PdfDocument {
   /// [reader] - PDF reader.
   /// [writer] - PDF writer.
   /// [properties] - stamping properties.
-  PdfDocument({
-    PdfReader? reader,
-    PdfWriter? writer,
-    StampingProperties? properties,
+  CraftPdfDocument({
+    CraftPdfReader? reader,
+    CraftPdfWriter? writer,
+    CraftStampingProperties? properties,
   })  : _reader = reader,
         _writer = writer,
         _properties = properties {
@@ -165,16 +163,16 @@ class PdfDocument {
   }
 
   /// Initializes document.
-  void _open(PdfVersion? newPdfVersion) {
-    _fingerPrint = FingerPrint();
+  void _open(CraftPdfVersion? newPdfVersion) {
+    _fingerPrint = CraftFingerPrint();
     // Initialize xref table
     if (_reader != null) {
       _xrefTable = _reader!.xref;
       _version = _reader!.getPdfVersion();
       _reader!.setDocument(this);
     } else {
-      _xrefTable = PdfXrefTable();
-      _version = PdfVersion.PDF_1_7;
+      _xrefTable = CraftPdfXrefTable();
+      _version = CraftPdfVersion.PDF_1_7;
     }
 
     // Set document reference in writer
@@ -183,32 +181,32 @@ class PdfDocument {
 
       if (_reader == null) {
         // New document - create catalog and add creation date
-        _catalog = PdfCatalog(PdfDictionary());
-        _catalog!.getPdfObject().makeIndirect(this);
-        getDocumentInfoSync().addCreationDate();
+        _catalog = CraftPdfCatalog(CraftPdfDictionary());
+        _catalog!.pdfRepresentation().attachToDocument(this);
+        documentDetailsSync().addCreationDate();
       }
-      getDocumentInfoSync().addModDate();
+      documentDetailsSync().addModDate();
 
       // Initialize trailer
       if (_trailer == null) {
-        _trailer = PdfDictionary();
+        _trailer = CraftPdfDictionary();
       }
 
-      // We keep the original trailer of the document to preserve the original document keys,
-      // but we have to remove all standard keys that can occur in the trailer to avoid invalid pdfs
+      // Rebuild writer-owned trailer entries for a fresh revision while keeping
+      // extension entries supplied by the input document.
       if (_trailer!.size() > 0 &&
           _reader != null &&
-          !isAppendMode()) {
+          !usesIncrementalRevision()) {
         final keysToRemove = [
-          PdfName.root,
-          PdfName.info,
-          PdfName.id,
-          PdfName.prev,
-          PdfName.size,
-          PdfName.xrefStm,
-          PdfName.encrypt,
-          PdfName.index,
-          PdfName.w
+          CraftPdfName.root,
+          CraftPdfName.info,
+          CraftPdfName.id,
+          CraftPdfName.prev,
+          CraftPdfName.size,
+          CraftPdfName.xrefStm,
+          CraftPdfName.encrypt,
+          CraftPdfName.index,
+          CraftPdfName.w
         ];
         for (final key in keysToRemove) {
           _trailer!.remove(key);
@@ -216,19 +214,19 @@ class PdfDocument {
       }
 
       // Ensure modified ID is updated or preserved
-      if (_trailer!.containsKey(PdfName.id)) {
+      if (_trailer!.containsKey(CraftPdfName.id)) {
         // In append mode, usually we preserve unless we specifically want to update.
       } else {
         // Create IDs if missing
-        final idArray = PdfArray();
-        idArray.add(getOriginalDocumentId());
-        idArray.add(getModifiedDocumentId());
-        _trailer!.put(PdfName.id, idArray);
+        final idArray = CraftPdfArray();
+        idArray.add(initialDocumentIdentifier());
+        idArray.add(revisionIdentifier());
+        _trailer!.put(CraftPdfName.id, idArray);
       }
 
       // Set root reference in trailer
       if (_catalog != null) {
-        _trailer!.put(PdfName.root, _catalog!.getPdfObject());
+        _trailer!.put(CraftPdfName.root, _catalog!.pdfRepresentation());
       }
     }
 
@@ -242,16 +240,16 @@ class PdfDocument {
     await _reader!.read();
 
     // Get catalog from reader's trailer
-    final catalogDict = await _reader!.getCatalog();
+    final catalogDict = await _reader!.rootCatalog();
     if (catalogDict == null) {
-      throw PdfException('Corrupted root entry in trailer');
+      throw CraftPdfException('Corrupted root entry in trailer');
     }
 
     // Create catalog wrapper
-    _catalog = PdfCatalog(catalogDict);
-    
+    _catalog = CraftPdfCatalog(catalogDict);
+
     // Ensure catalog's indirect reference has this document set
-    final catRef = catalogDict.getIndirectReference();
+    final catRef = catalogDict.indirectHandle();
     if (catRef != null) {
       catRef.setDocument(this);
     }
@@ -260,13 +258,13 @@ class PdfDocument {
     _trailer = _reader!.trailer;
 
     // Load Document IDs
-    final idArray = await _trailer?.getAsArray(PdfName.id);
+    final idArray = await _trailer?.arrayEntry(CraftPdfName.id);
     if (idArray != null) {
       if (idArray.size() > 0) {
-        _originalDocumentId = await idArray.getAsString(0);
+        _originalDocumentId = await idArray.stringEntry(0);
       }
       if (idArray.size() > 1) {
-        _modifiedDocumentId = await idArray.getAsString(1);
+        _modifiedDocumentId = await idArray.stringEntry(1);
       }
     }
 
@@ -274,13 +272,15 @@ class PdfDocument {
     _version = _reader!.getPdfVersion();
 
     // Initialize Pages Tree from saved catalog
-    final tree = getPagesTree();
+    final tree = pageHierarchy();
     await tree.init();
 
     // Initialize Tag Structure if present
-    final str = await _catalog!.getPdfObject().getAsDictionary(PdfName.structTreeRoot);
+    final str = await _catalog!
+        .pdfRepresentation()
+        .dictionaryEntry(CraftPdfName.structTreeRoot);
     if (str != null) {
-      await tryInitTagStructure(str);
+      await initializeTaggingWhenReady(str);
     }
 
     // Update version from catalog
@@ -288,66 +288,66 @@ class PdfDocument {
   }
 
   /// Factory method to open document for reading.
-  static Future<PdfDocument> open(PdfReader reader) async {
-    final doc = PdfDocument.fromReader(reader);
+  static Future<CraftPdfDocument> open(CraftPdfReader reader) async {
+    final doc = CraftPdfDocument.fromReader(reader);
     await doc.load();
     return doc;
   }
 
   /// Factory method to create new document.
-  static PdfDocument create(PdfWriter writer) {
-    return PdfDocument.fromWriter(writer);
+  static CraftPdfDocument create(CraftPdfWriter writer) {
+    return CraftPdfDocument.fromWriter(writer);
   }
 
   // ============== GETTERS ==============
 
   /// Gets PdfReader associated with the document.
-  PdfReader? getReader() => _reader;
+  CraftPdfReader? inputReader() => _reader;
 
   /// Gets PdfWriter associated with the document.
-  PdfWriter? getWriter() => _writer;
+  CraftPdfWriter? outputWriter() => _writer;
 
   /// Gets document catalog.
-  PdfCatalog getCatalog() {
+  CraftPdfCatalog rootCatalog() {
     if (_catalog == null) {
-      _catalog = PdfCatalog(PdfDictionary());
-      _catalog!.getPdfObject().makeIndirect(this);
+      _catalog = CraftPdfCatalog(CraftPdfDictionary());
+      _catalog!.pdfRepresentation().attachToDocument(this);
       if (_trailer != null) {
-        _trailer!.put(PdfName.root, _catalog!.getPdfObject());
+        _trailer!.put(CraftPdfName.root, _catalog!.pdfRepresentation());
       }
     }
     return _catalog!;
   }
 
   /// Gets document trailer.
-  PdfDictionary getTrailer() {
-    _trailer ??= PdfDictionary();
+  CraftPdfDictionary fileTrailer() {
+    _trailer ??= CraftPdfDictionary();
     return _trailer!;
   }
 
   /// Gets xref table.
-  PdfXrefTable? getXrefTable() => _xrefTable;
+  CraftPdfXrefTable? referenceIndex() => _xrefTable;
 
   /// Alias for getXrefTable for compatibility.
-  PdfXrefTable getXref() => _xrefTable ?? PdfXrefTable();
+  CraftPdfXrefTable crossReferenceTable() => _xrefTable ?? CraftPdfXrefTable();
 
   /// Gets encryption handler.
-  PdfEncryption? getEncryption() => _encryption;
+  CraftPdfEncryption? securityCodec() => _encryption;
 
   /// Gets document version.
-  PdfVersion? getVersion() => _version;
+  CraftPdfVersion? formatVersion() => _version;
 
   /// Returns true if document is closed.
-  bool isClosed() => _closed;
+  bool lifecycleClosed() => _closed;
 
   /// Returns true if closing process has started.
-  bool isClosing() => _isClosing;
+  bool lifecycleClosing() => _isClosing;
 
   /// Gets default page size.
-  PageSize getDefaultPageSize() => _defaultPageSize;
+  CraftPageSize defaultPageExtent() => _defaultPageSize;
 
   /// Sets default page size.
-  void setDefaultPageSize(PageSize pageSize) {
+  void configureDefaultPageExtent(CraftPageSize pageSize) {
     _defaultPageSize = pageSize;
   }
 
@@ -355,13 +355,13 @@ class PdfDocument {
   ///
   /// The default font is lazily initialized using Helvetica.
   /// Returns the default font, or null if creation fails.
-  PdfFont? getDefaultFont() {
+  CraftPdfFont? defaultTypeface() {
     if (_defaultFont == null) {
       try {
         // Use Helvetica as the default font
-        _defaultFont = PdfFontFactory.createFont('Helvetica');
+        _defaultFont = CraftPdfFontFactory.createFont('Helvetica');
         if (_writer != null && _defaultFont != null) {
-          _defaultFont!.makeIndirect(this);
+          _defaultFont!.attachToDocument(this);
         }
       } catch (e) {
         // Log error or handle gracefully
@@ -375,18 +375,19 @@ class PdfDocument {
   ///
   /// This is used to retrieve embedded fonts from the PDF document.
   /// Returns null if the font cannot be created.
-  Future<PdfFont?> getFont(PdfDictionary fontDictionary) async {
-    final ref = fontDictionary.getIndirectReference();
+  Future<CraftPdfFont?> resolveTypeface(
+      CraftPdfDictionary fontDictionary) async {
+    final ref = fontDictionary.indirectHandle();
     if (ref != null && _documentFonts.containsKey(ref)) {
       return _documentFonts[ref];
     }
     try {
       final font =
-          await PdfFontFactory.createFontFromDictionary(fontDictionary);
+          await CraftPdfFontFactory.createFontFromDictionary(fontDictionary);
       if (font != null) {
         // If we created a font, we should add it to our tracking map
         // but only if it has an indirect reference (which it usually does or will)
-        return addFont(font);
+        return registerTypeface(font);
       }
       return null;
     } catch (e) {
@@ -394,12 +395,11 @@ class PdfDocument {
     }
   }
 
-  /// Adds a [PdfFont] instance to this document so that this font is flushed automatically
-  /// on document close.
-  PdfFont addFont(PdfFont font) {
-    font.makeIndirect(this);
+  /// Registers font storage for serialization during this document's lifecycle.
+  CraftPdfFont registerTypeface(CraftPdfFont font) {
+    font.attachToDocument(this);
     // font.setForbidRelease(); // Not implemented yet
-    final ref = font.getPdfObject().getIndirectReference();
+    final ref = font.pdfRepresentation().indirectHandle();
     if (ref != null) {
       _documentFonts[ref] = font;
     }
@@ -407,22 +407,22 @@ class PdfDocument {
   }
 
   /// List all newly added or loaded fonts.
-  List<PdfFont> getDocumentFonts() {
+  List<CraftPdfFont> registeredTypefaces() {
     return _documentFonts.values.toList();
   }
 
   /// Adds event handler.
-  void addEventHandler(String type, IEventHandler handler) {
+  void subscribeEvent(String type, CraftEventHandler handler) {
     _handlers.putIfAbsent(type, () => []).add(handler);
   }
 
   /// Removes event handler.
-  void removeEventHandler(String type, IEventHandler handler) {
+  void unsubscribeEvent(String type, CraftEventHandler handler) {
     _handlers[type]?.remove(handler);
   }
 
   /// Dispatches event.
-  void dispatchEvent(IEvent event) {
+  void publishEvent(CraftEvent event) {
     final list = _handlers[event.eventType];
     if (list != null) {
       for (final handler in list) {
@@ -434,23 +434,23 @@ class PdfDocument {
   // ============== PAGES ==============
 
   /// Gets pages tree.
-  PdfPagesTree getPagesTree() {
-    final tree = getCatalog().getPageTree();
+  CraftPdfPagesTree pageHierarchy() {
+    final tree = rootCatalog().getPageTree();
     tree.setDocument(this);
     return tree;
   }
 
   /// Creates and adds new page to the end of document.
-  Future<PdfPage> addNewPage([PageSize? pageSize]) async {
+  Future<CraftPdfPage> appendBlankPage([CraftPageSize? pageSize]) async {
     _checkClosingStatus();
-    final page = PdfPage(PdfDictionary());
-    page.setMediaBox(pageSize ?? _defaultPageSize);
-    await getPagesTree().addPage(page, this);
+    final page = CraftPdfPage(CraftPdfDictionary());
+    page.setMediaBounds(pageSize ?? _defaultPageSize);
+    await pageHierarchy().appendPageObject(page, this);
 
-    dispatchEvent(
-        PdfDocumentEvent(PdfDocumentEvent.startPage, page.getPdfObject()));
-    dispatchEvent(
-        PdfDocumentEvent(PdfDocumentEvent.insertPage, page.getPdfObject()));
+    publishEvent(CraftPdfDocumentEvent(
+        CraftPdfDocumentEvent.startPage, page.pdfRepresentation()));
+    publishEvent(CraftPdfDocumentEvent(
+        CraftPdfDocumentEvent.insertPage, page.pdfRepresentation()));
 
     return page;
   }
@@ -459,26 +459,27 @@ class PdfDocument {
   ///
   /// [index] - Position to insert page to (1-based)
   /// [pageSize] - Optional size of the new page
-  Future<PdfPage> addNewPageAt(int index, [PageSize? pageSize]) async {
+  Future<CraftPdfPage> insertBlankPage(int index,
+      [CraftPageSize? pageSize]) async {
     _checkClosingStatus();
-    final page = PdfPage(PdfDictionary());
-    page.setMediaBox(pageSize ?? _defaultPageSize);
-    await getPagesTree().addPageAt(index, page, this);
+    final page = CraftPdfPage(CraftPdfDictionary());
+    page.setMediaBounds(pageSize ?? _defaultPageSize);
+    await pageHierarchy().insertPageObject(index, page, this);
 
-    dispatchEvent(
-        PdfDocumentEvent(PdfDocumentEvent.startPage, page.getPdfObject()));
-    dispatchEvent(
-        PdfDocumentEvent(PdfDocumentEvent.insertPage, page.getPdfObject()));
+    publishEvent(CraftPdfDocumentEvent(
+        CraftPdfDocumentEvent.startPage, page.pdfRepresentation()));
+    publishEvent(CraftPdfDocumentEvent(
+        CraftPdfDocumentEvent.insertPage, page.pdfRepresentation()));
 
     return page;
   }
 
   /// Adds existing page to the end of document.
-  Future<PdfPage> addPage(PdfPage page) async {
+  Future<CraftPdfPage> appendPageObject(CraftPdfPage page) async {
     _checkClosingStatus();
-    await getPagesTree().addPage(page, this);
-    dispatchEvent(
-        PdfDocumentEvent(PdfDocumentEvent.insertPage, page.getPdfObject()));
+    await pageHierarchy().appendPageObject(page, this);
+    publishEvent(CraftPdfDocumentEvent(
+        CraftPdfDocumentEvent.insertPage, page.pdfRepresentation()));
     return page;
   }
 
@@ -486,87 +487,90 @@ class PdfDocument {
   ///
   /// [index] - Position to insert page to (1-based)
   /// [page] - The page to insert
-  Future<PdfPage> addPageAt(int index, PdfPage page) async {
+  Future<CraftPdfPage> insertPageObject(int index, CraftPdfPage page) async {
     _checkClosingStatus();
-    await getPagesTree().addPageAt(index, page, this);
-    dispatchEvent(
-        PdfDocumentEvent(PdfDocumentEvent.insertPage, page.getPdfObject()));
+    await pageHierarchy().insertPageObject(index, page, this);
+    publishEvent(CraftPdfDocumentEvent(
+        CraftPdfDocumentEvent.insertPage, page.pdfRepresentation()));
     return page;
   }
 
   /// Gets the page by page number (1-based).
-  Future<PdfPage?> getPage(int pageNumber) async {
-    return await getPagesTree().getPage(pageNumber);
+  Future<CraftPdfPage?> pageAt(int pageNumber) async {
+    return await pageHierarchy().pageAt(pageNumber);
   }
 
   /// Gets the first page of the document.
-  Future<PdfPage?> getFirstPage() async {
-    if (getNumberOfPages() > 0) {
-      return await getPage(1);
+  Future<CraftPdfPage?> firstPage() async {
+    if (pageTotal() > 0) {
+      return await pageAt(1);
     }
     return null;
   }
 
   /// Gets the last page of the document.
-  Future<PdfPage?> getLastPage() async {
-    final numPages = getNumberOfPages();
+  Future<CraftPdfPage?> lastPage() async {
+    final numPages = pageTotal();
     if (numPages > 0) {
-      return await getPage(numPages);
+      return await pageAt(numPages);
     }
     return null;
   }
 
   /// Gets number of pages in the document.
-  int getNumberOfPages() {
-    return getPagesTree().getNumberOfPages();
+  int pageTotal() {
+    return pageHierarchy().pageTotal();
   }
 
   /// Gets the page by its PdfDictionary.
   ///
   /// Returns null if the page is not found.
-  Future<PdfPage?> getPageByDictionary(PdfDictionary pageDictionary) async {
-    return await getPagesTree().getPageByDictionary(pageDictionary);
+  Future<CraftPdfPage?> findPageObject(
+      CraftPdfDictionary pageDictionary) async {
+    return await pageHierarchy().findPageObject(pageDictionary);
   }
 
   /// Gets page number by page.
-  int getPageNumber(PdfPage page) {
-    return getPagesTree().getPageNumber(page);
+  int pageOrdinal(CraftPdfPage page) {
+    return pageHierarchy().pageOrdinal(page);
   }
 
   /// Removes the page at the specified position (1-based index).
   ///
   /// [pageNum] - the one-based index of the PdfPage to be removed.
-  Future<void> removePageAt(int pageNum) async {
+  Future<void> deletePageAt(int pageNum) async {
     _checkClosingStatus();
-    final removedPage = await getPage(pageNum);
-    if (removedPage != null) {
-      // Remove outlines
-      await getCatalog().removeOutlines(removedPage);
-
-      // Remove unused widgets
-      _removeUnusedWidgetsFromFields(removedPage);
-
-      // Remove tags
-      if (isTagged()) {
-        getTagStructureContext()?.removePageTags(removedPage);
-      }
-
-      // Remove parent reference from page dictionary
-      removedPage.getPdfObject().remove(PdfName.parent);
-      // Mark the indirect reference as free
-      final ref = removedPage.getPdfObject().getIndirectReference();
-      if (ref != null) {
-        ref.setState(PdfObject.free);
-      }
-      dispatchEvent(PdfDocumentEvent(
-          PdfDocumentEvent.removePage, removedPage.getPdfObject()));
+    final tree = pageHierarchy();
+    final count = tree.pageTotal();
+    if (pageNum < 1 || pageNum > count) {
+      throw RangeError.range(pageNum, 1, count, 'pageNum');
     }
-    await getPagesTree().removePage(pageNum);
+    final detached = await tree.detachPage(pageNum);
+    if (detached == null) {
+      throw StateError(
+          'The selected page could not be detached from its tree.');
+    }
+
+    final dictionary = detached.pdfRepresentation();
+    dictionary.remove(CraftPdfName.parent);
+    detached.parentPages = null;
+    dictionary.indirectHandle()?.setState(CraftPdfObject.free);
+
+    // Keep the existing cleanup hooks; widget cleanup is currently a stub.
+    if (usesTagging()) {
+      taggingContext()?.removePageTags(detached);
+    }
+    _removeUnusedWidgetsFromFields(detached);
+    await rootCatalog().removeOutlines(detached);
+
+    // Observers receive the completed page-tree state.
+    publishEvent(
+        CraftPdfDocumentEvent(CraftPdfDocumentEvent.detachPage, dictionary));
   }
 
   /// Removes all widgets associated with a given page from AcroForm structure.
-  void _removeUnusedWidgetsFromFields(PdfPage page) {
-    if (page.isFlushed()) {
+  void _removeUnusedWidgetsFromFields(CraftPdfPage page) {
+    if (page.hasBeenWritten()) {
       return;
     }
     // Stub implementation:
@@ -579,72 +583,73 @@ class PdfDocument {
   ///
   /// [key] - name of the destination.
   /// [fs] - [PdfFileSpec] object.
-  Future<void> addFileAttachment(String key, PdfFileSpec fs) async {
+  Future<void> registerAttachment(String key, CraftPdfFileSpec fs) async {
     _checkClosingStatus();
-    await getCatalog().addNameToNameTree(
-        PdfString(key), fs.getPdfObject(), PdfName.embeddedFiles);
+    await rootCatalog().addNameToNameTree(CraftPdfString(key),
+        fs.pdfRepresentation(), CraftPdfName.embeddedFiles);
   }
 
   /// Adds file associated with PDF document as a whole.
-  Future<void> addAssociatedFile(String description, PdfFileSpec fs) async {
-    final fsDict = fs.getPdfObject();
-    if (!fsDict.containsKey(PdfName.afRelationship)) {
+  Future<void> associateAttachment(
+      String description, CraftPdfFileSpec fs) async {
+    final fsDict = fs.pdfRepresentation();
+    if (!fsDict.containsKey(CraftPdfName.afRelationship)) {
       // Log error or throw
     }
-    PdfArray? afArray =
-        await getCatalog().getPdfObject().getAsArray(PdfName.af);
+    CraftPdfArray? afArray =
+        await rootCatalog().pdfRepresentation().arrayEntry(CraftPdfName.af);
     if (afArray == null) {
-      afArray = PdfArray();
-      afArray.makeIndirect(this);
-      getCatalog().put(PdfName.af, afArray);
+      afArray = CraftPdfArray();
+      afArray.attachToDocument(this);
+      rootCatalog().put(CraftPdfName.af, afArray);
     }
-    afArray.add(fs.getPdfObject());
-    await addFileAttachment(description, fs);
+    afArray.add(fs.pdfRepresentation());
+    await registerAttachment(description, fs);
   }
 
   /// Adds a named destination.
-  Future<void> addNamedDestination(String key, PdfObject value) async {
-    await getCatalog().addNamedDestination(PdfString(key), value);
+  Future<void> registerDestination(String key, CraftPdfObject value) async {
+    await rootCatalog().registerDestination(CraftPdfString(key), value);
   }
 
   /// Gets the outlines of the document.
-  Future<PdfOutline?> getOutlines(bool updateOutlines) async {
+  Future<CraftPdfOutline?> outlineTree(bool updateOutlines) async {
     _checkClosingStatus();
-    return await getCatalog().getOutlines(updateOutlines);
+    return await rootCatalog().outlineTree(updateOutlines);
   }
 
   /// Initializes an outline tree of the document.
-  void initializeOutlines() {
+  void initializeOutlineTree() {
     _checkClosingStatus();
-    if (!hasOutlines()) {
-      PdfOutline.createRoot(this);
+    if (!containsOutlineTree()) {
+      CraftPdfOutline.createRoot(this);
     }
   }
 
   /// Indicates if the document has any outlines.
-  bool hasOutlines() {
-    return getCatalog().hasOutlines();
+  bool containsOutlineTree() {
+    return rootCatalog().containsOutlineTree();
   }
 
   /// Gets page labels.
-  Future<List<String>?> getPageLabels() async {
+  Future<List<String>?> pageLabelValues() async {
     // Stub
     return null;
   }
 
   /// Checks ISO conformance.
-  void checkIsoConformance(dynamic validationContext) {
+  void validateDocumentRules(dynamic validationContext) {
     // Stub
   }
 
   /// Removes the specified page from this document.
   ///
   /// Returns true if this document contained the specified page.
-  Future<bool> removePage(PdfPage page) async {
+  Future<bool> detachPage(CraftPdfPage page) async {
     _checkClosingStatus();
-    final pageNum = getPageNumber(page);
+    final pageNum = pageOrdinal(page);
     if (pageNum >= 1) {
-      await removePageAt(pageNum);
+      await deletePageAt(pageNum);
       return true;
     }
     return false;
@@ -654,11 +659,11 @@ class PdfDocument {
   ///
   /// [page] - page to be moved in document if present
   /// [insertBefore] - indicates before which page new one will be inserted to (1-based)
-  Future<bool> movePage(PdfPage page, int insertBefore) async {
+  Future<bool> relocatePage(CraftPdfPage page, int insertBefore) async {
     _checkClosingStatus();
-    final pageNum = getPageNumber(page);
+    final pageNum = pageOrdinal(page);
     if (pageNum > 0) {
-      await movePageAt(pageNum, insertBefore);
+      await relocatePageAt(pageNum, insertBefore);
       return true;
     }
     return false;
@@ -668,9 +673,9 @@ class PdfDocument {
   ///
   /// [pageNumber] - number of Page that will be moved (1-based)
   /// [insertBefore] - indicates before which page new one will be inserted to (1-based)
-  Future<void> movePageAt(int pageNumber, int insertBefore) async {
+  Future<void> relocatePageAt(int pageNumber, int insertBefore) async {
     _checkClosingStatus();
-    if (insertBefore < 1 || insertBefore > getNumberOfPages() + 1) {
+    if (insertBefore < 1 || insertBefore > pageTotal() + 1) {
       throw RangeError('Requested page number $insertBefore is out of bounds.');
     }
 
@@ -680,7 +685,7 @@ class PdfDocument {
     // Detach from parent and remove from tree.
     // We use getPagesTree().removePage() directly to avoid 'freeing' the object,
     // which happens in PdfDocument.removePageAt().
-    final removedPage = await getPagesTree().removePage(pageNumber);
+    final removedPage = await pageHierarchy().detachPage(pageNumber);
     if (removedPage == null) {
       // Page not found or error
       return;
@@ -691,30 +696,32 @@ class PdfDocument {
     }
 
     // Re-attach page at new location
-    await getPagesTree().addPageAt(insertBefore, removedPage, this);
+    await pageHierarchy().insertPageObject(insertBefore, removedPage, this);
   }
 
   // ============== OBJECTS ==============
 
   /// Gets number of indirect objects in the document.
-  int getNumberOfPdfObjects() {
+  int storedObjectCount() {
     return _xrefTable?.size() ?? 0;
   }
 
   /// Creates next indirect reference.
-  PdfIndirectReference createNextIndirectReference() {
+  CraftPdfIndirectReference allocateObjectHandle() {
     final objNr = _xrefTable!.size();
-    return _xrefTable!.add(PdfIndirectReference(objNr, 0)..setDocument(this))!;
+    return _xrefTable!
+        .add(CraftPdfIndirectReference(objNr, 0)..setDocument(this))!;
   }
 
   /// Reads object by indirect reference.
-  Future<PdfObject?> readObject(PdfIndirectReference reference) async {
+  Future<CraftPdfObject?> readObject(
+      CraftPdfIndirectReference reference) async {
     if (reference.getDocument() != this) {
       throw ArgumentError("Indirect reference does not belong to document");
     }
     if (reference.isFree()) return null;
     if (_reader != null) {
-      return await _reader!.readObject(reference.getObjNumber());
+      return await _reader!.readObject(reference.objectNumber());
     }
     return null;
   }
@@ -722,73 +729,76 @@ class PdfDocument {
   /// Gets PdfObject by object number.
   ///
   /// Returns [PdfObject] or null if object not found.
-  Future<PdfObject?> getPdfObject(int objNum) async {
+  Future<CraftPdfObject?> pdfRepresentation(int objNum) async {
     _checkClosingStatus();
     final reference = _xrefTable?.get(objNum);
     if (reference == null) {
       return null;
     }
-    return await reference.getRefersTo();
+    return await reference.targetObject();
   }
 
   // ============== APPEND MODE ==============
 
   /// Returns true if the document is opened in append mode.
-  bool isAppendMode() => _properties?.isAppendMode() ?? false;
+  bool usesIncrementalRevision() =>
+      _properties?.usesIncrementalRevision() ?? false;
 
   /// Gets the stamping properties for this document.
-  StampingProperties? getStampingProperties() => _properties;
+  CraftStampingProperties? revisionOptions() => _properties;
 
   // ============== ENCRYPTION ==============
 
   /// Returns true if the document is encrypted.
-  bool isEncrypted() => _encryption != null;
+  bool usesEncryption() => _encryption != null;
 
   /// Sets the encryption for the document.
-  void setEncryption(PdfEncryption? encryption) {
+  void configureEncryption(CraftPdfEncryption? encryption) {
     _encryption = encryption;
   }
 
   /// Gets original document id.
-  PdfString getOriginalDocumentId() {
-    return _originalDocumentId ??=
-        PdfString.fromBytes(PdfEncryption.generateNewDocumentId(), true);
+  CraftPdfString initialDocumentIdentifier() {
+    return _originalDocumentId ??= CraftPdfString.fromBytes(
+        CraftPdfEncryption.generateNewDocumentId(), true);
   }
 
   /// Gets modified document id.
-  PdfString getModifiedDocumentId() {
-    return _modifiedDocumentId ??=
-        PdfString.fromBytes(PdfEncryption.generateNewDocumentId(), true);
+  CraftPdfString revisionIdentifier() {
+    return _modifiedDocumentId ??= CraftPdfString.fromBytes(
+        CraftPdfEncryption.generateNewDocumentId(), true);
   }
 
   // ============== INFO ==============
 
   /// Gets document information dictionary.
-  Future<PdfDocumentInfo> getDocumentInfo() async {
+  Future<CraftPdfDocumentInfo> documentDetails() async {
     _checkClosingStatus();
     if (_info == null) {
-      final infoDict = _trailer != null ? await _trailer!.getAsDictionary(PdfName.info) : null;
-      _info = PdfDocumentInfo(infoDict ?? PdfDictionary());
+      final infoDict = _trailer != null
+          ? await _trailer!.dictionaryEntry(CraftPdfName.info)
+          : null;
+      _info = CraftPdfDocumentInfo(infoDict ?? CraftPdfDictionary());
     }
     return _info!;
   }
 
   /// Gets the document information synchronously.
   /// If info is not loaded, it creates a new one.
-  PdfDocumentInfo getDocumentInfoSync() {
+  CraftPdfDocumentInfo documentDetailsSync() {
     _checkClosingStatus();
     if (_info == null) {
-      PdfDictionary? infoDict;
+      CraftPdfDictionary? infoDict;
       if (_trailer != null) {
-        var infoObj = _trailer!.getMap()?[PdfName.info];
-        if (infoObj is PdfIndirectReference) {
-          infoObj = infoObj.getRefersToSync();
+        var infoObj = _trailer!.getMap()?[CraftPdfName.info];
+        if (infoObj is CraftPdfIndirectReference) {
+          infoObj = infoObj.targetObjectSync();
         }
-        if (infoObj is PdfDictionary) {
+        if (infoObj is CraftPdfDictionary) {
           infoDict = infoObj;
         }
       }
-      _info = PdfDocumentInfo(infoDict ?? PdfDictionary());
+      _info = CraftPdfDocumentInfo(infoDict ?? CraftPdfDictionary());
     }
     return _info!;
   }
@@ -796,47 +806,49 @@ class PdfDocument {
   // ============== FLUSH ==============
 
   /// Gets the tag structure context.
-  TagStructureContext? getTagStructureContext() {
+  CraftTagStructureContext? taggingContext() {
     if (_tagStructureContext == null) {
-      _tagStructureContext = TagStructureContext(this);
+      _tagStructureContext = CraftTagStructureContext(this);
     }
     return _tagStructureContext;
   }
 
   /// Flushes all fonts.
-  Future<void> flushFonts() async {
+  Future<void> writeRegisteredTypefaces() async {
     for (final font in _documentFonts.values) {
       await font.flush();
     }
   }
 
   /// Flushes pages to free memory (stub).
-  Future<void> flushPages() async {
+  Future<void> writePendingPages() async {
     _checkClosingStatus();
   }
 
   /// Flush waiting objects (stub).
-  Future<void> flushWaitingObjects([Set<PdfIndirectReference>? forbiddenToFlush]) async {
+  Future<void> writePendingObjects(
+      [Set<CraftPdfIndirectReference>? forbiddenToFlush]) async {
     _checkClosingStatus();
   }
 
   /// Flushes tag structure (stub).
-  Future<void> tryFlushTagStructure(bool isAppendMode) async {
+  Future<void> writeTaggingWhenReady(bool usesIncrementalRevision) async {
     _checkClosingStatus();
     if (_structTreeRoot != null) {
-      if (!isAppendMode || _structTreeRoot!.getPdfObject().isModified()) {
-        await _structTreeRoot!.getPdfObject().flush();
+      if (!usesIncrementalRevision ||
+          _structTreeRoot!.pdfRepresentation().hasChanges()) {
+        await _structTreeRoot!.pdfRepresentation().flush();
       }
     }
   }
 
-  Future<PdfStructTreeRoot?> getStructTreeRootAsync() async {
+  Future<CraftPdfStructTreeRoot?> loadStructureRoot() async {
     if (_structTreeRoot == null) {
-      final rootDict = await getCatalog()
-          .getPdfObject()
-          .getAsDictionary(PdfName.structTreeRoot);
+      final rootDict = await rootCatalog()
+          .pdfRepresentation()
+          .dictionaryEntry(CraftPdfName.structTreeRoot);
       if (rootDict != null) {
-        _structTreeRoot = PdfStructTreeRoot(rootDict);
+        _structTreeRoot = CraftPdfStructTreeRoot(rootDict);
       }
     }
     return _structTreeRoot;
@@ -844,18 +856,19 @@ class PdfDocument {
 
   /// Gets the logical structure tree root of the document.
   /// (Synchronous version, assumes already loaded or created)
-  PdfStructTreeRoot getStructTreeRoot() {
-      if (_structTreeRoot == null) {
-        _structTreeRoot = PdfStructTreeRoot.withDocument(this);
-        _catalog?.getPdfObject().put(PdfName.structTreeRoot, _structTreeRoot!.getPdfObject());
-      }
-      return _structTreeRoot!;
+  CraftPdfStructTreeRoot structureRoot() {
+    if (_structTreeRoot == null) {
+      _structTreeRoot = CraftPdfStructTreeRoot.withDocument(this);
+      _catalog?.pdfRepresentation().put(
+          CraftPdfName.structTreeRoot, _structTreeRoot!.pdfRepresentation());
+    }
+    return _structTreeRoot!;
   }
 
   /// Initializes document's structure tree root.
-  Future<void> tryInitTagStructure(PdfDictionary str) async {
+  Future<void> initializeTaggingWhenReady(CraftPdfDictionary str) async {
     try {
-      _structTreeRoot = PdfStructTreeRoot(str);
+      _structTreeRoot = CraftPdfStructTreeRoot(str);
       _structTreeRoot!.setDocument(this);
       _structParentIndex = await _structTreeRoot!.getParentTreeNextKey();
     } catch (e) {
@@ -866,19 +879,20 @@ class PdfDocument {
   }
 
   /// Specifies that document shall contain tag structure.
-  PdfDocument setTagged() {
+  CraftPdfDocument enableTagging() {
     _checkClosingStatus();
     if (_structTreeRoot == null) {
-      _structTreeRoot = PdfStructTreeRoot.withDocument(this);
-      getCatalog().getPdfObject().put(PdfName.structTreeRoot, _structTreeRoot!.getPdfObject());
-      _updateValueInMarkInfoDict(PdfName.marked, PdfBoolean(true));
+      _structTreeRoot = CraftPdfStructTreeRoot.withDocument(this);
+      rootCatalog().pdfRepresentation().put(
+          CraftPdfName.structTreeRoot, _structTreeRoot!.pdfRepresentation());
+      _updateValueInMarkInfoDict(CraftPdfName.marked, CraftPdfBoolean(true));
       _structParentIndex = 0;
     }
     return this;
   }
 
   /// Returns the next struct parent index.
-  int getNextStructParentIndex() {
+  int allocateStructureParentIndex() {
     _checkClosingStatus();
     if (_structParentIndex < 0) {
       return -1;
@@ -886,30 +900,32 @@ class PdfDocument {
     return _structParentIndex++;
   }
 
-  void _updateValueInMarkInfoDict(PdfName key, PdfObject value) {
-    var markInfo = getCatalog().getPdfObject().getMap()?[PdfName.markInfo];
-    if (markInfo is PdfIndirectReference) {
-      markInfo = markInfo.getRefersToSync();
+  void _updateValueInMarkInfoDict(CraftPdfName key, CraftPdfObject value) {
+    var markInfo =
+        rootCatalog().pdfRepresentation().getMap()?[CraftPdfName.markInfo];
+    if (markInfo is CraftPdfIndirectReference) {
+      markInfo = markInfo.targetObjectSync();
     }
-    
-    if (markInfo == null || markInfo is! PdfDictionary) {
-      markInfo = PdfDictionary();
-      getCatalog().getPdfObject().put(PdfName.markInfo, markInfo);
+
+    if (markInfo == null || markInfo is! CraftPdfDictionary) {
+      markInfo = CraftPdfDictionary();
+      rootCatalog().pdfRepresentation().put(CraftPdfName.markInfo, markInfo);
     }
     markInfo.put(key, value);
   }
 
   /// Checks if the document is tagged.
-  bool isTagged() {
+  bool usesTagging() {
     return _structTreeRoot != null;
   }
 
   Future<void> _updatePdfVersionFromCatalog() async {
-    final versionName = await _catalog!.getPdfObject().getAsName(PdfName.version);
+    final versionName =
+        await _catalog!.pdfRepresentation().nameEntry(CraftPdfName.version);
     if (versionName != null) {
       // Parse version from name
       try {
-        _version = PdfVersion.fromPdfName(versionName);
+        _version = CraftPdfVersion.fromPdfName(versionName);
       } catch (e) {
         // Log warning
       }
@@ -923,36 +939,121 @@ class PdfDocument {
   /// [insertBeforePage] - Optional page to insert before (1-based index).
   ///
   /// Returns list of copied pages.
-  Future<List<PdfPage>> copyPagesTo(
-      List<int> pagesToCopy, PdfDocument toDocument,
+  Future<List<CraftPdfPage>> transferPagesInto(
+      List<int> pagesToCopy, CraftPdfDocument toDocument,
       [int? insertBeforePage]) async {
     _checkClosingStatus();
 
     // Default to append at end
-    int insertIndex =
-        insertBeforePage ?? (await toDocument.getNumberOfPages() + 1);
+    int insertIndex = insertBeforePage ?? (await toDocument.pageTotal() + 1);
 
-    final List<PdfPage> copiedPages = [];
+    final List<CraftPdfPage> copiedPages = [];
+    if (toDocument != this) {
+      if (insertIndex < 1 || insertIndex > toDocument.pageTotal() + 1) {
+        throw RangeError.range(
+            insertIndex, 1, toDocument.pageTotal() + 1, 'insertBeforePage');
+      }
+      if (pagesToCopy.toSet().length != pagesToCopy.length) {
+        throw ArgumentError(
+            'A cross-document batch must select distinct pages.');
+      }
+      // Page copying does not reconcile these document-level structures.
+      for (final key in [
+        'AcroForm',
+        'StructTreeRoot',
+        'OCProperties',
+        'Names',
+        'Dests'
+      ]) {
+        if (rootCatalog().pdfRepresentation().containsKey(CraftPdfName(key))) {
+          throw UnsupportedError(
+              'Cross-document page copying cannot reconcile /$key.');
+        }
+      }
+      final sourcePages = <CraftPdfPage>[];
+      for (final number in pagesToCopy) {
+        if (number < 1 || number > pageTotal()) {
+          throw RangeError.range(number, 1, pageTotal(), 'page');
+        }
+        final page = (await pageAt(number))!;
+        if (page
+            .pdfRepresentation()
+            .containsKey(CraftPdfName('StructParents'))) {
+          throw UnsupportedError(
+              'Tagged page copying requires structure reconciliation.');
+        }
+        final annots =
+            await page.pdfRepresentation().arrayEntry(CraftPdfName.annots);
+        if (annots != null) {
+          for (var i = 0; i < annots.size(); i++) {
+            final annotation = await annots.get(i);
+            if (annotation is CraftPdfDictionary &&
+                (await annotation.nameEntry(CraftPdfName.subtype))
+                        ?.getValue() ==
+                    'Widget') {
+              throw UnsupportedError(
+                  'Widget copying requires form reconciliation.');
+            }
+          }
+        }
+        sourcePages.add(page);
+      }
+      final copier = PdfObjectCopier(toDocument,
+          forbiddenUnmappedTypes: {'Page', 'Pages', 'Catalog'},
+          deferIndirectRegistration: true);
+      final targets = <CraftPdfDictionary>[];
+      for (final page in sourcePages) {
+        final target = CraftPdfDictionary();
+        copier.register(page.pdfRepresentation(), target);
+        targets.add(target);
+      }
+      for (var i = 0; i < sourcePages.length; i++) {
+        final source = sourcePages[i].pdfRepresentation();
+        final target = targets[i];
+        await copier.copyDictionaryEntries(source, target,
+            excludedKeys: {CraftPdfName.parent});
+        for (final name in ['Resources', 'MediaBox', 'CropBox', 'Rotate']) {
+          final key = CraftPdfName(name);
+          if (target.containsKey(key)) continue;
+          CraftPdfDictionary? ancestor = source;
+          final visited = <CraftPdfDictionary>{};
+          while (ancestor != null) {
+            if (!visited.add(ancestor))
+              throw FormatException('Cyclic page tree.');
+            final value = await ancestor.get(key);
+            if (value != null) {
+              target.put(key, await copier.copy(value));
+              break;
+            }
+            ancestor = await ancestor.dictionaryEntry(CraftPdfName.parent);
+          }
+        }
+      }
+      copier.commit();
+      for (final target in targets) {
+        final page = CraftPdfPage(target);
+        await toDocument.insertPageObject(insertIndex++, page);
+        copiedPages.add(page);
+      }
+      return copiedPages;
+    }
     // final Map<PdfPage, PdfPage> page2page = {};
 
     for (final pageNum in pagesToCopy) {
       if (toDocument == this) {
-        final originalPage = await getPage(pageNum);
+        final originalPage = await pageAt(pageNum);
         if (originalPage != null) {
-          final newPageDict = originalPage.getPdfObject().clone() as PdfDictionary;
-          
+          final newPageDict =
+              originalPage.pdfRepresentation().clone() as CraftPdfDictionary;
+
           // Clear Parent and other keys that will be set by addPageAt
-          newPageDict.remove(PdfName.parent);
-          
-          final newPage = PdfPage(newPageDict);
-          await toDocument.addPageAt(insertIndex, newPage);
+          newPageDict.remove(CraftPdfName.parent);
+
+          final newPage = CraftPdfPage(newPageDict);
+          await toDocument.insertPageObject(insertIndex, newPage);
           copiedPages.add(newPage);
           insertIndex++;
         }
-      } else {
-        // Cross-document copying is a complex task requiring full resource mapping (PdfCopier logic).
-        // For now, we only support same-document duplication.
-        throw UnimplementedError('Cross-document page copying is not yet implemented.');
       }
     }
 
@@ -960,32 +1061,32 @@ class PdfDocument {
   }
 
   /// Adds an output intent to the document.
-  void addOutputIntent(PdfOutputIntent outputIntent) {
+  void registerOutputProfile(CraftPdfOutputIntent outputIntent) {
     _checkClosingStatus();
-    getCatalog().addOutputIntent(outputIntent.getPdfObject());
+    rootCatalog().registerOutputProfile(outputIntent.pdfRepresentation());
   }
 
   /// Sets PDF/A-1B conformance boilerplate (Metadata and basic OutputIntent).
-  Future<void> setPdfAConformance() async {
-    final xmp = await getXmpMetadata(true);
+  Future<void> configureArchivalProfile() async {
+    final xmp = await metadataModel(true);
     if (xmp != null) {
       // PDF/A-1B requires specific metadata fields
-      xmp.setProperty(XMPConst.NS_DC, 'format', 'application/pdf');
+      xmp.setProperty(CraftXMPConst.NS_DC, 'format', 'application/pdf');
     }
 
     // Add a default sRGB OutputIntent if none exists
-    final intents = await getCatalog().getOutputIntents();
+    final intents = await rootCatalog().getOutputIntents();
     if (intents == null || intents.size() == 0) {
       // Note: Ideally we should use a real sRGB ICC profile stream here.
       // For now, we create a placeholder that satisfies simple validators.
-      final intent = PdfOutputIntent.create(
+      final intent = CraftPdfOutputIntent.create(
         'sRGB IEC61966-2.1', // OutputConditionIdentifier
         'sRGB IEC61966-2.1', // OutputCondition
         'http://www.color.org', // RegistryName
         'sRGB IEC61966-2.1', // Info
         null, // DestOutputProfile (Should be a stream with ICC profile)
       );
-      addOutputIntent(intent);
+      registerOutputProfile(intent);
     }
   }
 
@@ -993,40 +1094,40 @@ class PdfDocument {
   ///
   /// Returns null if no XMP metadata is set.
   /// Sets the XMP Metadata.
-  void setXmpMetadata(XMPMeta xmpMeta) {
+  void assignMetadata(CraftXMPMeta xmpMeta) {
     _checkClosingStatus();
     _xmpMetadataBytes =
-        Uint8List.fromList(XMPMetaFactory.serializeToBuffer(xmpMeta));
+        Uint8List.fromList(CraftXMPMetaFactory.serializeToBuffer(xmpMeta));
     _xmpMetadata = xmpMeta;
   }
 
   /// Sets the XMP Metadata as bytes.
-  Future<void> setXmpMetadataBytes(Uint8List xmpMetadata) async {
+  Future<void> assignMetadataPayload(Uint8List xmpMetadata) async {
     _checkClosingStatus();
     _xmpMetadataBytes = xmpMetadata;
     _xmpMetadata = null;
     try {
-      await getXmpMetadata();
+      await metadataModel();
     } catch (e) {
       // ignore
     }
   }
 
   /// Gets XMP Metadata.
-  Future<XMPMeta?> getXmpMetadata([bool createNew = false]) async {
+  Future<CraftXMPMeta?> metadataModel([bool createNew = false]) async {
     _checkClosingStatus();
     if (_xmpMetadata == null) {
-      final bytes = await getXmpMetadataBytes();
+      final bytes = await metadataPayload();
       if (bytes != null) {
-        _xmpMetadata = XMPMetaFactory.parseFromBuffer(bytes);
+        _xmpMetadata = CraftXMPMetaFactory.parseFromBuffer(bytes);
       } else if (createNew) {
-        _xmpMetadata = XMPMetaFactory.create();
-        _xmpMetadata!.setObjectName(XMPConst.TAG_XMPMETA);
+        _xmpMetadata = CraftXMPMetaFactory.create();
+        _xmpMetadata!.setObjectName(CraftXMPConst.TAG_XMPMETA);
         try {
-          _xmpMetadata!
-              .setProperty(XMPConst.NS_DC, PdfConst.Format, "application/pdf");
+          _xmpMetadata!.setProperty(
+              CraftXMPConst.NS_DC, CraftPdfConst.Format, "application/pdf");
         } catch (e) {}
-        setXmpMetadata(_xmpMetadata!);
+        assignMetadata(_xmpMetadata!);
       }
     }
     return _xmpMetadata;
@@ -1035,11 +1136,12 @@ class PdfDocument {
   /// Gets XMP Metadata bytes.
   ///
   /// Returns null if no XMP metadata is set.
-  Future<Uint8List?> getXmpMetadataBytes() async {
+  Future<Uint8List?> metadataPayload() async {
     _checkClosingStatus();
     if (_xmpMetadataBytes == null && _catalog != null) {
-      final stream =
-          await _catalog!.getPdfObject().getAsStream(PdfName.metadata);
+      final stream = await _catalog!
+          .pdfRepresentation()
+          .streamEntry(CraftPdfName.metadata);
       if (stream != null) {
         _xmpMetadataBytes = await stream.getBytes();
       }
@@ -1052,7 +1154,7 @@ class PdfDocument {
   /// Checks if the document is closed or closing.
   void _checkClosingStatus() {
     if (_closed) {
-      throw PdfException('Document is already closed.');
+      throw CraftPdfException('Document is already closed.');
     }
   }
 
@@ -1066,22 +1168,22 @@ class PdfDocument {
 
     try {
       if (_writer != null) {
-        if (getNumberOfPages() == 0) {
-          await addNewPage();
+        if (pageTotal() == 0) {
+          await appendBlankPage();
         }
 
         // Add PDF producer info in any case, and the valid way to do it for PDF 2.0 in only in metadata, not
         // in the info dictionary.
-        await updateXmpMetadata();
+        await refreshMetadata();
 
-        await flushPages();
-        await flushWaitingObjects();
+        await writePendingPages();
+        await writePendingObjects();
 
         if (_writer.document != null) {
-           await _writer.flushAsync();
+          await _writer.flushAsync();
         }
 
-        if (isAppendMode() && _reader != null) {
+        if (usesIncrementalRevision() && _reader != null) {
           await _closeAppendMode();
         } else {
           await _closeNormalMode();
@@ -1094,17 +1196,18 @@ class PdfDocument {
   }
 
   /// Updates XMP metadata based on document information.
-  Future<void> updateXmpMetadata() async {
+  Future<void> refreshMetadata() async {
     try {
       // await getDocumentInfo(); // Ensure info is loaded
       // Logic for updating metadata from info
-      if (await getXmpMetadataBytes() != null || _writer?.properties.addXmpMetadata == true) {
-         final xmpMeta = await getXmpMetadata(true);
-         if (xmpMeta != null) {
-           // Append document info to metadata
-           // XmpMetaInfoConverter.appendDocumentInfoToMetadata(info, xmpMeta);
-           setXmpMetadata(xmpMeta);
-         }
+      if (await metadataPayload() != null ||
+          _writer?.properties.addXmpMetadata == true) {
+        final xmpMeta = await metadataModel(true);
+        if (xmpMeta != null) {
+          // Append document info to metadata
+          // XmpMetaInfoConverter.appendDocumentInfoToMetadata(info, xmpMeta);
+          assignMetadata(xmpMeta);
+        }
       }
     } catch (e) {
       _logger.logError(e.toString());
@@ -1121,46 +1224,48 @@ class PdfDocument {
     writer.writeHeader();
 
     // Ensure catalog is set up
-    final catalog = getCatalog();
+    final catalog = rootCatalog();
 
     // Generate Pages tree
-    final pagesRoot = await getPagesTree().generateTree();
-    catalog.getPdfObject().put(PdfName.pages, pagesRoot);
+    final pagesRoot = await pageHierarchy().generateTree();
+    catalog.pdfRepresentation().put(CraftPdfName.pages, pagesRoot);
 
     // Update XMP Metadata
-    if (await getXmpMetadataBytes() != null) {
-      final xmpStream = PdfStream();
+    if (await metadataPayload() != null) {
+      final xmpStream = CraftPdfStream();
       xmpStream.setData(_xmpMetadataBytes!);
-      xmpStream.put(PdfName.type, PdfName.metadata);
-      xmpStream.put(PdfName.subtype, PdfName.xml);
+      xmpStream.put(CraftPdfName.type, CraftPdfName.metadata);
+      xmpStream.put(CraftPdfName.subtype, CraftPdfName.xml);
       // Ensure indirect
-      xmpStream.makeIndirect(this);
-      catalog.getPdfObject().put(PdfName.metadata, xmpStream);
+      xmpStream.attachToDocument(this);
+      catalog.pdfRepresentation().put(CraftPdfName.metadata, xmpStream);
     }
 
     // Ensure StructTreeRoot is in Catalog if it was created
     if (_structTreeRoot != null) {
-        catalog.getPdfObject().put(PdfName.structTreeRoot, _structTreeRoot!.getPdfObject());
+      catalog.pdfRepresentation().put(
+          CraftPdfName.structTreeRoot, _structTreeRoot!.pdfRepresentation());
     }
 
     // Flush fonts before writing
-    await flushFonts();
+    await writeRegisteredTypefaces();
 
     // Add info dictionary to trailer (must be indirect reference)
-    final info = await getDocumentInfo();
-    if (info.getPdfObject().size() > 0) {
+    final info = await documentDetails();
+    if (info.pdfRepresentation().size() > 0) {
       // Ensure info is indirect
-      if (info.getPdfObject().getIndirectReference() == null) {
-        info.getPdfObject().makeIndirect(this);
+      if (info.pdfRepresentation().indirectHandle() == null) {
+        info.pdfRepresentation().attachToDocument(this);
       }
-      _trailer ??= PdfDictionary();
-      _trailer!.put(PdfName.info, info.getPdfObject().getIndirectReference()!);
+      _trailer ??= CraftPdfDictionary();
+      _trailer!
+          .put(CraftPdfName.info, info.pdfRepresentation().indirectHandle()!);
     }
 
     // Write all objects from xref table
     for (final ref in xrefTable.references) {
-      if (!ref.isFree() && !ref.checkState(PdfObject.flushed)) {
-        final obj = await ref.getRefersTo();
+      if (!ref.isFree() && !ref.checkState(CraftPdfObject.flushed)) {
+        final obj = await ref.targetObject();
         if (obj != null) {
           // Skip the current object stream as it's being populated and will be flushed later
           if (obj == writer.currentObjStream) {
@@ -1170,49 +1275,49 @@ class PdfDocument {
         }
       }
     }
-    
+
     // Flush any pending ObjStream before building trailer
     // This is critical for full compression mode to actually write the ObjStream
     await writer.flushAsync();
 
     // Build trailer
-    final trailer = getTrailer(); // Ensure trailer exists
+    final trailer = fileTrailer(); // Ensure trailer exists
     // Size is updated below if XRefStream is used
-    trailer.put(PdfName.root, catalog.getPdfObject());
+    trailer.put(CraftPdfName.root, catalog.pdfRepresentation());
 
     // Set IDs in trailer
-    final idArray = PdfArray();
-    idArray.add(getOriginalDocumentId());
-    idArray.add(getModifiedDocumentId());
-    trailer.put(PdfName.id, idArray);
+    final idArray = CraftPdfArray();
+    idArray.add(initialDocumentIdentifier());
+    idArray.add(revisionIdentifier());
+    trailer.put(CraftPdfName.id, idArray);
 
     // Info is already added above if present
 
     if (writer.properties.isFullCompression == true) {
-       // Create XRefStream object
-       final xrefStreamRef = createNextIndirectReference();
-       final xrefStream = PdfStream();
-       // Manually link reference
-       xrefStream.setIndirectReference(xrefStreamRef);
-       xrefStreamRef.setRefersTo(xrefStream);
-       
-       // Trailer Size includes the XRefStream itself
-       trailer.put(PdfName.size, PdfNumber.fromInt(xrefTable.size()));
-       
-       // StartXref is the position of XRefStream object
-       final startxref = writer.getPosition();
-       
-       await writer.writeXrefStream(xrefTable, trailer, xrefStream);
-        
-       // We also need to write startxref offset
-       writer.writeString('startxref\n');
-       writer.writeInt(startxref);
-       writer.writeNewLine();
+      // Create XRefStream object
+      final xrefStreamRef = allocateObjectHandle();
+      final xrefStream = CraftPdfStream();
+      // Manually link reference
+      xrefStream.setIndirectReference(xrefStreamRef);
+      xrefStreamRef.assignTargetObject(xrefStream);
+
+      // Trailer Size includes the XRefStream itself
+      trailer.put(CraftPdfName.size, CraftPdfNumber.fromInt(xrefTable.size()));
+
+      // StartXref is the position of XRefStream object
+      final startxref = writer.getPosition();
+
+      await writer.writeXrefStream(xrefTable, trailer, xrefStream);
+
+      // We also need to write startxref offset
+      writer.writeString('startxref\n');
+      writer.writeInt(startxref);
+      writer.writeNewLine();
     } else {
-       trailer.put(PdfName.size, PdfNumber.fromInt(xrefTable.size()));
-       final startxref = writer.getPosition();
-       writer.writeXrefTable(xrefTable);
-       await writer.writeTrailer(trailer, startxref);
+      trailer.put(CraftPdfName.size, CraftPdfNumber.fromInt(xrefTable.size()));
+      final startxref = writer.getPosition();
+      writer.writeXrefTable(xrefTable);
+      await writer.writeTrailer(trailer, startxref);
     }
 
     writer.writeEOF();
@@ -1241,19 +1346,19 @@ class PdfDocument {
     // 3. Write only MODIFIED objects
     for (final ref in xrefTable.references) {
       // Check if info is modified
-      if (_info != null && _info!.getPdfObject().isModified()) {
+      if (_info != null && _info!.pdfRepresentation().hasChanges()) {
         // Info will be picked up by checking modified refs?
         // Actually we need to make sure info is flushed if modified.
         // But for now, simple loop over refs.
       }
 
-      final isNew = ref.getReader() == null;
+      final isNew = ref.inputReader() == null;
       final shouldWrite = !ref.isFree() &&
-          !ref.checkState(PdfObject.flushed) &&
-          (ref.isModified() || isNew);
+          !ref.checkState(CraftPdfObject.flushed) &&
+          (ref.hasChanges() || isNew);
 
       if (shouldWrite) {
-        final obj = await ref.getRefersTo();
+        final obj = await ref.targetObject();
         if (obj != null) {
           await writer.writeObject(obj);
         }
@@ -1261,10 +1366,10 @@ class PdfDocument {
     }
 
     // 4. Collect modified references
-    final modifiedRefs = <PdfIndirectReference>[];
+    final modifiedRefs = <CraftPdfIndirectReference>[];
     for (final ref in xrefTable.references) {
-      final isNew = ref.getReader() == null;
-      if (!ref.isFree() && (ref.isModified() || isNew)) {
+      final isNew = ref.inputReader() == null;
+      if (!ref.isFree() && (ref.hasChanges() || isNew)) {
         modifiedRefs.add(ref);
       }
     }
@@ -1274,42 +1379,43 @@ class PdfDocument {
     writer.writeIncrementalXrefTable(xrefTable, modifiedRefs);
 
     // 5. Build new trailer with Prev pointer
-    final trailer = PdfDictionary();
-    trailer.put(PdfName.intern('Size'), PdfNumber.fromInt(xrefTable.size()));
-    trailer.put(PdfName.intern('Root'), getCatalog().getPdfObject());
-    trailer.put(PdfName.intern('Prev'), PdfNumber.fromInt(prevXref));
+    final trailer = CraftPdfDictionary();
+    trailer.put(
+        CraftPdfName.intern('Size'), CraftPdfNumber.fromInt(xrefTable.size()));
+    trailer.put(CraftPdfName.intern('Root'), rootCatalog().pdfRepresentation());
+    trailer.put(CraftPdfName.intern('Prev'), CraftPdfNumber.fromInt(prevXref));
 
     // Add info if loaded/modified - use indirect reference
     if (_info != null) {
-      final infoRef = _info!.getPdfObject().getIndirectReference();
+      final infoRef = _info!.pdfRepresentation().indirectHandle();
       if (infoRef != null) {
-        trailer.put(PdfName.info, infoRef);
+        trailer.put(CraftPdfName.info, infoRef);
       }
     }
 
     // Set IDs in trailer
-    final idArray = PdfArray();
-    idArray.add(getOriginalDocumentId());
-    idArray.add(getModifiedDocumentId());
-    trailer.put(PdfName.id, idArray);
+    final idArray = CraftPdfArray();
+    idArray.add(initialDocumentIdentifier());
+    idArray.add(revisionIdentifier());
+    trailer.put(CraftPdfName.id, idArray);
 
     // Update XMP Metadata in Append Mode
-    if (await getXmpMetadataBytes() != null) {
-      final cat = getCatalog().getPdfObject();
-      var xmpStream = await cat.getAsStream(PdfName.metadata);
+    if (await metadataPayload() != null) {
+      final cat = rootCatalog().pdfRepresentation();
+      var xmpStream = await cat.streamEntry(CraftPdfName.metadata);
 
-      if (xmpStream != null && xmpStream.getIndirectReference() != null) {
+      if (xmpStream != null && xmpStream.indirectHandle() != null) {
         xmpStream.setData(_xmpMetadataBytes!);
-        if (!xmpStream.isModified()) {
-          xmpStream.setModified();
+        if (!xmpStream.hasChanges()) {
+          xmpStream.markChanged();
         }
       } else {
-        xmpStream = PdfStream();
+        xmpStream = CraftPdfStream();
         xmpStream.setData(_xmpMetadataBytes!);
-        xmpStream.put(PdfName.type, PdfName.metadata);
-        xmpStream.put(PdfName.subtype, PdfName.xml);
-        xmpStream.makeIndirect(this);
-        cat.put(PdfName.metadata, xmpStream);
+        xmpStream.put(CraftPdfName.type, CraftPdfName.metadata);
+        xmpStream.put(CraftPdfName.subtype, CraftPdfName.xml);
+        xmpStream.attachToDocument(this);
+        cat.put(CraftPdfName.metadata, xmpStream);
       }
     }
 
@@ -1328,11 +1434,11 @@ class PdfDocument {
 }
 
 /// Data container for debugging information.
-class FingerPrint {
+class CraftFingerPrint {
   bool _fingerPrintEnabled = true;
 
   /// Default constructor.
-  FingerPrint();
+  CraftFingerPrint();
 
   /// This method is used to disable  fingerprint.
   void disableFingerPrint() {

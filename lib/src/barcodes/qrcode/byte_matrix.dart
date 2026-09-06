@@ -1,16 +1,16 @@
 import 'dart:typed_data';
 
 /// A class which wraps a 2D array of bytes.
-class ByteMatrix {
+class CraftByteMatrix {
   late List<Uint8List> _bytes;
   final int _width;
   final int _height;
 
-  /// Create a ByteMatix of given width and height, with the values initialized to 0
+  /// Allocates a zero-filled rectangular byte grid.
   ///
   /// [width] - width of the matrix
   /// [height] - height of the matrix
-  ByteMatrix(this._width, this._height) {
+  CraftByteMatrix(this._width, this._height) {
     _bytes = List.generate(_height, (i) => Uint8List(_width));
   }
 

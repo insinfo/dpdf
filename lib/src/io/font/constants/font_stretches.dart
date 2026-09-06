@@ -1,4 +1,4 @@
-class FontStretches {
+class CraftFontStretches {
   static const int FWIDTH_ULTRA_CONDENSED = 1;
   static const int FWIDTH_EXTRA_CONDENSED = 2;
   static const int FWIDTH_CONDENSED = 3;

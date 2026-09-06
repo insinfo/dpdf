@@ -1,89 +1,96 @@
-/// Class that bundles all the error message templates as constants.
-class SvgExceptionMessageConstant {
-  SvgExceptionMessageConstant._();
+/// Diagnostic templates for PDFCraft. Public identifiers and format slots are stable.
+class CraftSvgExceptionMessageConstant {
+  CraftSvgExceptionMessageConstant._();
 
   static const String ARC_TO_EXPECTS_FOLLOWING_PARAMETERS_GOT_0 =
-      "(rx ry rot largearc sweep x y)+ parameters are expected for elliptical arcs. Got: {0}";
+      'Elliptical-arc commands require groups of (rx ry rot largearc sweep x y); received {0}.';
 
   static const String
       COORDINATE_ARRAY_LENGTH_MUST_BY_DIVISIBLE_BY_CURRENT_COORDINATES_ARRAY_LENGTH =
-      "Array of current coordinates must have length that is divisible by the length of the array with current coordinates";
+      'Coordinate data must contain a whole number of groups matching the current coordinate group length.';
 
   static const String COULD_NOT_DETERMINE_MIDDLE_POINT_OF_ELLIPTICAL_ARC =
-      "Could not determine the middle point of the ellipse traced by this elliptical arc";
+      'The elliptical arc does not yield a computable ellipse center.';
 
   static const String CURVE_TO_EXPECTS_FOLLOWING_PARAMETERS_GOT_0 =
-      "(x1 y1 x2 y2 x y)+ parameters are expected for curves. Got: {0}";
+      'Cubic-curve commands require groups of (x1 y1 x2 y2 x y); received {0}.';
 
-  static const String DRAW_NO_DRAW = "The renderer cannot be drawn.";
+  static const String DRAW_NO_DRAW =
+      'This renderer does not provide a drawable representation.';
 
   static const String FAILED_TO_PARSE_INPUTSTREAM =
-      "Failed to parse InputStream.";
+      'The SVG input stream could not be parsed.';
 
-  static const String FONT_NOT_FOUND = "The font wasn't found.";
+  static const String FONT_NOT_FOUND = 'No matching font could be resolved.';
 
-  static const String I_NODE_ROOT_IS_NULL = "Input root value is null";
+  static const String I_NODE_ROOT_IS_NULL =
+      'SVG processing requires a non-null input root node.';
 
   static const String MEET_OR_SLICE_ARGUMENT_IS_INCORRECT =
-      "The meetOrSlice argument is incorrect. It must be `meet`, `slice` or null.";
+      'Use meet, slice, or null for the meetOrSlice argument.';
 
   static const String CURRENT_VIEWPORT_IS_NULL =
-      "The current viewport is null. The viewBox applying could not be processed.";
+      'A current viewport is required before applying viewBox.';
 
   static const String VIEWBOX_IS_INCORRECT =
-      "The viewBox is incorrect. The viewBox applying could not be processed.";
+      'The viewBox definition is invalid and cannot be applied.';
 
   static const String INVALID_CLOSEPATH_OPERATOR_USE =
-      "The close path operator (Z) may not be used before a move to operation (M)";
+      'A path must begin with moveto (M) before closepath (Z) can be used.';
 
   static const String INVALID_PATH_D_ATTRIBUTE_OPERATORS =
-      "Invalid operators found in path data attribute: {0}";
+      'The path d attribute contains unsupported operators: {0}.';
 
   static const String INVALID_SMOOTH_CURVE_USE =
-      "The smooth curve operations (S, s, T, t) may not be used as a first operator in path.";
+      'Smooth-curve commands S, s, T, and t cannot start a path.';
 
   static const String INVALID_TRANSFORM_DECLARATION =
-      "Transformation declaration is not formed correctly.";
+      'The transform declaration has invalid syntax.';
 
   static const String INVALID_TRANSFORM_VALUE =
-      "Invalid transformation value: {0}";
+      'The transform parameter value is invalid: {0}.';
 
   static const String LINE_TO_EXPECTS_FOLLOWING_PARAMETERS_GOT_0 =
-      "(x y)+ parameters are expected for lineTo operator. Got: {0}";
+      'Lineto commands require coordinate pairs (x y); received {0}.';
 
   static const String MOVE_TO_EXPECTS_FOLLOWING_PARAMETERS_GOT_0 =
-      "(x y)+ parameters are expected for moveTo operator. Got: {0}";
+      'Moveto commands require coordinate pairs (x y); received {0}.';
 
   static const String NAMED_OBJECT_NAME_NULL_OR_EMPTY =
-      "The name of the named object can't be null or empty.";
+      'A named object requires a non-null, nonempty name.';
 
-  static const String NAMED_OBJECT_NULL = "A named object can't be null.";
+  static const String NAMED_OBJECT_NULL =
+      'The named-object value must be provided.';
 
-  static const String NO_ROOT = "No root found";
+  static const String NO_ROOT = 'The SVG input has no root element.';
 
-  static const String PARAMETER_CANNOT_BE_NULL = "Parameters cannot be null.";
+  static const String PARAMETER_CANNOT_BE_NULL =
+      'This operation requires non-null parameters.';
 
   static const String POINTS_ATTRIBUTE_INVALID_LIST =
-      "Points attribute {0} on polyline tag does not contain a valid set of points";
+      'Polyline points="{0}" is not a valid coordinate-pair list.';
 
   static const String QUADRATIC_CURVE_TO_EXPECTS_FOLLOWING_PARAMETERS_GOT_0 =
-      "(x1 y1 x y)+ parameters are expected for quadratic curves. Got: {0}";
+      'Quadratic-curve commands require groups of (x1 y1 x y); received {0}.';
 
   static const String ROOT_SVG_NO_BBOX =
-      "The root svg tag needs to have a bounding box defined.";
+      'Define a bounding box for the root SVG element before rendering.';
 
-  static const String TAG_PARAMETER_NULL = "Tag parameter must not be null";
+  static const String TAG_PARAMETER_NULL =
+      'A non-null SVG tag argument is required.';
 
-  static const String TRANSFORM_EMPTY = "The transformation value is empty.";
+  static const String TRANSFORM_EMPTY =
+      'Provide at least one transform value; the declaration is empty.';
 
   static const String TRANSFORM_INCORRECT_NUMBER_OF_VALUES =
-      "Transformation doesn't contain the right number of values.";
+      'The transform argument count does not match its operation.';
 
-  static const String TRANSFORM_NULL = "The transformation value is null.";
+  static const String TRANSFORM_NULL =
+      'A transform value is required but was null.';
 
   static const String UNKNOWN_TRANSFORMATION_TYPE =
-      "Unsupported type of transformation.";
+      'The requested transform operation is not implemented.';
 
   static const String ILLEGAL_RELATIVE_VALUE_NO_VIEWPORT_IS_SET =
-      "Relative value can't be resolved, no viewport is set.";
+      'Set a viewport before resolving a relative SVG value.';
 }

@@ -1,10 +1,10 @@
-import 'package:dpdf/src/kernel/colors/color.dart';
-import 'package:dpdf/src/kernel/colors/device_gray.dart';
+import 'package:pdfcraft/src/kernel/colors/color.dart';
+import 'package:pdfcraft/src/kernel/colors/device_gray.dart';
 
 /// This class represents text and tspan SVG elements properties identifying their graphics state.
 class SvgTextProperties {
-  Color? fillColor = DeviceGray.BLACK;
-  Color? strokeColor = DeviceGray.BLACK;
+  CraftColor? fillColor = CraftDeviceGray.BLACK;
+  CraftColor? strokeColor = CraftDeviceGray.BLACK;
   double fillOpacity = 1.0;
   double strokeOpacity = 1.0;
   List<double>? dashArray;
@@ -25,14 +25,14 @@ class SvgTextProperties {
     textDecoration = List.from(other.textDecoration);
   }
 
-  Color? getFillColor() => fillColor;
-  SvgTextProperties setFillColor(Color? color) {
+  CraftColor? getFillColor() => fillColor;
+  SvgTextProperties setFillColor(CraftColor? color) {
     fillColor = color;
     return this;
   }
 
-  Color? getStrokeColor() => strokeColor;
-  SvgTextProperties setStrokeColor(Color? color) {
+  CraftColor? getStrokeColor() => strokeColor;
+  SvgTextProperties setStrokeColor(CraftColor? color) {
     strokeColor = color;
     return this;
   }

@@ -1,25 +1,17 @@
-class AlphabetNumbering {
+/// Positive integers in a bijective positional alphabet (A, ..., AA).
+class CraftAlphabetNumbering {
   static String toAlphabetNumber(int number, List<String> alphabet) {
-    if (number < 1) {
-      throw ArgumentError("The parameter must be a positive integer");
+    if (number < 1) throw RangeError.range(number, 1, null, 'number');
+    if (alphabet.isEmpty) {
+      throw ArgumentError.value(
+          alphabet, 'alphabet', 'Provide at least one symbol.');
     }
-    int cardinality = alphabet.length;
-    number--;
-    int bytes = 1;
-    int start = 0;
-    int symbols = cardinality;
-    while (number >= symbols + start) {
-      bytes++;
-      start += symbols;
-      // Note: in Dart int is 64-bit, so symbols *= cardinality should be safe for reasonable lists.
-      symbols *= cardinality;
+    final digits = <String>[];
+    while (number > 0) {
+      final ordinal = number - 1;
+      digits.add(alphabet[ordinal % alphabet.length]);
+      number = ordinal ~/ alphabet.length;
     }
-    int c = number - start;
-    List<String> value = List.filled(bytes, "");
-    while (bytes > 0) {
-      value[--bytes] = alphabet[c % cardinality];
-      c ~/= cardinality;
-    }
-    return value.join("");
+    return digits.reversed.join();
   }
 }

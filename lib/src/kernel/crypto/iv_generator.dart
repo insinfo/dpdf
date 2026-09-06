@@ -1,21 +1,22 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/commons/utils/encoding_util.dart';
-import 'package:dpdf/src/commons/utils/system_util.dart';
-import 'package:dpdf/src/kernel/crypto/arcfour_encryption.dart';
+import 'package:pdfcraft/src/commons/utils/encoding_util.dart';
+import 'package:pdfcraft/src/commons/utils/system_util.dart';
+import 'package:pdfcraft/src/kernel/crypto/arcfour_encryption.dart';
 
 /// An initialization vector generator for a CBC block encryption.
-class IVGenerator {
-  static final ARCFOUREncryption _arcfour = _initArcfour();
+class CraftIVGenerator {
+  static final CraftARCFOUREncryption _arcfour = _initArcfour();
 
-  IVGenerator._();
+  CraftIVGenerator._();
 
-  static ARCFOUREncryption _initArcfour() {
-    final arcfour = ARCFOUREncryption();
-    final time = SystemUtil.getTimeBasedSeed();
-    final mem = SystemUtil.getFreeMemory();
+  static CraftARCFOUREncryption _initArcfour() {
+    final arcfour = CraftARCFOUREncryption();
+    final time = CraftSystemUtil.getTimeBasedSeed();
+    final mem = CraftSystemUtil.getFreeMemory();
     final s = "$time+$mem";
-    arcfour.prepareARCFOURKey(EncodingUtil.convertToBytes(s, "ISO-8859-1"));
+    arcfour
+        .prepareARCFOURKey(CraftEncodingUtil.convertToBytes(s, "ISO-8859-1"));
     return arcfour;
   }
 

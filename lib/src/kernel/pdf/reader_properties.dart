@@ -12,7 +12,7 @@ import 'dart:typed_data';
 /// final properties = ReaderProperties()
 ///   .setPassword(utf8.encode('secretPassword'));
 /// ```
-class ReaderProperties {
+class CraftReaderProperties {
   /// The password for encrypted documents.
   Uint8List? password;
 
@@ -21,10 +21,10 @@ class ReaderProperties {
   int? memoryLimit;
 
   /// Creates default reader properties.
-  ReaderProperties();
+  CraftReaderProperties();
 
   /// Creates a copy of another ReaderProperties.
-  ReaderProperties.from(ReaderProperties other)
+  CraftReaderProperties.from(CraftReaderProperties other)
       : password =
             other.password != null ? Uint8List.fromList(other.password!) : null,
         memoryLimit = other.memoryLimit;
@@ -34,14 +34,14 @@ class ReaderProperties {
   /// This could be either user or owner password.
   ///
   /// [password] - The password to use to open the document.
-  ReaderProperties setPassword(Uint8List password) {
+  CraftReaderProperties setPassword(Uint8List password) {
     _clearEncryptionParams();
     this.password = password;
     return this;
   }
 
   /// Sets the password from a string (using UTF-8 encoding).
-  ReaderProperties setPasswordFromString(String password) {
+  CraftReaderProperties setPasswordFromString(String password) {
     return setPassword(Uint8List.fromList(password.codeUnits));
   }
 
@@ -49,7 +49,7 @@ class ReaderProperties {
   ///
   /// This helps prevent out-of-memory errors when processing large PDFs.
   /// Set to null for no limit.
-  ReaderProperties setMemoryLimit(int? limit) {
+  CraftReaderProperties setMemoryLimit(int? limit) {
     memoryLimit = limit;
     return this;
   }
@@ -60,14 +60,14 @@ class ReaderProperties {
   }
 
   // TODO: Add public key security params when crypto module is implemented
-  // setPublicKeySecurityParams(IX509Certificate certificate, IPrivateKey key)
+  // setPublicKeySecurityParams(CertificateDetails certificate, SigningPrivateKey key)
 }
 
 /// Handler for memory limits during PDF processing.
 ///
 /// This class is used to track memory usage during decompression
 /// and other memory-intensive operations.
-class MemoryLimitsAwareHandler {
+class CraftMemoryLimitsAwareHandler {
   /// Maximum memory to allocate in bytes.
   final int maxMemory;
 
@@ -75,11 +75,11 @@ class MemoryLimitsAwareHandler {
   int _currentMemory = 0;
 
   /// Creates a memory limits handler with the specified max memory.
-  MemoryLimitsAwareHandler(this.maxMemory);
+  CraftMemoryLimitsAwareHandler(this.maxMemory);
 
   /// Creates a new instance (for copy operations).
-  MemoryLimitsAwareHandler createNewInstance() {
-    return MemoryLimitsAwareHandler(maxMemory);
+  CraftMemoryLimitsAwareHandler createNewInstance() {
+    return CraftMemoryLimitsAwareHandler(maxMemory);
   }
 
   /// Checks if allocation is within limits and tracks it.

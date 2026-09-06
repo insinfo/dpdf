@@ -4,11 +4,11 @@ import 'dart:typed_data';
 import 'dart:async';
 
 import 'package:test/test.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
 
-import 'package:dpdf/src/kernel/geom/page_size.dart';
+import 'package:pdfcraft/src/kernel/geom/page_size.dart';
 
 void main() {
   group('PDF Pages Creation Tests', () {
@@ -16,11 +16,11 @@ void main() {
       // Create a simple PDF with 1 page
       final outputBuffer = BytesBuilder();
       final tempSink = _BytesBuilderSink(outputBuffer);
-      final doc = PdfDocument(writer: PdfWriter(tempSink));
+      final doc = CraftPdfDocument(writer: CraftPdfWriter(tempSink));
 
       // Add one page
-      await doc.addNewPage(PageSize.A4);
-      expect(doc.getPagesTree().getNumberOfPages(), equals(1));
+      await doc.appendBlankPage(CraftPageSize.A4);
+      expect(doc.pageHierarchy().pageTotal(), equals(1));
 
       // Close and get bytes
       await doc.close();
@@ -28,39 +28,39 @@ void main() {
       expect(pdfBytes.length, greaterThan(0));
 
       // Re-read and verify
-      final reader = PdfReader.fromBytes(pdfBytes);
-      final doc2 = PdfDocument(reader: reader);
+      final reader = CraftPdfReader.fromBytes(pdfBytes);
+      final doc2 = CraftPdfDocument(reader: reader);
       await doc2.load();
 
-      expect(doc2.getPagesTree().getNumberOfPages(), equals(1));
+      expect(doc2.pageHierarchy().pageTotal(), equals(1));
     });
 
     test('Create PDF with multiple pages and verify count', () async {
       // Create a PDF with 5 pages
       final outputBuffer = BytesBuilder();
       final tempSink = _BytesBuilderSink(outputBuffer);
-      final doc = PdfDocument(writer: PdfWriter(tempSink));
+      final doc = CraftPdfDocument(writer: CraftPdfWriter(tempSink));
 
       // Add 5 pages
       for (var i = 0; i < 5; i++) {
-        await doc.addNewPage(PageSize.A4);
+        await doc.appendBlankPage(CraftPageSize.A4);
       }
-      expect(doc.getPagesTree().getNumberOfPages(), equals(5));
+      expect(doc.pageHierarchy().pageTotal(), equals(5));
 
       // Close and get bytes
       await doc.close();
       final pdfBytes = outputBuffer.toBytes();
 
       // Re-read and verify
-      final reader = PdfReader.fromBytes(pdfBytes);
-      final doc2 = PdfDocument(reader: reader);
+      final reader = CraftPdfReader.fromBytes(pdfBytes);
+      final doc2 = CraftPdfDocument(reader: reader);
       await doc2.load();
 
-      expect(doc2.getPagesTree().getNumberOfPages(), equals(5));
+      expect(doc2.pageHierarchy().pageTotal(), equals(5));
 
       // Verify each page can be accessed
       for (var i = 1; i <= 5; i++) {
-        final page = await doc2.getPage(i);
+        final page = await doc2.pageAt(i);
         expect(page, isNotNull, reason: 'Page $i should not be null');
       }
     });
@@ -69,9 +69,9 @@ void main() {
       // Create a simple PDF
       final outputBuffer = BytesBuilder();
       final tempSink = _BytesBuilderSink(outputBuffer);
-      final doc = PdfDocument(writer: PdfWriter(tempSink));
-      await doc.addNewPage(PageSize.A4);
-      await doc.addNewPage(PageSize.A4);
+      final doc = CraftPdfDocument(writer: CraftPdfWriter(tempSink));
+      await doc.appendBlankPage(CraftPageSize.A4);
+      await doc.appendBlankPage(CraftPageSize.A4);
       await doc.close();
 
       final pdfBytes = outputBuffer.toBytes();

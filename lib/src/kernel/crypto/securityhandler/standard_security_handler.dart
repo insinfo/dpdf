@@ -1,19 +1,19 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/source/byte_utils.dart';
-import 'package:dpdf/src/kernel/crypto/digest_algorithms.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_encryption.dart';
-import 'package:dpdf/src/kernel/crypto/securityhandler/security_handler.dart';
-import 'package:dpdf/src/kernel/exceptions/kernel_exception_message_constant.dart';
-import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_literal.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
+import 'package:pdfcraft/src/io/source/byte_utils.dart';
+import 'package:pdfcraft/src/kernel/crypto/digest_algorithms.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_encryption.dart';
+import 'package:pdfcraft/src/kernel/crypto/securityhandler/security_handler.dart';
+import 'package:pdfcraft/src/kernel/exceptions/kernel_exception_message_constant.dart';
+import 'package:pdfcraft/src/kernel/exceptions/pdf_exception.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_literal.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
 
 /// Base class for standard security handlers.
-abstract class StandardSecurityHandler extends SecurityHandler {
+abstract class CraftStandardSecurityHandler extends CraftSecurityHandler {
   static const int permsMask1ForRevision2 = 0xffffffc0;
   static const int permsMask1ForRevision3OrGreater = 0xffffe0c0;
   static const int permsMask2 = 0xfffffffc;
@@ -24,48 +24,56 @@ abstract class StandardSecurityHandler extends SecurityHandler {
   int getPermissions() => permissions;
 
   /// Updates encryption dictionary with the security permissions provided.
-  void setPermissions(int permissions, PdfDictionary encryptionDictionary) {
+  void setPermissions(
+      int permissions, CraftPdfDictionary encryptionDictionary) {
     this.permissions = permissions;
-    encryptionDictionary.put(PdfName.p, PdfNumber.fromInt(permissions));
+    encryptionDictionary.put(
+        CraftPdfName.p, CraftPdfNumber.fromInt(permissions));
   }
 
   bool isUsedOwnerPassword() => usedOwnerPassword;
 
-  void setStandardHandlerDicEntries(PdfDictionary encryptionDictionary,
+  void setStandardHandlerDicEntries(CraftPdfDictionary encryptionDictionary,
       Uint8List userKey, Uint8List ownerKey) {
-    encryptionDictionary.put(PdfName.filter, PdfName.standard);
-    encryptionDictionary.put(PdfName.o, PdfLiteral.fromBytes(ownerKey));
-    encryptionDictionary.put(PdfName.u, PdfLiteral.fromBytes(userKey));
-    encryptionDictionary.put(PdfName.p, PdfNumber.fromInt(permissions));
+    encryptionDictionary.put(CraftPdfName.filter, CraftPdfName.standard);
+    encryptionDictionary.put(
+        CraftPdfName.o, CraftPdfLiteral.fromBytes(ownerKey));
+    encryptionDictionary.put(
+        CraftPdfName.u, CraftPdfLiteral.fromBytes(userKey));
+    encryptionDictionary.put(
+        CraftPdfName.p, CraftPdfNumber.fromInt(permissions));
   }
 
   Uint8List generateOwnerPasswordIfNullOrEmpty(Uint8List? ownerPassword) {
     if (ownerPassword == null || ownerPassword.isEmpty) {
       try {
-        final sha256 = DigestAlgorithms.getMessageDigest("SHA-256");
+        final sha256 = CraftDigestAlgorithms.getMessageDigest("SHA-256");
         ownerPassword =
-            sha256.digestWithInput(PdfEncryption.generateNewDocumentId());
+            sha256.digestWithInput(CraftPdfEncryption.generateNewDocumentId());
       } catch (e) {
-        throw PdfException(KernelExceptionMessageConstant.unknownPdfException,
+        throw CraftPdfException(
+            CraftKernelExceptionMessageConstant.unknownPdfException,
             cause: e);
       }
     }
     return ownerPassword;
   }
 
-  Uint8List getIsoBytes(PdfString string) {
-    return ByteUtils.getIsoBytes(string.getValue());
+  Uint8List getIsoBytes(CraftPdfString string) {
+    return CraftByteUtils.getIsoBytes(string.getValue());
   }
 
   bool equalsArray(Uint8List ar1, Uint8List ar2, int size) {
-    for (int k = 0; k < size; ++k) {
-      if (ar1[k] != ar2[k]) {
-        return false;
-      }
+    RangeError.checkValidRange(0, size, ar1.length);
+    RangeError.checkValidRange(0, size, ar2.length);
+    var mismatch = 0;
+    for (var offset = size; offset > 0;) {
+      offset -= 1;
+      mismatch |= ar1[offset] ^ ar2[offset];
     }
-    return true;
+    return mismatch == 0;
   }
 
-  void setSpecificHandlerDicEntries(PdfDictionary encryptionDictionary,
+  void setSpecificHandlerDicEntries(CraftPdfDictionary encryptionDictionary,
       bool encryptMetadata, bool embeddedFilesOnly) {}
 }

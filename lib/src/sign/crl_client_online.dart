@@ -1,13 +1,13 @@
-import 'dart:io';
+import '../platform/io.dart';
 import 'dart:typed_data';
 
 import 'certificate_util.dart';
-import 'i_crl_client.dart';
-import 'i_x509_certificate.dart';
-import 'package:dpdf/src/commons/_log_manager.dart';
+import 'crl_client.dart';
+import 'certificate_details.dart';
+import 'package:pdfcraft/src/commons/pdfcraft_log_manager.dart';
 
 /// An implementation of [ICrlClient] that fetches the CRL bytes from a URL.
-class CrlClientOnline implements ICrlClient {
+class CraftCrlClientOnline implements CraftCrlClient {
   static final _logger = LogManager.getLoggerByName('CrlClientOnline');
   final List<Uri> _urls = [];
   int _connectionTimeout = 10000; // 10 seconds default
@@ -15,10 +15,10 @@ class CrlClientOnline implements ICrlClient {
   /// Creates a CrlClientOnline instance.
   ///
   /// If [urls] or [chain] is provided, they are added to the list of URLs.
-  CrlClientOnline({
+  CraftCrlClientOnline({
     List<String>? urls,
     List<Uri>? uris,
-    List<IX509Certificate>? chain,
+    List<CertificateDetails>? chain,
   }) {
     if (urls != null) {
       for (final url in urls) {
@@ -33,7 +33,7 @@ class CrlClientOnline implements ICrlClient {
     if (chain != null) {
       for (final cert in chain) {
         _logger.logInfo("Checking certificate: ${cert.getSubjectDN()}");
-        final certUrls = CertificateUtil.getCRLURLs(cert);
+        final certUrls = CraftCertificateUtil.getCRLURLs(cert);
         for (final url in certUrls) {
           addUrlString(url);
         }
@@ -65,7 +65,7 @@ class CrlClientOnline implements ICrlClient {
 
   @override
   Future<List<Uint8List>?> getEncoded(
-      IX509Certificate? checkCert, String? url) async {
+      CertificateDetails? checkCert, String? url) async {
     if (checkCert == null) return null;
 
     final urlsToCheck = <Uri>[..._urls];
@@ -75,7 +75,7 @@ class CrlClientOnline implements ICrlClient {
       if (url != null) {
         urlsToCheck.add(Uri.parse(url));
       } else {
-        final certUrls = CertificateUtil.getCRLURLs(checkCert);
+        final certUrls = CraftCertificateUtil.getCRLURLs(checkCert);
         for (final u in certUrls) {
           try {
             final uri = Uri.parse(u);

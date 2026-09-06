@@ -1,24 +1,24 @@
 import 'dart:typed_data';
 
-import 'package:dpdf/src/kernel/crypto/aes_cipher.dart';
-import 'package:dpdf/src/kernel/crypto/aes_decryptor.dart';
-import 'package:dpdf/src/kernel/crypto/digest_algorithms.dart';
-import 'package:dpdf/src/kernel/crypto/i_decryptor.dart';
-import 'package:dpdf/src/kernel/crypto/iv_generator.dart';
-import 'package:dpdf/src/kernel/crypto/output_stream_aes_encryption.dart';
-import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
-import 'package:dpdf/src/kernel/crypto/securityhandler/standard_security_handler.dart';
-import 'package:dpdf/src/kernel/exceptions/kernel_exception_message_constant.dart';
-import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_boolean.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_version.dart';
+import 'package:pdfcraft/src/kernel/crypto/aes_cipher.dart';
+import 'package:pdfcraft/src/kernel/crypto/aes_decryptor.dart';
+import 'package:pdfcraft/src/kernel/crypto/digest_algorithms.dart';
+import 'package:pdfcraft/src/kernel/crypto/decryptor.dart';
+import 'package:pdfcraft/src/kernel/crypto/iv_generator.dart';
+import 'package:pdfcraft/src/kernel/crypto/output_stream_aes_encryption.dart';
+import 'package:pdfcraft/src/kernel/crypto/output_stream_encryption.dart';
+import 'package:pdfcraft/src/kernel/crypto/securityhandler/standard_security_handler.dart';
+import 'package:pdfcraft/src/kernel/exceptions/kernel_exception_message_constant.dart';
+import 'package:pdfcraft/src/kernel/exceptions/pdf_exception.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_boolean.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_version.dart';
 
 /// Standard security handler using AES-256 algorithm.
-class StandardHandlerUsingAes256 extends StandardSecurityHandler {
+class CraftStandardHandlerUsingAes256 extends CraftStandardSecurityHandler {
   static const int VALIDATION_SALT_OFFSET = 32;
   static const int KEY_SALT_OFFSET = 40;
   static const int SALT_LENGTH = 8;
@@ -26,34 +26,35 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
   bool _encryptMetadata = true;
   bool _isPdf2 = false;
 
-  StandardHandlerUsingAes256(
-      PdfDictionary encryptionDictionary,
+  CraftStandardHandlerUsingAes256(
+      CraftPdfDictionary encryptionDictionary,
       Uint8List? userPassword,
       Uint8List? ownerPassword,
       int permissions,
       bool encryptMetadata,
       bool embeddedFilesOnly,
-      PdfVersion? version) {
-    _isPdf2 = version != null && version.compareTo(PdfVersion.PDF_2_0) >= 0;
+      CraftPdfVersion? version) {
+    _isPdf2 =
+        version != null && version.compareTo(CraftPdfVersion.PDF_2_0) >= 0;
     _initKeyAndFillDictionary(encryptionDictionary, userPassword, ownerPassword,
         permissions, encryptMetadata, embeddedFilesOnly);
   }
 
-  StandardHandlerUsingAes256.read(
-      PdfDictionary encryptionDictionary, Uint8List password) {
+  CraftStandardHandlerUsingAes256.read(
+      CraftPdfDictionary encryptionDictionary, Uint8List password) {
     // Intentionally left empty or private, essentially disabled.
     // Ideally we should remove it, but to keep 'read' logic we make a static method.
     throw UnimplementedError("Use fromDictionary instead");
   }
 
-  static Future<StandardHandlerUsingAes256> fromDictionary(
-      PdfDictionary encryptionDictionary, Uint8List password) async {
-    final handler = StandardHandlerUsingAes256._internal();
+  static Future<CraftStandardHandlerUsingAes256> fromDictionary(
+      CraftPdfDictionary encryptionDictionary, Uint8List password) async {
+    final handler = CraftStandardHandlerUsingAes256._internal();
     await handler._initKeyAndReadDictionary(encryptionDictionary, password);
     return handler;
   }
 
-  StandardHandlerUsingAes256._internal() : super();
+  CraftStandardHandlerUsingAes256._internal() : super();
 
   bool isEncryptMetadata() => _encryptMetadata;
 
@@ -63,32 +64,35 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
   }
 
   @override
-  OutputStreamEncryption getEncryptionStream(dynamic os) {
-    return OutputStreamAesEncryption(os, nextObjectKey!, 0, nextObjectKeySize);
+  CraftOutputStreamEncryption getEncryptionStream(dynamic os) {
+    return CraftOutputStreamAesEncryption(
+        os, nextObjectKey!, 0, nextObjectKeySize);
   }
 
   @override
-  IDecryptor getDecryptor() {
-    return AesDecryptor(nextObjectKey!, 0, nextObjectKeySize);
+  CraftDecryptor getDecryptor() {
+    return CraftAesDecryptor(nextObjectKey!, 0, nextObjectKeySize);
   }
 
   @override
-  void setPermissions(int permissions, PdfDictionary encryptionDictionary) {
+  void setPermissions(
+      int permissions, CraftPdfDictionary encryptionDictionary) {
     super.setPermissions(permissions, encryptionDictionary);
     final aes256Perms = getAes256Perms(permissions, isEncryptMetadata());
-    encryptionDictionary.put(PdfName.perms, PdfString.fromBytes(aes256Perms));
+    encryptionDictionary.put(
+        CraftPdfName.perms, CraftPdfString.fromBytes(aes256Perms));
   }
 
   void _initKeyAndFillDictionary(
-      PdfDictionary encryptionDictionary,
+      CraftPdfDictionary encryptionDictionary,
       Uint8List? userPassword,
       Uint8List? ownerPassword,
       int permissions,
       bool encryptMetadata,
       bool embeddedFilesOnly) {
     ownerPassword = generateOwnerPasswordIfNullOrEmpty(ownerPassword);
-    permissions |= StandardSecurityHandler.permsMask1ForRevision3OrGreater;
-    permissions &= StandardSecurityHandler.permsMask2;
+    permissions |= CraftStandardSecurityHandler.permsMask1ForRevision3OrGreater;
+    permissions &= CraftStandardSecurityHandler.permsMask2;
 
     try {
       Uint8List up = userPassword ?? Uint8List(0);
@@ -100,9 +104,9 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
         op = op.sublist(0, 127);
       }
 
-      final userValAndKeySalt = IVGenerator.getIVLen(16);
-      final ownerValAndKeySalt = IVGenerator.getIVLen(16);
-      nextObjectKey = IVGenerator.getIVLen(32);
+      final userValAndKeySalt = CraftIVGenerator.getIVLen(16);
+      final ownerValAndKeySalt = CraftIVGenerator.getIVLen(16);
+      nextObjectKey = CraftIVGenerator.getIVLen(32);
       nextObjectKeySize = 32;
 
       // Algorithm 8.1
@@ -116,7 +120,7 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
       final userKeySalt = userValAndKeySalt.sublist(8, 16);
       final hashUPKey = computeHash(up, userKeySalt, null);
       final cipherUP =
-          AESCipher(true, hashUPKey, Uint8List(16), usePadding: false);
+          CraftAESCipher(true, hashUPKey, Uint8List(16), usePadding: false);
       final ueKey =
           cipherUP.processBlock(nextObjectKey!, 0, nextObjectKey!.length);
 
@@ -131,7 +135,7 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
       final ownerKeySalt = ownerValAndKeySalt.sublist(8, 16);
       final hashOPKey = computeHash(op, ownerKeySalt, userKey);
       final cipherOP =
-          AESCipher(true, hashOPKey, Uint8List(16), usePadding: false);
+          CraftAESCipher(true, hashOPKey, Uint8List(16), usePadding: false);
       final oeKey =
           cipherOP.processBlock(nextObjectKey!, 0, nextObjectKey!.length);
 
@@ -145,13 +149,14 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
       _setAES256DicEntries(encryptionDictionary, oeKey, ueKey, aes256Perms,
           encryptMetadata, embeddedFilesOnly);
     } catch (e) {
-      throw PdfException(KernelExceptionMessageConstant.unknownPdfException,
+      throw CraftPdfException(
+          CraftKernelExceptionMessageConstant.unknownPdfException,
           cause: e);
     }
   }
 
   Future<void> _initKeyAndReadDictionary(
-      PdfDictionary encryptionDictionary, Uint8List password) async {
+      CraftPdfDictionary encryptionDictionary, Uint8List password) async {
     try {
       Uint8List pw = password;
       if (pw.length > 127) {
@@ -160,17 +165,17 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
 
       _isPdf2 = await _checkIsPdf2(encryptionDictionary);
 
-      final oValue = _truncateArray(
-          getIsoBytes((await encryptionDictionary.getAsString(PdfName.o))!));
-      final uValue = _truncateArray(
-          getIsoBytes((await encryptionDictionary.getAsString(PdfName.u))!));
-      final oeValue =
-          getIsoBytes((await encryptionDictionary.getAsString(PdfName.oe))!);
-      final ueValue =
-          getIsoBytes((await encryptionDictionary.getAsString(PdfName.ue))!);
-      final perms =
-          getIsoBytes((await encryptionDictionary.getAsString(PdfName.perms))!);
-      final pValue = (await encryptionDictionary.getAsNumber(PdfName.p))!;
+      final oValue = _truncateArray(getIsoBytes(
+          (await encryptionDictionary.stringEntry(CraftPdfName.o))!));
+      final uValue = _truncateArray(getIsoBytes(
+          (await encryptionDictionary.stringEntry(CraftPdfName.u))!));
+      final oeValue = getIsoBytes(
+          (await encryptionDictionary.stringEntry(CraftPdfName.oe))!);
+      final ueValue = getIsoBytes(
+          (await encryptionDictionary.stringEntry(CraftPdfName.ue))!);
+      final perms = getIsoBytes(
+          (await encryptionDictionary.stringEntry(CraftPdfName.perms))!);
+      final pValue = (await encryptionDictionary.numberEntry(CraftPdfName.p))!;
       this.permissions = pValue.intValue();
 
       final oValSalt = oValue.sublist(
@@ -183,33 +188,33 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
             oValue.sublist(KEY_SALT_OFFSET, KEY_SALT_OFFSET + SALT_LENGTH);
         final hashOK = computeHash(pw, oKeySalt, uValue);
         final cipherOK =
-            AESCipher(false, hashOK, Uint8List(16), usePadding: false);
+            CraftAESCipher(false, hashOK, Uint8List(16), usePadding: false);
         nextObjectKey = cipherOK.processBlock(oeValue, 0, oeValue.length);
       } else {
         final uValSalt = uValue.sublist(
             VALIDATION_SALT_OFFSET, VALIDATION_SALT_OFFSET + SALT_LENGTH);
         final hashPU = computeHash(pw, uValSalt, null);
         if (!equalsArray(hashPU, uValue, 32)) {
-          throw BadPasswordException(
-              KernelExceptionMessageConstant.badUserPassword);
+          throw CraftBadPasswordException(
+              CraftKernelExceptionMessageConstant.badUserPassword);
         }
         final uKeySalt =
             uValue.sublist(KEY_SALT_OFFSET, KEY_SALT_OFFSET + SALT_LENGTH);
         final hashUK = computeHash(pw, uKeySalt, null);
         final cipherUK =
-            AESCipher(false, hashUK, Uint8List(16), usePadding: false);
+            CraftAESCipher(false, hashUK, Uint8List(16), usePadding: false);
         nextObjectKey = cipherUK.processBlock(ueValue, 0, ueValue.length);
       }
 
       nextObjectKeySize = 32;
-      final cipherPerms =
-          AESCipher(false, nextObjectKey!, Uint8List(16), usePadding: false);
+      final cipherPerms = CraftAESCipher(false, nextObjectKey!, Uint8List(16),
+          usePadding: false);
       final decPerms = cipherPerms.processBlock(perms, 0, perms.length);
 
       if (decPerms[9] != 0x61 || decPerms[10] != 0x64 || decPerms[11] != 0x62) {
         // 'adb'
-        throw BadPasswordException(
-            KernelExceptionMessageConstant.badUserPassword);
+        throw CraftBadPasswordException(
+            CraftKernelExceptionMessageConstant.badUserPassword);
       }
 
       final permissionsDecoded = (decPerms[0] & 0xff) |
@@ -220,16 +225,17 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
 
       this.permissions = permissionsDecoded;
       this._encryptMetadata = encryptMetadata;
-    } on BadPasswordException {
+    } on CraftBadPasswordException {
       rethrow;
     } catch (e) {
-      throw PdfException(KernelExceptionMessageConstant.unknownPdfException,
+      throw CraftPdfException(
+          CraftKernelExceptionMessageConstant.unknownPdfException,
           cause: e);
     }
   }
 
   Uint8List getAes256Perms(int permissions, bool encryptMetadata) {
-    final permsp = IVGenerator.getIVLen(16);
+    final permsp = CraftIVGenerator.getIVLen(16);
     permsp[0] = permissions & 0xFF;
     permsp[1] = (permissions >> 8) & 0xFF;
     permsp[2] = (permissions >> 16) & 0xFF;
@@ -244,12 +250,12 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
     permsp[11] = 0x62; // 'b'
 
     final cipher =
-        AESCipher(true, nextObjectKey!, Uint8List(16), usePadding: false);
+        CraftAESCipher(true, nextObjectKey!, Uint8List(16), usePadding: false);
     return cipher.processBlock(permsp, 0, permsp.length);
   }
 
   void _setAES256DicEntries(
-      PdfDictionary encryptionDictionary,
+      CraftPdfDictionary encryptionDictionary,
       Uint8List oeKey,
       Uint8List ueKey,
       Uint8List aes256Perms,
@@ -257,43 +263,45 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
       bool embeddedFilesOnly) {
     int version = 5;
     int revision = _isPdf2 ? 6 : 5;
-    PdfName cryptoFilter = PdfName.aesV3;
+    CraftPdfName cryptoFilter = CraftPdfName.aesV3;
 
-    encryptionDictionary.put(PdfName.oe, PdfString.fromBytes(oeKey));
-    encryptionDictionary.put(PdfName.ue, PdfString.fromBytes(ueKey));
-    encryptionDictionary.put(PdfName.perms, PdfString.fromBytes(aes256Perms));
-    encryptionDictionary.put(PdfName.r, PdfNumber.fromInt(revision));
-    encryptionDictionary.put(PdfName.v, PdfNumber.fromInt(version));
+    encryptionDictionary.put(CraftPdfName.oe, CraftPdfString.fromBytes(oeKey));
+    encryptionDictionary.put(CraftPdfName.ue, CraftPdfString.fromBytes(ueKey));
+    encryptionDictionary.put(
+        CraftPdfName.perms, CraftPdfString.fromBytes(aes256Perms));
+    encryptionDictionary.put(CraftPdfName.r, CraftPdfNumber.fromInt(revision));
+    encryptionDictionary.put(CraftPdfName.v, CraftPdfNumber.fromInt(version));
 
-    final stdcf = PdfDictionary();
-    stdcf.put(PdfName.length, PdfNumber.fromInt(32));
+    final stdcf = CraftPdfDictionary();
+    stdcf.put(CraftPdfName.length, CraftPdfNumber.fromInt(32));
     if (!encryptMetadata) {
-      encryptionDictionary.put(PdfName.encryptMetadata, PdfBoolean.pdfFalse);
+      encryptionDictionary.put(
+          CraftPdfName.encryptMetadata, CraftPdfBoolean.pdfFalse);
     }
     if (embeddedFilesOnly) {
-      stdcf.put(PdfName.authEvent, PdfName.efOpen);
-      encryptionDictionary.put(PdfName.eff, PdfName.stdCF);
-      encryptionDictionary.put(PdfName.strF, PdfName.identity);
-      encryptionDictionary.put(PdfName.stmF, PdfName.identity);
+      stdcf.put(CraftPdfName.authEvent, CraftPdfName.efOpen);
+      encryptionDictionary.put(CraftPdfName.eff, CraftPdfName.stdCF);
+      encryptionDictionary.put(CraftPdfName.strF, CraftPdfName.identity);
+      encryptionDictionary.put(CraftPdfName.stmF, CraftPdfName.identity);
     } else {
-      stdcf.put(PdfName.authEvent, PdfName.docOpen);
-      encryptionDictionary.put(PdfName.strF, PdfName.stdCF);
-      encryptionDictionary.put(PdfName.stmF, PdfName.stdCF);
+      stdcf.put(CraftPdfName.authEvent, CraftPdfName.docOpen);
+      encryptionDictionary.put(CraftPdfName.strF, CraftPdfName.stdCF);
+      encryptionDictionary.put(CraftPdfName.stmF, CraftPdfName.stdCF);
     }
-    stdcf.put(PdfName.cfm, cryptoFilter);
-    final cf = PdfDictionary();
-    cf.put(PdfName.stdCF, stdcf);
-    encryptionDictionary.put(PdfName.cf, cf);
+    stdcf.put(CraftPdfName.cfm, cryptoFilter);
+    final cf = CraftPdfDictionary();
+    cf.put(CraftPdfName.stdCF, stdcf);
+    encryptionDictionary.put(CraftPdfName.cf, cf);
   }
 
-  Future<bool> _checkIsPdf2(PdfDictionary encryptionDictionary) async {
-    final r = await encryptionDictionary.getAsNumber(PdfName.r);
+  Future<bool> _checkIsPdf2(CraftPdfDictionary encryptionDictionary) async {
+    final r = await encryptionDictionary.numberEntry(CraftPdfName.r);
     return r != null && r.intValue() == 6;
   }
 
   Uint8List computeHash(
       Uint8List password, Uint8List salt, Uint8List? userKey) {
-    final sha256 = DigestAlgorithms.getMessageDigest("SHA-256");
+    final sha256 = CraftDigestAlgorithms.getMessageDigest("SHA-256");
     sha256.updateAll(password);
     sha256.updateAll(salt);
     if (userKey != null) {
@@ -302,8 +310,8 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
     Uint8List k = sha256.digest();
 
     if (_isPdf2) {
-      final sha384 = DigestAlgorithms.getMessageDigest("SHA-384");
-      final sha512 = DigestAlgorithms.getMessageDigest("SHA-512");
+      final sha384 = CraftDigestAlgorithms.getMessageDigest("SHA-384");
+      final sha512 = CraftDigestAlgorithms.getMessageDigest("SHA-512");
       int userKeyLen = userKey?.length ?? 0;
       int passAndUserKeyLen = password.length + userKeyLen;
       int roundNum = 0;
@@ -325,7 +333,7 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
         // b) AES-128-CBC encryption with key from first 16 bytes of k and IV from next 16 bytes.
         final aesKey = k.sublist(0, 16);
         final aesIv = k.sublist(16, 32);
-        final cipher = AESCipher(true, aesKey, aesIv, usePadding: false);
+        final cipher = CraftAESCipher(true, aesKey, aesIv, usePadding: false);
         final e = cipher.processBlock(k1, 0, k1.length);
 
         // c) Choose SHA based on remainder of e[0..15] % 3
@@ -364,7 +372,7 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
     if (array.length > 48) {
       for (int i = 48; i < array.length; i++) {
         if (array[i] != 0) {
-          throw PdfException(KernelExceptionMessageConstant
+          throw CraftPdfException(CraftKernelExceptionMessageConstant
               .alreadyClosed); // Using alreadyClosed as generic error for now
         }
       }

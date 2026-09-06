@@ -11,42 +11,45 @@ import '../pdf_name_tree.dart';
 import 'pdf_mcr.dart';
 import 'pdf_namespace.dart';
 
-class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implements IStructureNode {
-  PdfDocument? _document;
+class CraftPdfStructTreeRoot extends CraftPdfObjectWrapper<CraftPdfDictionary>
+    implements CraftStructureNode {
+  CraftPdfDocument? _document;
 
-  PdfStructTreeRoot(PdfDictionary dictionary) : super(dictionary);
+  CraftPdfStructTreeRoot(CraftPdfDictionary dictionary) : super(dictionary);
 
-  PdfStructTreeRoot.withDocument(PdfDocument document) : super(PdfDictionary()) {
+  CraftPdfStructTreeRoot.withDocument(CraftPdfDocument document)
+      : super(CraftPdfDictionary()) {
     _document = document;
-    getPdfObject().put(PdfName.type, PdfName.structTreeRoot);
-    getPdfObject().makeIndirect(document);
+    pdfRepresentation().put(CraftPdfName.type, CraftPdfName.structTreeRoot);
+    pdfRepresentation().attachToDocument(document);
   }
 
-  void setDocument(PdfDocument doc) {
+  void setDocument(CraftPdfDocument doc) {
     _document = doc;
   }
 
-  PdfDocument? getDocument() => _document;
+  CraftPdfDocument? getDocument() => _document;
 
-  Future<void> addKid(PdfStructElem structElem, [int index = -1]) async {
+  Future<void> addKid(CraftPdfStructElem structElem, [int index = -1]) async {
     final kids = await getKidsObject();
     if (index == -1) {
-      kids.add(structElem.getPdfObject());
+      kids.add(structElem.pdfRepresentation());
     } else {
-      kids.insert(index, structElem.getPdfObject());
+      kids.insert(index, structElem.pdfRepresentation());
     }
-    structElem.getPdfObject().put(PdfName.p, getPdfObject().getIndirectReference() ?? getPdfObject());
-    setModified();
+    structElem.pdfRepresentation().put(CraftPdfName.p,
+        pdfRepresentation().indirectHandle() ?? pdfRepresentation());
+    markChanged();
   }
 
   @override
-  Future<PdfName?> getRole() async => null;
+  Future<CraftPdfName?> getRole() async => null;
 
-  Future<List<PdfObject>> getKids() async {
-    final k = await getPdfObject().get(PdfName.k);
+  Future<List<CraftPdfObject>> getKids() async {
+    final k = await pdfRepresentation().get(CraftPdfName.k);
     if (k == null) return [];
-    if (k is PdfArray) {
-      final list = <PdfObject>[];
+    if (k is CraftPdfArray) {
+      final list = <CraftPdfObject>[];
       for (int i = 0; i < k.size(); i++) {
         final kid = await k.get(i, true);
         if (kid != null) list.add(kid);
@@ -56,74 +59,78 @@ class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implements IStru
     return [k];
   }
 
-  Future<PdfArray> getKidsObject() async {
-    var k = await getPdfObject().getAsArray(PdfName.k);
+  Future<CraftPdfArray> getKidsObject() async {
+    var k = await pdfRepresentation().arrayEntry(CraftPdfName.k);
     if (k == null) {
-      k = PdfArray();
-      final kObj = await getPdfObject().get(PdfName.k);
+      k = CraftPdfArray();
+      final kObj = await pdfRepresentation().get(CraftPdfName.k);
       if (kObj != null) {
         k.add(kObj);
       }
-      getPdfObject().put(PdfName.k, k);
-      setModified();
+      pdfRepresentation().put(CraftPdfName.k, k);
+      markChanged();
     }
     return k;
   }
 
-  Future<PdfDictionary> getRoleMap() async {
-    var roleMap = await getPdfObject().getAsDictionary(PdfName.roleMap);
+  Future<CraftPdfDictionary> getRoleMap() async {
+    var roleMap =
+        await pdfRepresentation().dictionaryEntry(CraftPdfName.roleMap);
     if (roleMap == null) {
-      roleMap = PdfDictionary();
-      getPdfObject().put(PdfName.roleMap, roleMap);
-      setModified();
+      roleMap = CraftPdfDictionary();
+      pdfRepresentation().put(CraftPdfName.roleMap, roleMap);
+      markChanged();
     }
     return roleMap;
   }
 
   Future<void> addRoleMapping(String fromRole, String toRole) async {
     final roleMap = await getRoleMap();
-    roleMap.put(PdfName(fromRole), PdfName(toRole));
-    setModified();
+    roleMap.put(CraftPdfName(fromRole), CraftPdfName(toRole));
+    markChanged();
   }
 
-  Future<List<PdfNamespace>> getNamespaces() async {
-    final namespacesArray = await getPdfObject().getAsArray(PdfName.namespaces);
+  Future<List<CraftPdfNamespace>> getNamespaces() async {
+    final namespacesArray =
+        await pdfRepresentation().arrayEntry(CraftPdfName.namespaces);
     if (namespacesArray == null) return [];
-    
-    final namespacesList = <PdfNamespace>[];
+
+    final namespacesList = <CraftPdfNamespace>[];
     for (int i = 0; i < namespacesArray.size(); i++) {
-        final nsDict = await namespacesArray.getAsDictionary(i);
-        if (nsDict != null) {
-            namespacesList.add(PdfNamespace(nsDict));
-        }
+      final nsDict = await namespacesArray.dictionaryEntry(i);
+      if (nsDict != null) {
+        namespacesList.add(CraftPdfNamespace(nsDict));
+      }
     }
     return namespacesList;
   }
 
-  Future<void> addNamespace(PdfNamespace namespace) async {
+  Future<void> addNamespace(CraftPdfNamespace namespace) async {
     final namespacesArray = await getNamespacesObject();
-    namespacesArray.add(namespace.getPdfObject());
-    setModified();
+    namespacesArray.add(namespace.pdfRepresentation());
+    markChanged();
   }
 
-  Future<PdfArray> getNamespacesObject() async {
-    var namespacesArray = await getPdfObject().getAsArray(PdfName.namespaces);
+  Future<CraftPdfArray> getNamespacesObject() async {
+    var namespacesArray =
+        await pdfRepresentation().arrayEntry(CraftPdfName.namespaces);
     if (namespacesArray == null) {
-        namespacesArray = PdfArray();
-        getPdfObject().put(PdfName.namespaces, namespacesArray);
-        setModified();
+      namespacesArray = CraftPdfArray();
+      pdfRepresentation().put(CraftPdfName.namespaces, namespacesArray);
+      markChanged();
     }
     return namespacesArray;
   }
 
-  Future<PdfNumTree> getParentTree() async {
-    final catalog = _document?.getCatalog();
+  Future<CraftPdfNumTree> getParentTree() async {
+    final catalog = _document?.rootCatalog();
     if (catalog == null) throw StateError('Document or Catalog is null');
-    return PdfNumTree(catalog, PdfName.parentTree);
+    return CraftPdfNumTree(catalog, CraftPdfName.parentTree);
   }
 
   Future<int> getParentTreeNextKey() async {
-    final nextKeyObj = await getPdfObject().getAsNumber(PdfName.parentTreeNextKey);
+    final nextKeyObj =
+        await pdfRepresentation().numberEntry(CraftPdfName.parentTreeNextKey);
     if (nextKeyObj != null) {
       return nextKeyObj.intValue();
     }
@@ -137,36 +144,37 @@ class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implements IStru
     return maxKey + 1;
   }
 
-  PdfNameTree getIdTree() {
+  CraftPdfNameTree getIdTree() {
     if (_document == null) throw StateError('Document is null');
-    return PdfNameTree(_document!.getCatalog(), PdfName.idTree);
+    return CraftPdfNameTree(_document!.rootCatalog(), CraftPdfName.idTree);
   }
 
-  Future<List<PdfMcr>?> getPageMarkedContentReferences(PdfPage page) async {
+  Future<List<CraftPdfMcr>?> getPageMarkedContentReferences(
+      CraftPdfPage page) async {
     final structParents = await page.getStructParents();
     if (structParents == null) return null;
-    
+
     final parentTree = await getParentTree();
     final parentObj = await parentTree.get(structParents);
     if (parentObj == null) return null;
-    
-    final mcrs = <PdfMcr>[];
-    if (parentObj is PdfArray) {
-        for (int i = 0; i < parentObj.size(); i++) {
-            final kid = await parentObj.get(i, true);
-            if (kid is PdfDictionary) {
-                final mcr = await PdfMcr.fromDictionary(kid, null);
-                if (mcr != null) mcrs.add(mcr);
-            }
+
+    final mcrs = <CraftPdfMcr>[];
+    if (parentObj is CraftPdfArray) {
+      for (int i = 0; i < parentObj.size(); i++) {
+        final kid = await parentObj.get(i, true);
+        if (kid is CraftPdfDictionary) {
+          final mcr = await CraftPdfMcr.fromDictionary(kid, null);
+          if (mcr != null) mcrs.add(mcr);
         }
-    } else if (parentObj is PdfDictionary) {
-        final mcr = await PdfMcr.fromDictionary(parentObj, null);
-        if (mcr != null) mcrs.add(mcr);
+      }
+    } else if (parentObj is CraftPdfDictionary) {
+      final mcr = await CraftPdfMcr.fromDictionary(parentObj, null);
+      if (mcr != null) mcrs.add(mcr);
     }
     return mcrs.isEmpty ? null : mcrs;
   }
 
-  Future<int> getNextMcidForPage(PdfPage page) async {
+  Future<int> getNextMcidForPage(CraftPdfPage page) async {
     final mcrs = await getPageMarkedContentReferences(page);
     if (mcrs == null || mcrs.isEmpty) {
       return 0;
@@ -181,10 +189,10 @@ class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary> implements IStru
     return maxMcid + 1;
   }
 
-  Future<void> move(PdfPage page, int insertBefore) async {
-     // TODO: Implement structure tree move logic (StructureTreeCopier)
+  Future<void> move(CraftPdfPage page, int insertBefore) async {
+    // TODO: Implement structure tree move logic (StructureTreeCopier)
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => true;
+  bool requiresIndirectStorage() => true;
 }

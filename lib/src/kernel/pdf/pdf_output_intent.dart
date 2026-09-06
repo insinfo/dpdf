@@ -5,37 +5,38 @@ import 'pdf_stream.dart';
 import 'pdf_object_wrapper.dart';
 
 /// Represents a PDF Output Intent.
-class PdfOutputIntent extends PdfObjectWrapper<PdfDictionary> {
-  PdfOutputIntent(PdfDictionary pdfObject) : super(pdfObject);
+class CraftPdfOutputIntent extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+  CraftPdfOutputIntent(CraftPdfDictionary pdfObject) : super(pdfObject);
 
-  factory PdfOutputIntent.create(
+  factory CraftPdfOutputIntent.create(
     String outputConditionIdentifier,
     String? outputCondition,
     String? registryName,
     String? info,
-    PdfStream? destOutputProfile,
+    CraftPdfStream? destOutputProfile,
   ) {
-    final dict = PdfDictionary();
-    dict.put(PdfName.type, PdfName.outputIntent);
-    dict.put(PdfName.s, PdfName.gts_pdfa1);
-    dict.put(PdfName.outputConditionIdentifier, PdfString(outputConditionIdentifier));
+    final dict = CraftPdfDictionary();
+    dict.put(CraftPdfName.type, CraftPdfName.outputIntent);
+    dict.put(CraftPdfName.s, CraftPdfName.gts_pdfa1);
+    dict.put(CraftPdfName.outputConditionIdentifier,
+        CraftPdfString(outputConditionIdentifier));
 
     if (outputCondition != null) {
-      dict.put(PdfName.outputCondition, PdfString(outputCondition));
+      dict.put(CraftPdfName.outputCondition, CraftPdfString(outputCondition));
     }
     if (registryName != null) {
-      dict.put(PdfName.registryName, PdfString(registryName));
+      dict.put(CraftPdfName.registryName, CraftPdfString(registryName));
     }
     if (info != null) {
-      dict.put(PdfName.intern('Info'), PdfString(info));
+      dict.put(CraftPdfName.intern('Info'), CraftPdfString(info));
     }
     if (destOutputProfile != null) {
-      dict.put(PdfName.destOutputProfile, destOutputProfile);
+      dict.put(CraftPdfName.destOutputProfile, destOutputProfile);
     }
 
-    return PdfOutputIntent(dict);
+    return CraftPdfOutputIntent(dict);
   }
 
   @override
-  bool isWrappedObjectMustBeIndirect() => true;
+  bool requiresIndirectStorage() => true;
 }

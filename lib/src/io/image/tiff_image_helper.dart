@@ -1,67 +1,67 @@
-import 'dart:io';
+import '../../platform/compression.dart';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:dpdf/src/io/codec/ccitt_g4_encoder.dart';
-import 'package:dpdf/src/io/codec/tiff_constants.dart';
-import 'package:dpdf/src/io/codec/tiff_directory.dart';
-import 'package:dpdf/src/io/codec/tiff_fax_decoder.dart';
-import 'package:dpdf/src/io/codec/tiff_field.dart';
-import 'package:dpdf/src/io/codec/tiff_lzw_decoder.dart';
-import 'package:dpdf/src/io/colors/icc_profile.dart';
-import 'package:dpdf/src/io/exceptions/io_exception.dart';
-import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
-import 'package:dpdf/src/io/font/pdf_encodings.dart';
-import 'package:dpdf/src/io/image/image_data.dart';
-import 'package:dpdf/src/io/image/image_data_factory.dart';
-import 'package:dpdf/src/io/image/jpeg_image_helper.dart';
-import 'package:dpdf/src/io/image/raw_image_data.dart';
-import 'package:dpdf/src/io/image/raw_image_helper.dart';
-import 'package:dpdf/src/io/image/tiff_image_data.dart';
-import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
-import 'package:dpdf/src/layout/properties/image_type.dart';
+import 'package:pdfcraft/src/io/codec/ccitt_g4_encoder.dart';
+import 'package:pdfcraft/src/io/codec/tiff_constants.dart';
+import 'package:pdfcraft/src/io/codec/tiff_directory.dart';
+import 'package:pdfcraft/src/io/codec/tiff_fax_decoder.dart';
+import 'package:pdfcraft/src/io/codec/tiff_field.dart';
+import 'package:pdfcraft/src/io/codec/tiff_lzw_decoder.dart';
+import 'package:pdfcraft/src/io/colors/icc_profile.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:pdfcraft/src/io/font/pdf_encodings.dart';
+import 'package:pdfcraft/src/io/image/image_data.dart';
+import 'package:pdfcraft/src/io/image/image_data_factory.dart';
+import 'package:pdfcraft/src/io/image/jpeg_image_helper.dart';
+import 'package:pdfcraft/src/io/image/raw_image_data.dart';
+import 'package:pdfcraft/src/io/image/raw_image_helper.dart';
+import 'package:pdfcraft/src/io/image/tiff_image_data.dart';
+import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
+import 'package:pdfcraft/src/layout/properties/image_type.dart';
 
 class _TiffParameters {
-  TiffImageData image;
+  CraftTiffImageData image;
   bool jpegProcessing = false;
   Map<String, Object>? additional;
 
   _TiffParameters(this.image);
 }
 
-class TiffImageHelper {
-  static void processImage(ImageData image) {
-    if (image.getOriginalType() != ImageType.TIFF) {
+class CraftTiffImageHelper {
+  static void processImage(CraftImageData image) {
+    if (image.getOriginalType() != CraftImageType.TIFF) {
       throw ArgumentError("TIFF image expected");
     }
     try {
       if (image.getData() == null) {
         // Handle loading data if not present
       }
-      final raf = RandomAccessFileOrArray(image.getData()!);
-      final tiff = _TiffParameters(image as TiffImageData);
+      final raf = CraftRandomAccessFileOrArray(image.getData()!);
+      final tiff = _TiffParameters(image as CraftTiffImageData);
       processTiffImage(raf, tiff);
       raf.close();
       if (!tiff.jpegProcessing) {
-        RawImageHelper.updateImageAttributes(tiff.image, tiff.additional);
+        CraftRawImageHelper.updateImageAttributes(tiff.image, tiff.additional);
       }
     } catch (e) {
-      throw IoException(IoExceptionMessageConstant.tiffImageException, e);
+      throw IoException(CraftIoExceptionMessageConstant.tiffImageException, e);
     }
   }
 
   static void processTiffImage(
-      RandomAccessFileOrArray s, _TiffParameters tiff) {
+      CraftRandomAccessFileOrArray s, _TiffParameters tiff) {
     bool recoverFromImageError = tiff.image.isRecoverFromImageError();
-    int page = tiff.image.getPage();
+    int page = tiff.image.pageAt();
     bool direct = tiff.image.isDirect();
     if (page < 1) {
-      throw IoException(IoExceptionMessageConstant.pageNumberMustBeGtEq1);
+      throw IoException(CraftIoExceptionMessageConstant.pageNumberMustBeGtEq1);
     }
     try {
       TiffDirectory dir = TiffDirectory(s, directory: page - 1);
       if (dir.isTagPresent(TiffConstants.tifftagTilewidth)) {
-        throw IoException(IoExceptionMessageConstant.tilesAreNotSupported);
+        throw IoException(CraftIoExceptionMessageConstant.tilesAreNotSupported);
       }
       int compression = TiffConstants.compressionNone;
       if (dir.isTagPresent(TiffConstants.tifftagCompression)) {
@@ -143,7 +143,7 @@ class TiffImageHelper {
 
       TiffField? fillOrderField = dir.getField(TiffConstants.tifftagFillorder);
       if (fillOrderField != null) {
-        fillOrder = fillOrderField.getAsInt(0);
+        fillOrder = fillOrderField.integerEntry(0);
       }
       // bool reverse = (fillOrder == TiffConstants.fillorderLsb2msb);
 
@@ -152,7 +152,7 @@ class TiffImageHelper {
         int photo =
             dir.getFieldAsLong(TiffConstants.tifftagPhotometric).toInt();
         if (photo == TiffConstants.photometricMinisblack) {
-          parameters |= RawImageData.ccittBlackis1;
+          parameters |= CraftRawImageData.ccittBlackis1;
         }
       }
 
@@ -160,28 +160,28 @@ class TiffImageHelper {
       switch (compression) {
         case TiffConstants.compressionCcittrlew:
         case TiffConstants.compressionCcittrle:
-          imagecomp = RawImageData.ccittg31d;
-          parameters |=
-              RawImageData.ccittEncodedbytealign | RawImageData.ccittEndofblock;
+          imagecomp = CraftRawImageData.ccittg31d;
+          parameters |= CraftRawImageData.ccittEncodedbytealign |
+              CraftRawImageData.ccittEndofblock;
           break;
         case TiffConstants.compressionCcittfax3:
-          imagecomp = RawImageData.ccittg31d;
-          parameters |=
-              RawImageData.ccittEndofline | RawImageData.ccittEndofblock;
+          imagecomp = CraftRawImageData.ccittg31d;
+          parameters |= CraftRawImageData.ccittEndofline |
+              CraftRawImageData.ccittEndofblock;
           TiffField? t4OptionsField =
               dir.getField(TiffConstants.tifftagGroup3options);
           if (t4OptionsField != null) {
             tiffT4Options = t4OptionsField.getAsLong(0).toInt();
             if ((tiffT4Options & TiffConstants.group3opt2dencoding) != 0) {
-              imagecomp = RawImageData.ccittg32d;
+              imagecomp = CraftRawImageData.ccittg32d;
             }
             if ((tiffT4Options & TiffConstants.group3optFillbits) != 0) {
-              parameters |= RawImageData.ccittEncodedbytealign;
+              parameters |= CraftRawImageData.ccittEncodedbytealign;
             }
           }
           break;
         case TiffConstants.compressionCcittfax4:
-          imagecomp = RawImageData.ccittg4;
+          imagecomp = CraftRawImageData.ccittg4;
           TiffField? t6OptionsField =
               dir.getField(TiffConstants.tifftagGroup4options);
           if (t6OptionsField != null) {
@@ -194,21 +194,22 @@ class TiffImageHelper {
         Uint8List im = Uint8List(size![0]);
         s.seek(offset[0]);
         s.readFully(im);
-        RawImageHelper.updateRawImageParameters(
+        CraftRawImageHelper.updateRawImageParameters(
             tiff.image, w, h, 1, 1, im, null);
-        RawImageHelper.updateRawImageParametersCCITT(
+        CraftRawImageHelper.updateRawImageParametersCCITT(
             tiff.image, w, h, false, imagecomp, parameters, im, null);
         tiff.image.setInverted(true);
       } else {
         int rowsLeft = h;
-        var g4 = CCITTG4Encoder(w);
+        var g4 = CraftCCITTG4Encoder(w);
 
         for (int k = 0; k < offset.length; ++k) {
           Uint8List im = Uint8List(size![k]);
           s.seek(offset[k]);
           s.readFully(im);
           int height = math.min(rowsStrip, rowsLeft);
-          TIFFFaxDecoder decoder = TIFFFaxDecoder(fillOrder, w, height);
+          CraftTIFFFaxDecoder decoder =
+              CraftTIFFFaxDecoder(fillOrder, w, height);
           decoder.setRecoverFromImageError(recoverFromImageError);
           Uint8List outBuf = Uint8List(((w + 7) ~/ 8) * height);
 
@@ -231,12 +232,12 @@ class TiffImageHelper {
                   im = Uint8List(size[0]);
                   s.seek(offset[0]);
                   s.readFully(im);
-                  RawImageHelper.updateRawImageParametersCCITT(
+                  CraftRawImageHelper.updateRawImageParametersCCITT(
                       tiff.image, w, h, false, imagecomp, parameters, im, null);
                   tiff.image.setInverted(true);
                   tiff.image.setDpi(dpiX, dpiY);
                   tiff.image.setXYRatio(xyRatio);
-                  if (rotation != 0) tiff.image.setRotation(rotation);
+                  if (rotation != 0) tiff.image.setRotationDegrees(rotation);
                   return;
                 }
               }
@@ -254,13 +255,13 @@ class TiffImageHelper {
           rowsLeft -= rowsStrip;
         }
         Uint8List g4pic = g4.close();
-        RawImageHelper.updateRawImageParametersCCITT(
+        CraftRawImageHelper.updateRawImageParametersCCITT(
             tiff.image,
             w,
             h,
             false,
-            RawImageData.ccittg4,
-            parameters & RawImageData.ccittBlackis1,
+            CraftRawImageData.ccittg4,
+            parameters & CraftRawImageData.ccittBlackis1,
             g4pic,
             null);
       }
@@ -269,7 +270,8 @@ class TiffImageHelper {
       if (dir.isTagPresent(TiffConstants.tifftagIccprofile)) {
         try {
           TiffField fd = dir.getField(TiffConstants.tifftagIccprofile)!;
-          IccProfile iccProf = IccProfile.getInstance(fd.getAsBytes());
+          CraftIccProfile iccProf =
+              CraftIccProfile.getInstance(fd.getAsBytes());
           if (iccProf.getNumComponents() == 1) {
             tiff.image.setProfile(iccProf);
           }
@@ -278,15 +280,15 @@ class TiffImageHelper {
         }
       }
       if (rotation != 0) {
-        tiff.image.setRotation(rotation);
+        tiff.image.setRotationDegrees(rotation);
       }
     } catch (e) {
-      throw IoException(IoExceptionMessageConstant.cannotReadTiffImage, e);
+      throw IoException(CraftIoExceptionMessageConstant.cannotReadTiffImage, e);
     }
   }
 
   static void processTiffImageColor(
-      TiffDirectory dir, RandomAccessFileOrArray s, _TiffParameters tiff) {
+      TiffDirectory dir, CraftRandomAccessFileOrArray s, _TiffParameters tiff) {
     try {
       int compression = TiffConstants.compressionNone;
       if (dir.isTagPresent(TiffConstants.tifftagCompression)) {
@@ -294,7 +296,7 @@ class TiffImageHelper {
             dir.getFieldAsLong(TiffConstants.tifftagCompression).toInt();
       }
       int predictor = 1;
-      TIFFLZWDecoder? lzwDecoder;
+      CraftTIFFLZWDecoder? lzwDecoder;
 
       switch (compression) {
         case TiffConstants.compressionNone:
@@ -307,7 +309,7 @@ class TiffImageHelper {
           break;
         default:
           throw IoException(
-              IoExceptionMessageConstant.compressionIsNotSupported);
+              CraftIoExceptionMessageConstant.compressionIsNotSupported);
       }
 
       int photometric =
@@ -323,7 +325,7 @@ class TiffImageHelper {
           if (compression != TiffConstants.compressionOjpeg &&
               compression != TiffConstants.compressionJpeg) {
             throw IoException(
-                IoExceptionMessageConstant.photometricIsNotSupported);
+                CraftIoExceptionMessageConstant.photometricIsNotSupported);
           }
           break;
       }
@@ -342,7 +344,7 @@ class TiffImageHelper {
           dir.getFieldAsLong(TiffConstants.tifftagPlanarconfig) ==
               TiffConstants.planarconfigSeparate) {
         throw IoException(
-            IoExceptionMessageConstant.planarImagesAreNotSupported);
+            CraftIoExceptionMessageConstant.planarImagesAreNotSupported);
       }
 
       int extraSamples = 0;
@@ -368,7 +370,7 @@ class TiffImageHelper {
           break;
         default:
           throw IoException(
-              IoExceptionMessageConstant.bitsPerSampleIsNotSupported);
+              CraftIoExceptionMessageConstant.bitsPerSampleIsNotSupported);
       }
 
       int h = dir.getFieldAsLong(TiffConstants.tifftagImagelength).toInt();
@@ -385,7 +387,7 @@ class TiffImageHelper {
 
       int fillOrder = 1;
       TiffField? fillOrderField = dir.getField(TiffConstants.tifftagFillorder);
-      if (fillOrderField != null) fillOrder = fillOrderField.getAsInt(0);
+      if (fillOrderField != null) fillOrder = fillOrderField.integerEntry(0);
       bool reverse = (fillOrder == TiffConstants.fillorderLsb2msb);
 
       int rowsStrip = h;
@@ -413,37 +415,37 @@ class TiffImageHelper {
         TiffField? predictorField =
             dir.getField(TiffConstants.tifftagPredictor);
         if (predictorField != null) {
-          predictor = predictorField.getAsInt(0);
+          predictor = predictorField.integerEntry(0);
           if (predictor != 1 && predictor != 2) {
-            throw IoException(
-                IoExceptionMessageConstant.illegalValueForPredictorInTiffFile);
+            throw IoException(CraftIoExceptionMessageConstant
+                .illegalValueForPredictorInTiffFile);
           }
           if (predictor == 2 && bitsPerSample != 8) {
-            throw IoException(IoExceptionMessageConstant
+            throw IoException(CraftIoExceptionMessageConstant
                 .bitSamplesAreNotSupportedForHorizontalDifferencingPredictor);
           }
         }
       }
 
       if (compression == TiffConstants.compressionLzw) {
-        lzwDecoder = TIFFLZWDecoder(w, predictor, samplePerPixel);
+        lzwDecoder = CraftTIFFLZWDecoder(w, predictor, samplePerPixel);
       }
 
       int rowsLeft = h;
       BytesBuilder stream = BytesBuilder();
       BytesBuilder mstream = BytesBuilder();
 
-      CCITTG4Encoder? g4;
+      CraftCCITTG4Encoder? g4;
       if (bitsPerSample == 1 &&
           samplePerPixel == 1 &&
           photometric != TiffConstants.photometricPalette) {
-        g4 = CCITTG4Encoder(w);
+        g4 = CraftCCITTG4Encoder(w);
       }
 
       if (compression == TiffConstants.compressionOjpeg) {
         if (!dir.isTagPresent(TiffConstants.tifftagJpegifoffset)) {
           throw IoException(
-              IoExceptionMessageConstant.missingTagsForOjpegCompression);
+              CraftIoExceptionMessageConstant.missingTagsForOjpegCompression);
         }
         int jpegOffset =
             dir.getFieldAsLong(TiffConstants.tifftagJpegifoffset).toInt();
@@ -458,12 +460,12 @@ class TiffImageHelper {
         s.seek(jpegOffset);
         s.readFully(jpeg);
         tiff.image.setData(jpeg);
-        tiff.image.setOriginalType(ImageType.JPEG);
-        JpegImageHelper.processImage(tiff.image);
+        tiff.image.setOriginalType(CraftImageType.JPEG);
+        CraftJpegImageHelper.processImage(tiff.image);
         tiff.jpegProcessing = true;
       } else if (compression == TiffConstants.compressionJpeg) {
         if (size!.length > 1) {
-          throw IoException(IoExceptionMessageConstant
+          throw IoException(CraftIoExceptionMessageConstant
               .compressionJpegIsOnlySupportedWithASingleStripThisImageHasStrips);
         }
         Uint8List jpeg = Uint8List(size[0]);
@@ -491,8 +493,8 @@ class TiffImageHelper {
           jpeg = combined.toBytes();
         }
         tiff.image.setData(jpeg);
-        tiff.image.setOriginalType(ImageType.JPEG);
-        JpegImageHelper.processImage(tiff.image);
+        tiff.image.setOriginalType(CraftImageType.JPEG);
+        CraftJpegImageHelper.processImage(tiff.image);
         tiff.jpegProcessing = true;
         if (photometric == TiffConstants.photometricRgb) {
           tiff.image.setColorTransform(0);
@@ -509,7 +511,7 @@ class TiffImageHelper {
                 ((w * bitsPerSample * samplePerPixel + 7) ~/ 8) * height);
           }
           if (reverse) {
-            TIFFFaxDecoder.reverseBits(im);
+            CraftTIFFFaxDecoder.reverseBits(im);
           }
           switch (compression) {
             case TiffConstants.compressionDeflate:
@@ -549,27 +551,27 @@ class TiffImageHelper {
         if (bitsPerSample == 1 &&
             samplePerPixel == 1 &&
             photometric != TiffConstants.photometricPalette) {
-          RawImageHelper.updateRawImageParametersCCITT(
+          CraftRawImageHelper.updateRawImageParametersCCITT(
               tiff.image,
               w,
               h,
               false,
-              RawImageData.ccittg4,
+              CraftRawImageData.ccittg4,
               photometric == TiffConstants.photometricMinisblack
-                  ? RawImageData.ccittBlackis1
+                  ? CraftRawImageData.ccittBlackis1
                   : 0,
               g4!.close(),
               null);
         } else {
           Uint8List compressedData =
               Uint8List.fromList(ZLibEncoder().convert(stream.toBytes()));
-          RawImageHelper.updateRawImageParametersBasic(tiff.image, w, h,
+          CraftRawImageHelper.updateRawImageParametersBasic(tiff.image, w, h,
               samplePerPixel - extraSamples, bitsPerSample, compressedData);
           tiff.image.setDeflated(true);
           if (extraSamples > 0) {
-            RawImageData mimg =
-                ImageDataFactory.createRawImage(null) as RawImageData;
-            RawImageHelper.updateRawImageParametersBasic(
+            CraftRawImageData mimg =
+                CraftImageDataFactory.createRawImage(null) as CraftRawImageData;
+            CraftRawImageHelper.updateRawImageParametersBasic(
                 mimg,
                 w,
                 h,
@@ -589,7 +591,8 @@ class TiffImageHelper {
         if (dir.isTagPresent(TiffConstants.tifftagIccprofile)) {
           try {
             TiffField fd = dir.getField(TiffConstants.tifftagIccprofile)!;
-            IccProfile iccProf = IccProfile.getInstance(fd.getAsBytes());
+            CraftIccProfile iccProf =
+                CraftIccProfile.getInstance(fd.getAsBytes());
             if (samplePerPixel - extraSamples == iccProf.getNumComponents()) {
               tiff.image.setProfile(iccProf);
             }
@@ -600,37 +603,22 @@ class TiffImageHelper {
         if (dir.isTagPresent(TiffConstants.tifftagColormap)) {
           TiffField fd = dir.getField(TiffConstants.tifftagColormap)!;
           List<int> rgb = fd.getAsChars();
-          Uint8List palette = Uint8List(rgb.length);
-          int gColor = rgb.length ~/ 3;
-          int bColor = gColor * 2;
-          bool colormapBroken = true;
-
-          for (int k = 0; k < gColor; ++k) {
-            palette[k * 3] = (rgb[k] >> 8);
-            palette[k * 3 + 1] = (rgb[k + gColor] >> 8);
-            palette[k * 3 + 2] = (rgb[k + bColor] >> 8);
-          }
-
-          for (int k = 0; k < palette.length; ++k) {
-            if (palette[k] != 0) {
-              colormapBroken = false;
-              break;
-            }
-          }
-
-          if (colormapBroken) {
-            for (int k = 0; k < gColor; ++k) {
-              palette[k * 3] = rgb[k] & 0xFF;
-              palette[k * 3 + 1] = rgb[k + gColor] & 0xFF;
-              palette[k * 3 + 2] = rgb[k + bColor] & 0xFF;
+          final entries = rgb.length ~/ 3;
+          final shift = rgb.any((sample) => sample > 255) ? 8 : 0;
+          final palette = Uint8List(rgb.length);
+          for (var channel = 0; channel < 3; channel++) {
+            final source = channel * entries;
+            for (var index = 0; index < entries; index++) {
+              palette[index * 3 + channel] =
+                  (rgb[source + index] >> shift) & 255;
             }
           }
 
           List<Object> indexed = [];
           indexed.add("/Indexed");
           indexed.add("/DeviceRGB");
-          indexed.add(gColor - 1);
-          indexed.add(PdfEncodings.convertToString(palette, null));
+          indexed.add(entries - 1);
+          indexed.add(CraftPdfEncodings.convertToString(palette, null));
 
           tiff.additional = {"ColorSpace": indexed};
         }
@@ -639,10 +627,11 @@ class TiffImageHelper {
         tiff.image.setInverted(true);
       }
       if (rotation != 0) {
-        tiff.image.setRotation(rotation);
+        tiff.image.setRotationDegrees(rotation);
       }
     } catch (e) {
-      throw IoException(IoExceptionMessageConstant.cannotGetTiffImageColor, e);
+      throw IoException(
+          CraftIoExceptionMessageConstant.cannotGetTiffImageColor, e);
     }
   }
 
@@ -703,13 +692,16 @@ class TiffImageHelper {
   static void _applyPredictor(
       Uint8List uncompData, int predictor, int w, int h, int samplesPerPixel) {
     if (predictor != 2) return;
-    int count;
-    for (int j = 0; j < h; j++) {
-      count = samplesPerPixel * (j * w + 1);
-      for (int i = samplesPerPixel; i < w * samplesPerPixel; i++) {
-        uncompData[count] =
-            (uncompData[count] + uncompData[count - samplesPerPixel]) & 0xFF;
-        count++;
+    final stride = w * samplesPerPixel;
+    for (var channel = 0; channel < samplesPerPixel; channel++) {
+      for (var row = 0; row < h; row++) {
+        var sum = 0;
+        for (var sample = row * stride + channel;
+            sample < (row + 1) * stride;
+            sample += samplesPerPixel) {
+          sum = (sum + uncompData[sample]) & 255;
+          uncompData[sample] = sum;
+        }
       }
     }
   }
@@ -722,21 +714,28 @@ class TiffImageHelper {
       int bitsPerSample,
       int width,
       int height) {
-    if (bitsPerSample == 8) {
-      Uint8List mask = Uint8List(width * height);
-      int mptr = 0;
-      int optr = 0;
-      int total = width * height * samplePerPixel;
-      for (int k = 0; k < total; k += samplePerPixel) {
-        for (int s = 0; s < samplePerPixel - 1; ++s) {
-          outBuf[optr++] = outBuf[k + s];
-        }
-        mask[mptr++] = outBuf[k + samplePerPixel - 1];
-      }
-      zip.add(outBuf.sublist(0, optr));
-      mzip.add(mask.sublist(0, mptr));
-    } else {
-      throw IoException(IoExceptionMessageConstant.extraSamplesAreNotSupported);
+    if (bitsPerSample != 8) {
+      throw IoException(
+          CraftIoExceptionMessageConstant.extraSamplesAreNotSupported);
     }
+    final count = width * height;
+    final colorChannels = samplePerPixel - 1;
+    if (colorChannels < 1 || outBuf.length < count * samplePerPixel) {
+      throw IoException('TIFF alpha samples do not fill the declared strip.');
+    }
+    final colors = Uint8List(count * colorChannels);
+    final opacity = Uint8List(count);
+    for (var channel = 0; channel < samplePerPixel; channel++) {
+      for (var pixel = 0; pixel < count; pixel++) {
+        final value = outBuf[pixel * samplePerPixel + channel];
+        if (channel == colorChannels) {
+          opacity[pixel] = value;
+        } else {
+          colors[pixel * colorChannels + channel] = value;
+        }
+      }
+    }
+    zip.add(colors);
+    mzip.add(opacity);
   }
 }

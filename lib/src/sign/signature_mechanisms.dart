@@ -1,10 +1,10 @@
 import 'oid.dart';
 
-/// Class that contains OID mappings to extract a signature algorithm name
-/// from a signature mechanism OID, and conversely, to retrieve the appropriate
-/// signature mechanism OID given a signature algorithm and a digest function.
-class SignatureMechanisms {
-  SignatureMechanisms._();
+/// Bidirectional lookup of signature mechanism identifiers
+/// and algorithm names, including selection of an OID
+/// for a signing algorithm paired with a digest.
+class CraftSignatureMechanisms {
+  CraftSignatureMechanisms._();
 
   /// Maps IDs of signature algorithms with its human-readable name.
   static final Map<String, String> algorithmNames = {
@@ -37,7 +37,7 @@ class SignatureMechanisms {
     '1.2.840.10045.4.3.3': 'ECDSA',
     // ECDSA coupled with SHA512
     '1.2.840.10045.4.3.4': 'ECDSA',
-    // Signing algorithms with SHA-3 digest functions (from NIST CSOR)
+    // SHA-3 signature identifiers registered in the NIST CSOR.
     '2.16.840.1.101.3.4.3.5': 'DSA',
     '2.16.840.1.101.3.4.3.6': 'DSA',
     '2.16.840.1.101.3.4.3.7': 'DSA',
@@ -51,10 +51,10 @@ class SignatureMechanisms {
     '2.16.840.1.101.3.4.3.15': 'RSA',
     '2.16.840.1.101.3.4.3.16': 'RSA',
     // RSASSA-PSS
-    OID.rsassaPss: 'RSASSA-PSS',
+    CraftOID.rsassaPss: 'RSASSA-PSS',
     // EdDSA
-    OID.ed25519: 'Ed25519',
-    OID.ed448: 'Ed448',
+    CraftOID.ed25519: 'Ed25519',
+    CraftOID.ed448: 'Ed448',
   };
 
   /// Maps digest algorithm names to RSA OIDs.
@@ -98,7 +98,7 @@ class SignatureMechanisms {
     'SHA3-512': '2.16.840.1.101.3.4.3.12',
   };
 
-  /// Attempt to look up the most specific OID for a given signature-digest combination.
+  /// Resolves an OID for the requested signing and digest algorithms.
   ///
   /// @param signatureAlgorithmName the name of the signature algorithm
   /// @param digestAlgorithmName the name of the digest algorithm, if any
@@ -108,8 +108,8 @@ class SignatureMechanisms {
     switch (signatureAlgorithmName) {
       case 'RSA':
         return digestAlgorithmName != null
-            ? rsaOidsByDigest[digestAlgorithmName] ?? OID.rsa
-            : OID.rsa;
+            ? rsaOidsByDigest[digestAlgorithmName] ?? CraftOID.rsa
+            : CraftOID.rsa;
       case 'DSA':
         return digestAlgorithmName != null
             ? dsaOidsByDigest[digestAlgorithmName]
@@ -119,12 +119,12 @@ class SignatureMechanisms {
             ? ecdsaOidsByDigest[digestAlgorithmName]
             : null;
       case 'Ed25519':
-        return OID.ed25519;
+        return CraftOID.ed25519;
       case 'Ed448':
-        return OID.ed448;
+        return CraftOID.ed448;
       case 'RSASSA-PSS':
       case 'RSA/PSS':
-        return OID.rsassaPss;
+        return CraftOID.rsassaPss;
       default:
         return null;
     }
@@ -138,7 +138,7 @@ class SignatureMechanisms {
     return algorithmNames[oid] ?? oid;
   }
 
-  /// Get the signing mechanism name for a certain id and digest.
+  /// Resolves the signing algorithm from its identifier and digest.
   ///
   /// @param oid an id of an algorithm
   /// @param digest digest of an algorithm

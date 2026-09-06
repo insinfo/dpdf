@@ -1,5 +1,5 @@
-class CommonCssConstants {
-  CommonCssConstants._();
+class CraftCommonCssConstants {
+  CraftCommonCssConstants._();
 
   static const String CM = "cm";
   static const String EM = "em";

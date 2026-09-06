@@ -1,3 +1,5 @@
-class LayoutLogMessageConstant {
-  static const String areaBreakUnexpected = "Area break unexpected.";
+/// Diagnostic templates for PDFCraft. Public identifiers and format slots are stable.
+class CraftLayoutLogMessageConstant {
+  static const String areaBreakUnexpected =
+      'An area break cannot be handled at this layout position.';
 }

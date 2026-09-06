@@ -1,29 +1,29 @@
 import 'package:test/test.dart';
-import 'package:dpdf/src/io/font/true_type_font.dart';
-import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
-import 'package:dpdf/src/layout/document.dart';
-import 'package:dpdf/src/layout/element/paragraph.dart';
-import 'package:dpdf/src/layout/element/text.dart';
-import 'package:dpdf/src/layout/properties/property.dart';
-import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:pdfcraft/src/io/font/true_type_font.dart';
+import 'package:pdfcraft/src/kernel/font/pdf_true_type_font.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
+import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
+import 'package:pdfcraft/src/layout/document.dart';
+import 'package:pdfcraft/src/layout/element/paragraph.dart';
+import 'package:pdfcraft/src/layout/element/text.dart';
+import 'package:pdfcraft/src/layout/properties/property.dart';
+import 'package:pdfcraft/src/layout/properties/unit_value.dart';
 import 'dart:io';
 
 void main() {
   group('Document Layout Test', () {
     test('Layout simple document', () async {
       final file = File('test/tmp/document_layout_test.pdf');
-      final writer = PdfWriter.toFile(file.path);
-      final pdfDoc = await PdfDocument.create(writer);
-      final doc = Document(pdfDoc);
+      final writer = CraftPdfWriter.toFile(file.path);
+      final pdfDoc = await CraftPdfDocument.create(writer);
+      final doc = CraftDocument(pdfDoc);
 
-      final ttf = TrueTypeFont.fromFile(
-          r"C:\MyDartProjects\pdfcraft\test\assets\arial.ttf");
+      final ttf =
+          CraftTrueTypeFont.fromFile(r"test/assets/ABeeZee-Regular.ttf");
 
       // Need to register font or set it property
       // Document sets standard font usually, but let's be explicit
-      final font = PdfTrueTypeFont(ttf);
+      final font = CraftPdfTrueTypeFont(ttf);
 
       // Add a paragraph
       // Paragraph renderer not fully implemented?
@@ -38,16 +38,17 @@ void main() {
       // Checking available elements: Text, Div?
       // I saw Div imported in BlockRenderer snippet in my thought.
 
-      final text = Text("Hello Document Layout World!");
-      text.setProperty(Property.FONT, font);
-      text.setProperty(Property.FONT_SIZE, UnitValue.createPointValue(12));
+      final text = CraftText("Hello Document Layout World!");
+      text.setProperty(CraftProperty.FONT, font);
+      text.setProperty(
+          CraftProperty.FONT_SIZE, CraftUnitValue.createPointValue(12));
 
       // If I add Text directly to Document?
       // Document.add takes IBlockElement. Text is ILeafElement / ILargeElement?
       // Text acts like inline usually.
       // Need a Paragraph wrapper.
 
-      final p = Paragraph();
+      final p = CraftParagraph();
       p.add(text);
 
       // Add directly? Paragraph extends BlockElement?

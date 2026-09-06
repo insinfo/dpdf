@@ -3,16 +3,16 @@ import '../../util/int_hashtable.dart';
 import 'abstract_cmap.dart';
 import 'cmap_object.dart';
 
-class CMapCidToCodepoint extends AbstractCMap {
+class CraftCMapCidToCodepoint extends CraftAbstractCMap {
   static final Uint8List _empty = Uint8List(0);
 
   final Map<int, Uint8List> map = {};
   final List<Uint8List> codeSpaceRanges = [];
 
   @override
-  void addChar(String mark, CMapObject code) {
+  void registerMappedCode(String mark, CraftCMapObject code) {
     if (code.isNumber()) {
-      Uint8List ser = AbstractCMap.decodeStringToByte(mark);
+      Uint8List ser = CraftAbstractCMap.mappingCodeBytes(mark);
       map[code.getValue() as int] = ser;
     }
   }
@@ -26,8 +26,9 @@ class CMapCidToCodepoint extends AbstractCMap {
     }
   }
 
-  IntHashtable getReversMap() {
-    IntHashtable code2cid = IntHashtable.withInitialCapacity(map.length);
+  CraftIntHashtable getReversMap() {
+    CraftIntHashtable code2cid =
+        CraftIntHashtable.withInitialCapacity(map.length);
     for (var entry in map.entries) {
       Uint8List bytes = entry.value;
       int byteCode = 0;
@@ -45,7 +46,7 @@ class CMapCidToCodepoint extends AbstractCMap {
   }
 
   @override
-  void addCodeSpaceRange(Uint8List low, Uint8List high) {
+  void registerCodeInterval(Uint8List low, Uint8List high) {
     codeSpaceRanges.add(low);
     codeSpaceRanges.add(high);
   }

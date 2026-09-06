@@ -1,15 +1,15 @@
 /// Base class for document properties.
 ///
 /// Contains common properties for document processing.
-class DocumentProperties {
+class CraftDocumentProperties {
   /// Dependencies for the document.
   dynamic dependencies;
 
   /// Default constructor.
-  DocumentProperties();
+  CraftDocumentProperties();
 
   /// Copy constructor.
-  DocumentProperties.copy(DocumentProperties other) {
+  CraftDocumentProperties.copy(CraftDocumentProperties other) {
     dependencies = other.dependencies;
   }
 }

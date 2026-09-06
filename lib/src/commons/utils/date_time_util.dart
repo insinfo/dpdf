@@ -1,7 +1,7 @@
 /// Helper class for internal usage only.
 
-class DateTimeUtil {
-  DateTimeUtil._();
+class CraftDateTimeUtil {
+  CraftDateTimeUtil._();
 
   static const String _defaultPattern = 'yyyy-MM-dd';
 
@@ -71,7 +71,7 @@ class DateTimeUtil {
     return _formatWithPattern(date, pattern);
   }
 
-  /// Gets the offset of time zone from UTC at the specified date.
+  /// Returns the UTC offset applicable to the supplied date.
   static int getCurrentTimeZoneOffset(DateTime date) {
     return date.timeZoneOffset.inMilliseconds;
   }
@@ -104,7 +104,7 @@ class DateTimeUtil {
   }
 
   /// Creates UTC Date based on provided parameters.
-  /// Note: month is 0-indexed (0 = January) to match Java Calendar behavior.
+  /// The month index starts at zero (January).
   static DateTime createUtcDateTime(
       int year, int month, int day, int hour, int minute, int second) {
     return DateTime.utc(year, month + 1, day, hour, minute, second);

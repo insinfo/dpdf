@@ -4,247 +4,77 @@ import '../../util/pdf_name_util.dart';
 import '../pdf_encodings.dart';
 import 'cmap_object.dart';
 
-class CMapContentParser {
+/// Reads CMap operands with the same state machine for both input modes.
+class CraftCMapContentParser {
   static const int commandType = 200;
+  final CraftPdfTokenizer tokenizer;
+  CraftCMapContentParser(this.tokenizer);
 
-  final PdfTokenizer tokenizer;
-
-  CMapContentParser(this.tokenizer);
-
-  Future<void> parse(List<CMapObject> ls) async {
-    ls.clear();
-    CMapObject? ob;
-    while ((ob = await readObject()) != null) {
-      ls.add(ob!);
-      if (ob.isLiteral()) {
-        break;
-      }
-    }
-  }
-
-  void parseSync(List<CMapObject> ls) {
-    ls.clear();
-    CMapObject? ob;
-    while ((ob = readObjectSync()) != null) {
-      ls.add(ob!);
-      if (ob.isLiteral()) {
-        break;
-      }
-    }
-  }
-
-  Future<CMapObject> readDictionary() async {
-    Map<String, CMapObject> dic = {};
+  Future<void> parse(List<CraftCMapObject> operands) async {
+    operands.clear();
     while (true) {
-      if (!await nextValidToken()) {
-        throw Exception("Unexpected end of file.");
-      }
-      if (tokenizer.getTokenType() == TokenType.endDic) {
-        break;
-      }
-      if (tokenizer.getTokenType() == TokenType.other &&
-          "def" == tokenizer.getStringValue()) {
-        continue;
-      }
-      if (tokenizer.getTokenType() != TokenType.name) {
-        throw Exception(
-            "Dictionary key ${tokenizer.getStringValue()} is not a name.");
-      }
-      String name = tokenizer.getStringValue();
-      CMapObject? obj = await readObject();
-      if (obj == null) {
-        throw Exception("Unexpected end of file.");
-      }
-      if (obj.isToken()) {
-        if (obj.toString() == ">>") {
-          tokenizer.throwError("Unexpected >>");
-        }
-        if (obj.toString() == "]") {
-          tokenizer.throwError("Unexpected ]");
-        }
-      }
-      dic[name] = obj;
+      final operand = await readObject();
+      if (operand == null) return;
+      _appendOperand(operands, operand);
+      if (operand.isLiteral()) return;
     }
-    return CMapObject(CMapObject.dictionary, dic);
   }
 
-  CMapObject readDictionarySync() {
-    Map<String, CMapObject> dic = {};
+  void parseSync(List<CraftCMapObject> operands) {
+    operands.clear();
     while (true) {
-      if (!nextValidTokenSync()) {
-        throw Exception("Unexpected end of file.");
-      }
-      if (tokenizer.getTokenType() == TokenType.endDic) {
-        break;
-      }
-      if (tokenizer.getTokenType() == TokenType.other &&
-          "def" == tokenizer.getStringValue()) {
-        continue;
-      }
-      if (tokenizer.getTokenType() != TokenType.name) {
-        throw Exception(
-            "Dictionary key ${tokenizer.getStringValue()} is not a name.");
-      }
-      String name = tokenizer.getStringValue();
-      CMapObject? obj = readObjectSync();
-      if (obj == null) {
-        throw Exception("Unexpected end of file.");
-      }
-      if (obj.isToken()) {
-        if (obj.toString() == ">>") {
-          tokenizer.throwError("Unexpected >>");
-        }
-        if (obj.toString() == "]") {
-          tokenizer.throwError("Unexpected ]");
-        }
-      }
-      dic[name] = obj;
-    }
-    return CMapObject(CMapObject.dictionary, dic);
-  }
-
-  Future<CMapObject> readArray() async {
-    List<CMapObject> array = [];
-    while (true) {
-      CMapObject? obj = await readObject();
-      if (obj == null) {
-        throw Exception("Unexpected end of file.");
-      }
-      if (obj.isToken()) {
-        if (obj.toString() == "]") {
-          break;
-        }
-        if (obj.toString() == ">>") {
-          tokenizer.throwError("Unexpected >>");
-        }
-      }
-      array.add(obj);
-    }
-    return CMapObject(CMapObject.array, array);
-  }
-
-  CMapObject readArraySync() {
-    List<CMapObject> array = [];
-    while (true) {
-      CMapObject? obj = readObjectSync();
-      if (obj == null) {
-        throw Exception("Unexpected end of file.");
-      }
-      if (obj.isToken()) {
-        if (obj.toString() == "]") {
-          break;
-        }
-        if (obj.toString() == ">>") {
-          tokenizer.throwError("Unexpected >>");
-        }
-      }
-      array.add(obj);
-    }
-    return CMapObject(CMapObject.array, array);
-  }
-
-  Future<CMapObject?> readObject() async {
-    if (!await nextValidToken()) {
-      return null;
-    }
-    TokenType type = tokenizer.getTokenType();
-    switch (type) {
-      case TokenType.startDic:
-        return await readDictionary();
-      case TokenType.startArray:
-        return await readArray();
-      case TokenType.string:
-        if (tokenizer.isHexString()) {
-          return CMapObject(
-              CMapObject.hexString,
-              PdfTokenizer.decodeStringContent2(
-                  tokenizer.getByteContent(), true));
-        } else {
-          return CMapObject(
-              CMapObject.string,
-              PdfTokenizer.decodeStringContent2(
-                  tokenizer.getByteContent(), false));
-        }
-      case TokenType.name:
-        return CMapObject(CMapObject.name,
-            PdfNameUtil.decodeName(tokenizer.getByteContent()));
-      case TokenType.number:
-        try {
-          return CMapObject(CMapObject.number,
-              double.parse(tokenizer.getStringValue()).toInt());
-        } catch (e) {
-          return CMapObject(CMapObject.number, -2147483648); // int.min
-        }
-      case TokenType.other:
-        return CMapObject(CMapObject.literal, tokenizer.getStringValue());
-      case TokenType.endArray:
-        return CMapObject(CMapObject.token, "]");
-      case TokenType.endDic:
-        return CMapObject(CMapObject.token, ">>");
-      default:
-        return CMapObject(0, "");
+      final operand = readObjectSync();
+      if (operand == null) return;
+      _appendOperand(operands, operand);
+      if (operand.isLiteral()) return;
     }
   }
 
-  CMapObject? readObjectSync() {
-    if (!nextValidTokenSync()) {
-      return null;
+  void _appendOperand(List<CraftCMapObject> operands, CraftCMapObject operand) {
+    if (operand.isToken()) {
+      throw FormatException(
+          'CMap closing delimiter has no matching container.');
     }
-    TokenType type = tokenizer.getTokenType();
-    switch (type) {
-      case TokenType.startDic:
-        return readDictionarySync();
-      case TokenType.startArray:
-        return readArraySync();
-      case TokenType.string:
-        if (tokenizer.isHexString()) {
-          return CMapObject(
-              CMapObject.hexString,
-              PdfTokenizer.decodeStringContent2(
-                  tokenizer.getByteContent(), true));
-        } else {
-          return CMapObject(
-              CMapObject.string,
-              PdfTokenizer.decodeStringContent2(
-                  tokenizer.getByteContent(), false));
-        }
-      case TokenType.name:
-        return CMapObject(CMapObject.name,
-            PdfNameUtil.decodeName(tokenizer.getByteContent()));
-      case TokenType.number:
-        try {
-          return CMapObject(CMapObject.number,
-              double.parse(tokenizer.getStringValue()).toInt());
-        } catch (e) {
-          return CMapObject(CMapObject.number, -2147483648); // int.min
-        }
-      case TokenType.other:
-        return CMapObject(CMapObject.literal, tokenizer.getStringValue());
-      case TokenType.endArray:
-        return CMapObject(CMapObject.token, "]");
-      case TokenType.endDic:
-        return CMapObject(CMapObject.token, ">>");
-      default:
-        return CMapObject(0, "");
+    operands.add(operand);
+  }
+
+  Future<CraftCMapObject> readDictionary() async =>
+      (await _readAsync(_OperandAssembler(dictionary: true)))!;
+  CraftCMapObject readDictionarySync() =>
+      _readSync(_OperandAssembler(dictionary: true))!;
+  Future<CraftCMapObject> readArray() async =>
+      (await _readAsync(_OperandAssembler(dictionary: false)))!;
+  CraftCMapObject readArraySync() =>
+      _readSync(_OperandAssembler(dictionary: false))!;
+  Future<CraftCMapObject?> readObject() => _readAsync(_OperandAssembler());
+  CraftCMapObject? readObjectSync() => _readSync(_OperandAssembler());
+
+  Future<CraftCMapObject?> _readAsync(_OperandAssembler state) async {
+    while (await nextValidToken()) {
+      final result = state.accept(tokenizer);
+      if (result != null) return result;
     }
+    return state.finish();
+  }
+
+  CraftCMapObject? _readSync(_OperandAssembler state) {
+    while (nextValidTokenSync()) {
+      final result = state.accept(tokenizer);
+      if (result != null) return result;
+    }
+    return state.finish();
   }
 
   Future<bool> nextValidToken() async {
     while (await tokenizer.nextToken()) {
-      if (tokenizer.getTokenType() == TokenType.comment) {
-        continue;
-      }
-      return true;
+      if (tokenizer.getTokenType() != TokenType.comment) return true;
     }
     return false;
   }
 
   bool nextValidTokenSync() {
     while (tokenizer.nextTokenSync()) {
-      if (tokenizer.getTokenType() == TokenType.comment) {
-        continue;
-      }
-      return true;
+      if (tokenizer.getTokenType() != TokenType.comment) return true;
     }
     return false;
   }
@@ -263,12 +93,120 @@ class CMapContentParser {
     return "[<${toHex4(high)}${toHex4(low)}>]";
   }
 
-  static String decodeCMapObject(CMapObject cMapObject) {
+  static String decodeCMapObject(CraftCMapObject cMapObject) {
     if (cMapObject.isHexString()) {
-      return PdfEncodings.convertToString(cMapObject.getValue() as Uint8List,
-          PdfEncodings.UNICODE_BIG_UNMARKED);
+      return CraftPdfEncodings.convertToString(
+          cMapObject.getValue() as Uint8List,
+          CraftPdfEncodings.UNICODE_BIG_UNMARKED);
     } else {
       return cMapObject.getValue().toString();
     }
+  }
+}
+
+class _OperandAssembler {
+  final List<_OperandContainer> _containers = [];
+  _OperandAssembler({bool? dictionary}) {
+    if (dictionary != null) _containers.add(_OperandContainer(dictionary));
+  }
+
+  CraftCMapObject? finish() {
+    if (_containers.isNotEmpty) {
+      throw FormatException('CMap input ended inside a container.');
+    }
+    return null;
+  }
+
+  CraftCMapObject? accept(CraftPdfTokenizer input) {
+    final type = input.getTokenType();
+    if (type == TokenType.startArray || type == TokenType.startDic) {
+      if (_containers.length >= 256) {
+        throw FormatException('CMap container nesting exceeds 256 levels.');
+      }
+      if (_containers.isNotEmpty) _containers.last.checkValuePosition();
+      _containers.add(_OperandContainer(type == TokenType.startDic));
+      return null;
+    }
+    CraftCMapObject value;
+    if (type == TokenType.endArray || type == TokenType.endDic) {
+      final dictionary = type == TokenType.endDic;
+      if (_containers.isEmpty) {
+        return CraftCMapObject(CraftCMapObject.token, dictionary ? '>>' : ']');
+      }
+      final frame = _containers.last;
+      if (frame.dictionary != dictionary) {
+        throw FormatException(
+            'CMap container closed with a mismatched delimiter.');
+      }
+      value = frame.complete();
+      _containers.removeLast();
+    } else {
+      value = _scalar(input);
+    }
+    if (_containers.isEmpty) return value;
+    _containers.last.append(value);
+    return null;
+  }
+
+  CraftCMapObject _scalar(CraftPdfTokenizer input) {
+    switch (input.getTokenType()) {
+      case TokenType.name:
+        return CraftCMapObject(CraftCMapObject.name,
+            CraftPdfNameUtil.decodeName(input.getByteContent()));
+      case TokenType.string:
+        final hex = input.isHexString();
+        return CraftCMapObject(
+            hex ? CraftCMapObject.hexString : CraftCMapObject.string,
+            CraftPdfTokenizer.decodeStringContent2(
+                input.getByteContent(), hex));
+      case TokenType.number:
+        final spelling = input.getStringValue();
+        final number = num.tryParse(spelling);
+        if (number == null || !number.isFinite) {
+          throw FormatException('CMap numeric operand is invalid: $spelling');
+        }
+        return CraftCMapObject(CraftCMapObject.number,
+            number == number.truncateToDouble() ? number.toInt() : number);
+      case TokenType.other:
+        return CraftCMapObject(CraftCMapObject.literal, input.getStringValue());
+      default:
+        throw FormatException('CMap contains an unsupported operand token.');
+    }
+  }
+}
+
+class _OperandContainer {
+  final bool dictionary;
+  final List<CraftCMapObject> items = [];
+  final Map<String, CraftCMapObject> entries = {};
+  String? _key;
+  _OperandContainer(this.dictionary);
+
+  void checkValuePosition() {
+    if (dictionary && _key == null) {
+      throw FormatException('CMap dictionary requires a name before a value.');
+    }
+  }
+
+  void append(CraftCMapObject value) {
+    if (!dictionary) {
+      items.add(value);
+    } else if (_key != null) {
+      entries[_key!] = value;
+      _key = null;
+    } else if (value.isName()) {
+      _key = value.getValue() as String;
+    } else if (!(value.isLiteral() && value.getValue() == 'def')) {
+      throw FormatException('CMap dictionary entry must begin with a name.');
+    }
+  }
+
+  CraftCMapObject complete() {
+    if (_key != null) {
+      throw FormatException('CMap dictionary has a name without its value.');
+    }
+    return CraftCMapObject(
+        dictionary ? CraftCMapObject.dictionary : CraftCMapObject.array,
+        dictionary ? entries : items);
   }
 }

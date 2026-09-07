@@ -82,7 +82,7 @@ class CraftFontNames {
   }
 
   void setFontName(String psFontName) {
-    this.fontName = psFontName;
+    fontName = psFontName;
   }
 
   void setCidFontName(String cidFontName) {

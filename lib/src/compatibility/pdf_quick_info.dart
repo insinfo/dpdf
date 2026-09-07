@@ -40,9 +40,10 @@ class PdfQuickInfo {
         RegExp(r'%PDF-([0-9]+)\.([0-9]+)(?=[\r\n\t ]|$)').firstMatch(prefix);
     final major = header == null ? null : int.parse(header.group(1)!);
     final minor = header == null ? null : int.parse(header.group(2)!);
-    if (!readDocument)
+    if (!readDocument) {
       return PdfQuickInfo._(major, minor, header?.start, header?.group(0), null,
           null, false, null);
+    }
     final reader = CraftPdfReader.fromBytes(bytes);
     final doc = await CraftPdfDocument.open(reader);
     try {
@@ -64,7 +65,9 @@ class PdfQuickInfo {
             if (entry is! CraftPdfDictionary) continue;
             if ((await entry.nameEntry(CraftPdfName('TransformMethod')))
                     ?.getValue() !=
-                'DocMDP') continue;
+                'DocMDP') {
+              continue;
+            }
             final parameters =
                 await entry.dictionaryEntry(CraftPdfName('TransformParams'));
             final value = await parameters?.numberEntry(CraftPdfName('P'));

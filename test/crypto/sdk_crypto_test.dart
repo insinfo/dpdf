@@ -55,8 +55,9 @@ void main() {
         expect(encrypted, expected);
         final cipher = CraftAESCipher(false, key, iv);
         final out = BytesBuilder();
-        for (var i = 0; i < encrypted.length; i++)
+        for (var i = 0; i < encrypted.length; i++) {
           out.add(cipher.update(encrypted, i, 1));
+        }
         out.add(cipher.doFinal());
         expect(out.takeBytes(), message);
       }
@@ -109,7 +110,9 @@ void main() {
       expect(() => ASN1Parser(hex(data)).nextObject(), throwsFormatException);
     }
     ASN1Object nested = ASN1Null();
-    for (var i = 0; i < 70; i++) nested = ASN1Sequence(elements: [nested]);
+    for (var i = 0; i < 70; i++) {
+      nested = ASN1Sequence(elements: [nested]);
+    }
     expect(
         () => ASN1Parser(nested.encode()).nextObject(), throwsFormatException);
   });

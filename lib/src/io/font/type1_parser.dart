@@ -47,7 +47,7 @@ class CraftType1Parser {
     if (pfbPath != null && pfbPath!.toLowerCase().endsWith(".pfb")) {
       return CraftRandomAccessFileOrArray.fromFile(File(pfbPath!));
     } else if (afmPath != null) {
-      String pfb = afmPath!.substring(0, afmPath!.length - 3) + "pfb";
+      String pfb = "${afmPath!.substring(0, afmPath!.length - 3)}pfb";
       File f = File(pfb);
       if (f.existsSync()) {
         return CraftRandomAccessFileOrArray.fromFile(f);

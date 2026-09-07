@@ -76,7 +76,7 @@ abstract class CraftImageData {
       throw IoException(CraftIoExceptionMessageConstant
           .imageIsNotAMaskYouMustCallImageDataMakeMask);
     }
-    this.imageMask = mask;
+    imageMask = mask;
   }
 
   Uint8List? getData() => data;

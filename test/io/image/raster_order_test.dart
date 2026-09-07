@@ -113,8 +113,9 @@ void main() {
           expect(top.getData()!.skip(width * 3).take(3), [2, 3, 4]);
         }
         if (bits == 16) expect(top.getData()!.take(3), [8, 0, 0]);
-        if (bits == 8)
+        if (bits == 8) {
           expect(top.getData()!.take(width), List.filled(width, 1));
+        }
       });
     }
   }

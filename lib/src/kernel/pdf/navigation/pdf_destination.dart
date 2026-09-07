@@ -59,7 +59,7 @@ abstract class CraftPdfDestination
 }
 
 class CraftPdfStringDestination extends CraftPdfDestination {
-  CraftPdfStringDestination(CraftPdfString pdfObject) : super(pdfObject);
+  CraftPdfStringDestination(CraftPdfString super.pdfObject);
 
   CraftPdfStringDestination.fromString(String s) : super(CraftPdfString(s));
 
@@ -82,7 +82,7 @@ class CraftPdfStringDestination extends CraftPdfDestination {
 }
 
 class CraftPdfNamedDestination extends CraftPdfDestination {
-  CraftPdfNamedDestination(CraftPdfName pdfObject) : super(pdfObject);
+  CraftPdfNamedDestination(CraftPdfName super.pdfObject);
 
   CraftPdfNamedDestination.fromName(String name) : super(CraftPdfName(name));
 
@@ -105,7 +105,7 @@ class CraftPdfNamedDestination extends CraftPdfDestination {
 }
 
 class CraftPdfExplicitDestination extends CraftPdfDestination {
-  CraftPdfExplicitDestination(CraftPdfArray pdfObject) : super(pdfObject);
+  CraftPdfExplicitDestination(CraftPdfArray super.pdfObject);
 
   CraftPdfExplicitDestination.empty() : super(CraftPdfArray());
 

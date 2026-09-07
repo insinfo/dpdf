@@ -56,23 +56,20 @@ class CraftPdfException extends DpdfException {
 
 /// Exception thrown when a bad password is provided for an encrypted PDF.
 class CraftBadPasswordException extends CraftPdfException {
-  CraftBadPasswordException(String message, {Object? cause})
-      : super(message, cause: cause);
+  CraftBadPasswordException(super.message, {super.cause});
 }
 
 /// Exception thrown when the PDF document is encrypted but no password was provided.
 class EncryptedDocumentException extends CraftPdfException {
-  EncryptedDocumentException(String message, {Object? cause})
-      : super(message, cause: cause);
+  EncryptedDocumentException(super.message, {super.cause});
 }
 
 /// Exception thrown when an invalid PDF structure is encountered.
 class InvalidPdfException extends CraftPdfException {
-  InvalidPdfException(String message, {Object? cause, Object? pdfObject})
-      : super(message, cause: cause, pdfObject: pdfObject);
+  InvalidPdfException(super.message, {super.cause, super.pdfObject});
 }
 
 /// Exception thrown for XRef table/stream errors.
 class XrefException extends CraftPdfException {
-  XrefException(String message, {Object? cause}) : super(message, cause: cause);
+  XrefException(super.message, {super.cause});
 }

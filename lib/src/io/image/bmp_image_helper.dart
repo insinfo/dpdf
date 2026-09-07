@@ -579,8 +579,9 @@ class CraftBmpImageHelper {
     final pixels = Uint8List(bmp.width * bmp.height);
     var cursor = 0, column = 0, row = 0;
     int take() {
-      if (cursor == values.length)
+      if (cursor == values.length) {
         throw IoException('BMP run data is incomplete.');
+      }
       return values[cursor++];
     }
 

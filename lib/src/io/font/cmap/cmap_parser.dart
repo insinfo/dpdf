@@ -106,8 +106,9 @@ class _MappingCommands {
   };
 
   void finish() {
-    if (pending != null)
+    if (pending != null) {
       throw FormatException('CMap block $pending has no closing command');
+    }
   }
 
   String? accept(List<CraftCMapObject> tokens) {
@@ -182,8 +183,9 @@ class _MappingCommands {
     for (var offset = 0; offset < values.length; offset += stride) {
       final first = values[offset];
       final second = values[offset + 1];
-      if (!first.isString())
+      if (!first.isString()) {
         throw FormatException('CMap $kind source must be a byte string');
+      }
       switch (kind) {
         case 'cidchar':
         case 'bfchar':

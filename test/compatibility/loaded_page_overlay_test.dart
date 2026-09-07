@@ -139,8 +139,7 @@ Future<CraftPdfDocument> _open(Uint8List bytes, BytesBuilder output) async {
 Future<void> _draw(CraftPdfPage page, String text) async {
   final canvas = await PdfPageOverlay.create(page);
   canvas.beginText();
-  await canvas.setFontAndSize(
-      await CraftPdfFontFactory.createFont('Helvetica'), 18);
+  await canvas.setFontAndSize(CraftPdfFontFactory.createFont('Helvetica'), 18);
   canvas.moveText(20, 40).showText(text).endText();
 }
 
@@ -158,7 +157,7 @@ Future<Uint8List> _source({bool unbalanced = false}) async {
     }
     canvas.beginText();
     await canvas.setFontAndSize(
-        await CraftPdfFontFactory.createFont('Helvetica'), 18);
+        CraftPdfFontFactory.createFont('Helvetica'), 18);
     canvas.moveText(50, 100).showText('Page $index').endText();
   }
   await document.close();

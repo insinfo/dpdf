@@ -15,7 +15,7 @@ abstract class CraftBorder {
 }
 
 class CraftSolidBorder extends CraftBorder {
-  CraftSolidBorder(double width) : super(width);
+  CraftSolidBorder(super.width);
 }
 
 class _NullBorder extends CraftBorder {

@@ -50,7 +50,7 @@ class CraftCidFont extends CraftFontProgram {
 
   @override
   bool isBuiltWith(String fontName) {
-    return this._fontName == fontName;
+    return _fontName == fontName;
   }
 
   void _initializeCidFontNameAndStyle(String fontName) {

@@ -5,10 +5,9 @@ import 'package:dpdf/dpdf.dart';
 Future<Uint8List> source(
     {String? destinations, bool cyclicInheritance = false}) async {
   final data = BytesBuilder();
-  final doc =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(data));
+  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(data));
   final pages = [await doc.appendBlankPage(), await doc.appendBlankPage()];
-  final font = await CraftPdfFontFactory.createFont('Helvetica');
+  final font = CraftPdfFontFactory.createFont('Helvetica');
   for (var i = 0; i < pages.length; i++) {
     final canvas = await CraftPdfCanvas.fromPage(pages[i]);
     canvas.beginText();
@@ -100,7 +99,7 @@ void main() {
     final overlay = await PdfPageOverlay.create(page);
     overlay.beginText();
     await overlay.setFontAndSize(
-        await CraftPdfFontFactory.createFont('Helvetica'), 12);
+        CraftPdfFontFactory.createFont('Helvetica'), 12);
     overlay.moveText(40, 50).showText('STAMP').endText();
     await doc.close();
     final reopened = await CraftPdfDocument.open(

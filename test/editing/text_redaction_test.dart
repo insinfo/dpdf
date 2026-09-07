@@ -17,8 +17,7 @@ List<PdfPositionedCharacter> positions(Uint8List content) =>
 Future<Uint8List> fixture(List<String> contents,
     {String? prohibited, String? encoding}) async {
   final buffer = BytesBuilder();
-  final doc =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
+  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
   CraftPdfStream.withBytes(bytes('UNREFERENCED_SECRET'), 0)
       .attachToDocument(doc);
   final font = CraftPdfDictionary()
@@ -34,10 +33,11 @@ Future<Uint8List> fixture(List<String> contents,
     page.pdfRepresentation().put(CraftPdfName.resources, resources);
     page.pdfRepresentation().put(
         CraftPdfName.contents, CraftPdfStream.withBytes(bytes(content), 0));
-    if (prohibited != null)
+    if (prohibited != null) {
       page
           .pdfRepresentation()
           .put(CraftPdfName(prohibited), CraftPdfString('SECRET'));
+    }
   }
   (await doc.documentDetails()).pdfRepresentation().clear();
   await doc.close();

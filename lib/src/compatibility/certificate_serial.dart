@@ -28,8 +28,9 @@ class CertificateSerial {
 
   /// Accepts a DER INTEGER TLV or unsigned integer content bytes.
   factory CertificateSerial.fromDerInteger(Uint8List input) {
-    if (input.isEmpty)
+    if (input.isEmpty) {
       throw const PdfFormatException('Certificate serial is empty');
+    }
     var start = 0;
     var end = input.length;
     if (input.first == 2 && input.length > 1) {
@@ -47,8 +48,9 @@ class CertificateSerial {
         for (var i = 0; i < octets; i++) {
           size = size * 256 + input[start++];
         }
-        if (size < 128)
+        if (size < 128) {
           throw const PdfFormatException('Nonminimal DER serial length');
+        }
       }
       end = start + size;
       if (size == 0 || end != input.length || (input[start] & 128) != 0) {

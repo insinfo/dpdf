@@ -78,21 +78,29 @@ class CraftCssSyntax {
 
   static bool _endsWithImportant(String value) {
     var index = value.length - 1;
-    while (index >= 0 && _isWhitespace(value.codeUnitAt(index))) index--;
+    while (index >= 0 && _isWhitespace(value.codeUnitAt(index))) {
+      index--;
+    }
     const word = 'important';
     if (index + 1 < word.length) return false;
     final start = index - word.length + 1;
     if (value.substring(start, index + 1).toLowerCase() != word) return false;
     index = start - 1;
-    while (index >= 0 && _isWhitespace(value.codeUnitAt(index))) index--;
+    while (index >= 0 && _isWhitespace(value.codeUnitAt(index))) {
+      index--;
+    }
     return index >= 0 && value.codeUnitAt(index) == 0x21;
   }
 
   static String _removeImportant(String value) {
     var index = value.length - 1;
-    while (_isWhitespace(value.codeUnitAt(index))) index--;
+    while (_isWhitespace(value.codeUnitAt(index))) {
+      index--;
+    }
     index -= 'important'.length;
-    while (index >= 0 && _isWhitespace(value.codeUnitAt(index))) index--;
+    while (index >= 0 && _isWhitespace(value.codeUnitAt(index))) {
+      index--;
+    }
     return value.substring(0, index); // excludes the exclamation mark.
   }
 

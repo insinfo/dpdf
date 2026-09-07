@@ -9,7 +9,7 @@ void main() {
     test('Nested shared streams become indirect, compression=$compressed',
         () async {
       final buffer = BytesBuilder();
-      final doc = await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(
+      final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(
           buffer,
           properties:
               CraftWriterProperties().setFullCompressionMode(compressed)));

@@ -157,7 +157,9 @@ int _identifierEnd(String value, int offset) {
   while (offset < value.length) {
     final codeUnit = value.codeUnitAt(offset);
     if (!_isIdentifierStart(codeUnit) &&
-        !(codeUnit >= 0x30 && codeUnit <= 0x39)) break;
+        !(codeUnit >= 0x30 && codeUnit <= 0x39)) {
+      break;
+    }
     offset++;
   }
   return offset;

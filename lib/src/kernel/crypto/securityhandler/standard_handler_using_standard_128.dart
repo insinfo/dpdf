@@ -11,22 +11,17 @@ import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 class CraftStandardHandlerUsingStandard128
     extends CraftStandardHandlerUsingStandard40 {
   CraftStandardHandlerUsingStandard128(
-      CraftPdfDictionary encryptionDictionary,
-      Uint8List? userPassword,
-      Uint8List? ownerPassword,
-      int permissions,
-      bool encryptMetadata,
-      bool embeddedFilesOnly,
-      Uint8List? documentId)
-      : super(encryptionDictionary, userPassword, ownerPassword, permissions,
-            encryptMetadata, embeddedFilesOnly, documentId);
+      super.encryptionDictionary,
+      super.userPassword,
+      super.ownerPassword,
+      super.permissions,
+      super.encryptMetadata,
+      super.embeddedFilesOnly,
+      super.documentId);
 
-  CraftStandardHandlerUsingStandard128.read(
-      CraftPdfDictionary encryptionDictionary,
-      Uint8List password,
-      Uint8List? documentId,
-      bool encryptMetadata)
-      : super.read(encryptionDictionary, password, documentId, encryptMetadata);
+  CraftStandardHandlerUsingStandard128.read(super.encryptionDictionary,
+      super.password, super.documentId, super.encryptMetadata)
+      : super.read();
 
   @override
   void calculatePermissions(int permissions) {

@@ -9,7 +9,7 @@ import 'package:dpdf/dpdf.dart';
 Future<void> main(List<String> args) async {
   final buffer = BytesBuilder();
   final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
+      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
   final page = await document.appendBlankPage();
   final font = CraftPdfDictionary()
     ..put(CraftPdfName.type, CraftPdfName.font)

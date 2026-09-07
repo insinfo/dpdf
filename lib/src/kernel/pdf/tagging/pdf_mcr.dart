@@ -61,8 +61,7 @@ abstract class CraftPdfMcr extends CraftPdfObjectWrapper<CraftPdfObject>
 }
 
 class CraftPdfMcrNumber extends CraftPdfMcr {
-  CraftPdfMcrNumber(CraftPdfNumber pdfObject, CraftPdfStructElem? parent)
-      : super(pdfObject, parent);
+  CraftPdfMcrNumber(CraftPdfNumber super.pdfObject, super.parent);
 
   @override
   Future<int> getMcid() async {
@@ -74,9 +73,7 @@ class CraftPdfMcrNumber extends CraftPdfMcr {
 }
 
 class CraftPdfMcrDictionary extends CraftPdfMcr {
-  CraftPdfMcrDictionary(
-      CraftPdfDictionary pdfObject, CraftPdfStructElem? parent)
-      : super(pdfObject, parent);
+  CraftPdfMcrDictionary(CraftPdfDictionary super.pdfObject, super.parent);
 
   @override
   Future<int> getMcid() async {

@@ -6,8 +6,7 @@ Future<CraftPdfDocument> roundtrip(
     Future<void> Function(CraftPdfDocument, CraftPdfPage, CraftPdfAcroForm)
         build) async {
   final bytes = BytesBuilder();
-  final doc =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
   final page = await doc.appendBlankPage();
   final form = await CraftPdfAcroForm.getAcroForm(doc, true);
   await build(doc, page, form);

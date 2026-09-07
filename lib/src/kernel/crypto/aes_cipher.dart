@@ -15,7 +15,7 @@ class CraftAESCipher {
       {bool usePadding = true})
       : _cipher = AesCbcCore(encrypt, key, iv),
         _encrypt = encrypt,
-        _usePadding = usePadding {}
+        _usePadding = usePadding;
 
   /// Processes chunks of data.
   Uint8List update(Uint8List input, int inputOffset, int inputLen) {
@@ -88,8 +88,9 @@ class CraftAESCipher {
             throw Exception("Decryption error: invalid padding");
           }
           for (var i = 16 - paddingValue; i < 16; i++) {
-            if (blockOut[i] != paddingValue)
+            if (blockOut[i] != paddingValue) {
               throw FormatException('Invalid AES padding');
+            }
           }
           out.addAll(blockOut.sublist(0, 16 - paddingValue));
         } else {

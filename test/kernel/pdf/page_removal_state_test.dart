@@ -15,7 +15,7 @@ class _Observer implements CraftEventHandler {
 
 void main() {
   test('Removal notification sees the committed page collection', () async {
-    final doc = await CraftPdfDocument.create(
+    final doc = CraftPdfDocument.create(
         CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
     final removed = await doc.appendBlankPage();
     final survivor = await doc.appendBlankPage();
@@ -36,7 +36,7 @@ void main() {
   });
 
   test('Invalid page ordinals leave all page state intact', () async {
-    final doc = await CraftPdfDocument.create(
+    final doc = CraftPdfDocument.create(
         CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
     final page = await doc.appendBlankPage();
     final dictionary = page.pdfRepresentation();

@@ -12,8 +12,9 @@ class CraftAdobeGlyphList {
         in const LineSplitter().convert(EmbeddedFontResources.glyphList)) {
       if (line.startsWith('#') || line.trim().isEmpty) continue;
       final parts = line.split(';');
-      if (parts.length != 2)
+      if (parts.length != 2) {
         throw FormatException('Invalid embedded glyph record', line);
+      }
       final scalar = parts[1].trim();
       // The scalar API intentionally excludes multi-scalar glyph sequences.
       if (scalar.contains(' ')) continue;

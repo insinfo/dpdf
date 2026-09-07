@@ -1721,8 +1721,9 @@ class CraftTIFFFaxDecoder {
       '0000010': 2,
     };
     for (final entry in modes.entries) {
-      if (word.startsWith(entry.key))
+      if (word.startsWith(entry.key)) {
         return (entry.value << 3) | entry.key.length;
+      }
     }
     return lookahead == 1 ? 88 : 80;
   }, growable: false);

@@ -23,9 +23,7 @@ class CraftTagStructureContext {
   }
 
   Future<CraftTagTreePointer> getAutoTaggingPointer() async {
-    if (autoTaggingPointer == null) {
-      autoTaggingPointer = CraftTagTreePointer(document);
-    }
+    autoTaggingPointer ??= CraftTagTreePointer(document);
     return autoTaggingPointer!;
   }
 

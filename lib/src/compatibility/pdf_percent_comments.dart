@@ -37,7 +37,9 @@ List<PdfPercentCommentLine> extractPdfPercentCommentLines(Uint8List bytes,
     if (end < bytes.length &&
         bytes[end] == 13 &&
         start < bytes.length &&
-        bytes[start] == 10) start++;
+        bytes[start] == 10) {
+      start++;
+    }
   }
   return result;
 }
@@ -80,7 +82,9 @@ PdfCommentSanitizationResult sanitizePdfLeadingPercentComments(
     if (end < input.length &&
         input[end] == 13 &&
         start < input.length &&
-        input[start] == 10) start++;
+        input[start] == 10) {
+      start++;
+    }
   }
   return PdfCommentSanitizationResult(output, count);
 }

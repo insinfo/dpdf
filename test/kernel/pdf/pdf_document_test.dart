@@ -22,7 +22,7 @@ void main() {
 
     test('Create simple PDF with one page', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       await pdfDoc.appendBlankPage(CraftPageSize.A4);
 
@@ -46,7 +46,7 @@ void main() {
     test('Read created PDF', () async {
       // Create a file first
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDocCreate = await CraftPdfDocument.create(writer);
+      final pdfDocCreate = CraftPdfDocument.create(writer);
       await pdfDocCreate.appendBlankPage(CraftPageSize.A4);
       await pdfDocCreate.close();
 
@@ -59,7 +59,7 @@ void main() {
 
     test('getFirstPage and getLastPage', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       // Add 3 pages
       await pdfDoc.appendBlankPage(CraftPageSize.A4);
@@ -81,7 +81,7 @@ void main() {
 
     test('getDefaultFont returns a font', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       final font = pdfDoc.defaultTypeface();
       expect(font, isNotNull);
@@ -92,7 +92,7 @@ void main() {
 
     test('getNumberOfPdfObjects', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       // Initially should have at least 1 object (catalog)
       expect(pdfDoc.storedObjectCount(), greaterThan(0));
@@ -107,7 +107,7 @@ void main() {
 
     test('isEncrypted returns false for unencrypted document', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       expect(pdfDoc.usesEncryption(), false);
 
@@ -117,7 +117,7 @@ void main() {
 
     test('isClosed and isClosing', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       expect(pdfDoc.lifecycleClosed(), false);
       expect(pdfDoc.lifecycleClosing(), false);
@@ -130,7 +130,7 @@ void main() {
 
     test('getCatalog returns valid catalog', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       final catalog = pdfDoc.rootCatalog();
       expect(catalog, isNotNull);
@@ -142,7 +142,7 @@ void main() {
 
     test('getTrailer returns valid trailer', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       final trailer = pdfDoc.fileTrailer();
       expect(trailer, isNotNull);
@@ -153,7 +153,7 @@ void main() {
 
     test('getVersion returns correct version', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       final version = pdfDoc.formatVersion();
       expect(version, isNotNull);
@@ -164,7 +164,7 @@ void main() {
 
     test('setDefaultPageSize affects new pages', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       pdfDoc.configureDefaultPageExtent(CraftPageSize.letter);
       expect(pdfDoc.defaultPageExtent(), CraftPageSize.letter);
@@ -176,7 +176,7 @@ void main() {
 
     test('Multiple pages with different sizes', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       await pdfDoc.appendBlankPage(CraftPageSize.A4);
       await pdfDoc.appendBlankPage(CraftPageSize.letter);
@@ -195,7 +195,7 @@ void main() {
 
     test('removePage removes a page from the document', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       // Add 3 pages
       await pdfDoc.appendBlankPage(CraftPageSize.A4);
@@ -218,7 +218,7 @@ void main() {
 
     test('getPdfObject returns objects by number', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       await pdfDoc.appendBlankPage(CraftPageSize.A4);
 
@@ -231,7 +231,7 @@ void main() {
 
     test('addNewPageAt inserts page at specific position', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       // Add pages at the end
       await pdfDoc.appendBlankPage(CraftPageSize.A4); // Page 1
@@ -254,7 +254,7 @@ void main() {
 
     test('addPage adds existing page to document', () async {
       final writer = CraftPdfWriter.toFile(outPath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
 
       final page = CraftPdfPage(CraftPdfDictionary());
       page.setMediaBounds(CraftPageSize.A4);

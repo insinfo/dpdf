@@ -13,8 +13,9 @@ Future<int> inspect(Uint8List bytes, int pages) async {
     var characters = 0;
     for (var page = 1; page <= pages; page++) {
       final text = await PdfTextExtraction.fromPage((await doc.pageAt(page))!);
-      if (!text.contains('Contract page ${(page - 1) % 3 + 1}'))
+      if (!text.contains('Contract page ${(page - 1) % 3 + 1}')) {
         throw StateError('Unexpected page text');
+      }
       characters += text.length;
     }
     return characters;

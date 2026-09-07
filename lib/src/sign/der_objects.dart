@@ -60,7 +60,9 @@ class ASN1Integer extends ASN1Object {
   static List<int> _bytes(BigInt v) {
     var size = 1;
     while (v < -(BigInt.one << (size * 8 - 1)) ||
-        v >= (BigInt.one << (size * 8 - 1))) size++;
+        v >= (BigInt.one << (size * 8 - 1))) {
+      size++;
+    }
     final result = List<int>.filled(size, 0);
     for (var i = size - 1; i >= 0; i--) {
       result[i] = (v & BigInt.from(255)).toInt();
@@ -71,7 +73,7 @@ class ASN1Integer extends ASN1Object {
 }
 
 class ASN1Enumerated extends ASN1Integer {
-  ASN1Enumerated(BigInt value) : super(value, tag: 10);
+  ASN1Enumerated(BigInt super.value) : super(tag: 10);
 }
 
 class ASN1OctetString extends ASN1Object {
@@ -133,8 +135,9 @@ class ASN1ObjectIdentifier extends ASN1Object {
         parts[0] < BigInt.zero ||
         parts[0] > BigInt.two ||
         parts[1] < BigInt.zero ||
-        (parts[0] < BigInt.two && parts[1] >= BigInt.from(40)))
+        (parts[0] < BigInt.two && parts[1] >= BigInt.from(40))) {
       throw FormatException('Invalid object identifier');
+    }
     final result = <int>[];
     for (var value in [
       parts[0] * BigInt.from(40) + parts[1],
@@ -168,22 +171,27 @@ class ASN1Parser {
   }
 
   ASN1Object nextObject() {
-    if (_depth > 64 || _offset + 2 > bytes.length)
+    if (_depth > 64 || _offset + 2 > bytes.length) {
       throw FormatException('Truncated or deeply nested ASN.1');
+    }
     final tag = bytes[_offset++];
     if ((tag & 31) == 31) throw FormatException('High ASN.1 tag unsupported');
     var length = bytes[_offset++];
     if (length >= 128) {
       final count = length & 127;
-      if (count == 0 || count > 4 || _offset + count > bytes.length)
+      if (count == 0 || count > 4 || _offset + count > bytes.length) {
         throw FormatException('Invalid ASN.1 length');
+      }
       if (bytes[_offset] == 0) throw FormatException('Nonminimal ASN.1 length');
       length = 0;
-      for (var i = 0; i < count; i++) length = (length << 8) | bytes[_offset++];
+      for (var i = 0; i < count; i++) {
+        length = (length << 8) | bytes[_offset++];
+      }
       if (length < 128) throw FormatException('Nonminimal ASN.1 length');
     }
-    if (_offset + length > bytes.length)
+    if (_offset + length > bytes.length) {
       throw FormatException('Truncated ASN.1 value');
+    }
     final value = Uint8List.fromList(bytes.sublist(_offset, _offset + length));
     _offset += length;
     if ((tag & 32) != 0) {
@@ -193,7 +201,9 @@ class ASN1Parser {
       }
       final parser = ASN1Parser._(value, _depth + 1);
       final elements = <ASN1Object>[];
-      while (parser._offset < value.length) elements.add(parser.nextObject());
+      while (parser._offset < value.length) {
+        elements.add(parser.nextObject());
+      }
       if (tag == 49) {
         for (var i = 1; i < elements.length; i++) {
           final previous = elements[i - 1].encode(),
@@ -222,16 +232,20 @@ class ASN1Parser {
           throw FormatException('Nonminimal ASN.1 integer');
         }
         var n = BigInt.zero;
-        for (final b in value) n = (n << 8) | BigInt.from(b);
+        for (final b in value) {
+          n = (n << 8) | BigInt.from(b);
+        }
         if (value[0] & 128 != 0) n -= BigInt.one << (value.length * 8);
         return tag == 2 ? ASN1Integer(n) : ASN1Enumerated(n);
       case 1:
-        if (value.length != 1 || (value[0] != 0 && value[0] != 255))
+        if (value.length != 1 || (value[0] != 0 && value[0] != 255)) {
           throw FormatException('Invalid DER boolean');
+        }
         return ASN1Boolean(value[0] != 0);
       case 3:
-        if (value.isEmpty || value[0] > 7)
+        if (value.isEmpty || value[0] > 7) {
           throw FormatException('Invalid bit string');
+        }
         if ((value.length == 1 && value[0] != 0) ||
             (value.length > 1 && value.last & ((1 << value[0]) - 1) != 0)) {
           throw FormatException('Invalid bit-string padding');
@@ -257,8 +271,9 @@ class ASN1Parser {
             start = true;
           }
         }
-        if (arcs.isEmpty || value.last & 128 != 0)
+        if (arcs.isEmpty || value.last & 128 != 0) {
           throw FormatException('Invalid OID');
+        }
         final first = arcs.removeAt(0);
         final a = first < BigInt.from(40)
             ? 0

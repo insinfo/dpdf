@@ -249,7 +249,7 @@ class SimpleTSAClient extends TimestampClient {
   /// Creates a TSA client for a well-known TSA service.
   ///
   /// @param tsaUrl the TSA URL
-  SimpleTSAClient(String tsaUrl) : super(tsaUrl);
+  SimpleTSAClient(super.tsaUrl);
 
   /// Creates a TSA client for a well-known free TSA service.
   factory SimpleTSAClient.freeTsa() {

@@ -56,10 +56,8 @@ class CraftSvgCssUtils {
   static List<double>? parseViewBox(CraftSvgNodeRenderer svgRenderer) {
     String? vbString =
         svgRenderer.getAttribute(CraftSvgConstants.Attributes.VIEWBOX);
-    if (vbString == null) {
-      vbString = svgRenderer
-          .getAttribute(CraftSvgConstants.Attributes.VIEWBOX.toLowerCase());
-    }
+    vbString ??= svgRenderer
+        .getAttribute(CraftSvgConstants.Attributes.VIEWBOX.toLowerCase());
 
     if (vbString == null) return null;
 

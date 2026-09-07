@@ -9,7 +9,7 @@ class CraftGlyph {
 
   final int _code;
   final int _width;
-  List<int>? _bbox;
+  final List<int>? _bbox;
   int _unicode;
   List<int>? _chars;
   final bool _isMark;
@@ -57,7 +57,7 @@ class CraftGlyph {
         _unicode = other._unicode,
         _chars = other._chars != null ? List.from(other._chars!) : null,
         _isMark = other._isMark,
-        _bbox = other._bbox != null ? List.from(other._bbox!) : null,
+        _bbox = other._bbox != null ? List.from(other._bbox) : null,
         xPlacement = other.xPlacement,
         yPlacement = other.yPlacement,
         xAdvance = other.xAdvance,
@@ -143,6 +143,6 @@ class CraftGlyph {
 
   @override
   String toString() {
-    return "[id=$_code, chars=${_chars}, uni=$_unicode, width=$_width]";
+    return "[id=$_code, chars=$_chars, uni=$_unicode, width=$_width]";
   }
 }

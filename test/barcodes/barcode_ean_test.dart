@@ -14,7 +14,7 @@ void main() {
     test('BarcodeEAN13 Basic Test', () async {
       final file = File('test/tmp/barcode_ean13_test.pdf');
       final writer = CraftPdfWriter(file.openWrite());
-      final pdf = await CraftPdfDocument.create(writer);
+      final pdf = CraftPdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
       final canvas = await CraftPdfCanvas.fromPage(page);
 
@@ -41,7 +41,7 @@ void main() {
     test('BarcodeEAN8 Basic Test', () async {
       final file = File('test/tmp/barcode_ean8_test.pdf');
       final writer = CraftPdfWriter(file.openWrite());
-      final pdf = await CraftPdfDocument.create(writer);
+      final pdf = CraftPdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
       final canvas = await CraftPdfCanvas.fromPage(page);
 

@@ -1,5 +1,5 @@
 import 'package:dpdf/src/layout/element/abstract_element.dart';
-import 'package:dpdf/src/layout/element/leaf_element.dart';
+import 'package:dpdf/src/layout/element/leaf_content.dart';
 import 'package:dpdf/src/layout/renderer/renderer.dart';
 import 'package:dpdf/src/layout/renderer/image_renderer.dart';
 import 'package:dpdf/src/io/image/image_data.dart';
@@ -25,11 +25,13 @@ class CraftImage extends CraftAbstractElement<CraftImage>
     return CraftAccessibilityProperties(); // TODO: Implement roles
   }
 
+  @override
   CraftImage setWidth(double width) {
     setProperty(CraftProperty.WIDTH, CraftUnitValue.createPointValue(width));
     return this;
   }
 
+  @override
   CraftImage setHeight(double height) {
     setProperty(CraftProperty.HEIGHT, CraftUnitValue.createPointValue(height));
     return this;

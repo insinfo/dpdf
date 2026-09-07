@@ -169,8 +169,9 @@ class CraftOpenTypeParser {
   // Placeholder methods for table reading
   void readHeadTable() {
     List<int>? tableLocation = tables["head"];
-    if (tableLocation == null)
+    if (tableLocation == null) {
       throw Exception("Table 'head' does not exist in $fileName");
+    }
     raf.seek(tableLocation[0] + 16);
     head = HeaderTable();
     head.flags = raf.readUnsignedShort();
@@ -185,8 +186,9 @@ class CraftOpenTypeParser {
 
   void readHheaTable() {
     List<int>? tableLocation = tables["hhea"];
-    if (tableLocation == null)
+    if (tableLocation == null) {
       throw Exception("Table 'hhea' does not exist in $fileName");
+    }
     raf.seek(tableLocation[0] + 4);
     hhea = HorizontalHeader();
     hhea.Ascender = raf.readShort();
@@ -220,8 +222,9 @@ class CraftOpenTypeParser {
         Uint8List.sublistView(raf.getBytes(), span[0], span[0] + span[1]);
     final fields = ByteData.sublistView(raw);
     final revision = fields.getUint16(0);
-    if (revision > 5)
+    if (revision > 5) {
       throw UnsupportedError('OS/2 revision $revision is unsupported.');
+    }
     final required = switch (revision) {
       0 => span[1] == 68 ? 68 : 78,
       1 => 86,
@@ -404,34 +407,40 @@ class CraftOpenTypeParser {
       cmaps.cmapEncodings.add(Tuple2(platId, platSpecId));
       int offset = raf.readInt();
 
-      if (platId == 0 && platSpecId == 3)
+      if (platId == 0 && platSpecId == 3) {
         map03 = offset;
-      else if (platId == 1 && platSpecId == 0)
+      } else if (platId == 1 && platSpecId == 0) {
         map10 = offset;
-      else if (platId == 3 && platSpecId == 0) {
+      } else if (platId == 3 && platSpecId == 0) {
         cmaps.fontSpecific = true;
         map30 = offset;
-      } else if (platId == 3 && platSpecId == 1)
+      } else if (platId == 3 && platSpecId == 1) {
         map31 = offset;
-      else if (platId == 3 && platSpecId == 10) map310 = offset;
+      } else if (platId == 3 && platSpecId == 10) {
+        map310 = offset;
+      }
     }
 
     if (map03 > 0) {
       raf.seek(tableLocation[0] + map03);
       int format = raf.readUnsignedShort();
-      if (format == 4)
+      if (format == 4) {
         cmaps.cmap03 = readFormat4(false);
-      else if (format == 6) cmaps.cmap03 = readFormat6();
+      } else if (format == 6) {
+        cmaps.cmap03 = readFormat6();
+      }
       cmaps.cmap31 = cmaps.cmap03;
     }
     if (map10 > 0) {
       raf.seek(tableLocation[0] + map10);
       int format = raf.readUnsignedShort();
-      if (format == 0)
+      if (format == 0) {
         cmaps.cmap10 = readFormat0();
-      else if (format == 4)
+      } else if (format == 4) {
         cmaps.cmap10 = readFormat4(false);
-      else if (format == 6) cmaps.cmap10 = readFormat6();
+      } else if (format == 6) {
+        cmaps.cmap10 = readFormat6();
+      }
     }
     if (map30 > 0) {
       raf.seek(tableLocation[0] + map30);
@@ -473,12 +482,18 @@ class CraftOpenTypeParser {
     int segCount = raf.readUnsignedShort() ~/ 2;
     raf.skipBytes(6);
     List<int> endCount = List.filled(segCount, 0);
-    for (int k = 0; k < segCount; k++) endCount[k] = raf.readUnsignedShort();
+    for (int k = 0; k < segCount; k++) {
+      endCount[k] = raf.readUnsignedShort();
+    }
     raf.skipBytes(2);
     List<int> startCount = List.filled(segCount, 0);
-    for (int k = 0; k < segCount; k++) startCount[k] = raf.readUnsignedShort();
+    for (int k = 0; k < segCount; k++) {
+      startCount[k] = raf.readUnsignedShort();
+    }
     List<int> idDelta = List.filled(segCount, 0);
-    for (int k = 0; k < segCount; k++) idDelta[k] = raf.readUnsignedShort();
+    for (int k = 0; k < segCount; k++) {
+      idDelta[k] = raf.readUnsignedShort();
+    }
     List<int> idRO = List.filled(segCount, 0);
 
     int currentPos = raf.getPosition();
@@ -572,8 +587,9 @@ class CraftOpenTypeParser {
   }
 
   int getGlyphWidth(int glyph) {
-    if (glyph >= glyphWidthsByIndex.length)
+    if (glyph >= glyphWidthsByIndex.length) {
       glyph = glyphWidthsByIndex.length - 1;
+    }
     return glyphWidthsByIndex[glyph];
   }
 

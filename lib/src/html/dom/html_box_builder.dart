@@ -32,8 +32,9 @@ class CraftHtmlBoxBuilder {
       }
       if (node is! dom.Element) continue;
       final tag = node.localName?.toLowerCase() ?? '';
-      if (const {'script', 'style', 'noscript', 'template'}.contains(tag))
+      if (const {'script', 'style', 'noscript', 'template'}.contains(tag)) {
         continue;
+      }
       final declarations = styleSheet.resolve(node);
       final style = _styleFor(tag, declarations, textStyle);
       final href = tag == 'a' ? node.attributes['href']?.trim() : null;

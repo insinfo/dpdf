@@ -6,7 +6,7 @@ typedef MutateOutline = void Function(List<CraftPdfDictionary> nodes);
 Future<Uint8List> outlineSource({MutateOutline? mutate}) async {
   final bytes = BytesBuilder();
   final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
   final pages = [
     await document.appendBlankPage(),
     await document.appendBlankPage()
@@ -112,8 +112,9 @@ void main() {
           identical(await target(current),
               (await result.pageAt(index))!.pdfRepresentation()),
           isTrue);
-      if (index < 4)
+      if (index < 4) {
         current = (await current.dictionaryEntry(CraftPdfName('Next')))!;
+      }
     }
   });
   test('Repeated page selection targets first copy and omitted targets reject',

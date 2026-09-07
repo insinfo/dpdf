@@ -1,19 +1,26 @@
-/// Compression constants for PdfStream.
+/// Stream compression levels, shared by [CraftPdfStream] and the writer.
+///
+/// The values are the zlib levels, so they can be passed straight to the
+/// deflate implementation.
 class CraftCompressionConstants {
   CraftCompressionConstants._();
 
-  /// Undefined compression level.
-  static const int undefinedCompression = -2147483648; // int.minValue
+  /// No level was chosen, so the caller's default applies.
+  ///
+  /// This is the same value as [defaultCompression] because zlib itself uses
+  /// -1 to mean "the implementation decides"; the two names record intent, not
+  /// different behaviour.
+  static const int undefinedCompression = -1;
 
-  /// Default compression level.
+  /// Let the deflate implementation choose, which is level 6 in zlib.
   static const int defaultCompression = -1;
 
-  /// No compression.
+  /// Store the data without compressing it.
   static const int noCompression = 0;
 
-  /// Best speed compression.
+  /// Compress as fast as possible.
   static const int bestSpeed = 1;
 
-  /// Best compression level.
+  /// Compress as small as possible.
   static const int bestCompression = 9;
 }

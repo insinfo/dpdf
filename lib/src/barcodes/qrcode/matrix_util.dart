@@ -40,9 +40,10 @@ class CraftMatrixUtil {
 
   static int calculateBCHCode(int value, int poly) {
     RangeError.checkNotNegative(value, 'value');
-    if (poly < 2)
+    if (poly < 2) {
       throw ArgumentError.value(
           poly, 'poly', 'Polynomial needs a nonconstant term');
+    }
     final degree = poly.bitLength - 1;
     var remainder = 0;
     // Feed message coefficients followed by the zero augmentation.
@@ -123,18 +124,22 @@ class CraftMatrixUtil {
           if (matrix.get(x, y) != 255) continue;
           var value = consumed < dataBits.size() ? dataBits.at(consumed++) : 0;
           if (maskPattern >= 0 &&
-              CraftMaskUtil.maskAppliesAt(maskPattern, x, y)) value ^= 1;
+              CraftMaskUtil.maskAppliesAt(maskPattern, x, y)) {
+            value ^= 1;
+          }
           matrix.set(x, y, value);
         }
       }
     }
-    if (consumed < dataBits.size())
+    if (consumed < dataBits.size()) {
       throw ArgumentError('QR data exceeds the unreserved matrix cells');
+    }
   }
 
   static void _writeVacant(CraftByteMatrix matrix, int x, int y, int value) {
-    if (matrix.get(x, y) != 255)
+    if (matrix.get(x, y) != 255) {
       throw StateError('QR pattern overlaps an occupied module at ($x, $y)');
+    }
     matrix.set(x, y, value);
   }
 
@@ -193,8 +198,9 @@ class CraftMatrixUtil {
         CraftVersion.getVersionForNumber(version).getAlignmentPatternCenters();
     for (final x in centers) {
       for (final y in centers) {
-        if (matrix.get(x, y) == 255)
+        if (matrix.get(x, y) == 255) {
           embedPositionAdjustmentPattern(x - 2, y - 2, matrix);
+        }
       }
     }
   }
@@ -215,8 +221,9 @@ class CraftMatrixUtil {
 
   static void embedDarkDotAtLeftBottomCorner(CraftByteMatrix matrix) {
     final y = matrix.getHeight() - 8;
-    if (matrix.get(8, y) == 0)
+    if (matrix.get(8, y) == 0) {
       throw StateError('QR fixed dark module was reserved as light');
+    }
     matrix.set(8, y, 1);
   }
 }

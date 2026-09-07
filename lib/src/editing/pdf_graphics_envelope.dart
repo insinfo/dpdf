@@ -27,7 +27,7 @@ class PdfGraphicsEnvelope {
     return (BytesBuilder(copy: false)
           ..add(ascii.encode('q\n' * saves))
           ..add(content)
-          ..add(ascii.encode('\n' + 'Q\n' * (saves + depth))))
+          ..add(ascii.encode('\n${'Q\n' * (saves + depth)}')))
         .takeBytes();
   }
 }

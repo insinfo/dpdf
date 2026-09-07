@@ -167,16 +167,15 @@ class CraftBarcodeEAN extends CraftBarcode1D {
     return CraftBarcodeEAN._internal(document, resolvedFont);
   }
 
-  CraftBarcodeEAN._internal(CraftPdfDocument document, CraftPdfFont font)
-      : super(document) {
-    this.x = 0.8;
+  CraftBarcodeEAN._internal(super.document, CraftPdfFont font) {
+    x = 0.8;
     this.font = font;
-    this.size = 8;
-    this.baseline = size;
-    this.barHeight = size * 3;
-    this.guardBars = true;
-    this.codeType = EAN13;
-    this.code = "";
+    size = 8;
+    baseline = size;
+    barHeight = size * 3;
+    guardBars = true;
+    codeType = EAN13;
+    code = "";
   }
 
   static List<int> _digits(String text, [int? length]) {
@@ -202,8 +201,9 @@ class CraftBarcodeEAN extends CraftBarcode1D {
 
   /// Compresses a twelve-digit UPC-A when its zero runs permit UPC-E.
   static String? convertUPCAtoUPCE(String text) {
-    if (text.length != 12 || !RegExp(r'^[01][0-9]{11}$').hasMatch(text))
+    if (text.length != 12 || !RegExp(r'^[01][0-9]{11}$').hasMatch(text)) {
       return null;
+    }
     final manufacturer = text.substring(1, 6);
     final product = text.substring(6, 11);
     String? payload;
@@ -215,11 +215,11 @@ class CraftBarcodeEAN extends CraftBarcode1D {
     } else if (manufacturer.endsWith('00') &&
         int.parse(manufacturer[2]) >= 3 &&
         product.startsWith('000')) {
-      payload = manufacturer.substring(0, 3) + product.substring(3) + '3';
+      payload = '${manufacturer.substring(0, 3)}${product.substring(3)}3';
     } else if (manufacturer.endsWith('0') &&
         manufacturer[3] != '0' &&
         product.startsWith('0000')) {
-      payload = manufacturer.substring(0, 4) + product[4] + '4';
+      payload = '${manufacturer.substring(0, 4)}${product[4]}4';
     } else if (manufacturer[4] != '0' &&
         product.startsWith('0000') &&
         int.parse(product[4]) >= 5) {
@@ -264,8 +264,9 @@ class CraftBarcodeEAN extends CraftBarcode1D {
 
   static Uint8List getBarsUPCE(String code) {
     final digits = _digits(code, 8);
-    if (digits.first > 1)
+    if (digits.first > 1) {
       throw const FormatException('UPC-E number system must be zero or one');
+    }
     final parity = PARITYE[digits.last];
     return Uint8List.fromList([
       1,

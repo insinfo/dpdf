@@ -95,15 +95,17 @@ class CraftJpegImageHelper {
     bool firstPass = true;
     while (true) {
       int v = read();
-      if (v < 0)
+      if (v < 0) {
         throw IoException(
             CraftIoExceptionMessageConstant.prematureEofWhileReadingJpeg);
+      }
 
       if (v == 0xFF) {
         int marker = read();
-        if (marker == -1)
+        if (marker == -1) {
           throw IoException(
               CraftIoExceptionMessageConstant.prematureEofWhileReadingJpeg);
+        }
 
         if (firstPass && marker == M_APP0) {
           firstPass = false;

@@ -14,7 +14,7 @@ class CraftPdfTextFormField extends CraftPdfFormField {
   static const int ffComb = 1 << 24; // Bit 25
   static const int ffRichText = 1 << 25; // Bit 26
 
-  CraftPdfTextFormField(CraftPdfDictionary pdfObject) : super(pdfObject);
+  CraftPdfTextFormField(super.pdfObject);
 
   @override
   Future<CraftPdfName?> getFormType() async {
@@ -54,6 +54,7 @@ class CraftPdfTextFormField extends CraftPdfFormField {
     return field;
   }
 
+  @override
   Future<bool> isMultiline() async {
     return getFieldFlag(ffMultiline);
   }
@@ -63,6 +64,7 @@ class CraftPdfTextFormField extends CraftPdfFormField {
     await setFieldFlag(ffMultiline, multiline);
   }
 
+  @override
   Future<bool> isPassword() async {
     return getFieldFlag(ffPassword);
   }

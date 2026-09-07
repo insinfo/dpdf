@@ -37,7 +37,9 @@ abstract final class KeccakDigest {
     for (final constant in _roundConstants) {
       for (var x = 0; x < 5; x++) {
         columns[x] = BigInt.zero;
-        for (var y = 0; y < 5; y++) columns[x] ^= lanes[x + 5 * y];
+        for (var y = 0; y < 5; y++) {
+          columns[x] ^= lanes[x + 5 * y];
+        }
       }
       for (var x = 0; x < 5; x++) {
         final correction =

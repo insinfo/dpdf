@@ -154,8 +154,9 @@ class TiffDirectory {
             break;
           case TiffField.TIFF_SHORT:
             Uint16List cvalues = Uint16List(count);
-            for (int j = 0; j < count; j++)
+            for (int j = 0; j < count; j++) {
               cvalues[j] = readUnsignedShort(stream);
+            }
             obj = cvalues;
             break;
           case TiffField.TIFF_LONG:
@@ -164,8 +165,9 @@ class TiffDirectory {
             // Let's use List<int> for simplicity or Uint32List?
             // C# uses long[]
             Int64List lvalues = Int64List(count);
-            for (int j = 0; j < count; j++)
+            for (int j = 0; j < count; j++) {
               lvalues[j] = readUnsignedInt(stream);
+            }
             obj = lvalues;
             break;
           case TiffField.TIFF_RATIONAL:
@@ -178,12 +180,16 @@ class TiffDirectory {
             break;
           case TiffField.TIFF_SSHORT:
             Int16List svalues = Int16List(count);
-            for (int j = 0; j < count; j++) svalues[j] = readShort(stream);
+            for (int j = 0; j < count; j++) {
+              svalues[j] = readShort(stream);
+            }
             obj = svalues;
             break;
           case TiffField.TIFF_SLONG:
             Int32List ivalues = Int32List(count);
-            for (int j = 0; j < count; j++) ivalues[j] = readInt(stream);
+            for (int j = 0; j < count; j++) {
+              ivalues[j] = readInt(stream);
+            }
             obj = ivalues;
             break;
           case TiffField.TIFF_SRATIONAL:
@@ -196,12 +202,16 @@ class TiffDirectory {
             break;
           case TiffField.TIFF_FLOAT:
             Float32List fvalues = Float32List(count);
-            for (int j = 0; j < count; j++) fvalues[j] = readFloat(stream);
+            for (int j = 0; j < count; j++) {
+              fvalues[j] = readFloat(stream);
+            }
             obj = fvalues;
             break;
           case TiffField.TIFF_DOUBLE:
             Float64List dvalues = Float64List(count);
-            for (int j = 0; j < count; j++) dvalues[j] = readDouble(stream);
+            for (int j = 0; j < count; j++) {
+              dvalues[j] = readDouble(stream);
+            }
             obj = dvalues;
             break;
           default:

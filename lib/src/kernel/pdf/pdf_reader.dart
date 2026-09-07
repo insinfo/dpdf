@@ -723,7 +723,9 @@ class CraftPdfReader {
   int _readXrefStreamField(Uint8List data, int offset, int width) {
     if (width == 0) return 0;
     var result = 0;
-    for (var i = 0; i < width; i++) result = (result << 8) | data[offset + i];
+    for (var i = 0; i < width; i++) {
+      result = (result << 8) | data[offset + i];
+    }
     return result;
   }
 

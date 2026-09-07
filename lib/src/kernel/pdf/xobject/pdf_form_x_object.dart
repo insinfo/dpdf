@@ -19,7 +19,7 @@ class CraftPdfFormXObject extends CraftPdfXObject {
     _bBoxCache = bBox;
   }
 
-  CraftPdfFormXObject.fromStream(CraftPdfStream pdfStream) : super(pdfStream) {
+  CraftPdfFormXObject.fromStream(super.pdfStream) {
     if (!pdfRepresentation().containsKey(CraftPdfName.subtype)) {
       pdfRepresentation().put(CraftPdfName.subtype, CraftPdfName.form);
     }

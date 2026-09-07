@@ -10,9 +10,7 @@ void main() {
       () {
     // Own synthetic fixture replaces the original external PDF asset.
     final bytes = Uint8List.fromList(latin1.encode(
-        '%PDF-1.7\n%Verbose dart_pdf\n%Producer https://github.com/DavBfr/dart_pdf\n'
-                '1 0 obj <<>> endobj\n' +
-            ' ' * 4096));
+        '%PDF-1.7\n%Verbose dart_pdf\n%Producer https://github.com/DavBfr/dart_pdf\n1 0 obj <<>> endobj\n${' ' * 4096}'));
 
     final result = sanitizePdfLeadingPercentComments(bytes);
 

@@ -1,4 +1,3 @@
-import '../../kernel/pdf/pdf_dictionary.dart';
 import '../../kernel/pdf/pdf_array.dart';
 import '../../kernel/pdf/pdf_number.dart';
 import '../../kernel/pdf/pdf_name.dart';
@@ -17,7 +16,7 @@ class CraftPdfChoiceFormField extends CraftPdfFormField {
 
   static final _logger = LogManager.getLoggerByName('PdfChoiceFormField');
 
-  CraftPdfChoiceFormField(CraftPdfDictionary pdfObject) : super(pdfObject);
+  CraftPdfChoiceFormField(super.pdfObject);
 
   @override
   Future<CraftPdfName?> getFormType() async {

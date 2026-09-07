@@ -30,8 +30,9 @@ abstract final class TripleDes {
       }
     }
     final padding = result.last;
-    if (padding < 1 || padding > 8)
+    if (padding < 1 || padding > 8) {
       throw FormatException('Invalid Triple DES padding.');
+    }
     var mismatch = 0;
     for (var n = result.length - padding; n < result.length; n++) {
       mismatch |= result[n] ^ padding;

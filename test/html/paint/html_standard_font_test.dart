@@ -15,19 +15,30 @@ CraftHtmlTextStyle _style(String css) {
 }
 
 void main() {
-  test('maps CSS family lists but selects only bundled standard faces', () {
+  test('maps CSS family lists to the matching standard face', () {
     expect(
         CraftHtmlStandardFont.resolve(_style(
             "font-family: 'Times New Roman', serif; font-weight: 700; font-style: oblique;")),
-        'Helvetica');
+        'Times-BoldItalic');
     expect(
         CraftHtmlStandardFont.resolve(
             _style('font-family: monospace; font-weight: bold;')),
-        'Helvetica');
+        'Courier-Bold');
     expect(
         CraftHtmlStandardFont.resolve(
             _style('font-family: missing, Arial; font-style: italic;')),
+        'Helvetica-Oblique');
+  });
+
+  test('falls back to Helvetica for an unknown family', () {
+    expect(CraftHtmlStandardFont.resolve(_style('font-family: Papyrus;')),
         'Helvetica');
+    expect(CraftHtmlStandardFont.resolve(_style('font-family: serif;')),
+        'Times-Roman');
+    expect(
+        CraftHtmlStandardFont.resolve(
+            _style('font-family: Courier; font-style: italic;')),
+        'Courier-Oblique');
   });
 
   test('normal CSS weight and style override inherited semantic emphasis', () {
@@ -41,6 +52,6 @@ void main() {
     final leaf = boxes.single.children.single.children.single.style.text;
     expect(leaf.bold, isFalse);
     expect(leaf.italic, isFalse);
-    expect(CraftHtmlStandardFont.resolve(leaf), 'Helvetica');
+    expect(CraftHtmlStandardFont.resolve(leaf), 'Courier');
   });
 }

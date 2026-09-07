@@ -383,7 +383,7 @@ void main() {
 
   group('PdfSigner', () {
     test('getSignerProperties returns properties', () async {
-      final signer = await CraftPdfSigner.fromBytes(
+      final signer = CraftPdfSigner.fromBytes(
         Uint8List.fromList([1, 2, 3]),
         MockSink(),
       );
@@ -392,7 +392,7 @@ void main() {
     });
 
     test('setSignerProperties updates properties', () async {
-      final signer = await CraftPdfSigner.fromBytes(
+      final signer = CraftPdfSigner.fromBytes(
         Uint8List.fromList([1, 2, 3]),
         MockSink(),
       );
@@ -406,7 +406,7 @@ void main() {
     });
 
     test('fluent setters work correctly', () async {
-      final signer = await CraftPdfSigner.fromBytes(
+      final signer = CraftPdfSigner.fromBytes(
         Uint8List.fromList([1, 2, 3]),
         MockSink(),
       );
@@ -427,7 +427,7 @@ void main() {
     });
 
     test('getNewSigFieldName returns default name', () async {
-      final signer = await CraftPdfSigner.fromBytes(
+      final signer = CraftPdfSigner.fromBytes(
         Uint8List.fromList([1, 2, 3]),
         MockSink(),
       );
@@ -437,7 +437,7 @@ void main() {
     });
 
     test('close prevents further operations', () async {
-      final signer = await CraftPdfSigner.fromBytes(
+      final signer = CraftPdfSigner.fromBytes(
         Uint8List.fromList([1, 2, 3]),
         MockSink(),
       );

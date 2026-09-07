@@ -27,8 +27,9 @@ class ECBlocks {
       if (ecBlocks1 != null) ecBlocks1,
       if (ecBlocks2 != null) ecBlocks2
     ];
-    if (_ecBlocks.isEmpty)
+    if (_ecBlocks.isEmpty) {
       throw ArgumentError('At least one QR block group is required');
+    }
   }
 
   int getECCodewordsPerBlock() {
@@ -148,8 +149,9 @@ class CraftVersion {
     for (var number = 7; number <= 40; number++) {
       var remainder = number << 12;
       for (var degree = 17; degree >= 12; degree--) {
-        if ((remainder & (1 << degree)) != 0)
+        if ((remainder & (1 << degree)) != 0) {
           remainder ^= 0x1f25 << (degree - 12);
+        }
       }
       var difference = versionBits ^ ((number << 12) | remainder);
       var errors = 0;

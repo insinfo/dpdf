@@ -108,8 +108,9 @@ class BksKeyStore {
     final random = salt == null ? Random.secure() : null;
     final chosen = salt ??
         Uint8List.fromList(List.generate(20, (_) => random!.nextInt(256)));
-    if (chosen.isEmpty || chosen.length > 4096)
+    if (chosen.isEmpty || chosen.length > 4096) {
       throw ArgumentError('Salt length must be 1..4096.');
+    }
     return BksKeyStore._(
         List.unmodifiable(records), Uint8List.fromList(chosen), iterations);
   }
@@ -118,10 +119,12 @@ class BksKeyStore {
       {required String password,
       int maxIterations = 1000000,
       int maximumBytes = 64 * 1024 * 1024}) {
-    if (maximumBytes < 33)
+    if (maximumBytes < 33) {
       throw ArgumentError.value(maximumBytes, 'maximumBytes');
-    if (bytes.length > maximumBytes)
+    }
+    if (bytes.length > maximumBytes) {
       throw FormatException('Store exceeds the accepted size.');
+    }
     final header = _Input(bytes);
     final version = header.u32();
     if (version != 2) throw UnsupportedError('Only BKS version 2 is accepted.');
@@ -129,8 +132,9 @@ class BksKeyStore {
     if (salt.isEmpty) throw FormatException('Store salt is empty.');
     final iterations = header.u32();
     _iterations(iterations, maxIterations);
-    if (header.remaining < 21)
+    if (header.remaining < 21) {
       throw FormatException('Store body or integrity tag is missing.');
+    }
     final body = header.take(header.remaining - 20);
     final tag = header.take(20);
     final expected = _mac(body, password, salt, iterations);
@@ -138,8 +142,9 @@ class BksKeyStore {
     for (var i = 0; i < 20; i++) {
       difference |= tag[i] ^ expected[i];
     }
-    if (difference != 0)
+    if (difference != 0) {
       throw FormatException('Store password or integrity check failed.');
+    }
     final input = _Input(body);
     final records = <BksRecord>[];
     final aliases = <String>{};
@@ -147,14 +152,16 @@ class BksKeyStore {
       final type = input.u8();
       if (type == 0) break;
       if (type > 4) throw FormatException('Unknown store record type.');
-      if (records.length >= 100000)
+      if (records.length >= 100000) {
         throw FormatException('Store has too many records.');
+      }
       final alias = input.text();
       if (!aliases.add(alias)) throw FormatException('Store repeats an alias.');
       final date = input.date();
       final count = input.u32();
-      if (count > 10000 || count > input.remaining ~/ 6)
+      if (count > 10000 || count > input.remaining ~/ 6) {
         throw FormatException('Invalid chain size.');
+      }
       final chain = List.generate(count, (_) => input.certificate());
       records.add(BksRecord(
           alias: alias,
@@ -182,8 +189,9 @@ class BksKeyStore {
     final body = _Output();
     final aliases = <String>{};
     for (final record in records) {
-      if (!aliases.add(record.alias))
+      if (!aliases.add(record.alias)) {
         throw ArgumentError('Duplicate store alias.');
+      }
       body.u8(record.kind.index + 1);
       body.text(record.alias);
       body.date(record.createdAt);
@@ -193,22 +201,25 @@ class BksKeyStore {
       }
       switch (record.kind) {
         case BksRecordKind.certificate:
-          if (record.certificate == null)
+          if (record.certificate == null) {
             throw ArgumentError('Certificate record has no certificate.');
+          }
           body.certificate(record.certificate!);
         case BksRecordKind.key:
           if (record.key == null) throw ArgumentError('Key record has no key.');
           final key = record.key!;
-          if (key.kind < 0 || key.kind > 2)
+          if (key.kind < 0 || key.kind > 2) {
             throw ArgumentError('Invalid key kind.');
+          }
           body.u8(key.kind);
           body.text(key.format);
           body.text(key.algorithm);
           body.blob(key.bytes);
         case BksRecordKind.opaqueSecret:
         case BksRecordKind.sealedKey:
-          if (record.payload == null)
+          if (record.payload == null) {
             throw ArgumentError('Record has no payload.');
+          }
           body.blob(record.payload!);
       }
     }
@@ -226,8 +237,9 @@ class BksKeyStore {
 
 void _iterations(int value, int limit) {
   if (limit < 1) throw ArgumentError.value(limit, 'maxIterations');
-  if (value < 1 || value > limit)
+  if (value < 1 || value > limit) {
     throw FormatException('KDF iteration count exceeds the accepted range.');
+  }
 }
 
 Uint8List _mac(
@@ -261,8 +273,9 @@ class _Input {
   _Input(this.bytes);
   int get remaining => bytes.length - offset;
   Uint8List take(int size) {
-    if (size < 0 || size > remaining)
+    if (size < 0 || size > remaining) {
       throw FormatException('Truncated store field.', null, offset);
+    }
     final data =
         Uint8List.fromList(Uint8List.sublistView(bytes, offset, offset + size));
     offset += size;
@@ -293,18 +306,21 @@ class _Input {
       }
       if (a >= 0xc0 && a <= 0xdf) {
         final b = encoded.u8();
-        if ((b & 0xc0) != 0x80)
+        if ((b & 0xc0) != 0x80) {
           throw FormatException('Invalid text continuation.');
+        }
         final unit = (a & 31) * 64 + (b & 63);
-        if (unit < 128 && unit != 0)
+        if (unit < 128 && unit != 0) {
           throw FormatException('Overlong store text.');
+        }
         units.add(unit);
         continue;
       }
       if (a >= 0xe0 && a <= 0xef) {
         final b = encoded.u8(), c = encoded.u8();
-        if ((b & 0xc0) != 0x80 || (c & 0xc0) != 0x80)
+        if ((b & 0xc0) != 0x80 || (c & 0xc0) != 0x80) {
           throw FormatException('Invalid text continuation.');
+        }
         final unit = (a & 15) * 4096 + (b & 63) * 64 + (c & 63);
         if (unit < 2048) throw FormatException('Overlong store text.');
         units.add(unit);
@@ -322,8 +338,9 @@ class _Input {
       value = (value << 8) | BigInt.from(byte);
     }
     if (data.first >= 128) value -= BigInt.one << 64;
-    if (value.abs() > BigInt.from(8640000000000000))
+    if (value.abs() > BigInt.from(8640000000000000)) {
       throw FormatException('Store timestamp is outside the supported range.');
+    }
     return DateTime.fromMillisecondsSinceEpoch(value.toInt(), isUtc: true);
   }
 
@@ -335,8 +352,9 @@ class _Input {
   }
 
   void end() {
-    if (remaining != 0)
+    if (remaining != 0) {
       throw FormatException('Unexpected bytes after the store terminator.');
+    }
   }
 }
 
@@ -369,8 +387,9 @@ class _Output {
       }
     }
     final data = encoded.takeBytes();
-    if (data.length > 65535)
+    if (data.length > 65535) {
       throw ArgumentError('Encoded store text is too long.');
+    }
     bytes.add([data.length >> 8, data.length & 255]);
     bytes.add(data);
   }

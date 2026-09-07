@@ -14,7 +14,7 @@ void main() {
     test('Barcode128 Basic Test', () async {
       final file = File('test/tmp/barcode_128_test.pdf');
       final writer = CraftPdfWriter(file.openWrite());
-      final pdf = await CraftPdfDocument.create(writer);
+      final pdf = CraftPdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
       final canvas = await CraftPdfCanvas.fromPage(page);
 

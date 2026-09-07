@@ -8,8 +8,9 @@ import 'qr_code.dart';
 class CraftQRCodeWriter {
   CraftByteMatrix encode(String contents, int width, int height,
       [Map<CraftEncodeHintType, dynamic>? hints]) {
-    if (contents.isEmpty)
+    if (contents.isEmpty) {
       throw ArgumentError('A QR raster needs nonempty content');
+    }
     RangeError.checkNotNegative(width, 'width');
     RangeError.checkNotNegative(height, 'height');
     final level = hints?[CraftEncodeHintType.ERROR_CORRECTION]

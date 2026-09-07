@@ -139,7 +139,9 @@ class CraftCssDimensionParsingUtils {
       if (index + 1 < s.length && _isDigit(s[index + 1])) return true;
       if (index + 2 < s.length &&
           (s[index + 1] == '-' || s[index + 1] == '+') &&
-          _isDigit(s[index + 2])) return true;
+          _isDigit(s[index + 2])) {
+        return true;
+      }
     }
     return false;
   }

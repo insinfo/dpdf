@@ -7,8 +7,7 @@ import 'package:dpdf/dpdf.dart';
 
 Future<Uint8List> fixture(int pages) async {
   final out = BytesBuilder();
-  final doc =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(out));
+  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(out));
   final font = CraftPdfFontFactory.createFont('Helvetica');
   for (var number = 0; number < pages; number++) {
     final canvas = await CraftPdfCanvas.fromPage(await doc.appendBlankPage());
@@ -33,8 +32,9 @@ Future<int> operation(Uint8List source, int pages, String task) async {
       for (var page = 1; page <= pages; page++) {
         final text =
             await PdfTextExtraction.fromPage((await doc.pageAt(page))!);
-        if (!text.contains('Synthetic page $page'))
+        if (!text.contains('Synthetic page $page')) {
           throw StateError('Incorrect extraction');
+        }
       }
     }
     return expected;

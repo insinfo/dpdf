@@ -20,8 +20,9 @@ void main() {
       final source = Uint8List(stride * 9);
       for (var y = 0; y < 9; y++) {
         for (var x = 0; x < width; x++) {
-          if (x >= y && (y.isEven || x % 3 == 0))
+          if (x >= y && (y.isEven || x % 3 == 0)) {
             source[y * stride + x ~/ 8] |= 1 << (7 - x % 8);
+          }
         }
       }
       final encoded = CraftCCITTG4Encoder.compress(source, width, 9);

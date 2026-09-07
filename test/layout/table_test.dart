@@ -18,7 +18,7 @@ void main() {
       }
 
       final writer = CraftPdfWriter(file.openWrite());
-      final pdf = await CraftPdfDocument.create(writer);
+      final pdf = CraftPdfDocument.create(writer);
       final doc = CraftDocument(pdf);
 
       final table = CraftTable.fromPointColumnWidths([100, 100, 100]);
@@ -42,7 +42,7 @@ void main() {
       }
 
       final writer = CraftPdfWriter(file.openWrite());
-      final pdf = await CraftPdfDocument.create(writer);
+      final pdf = CraftPdfDocument.create(writer);
       final doc = CraftDocument(pdf);
 
       final table = CraftTable.fromPointColumnWidths([100, 100, 100]);

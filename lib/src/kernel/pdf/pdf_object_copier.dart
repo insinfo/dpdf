@@ -54,8 +54,9 @@ class PdfObjectCopier {
       {Set<CraftPdfName> excludedKeys = const {}}) async {
     for (final entry in await source.entrySet()) {
       if (excludedKeys.contains(entry.key)) continue;
-      if (source is CraftPdfStream && entry.key == CraftPdfName.length)
+      if (source is CraftPdfStream && entry.key == CraftPdfName.length) {
         continue;
+      }
       target.put(entry.key, await copy(entry.value));
     }
   }
@@ -63,8 +64,9 @@ class PdfObjectCopier {
   Future<CraftPdfObject> copy(CraftPdfObject source) async {
     final references = HashSet<CraftPdfIndirectReference>.identity();
     while (source is CraftPdfIndirectReference) {
-      if (!references.add(source))
+      if (!references.add(source)) {
         throw FormatException('Cyclic indirect reference chain.');
+      }
       final target = await source.targetObject(true);
       if (target == null) throw FormatException('Unresolved object reference.');
       source = target;

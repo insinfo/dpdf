@@ -247,6 +247,7 @@ class CraftPdfIndirectReference extends CraftPdfObject {
   CraftPdfObject? _refersTo;
 
   /// Offset in the file where the object is stored.
+  @override
   int _offset = 0;
 
   /// Object stream number (0 if not in an object stream).
@@ -355,9 +356,11 @@ class CraftPdfIndirectReference extends CraftPdfObject {
   }
 
   /// Gets the offset in the file.
+  @override
   int getOffset() => _offset;
 
   /// Sets the offset in the file.
+  @override
   void setOffset(int offset) {
     _offset = offset;
   }

@@ -134,7 +134,7 @@ void main() {
   });
   test('Composite font resolves indirect encoding and Unicode streams',
       () async {
-    final document = await CraftPdfDocument.create(
+    final document = CraftPdfDocument.create(
         CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
     final encoding = CraftPdfStream.withBytes(
         bytes(

@@ -36,12 +36,12 @@ class CraftRawImageData extends CraftImageData {
   int typeCcitt = 0;
 
   /// Creates a RawImageData from a URL.
-  CraftRawImageData.fromUrl(Uri url, CraftImageType type)
-      : super.fromUrl(url, type);
+  CraftRawImageData.fromUrl(Uri super.url, CraftImageType super.type)
+      : super.fromUrl();
 
   /// Creates a RawImageData from bytes.
-  CraftRawImageData.fromBytes(Uint8List data, CraftImageType type)
-      : super.fromBytes(data, type);
+  CraftRawImageData.fromBytes(Uint8List super.data, CraftImageType super.type)
+      : super.fromBytes();
 
   @override
   bool isRawImage() => true;

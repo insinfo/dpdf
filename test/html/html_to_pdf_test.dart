@@ -25,7 +25,7 @@ void main() {
     final document =
         await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
     try {
-      expect(await document.pageTotal(), 1);
+      expect(document.pageTotal(), 1);
       final page = await document.pageAt(1);
       final text = await PdfTextExtraction.fromPage(page!);
       expect(text, contains('Relatório'));
@@ -45,7 +45,7 @@ void main() {
     final document =
         await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
     try {
-      expect(await document.pageTotal(), greaterThan(1));
+      expect(document.pageTotal(), greaterThan(1));
     } finally {
       await document.close();
     }

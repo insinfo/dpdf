@@ -29,13 +29,12 @@ class CraftPdfType0Font extends CraftPdfFont {
   CraftPdfType0Font(CraftFontProgram fontProgram, [String cmap = "Identity-H"])
       : super() {
     this.fontProgram = fontProgram;
-    this.embedded = true;
+    embedded = true;
     vertical = cmap.endsWith("V");
     cmapEncoding = CraftCMapEncoding(cmap);
   }
 
-  CraftPdfType0Font.fromDictionary(CraftPdfDictionary fontDictionary)
-      : super(fontDictionary) {
+  CraftPdfType0Font.fromDictionary(CraftPdfDictionary super.fontDictionary) {
     newFont = false;
   }
 
@@ -328,8 +327,9 @@ class CraftPdfType0Font extends CraftPdfFont {
       if (g != null) {
         glyphs.add(g);
         processed++;
-      } else
+      } else {
         break;
+      }
     }
     return processed;
   }

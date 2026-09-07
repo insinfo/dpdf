@@ -25,7 +25,7 @@ class CraftSvgDrawContext {
   SvgTextProperties _textProperties = SvgTextProperties();
   CraftSvgCssContext _cssContext = CraftSvgCssContext();
   CraftAffineTransform? _rootTransform;
-  CraftAffineTransform _clippingElementTransform = CraftAffineTransform();
+  final CraftAffineTransform _clippingElementTransform = CraftAffineTransform();
   List<double> _textMove = [0.0, 0.0];
   List<double>? _relativePosition;
   CraftRectangle? _customViewport;

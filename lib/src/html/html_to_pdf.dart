@@ -36,7 +36,7 @@ class CraftHtmlConverter {
     final options = properties ?? const CraftHtmlConverterProperties();
     final output = BytesBuilder(copy: false);
     final document =
-        await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
     try {
       await convertInto(html, document, properties: options);
     } finally {

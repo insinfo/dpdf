@@ -155,9 +155,9 @@ class CraftFontEncoding {
       if (ch < encoded.length) uni = encoded[ch];
 
       String? name = CraftAdobeGlyphList.unicodeToName(uni);
-      if (name == null)
+      if (name == null) {
         name = NOTDEF;
-      else {
+      } else {
         unicodeToCode[uni] = ch;
         codeToUnicode[ch] = uni;
         unicodeDifferences[uni] = ch;
@@ -169,10 +169,12 @@ class CraftFontEncoding {
   static String normalizeEncoding(String? enc) {
     if (enc == null) return "";
     String tmp = enc.toLowerCase();
-    if (tmp == "winansi" || tmp == "winansiencoding")
+    if (tmp == "winansi" || tmp == "winansiencoding") {
       return CraftPdfEncodings.WINANSI;
-    if (tmp == "macroman" || tmp == "macromanencoding")
+    }
+    if (tmp == "macroman" || tmp == "macromanencoding") {
       return CraftPdfEncodings.MACROMAN;
+    }
     if (tmp == "zapfdingbatsencoding") return CraftPdfEncodings.ZAPFDINGBATS;
     return enc;
   }

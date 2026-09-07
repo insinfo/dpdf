@@ -13,8 +13,7 @@ import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 
 Future<Uint8List> fixture(List<String> texts) async {
   final buffer = BytesBuilder();
-  final doc =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
+  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
   for (final text in texts) {
     final page = await doc.appendBlankPage();
     page.pdfRepresentation().put(
@@ -85,7 +84,7 @@ void main() {
   test('Compressed streams and shared resources survive assembly', () async {
     final buffer = BytesBuilder();
     final source =
-        await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
+        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
     final resources = CraftPdfDictionary();
     final fonts = CraftPdfDictionary();
     final font = CraftPdfDictionary()
@@ -124,7 +123,7 @@ void main() {
   test('Interactive documents are rejected before returning output', () async {
     final buffer = BytesBuilder();
     final source =
-        await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
+        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
     await source.appendBlankPage();
     source
         .rootCatalog()
@@ -138,7 +137,7 @@ void main() {
       () async {
     final buffer = BytesBuilder();
     final source =
-        await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
+        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
     final page = await source.appendBlankPage();
     page.pdfRepresentation().put(
         CraftPdfName.contents,

@@ -528,9 +528,8 @@ class CraftPdfCanvas {
         .writeBytes(CraftByteUtils.getIsoBytes("["));
     for (var item in items) {
       if (item is String) {
-        contentStream!.getOutputStream()
-          ..writeBytes(CraftByteUtils.getIsoBytes(
-              "(${item.replaceAll('(', '\\(').replaceAll(')', '\\)')})"));
+        contentStream!.getOutputStream().writeBytes(CraftByteUtils.getIsoBytes(
+            "(${item.replaceAll('(', '\\(').replaceAll(')', '\\)')})"));
       } else if (item is double || item is int) {
         contentStream!.getOutputStream().writeDouble(item.toDouble());
       }

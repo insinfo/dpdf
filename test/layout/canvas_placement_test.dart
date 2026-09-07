@@ -38,7 +38,7 @@ void main() {
   late CraftCanvas canvas;
   setUp(() async {
     temporary = await Directory.systemTemp.createTemp('canvas-placement-');
-    document = await CraftPdfDocument.create(
+    document = CraftPdfDocument.create(
         CraftPdfWriter(File('${temporary.path}/result.pdf').openWrite()));
     final page = await document.appendBlankPage();
     canvas = CraftCanvas(

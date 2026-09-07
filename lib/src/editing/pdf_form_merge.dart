@@ -28,54 +28,63 @@ class PdfFormMerge {
       final dictionary = page.pdfRepresentation();
       pages.add(dictionary);
       final annotations = await dictionary.arrayEntry(CraftPdfName.annots);
-      if (annotations != null)
+      if (annotations != null) {
         for (var i = 0; i < annotations.size(); i++) {
           final widget = await annotations.dictionaryEntry(i);
           if (widget != null &&
               await widget.nameEntry(CraftPdfName.subtype) ==
-                  CraftPdfName.widget) widgetPages[widget] = dictionary;
+                  CraftPdfName.widget) {
+            widgetPages[widget] = dictionary;
+          }
         }
+      }
     }
     final form = await source
         .rootCatalog()
         .pdfRepresentation()
         .dictionaryEntry(CraftPdfName.acroForm);
     if (form == null) {
-      if (widgetPages.isNotEmpty)
+      if (widgetPages.isNotEmpty) {
         throw FormatException('Page widgets have no AcroForm hierarchy');
+      }
       return PdfFormMergePlan._(null, [], widgetPages, signaturePolicy);
     }
     for (final key in ['XFA', 'CO', 'AA']) {
-      if (form.containsKey(CraftPdfName(key)))
+      if (form.containsKey(CraftPdfName(key))) {
         throw UnsupportedError(
             'AcroForm /$key requires specialized merge support');
+      }
     }
     final roots = await form.arrayEntry(CraftPdfName.fields);
     final seen = HashSet<CraftPdfDictionary>.identity();
     final accounted = HashSet<CraftPdfDictionary>.identity();
     Future<_FieldNode> visit(
         CraftPdfDictionary dictionary, String? inheritedType, int depth) async {
-      if (depth > 128 || !seen.add(dictionary))
+      if (depth > 128 || !seen.add(dictionary)) {
         throw FormatException('Cyclic or shared AcroForm field hierarchy');
+      }
       for (final key in ['A', 'AA']) {
-        if (dictionary.containsKey(CraftPdfName(key)))
+        if (dictionary.containsKey(CraftPdfName(key))) {
           throw UnsupportedError('Field actions require merge reconciliation');
+        }
       }
       final type = (await dictionary.nameEntry(CraftPdfName.ft))?.getValue() ??
           inheritedType;
       final signed =
           type == 'Sig' && await dictionary.get(CraftPdfName.v, true) != null;
-      if (signed && signaturePolicy == PdfMergeSignaturePolicy.reject)
+      if (signed && signaturePolicy == PdfMergeSignaturePolicy.reject) {
         throw UnsupportedError(
             'Merging would invalidate an existing PDF signature');
+      }
       final children = <_FieldNode>[];
       final widgets = <CraftPdfDictionary>[];
       final kids = await dictionary.arrayEntry(CraftPdfName.kids);
-      if (kids != null)
+      if (kids != null) {
         for (var i = 0; i < kids.size(); i++) {
           final child = await kids.dictionaryEntry(i);
-          if (child == null)
+          if (child == null) {
             throw FormatException('AcroForm child must be a dictionary');
+          }
           if (await child.nameEntry(CraftPdfName.subtype) ==
                   CraftPdfName.widget &&
               !child.containsKey(CraftPdfName.t)) {
@@ -87,6 +96,7 @@ class PdfFormMerge {
             children.add(await visit(child, type, depth + 1));
           }
         }
+      }
       if (await dictionary.nameEntry(CraftPdfName.subtype) ==
               CraftPdfName.widget &&
           widgetPages.containsKey(dictionary)) {
@@ -107,15 +117,18 @@ class PdfFormMerge {
     }
 
     final nodes = <_FieldNode>[];
-    if (roots != null)
+    if (roots != null) {
       for (var i = 0; i < roots.size(); i++) {
         final field = await roots.dictionaryEntry(i);
-        if (field == null)
+        if (field == null) {
           throw FormatException('AcroForm root must be a dictionary');
+        }
         nodes.add(await visit(field, null, 0));
       }
-    if (widgetPages.keys.any((widget) => !accounted.contains(widget)))
+    }
+    if (widgetPages.keys.any((widget) => !accounted.contains(widget))) {
       throw FormatException('Page widget is absent from AcroForm hierarchy');
+    }
     return PdfFormMergePlan._(form, nodes, widgetPages, signaturePolicy);
   }
 }
@@ -141,8 +154,9 @@ class PdfFormMergePlan {
   bool isSignedWidget(CraftPdfDictionary widget) {
     bool contains(_FieldNode node, bool inherited) {
       final signed = inherited || node.signed;
-      if (signed && node.widgets.any((value) => identical(value, widget)))
+      if (signed && node.widgets.any((value) => identical(value, widget))) {
         return true;
+      }
       return node.children.any((child) => contains(child, signed));
     }
 
@@ -170,8 +184,9 @@ class PdfFormMergePlan {
     final usedNames = <String>{};
     Future<void> collectNames(CraftPdfDictionary node, String prefix,
         Set<CraftPdfDictionary> seen) async {
-      if (!seen.add(node))
+      if (!seen.add(node)) {
         throw FormatException('Output form hierarchy contains a cycle');
+      }
       final partial =
           (await node.stringEntry(CraftPdfName.t))?.decodeMappingText();
       final full = partial == null
@@ -181,18 +196,21 @@ class PdfFormMergePlan {
               : '$prefix.$partial';
       if (partial != null) usedNames.add(full);
       final kids = await node.arrayEntry(CraftPdfName.kids);
-      if (kids != null)
+      if (kids != null) {
         for (var i = 0; i < kids.size(); i++) {
           final child = await kids.dictionaryEntry(i);
-          if (child != null && child.containsKey(CraftPdfName.t))
+          if (child != null && child.containsKey(CraftPdfName.t)) {
             await collectNames(child, full, seen);
+          }
         }
+      }
     }
 
     for (var i = 0; i < fields.size(); i++) {
       final field = await fields.dictionaryEntry(i);
-      if (field != null)
+      if (field != null) {
         await collectNames(field, '', HashSet<CraftPdfDictionary>.identity());
+      }
     }
     Future<Set<String>> incomingNames(_FieldNode node, String name) async {
       final result = <String>{name};
@@ -219,8 +237,9 @@ class PdfFormMergePlan {
         if (sourceGroup == null) {
           if (category.key.getValue() == 'ProcSet') {
             final value = await resources.arrayEntry(category.key);
-            if (value == null)
+            if (value == null) {
               throw FormatException('AcroForm ProcSet must be an array');
+            }
             var combined = await destResources.arrayEntry(category.key);
             if (combined == null) {
               combined = CraftPdfArray();
@@ -294,8 +313,9 @@ class PdfFormMergePlan {
         } else {
           instance = CraftPdfDictionary()..attachToDocument(output);
           for (final entry in await target.entrySet()) {
-            if (entry.key != CraftPdfName.p)
+            if (entry.key != CraftPdfName.p) {
               instance.put(entry.key, entry.value);
+            }
           }
         }
         instance.put(CraftPdfName.p, page);
@@ -317,9 +337,10 @@ class PdfFormMergePlan {
         final state = await widget.nameEntry(CraftPdfName.as);
         normal = state == null ? null : await normal.get(state, true);
       }
-      if (normal is! CraftPdfStream)
+      if (normal is! CraftPdfStream) {
         throw UnsupportedError(
             'Signature appearance cannot be preserved without a normal appearance stream');
+      }
       final stamp = CraftPdfDictionary()..attachToDocument(output);
       await copyEntries(widget, stamp, {
         'Parent',
@@ -385,9 +406,10 @@ class PdfFormMergePlan {
         }
         if (!field.containsKey(CraftPdfName.da)) {
           final da = await _form.stringEntry(CraftPdfName.da);
-          if (da != null)
+          if (da != null) {
             field.put(CraftPdfName.da,
                 CraftPdfString(rewriteAppearance(da.decodeMappingText())));
+          }
         }
       }
       final kids = CraftPdfArray();

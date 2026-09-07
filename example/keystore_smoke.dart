@@ -10,15 +10,17 @@ void main() {
           'AAAAAgAAAAgBCAIHAwYEBQAAAAcEAAZzZWFsZWQAAAAAAAAAAAAAAAAAAAAwAAAACAEIAgcDBgQFAAAABwxQ7+7Z8f8WOMQc9OIwlihAFFbo5VwMsJYrMVLo/qhnAGd7fhZBHiQVrAV106H7GEKz7hJi'),
       password: 'senha');
   final key = bks.records.single.recoverKey('entry-password');
-  if (key.algorithm != 'AES' || key.bytes.length != 16)
+  if (key.algorithm != 'AES' || key.bytes.length != 16) {
     throw StateError('BKS key recovery failed');
+  }
   for (var i = 0; i < 16; i++) {
     if (key.bytes[i] != i) throw StateError('BKS key bytes differ');
   }
   final rewritten = BksKeyStore.decode(bks.encode(password: 'new-password'),
       password: 'new-password');
-  if (rewritten.records.single.alias != 'sealed')
+  if (rewritten.records.single.alias != 'sealed') {
     throw StateError('BKS rewrite failed');
+  }
 }
 
 // Public synthetic certificate generated for this compatibility check.

@@ -122,7 +122,7 @@ abstract class CraftPdfAnnotation
   }
 
   CraftPdfAnnotation setPage(CraftPdfPage page) {
-    this._page = page;
+    _page = page;
     put(CraftPdfName.p, page.pdfRepresentation().indirectHandle()!);
     return this;
   }
@@ -176,11 +176,7 @@ abstract class CraftPdfAnnotation
 
     if (n.isDictionary()) {
       CraftPdfName? as = await pdfRepresentation().nameEntry(CraftPdfName.as);
-      if (as == null) {
-        // Fallback to "Off" or typically existing state?
-        // For now try 'Off' which is standard for unchecked.
-        as = CraftPdfName.intern("Off");
-      }
+      as ??= CraftPdfName.intern("Off");
       CraftPdfStream? stream = await (n as CraftPdfDictionary).streamEntry(as);
       return stream;
     }
@@ -189,7 +185,7 @@ abstract class CraftPdfAnnotation
 }
 
 class PdfUnknownAnnotation extends CraftPdfAnnotation {
-  PdfUnknownAnnotation(CraftPdfDictionary pdfObject) : super(pdfObject);
+  PdfUnknownAnnotation(super.pdfObject);
 
   @override
   CraftPdfName getSubtype() {

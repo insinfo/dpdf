@@ -17,12 +17,13 @@ Future<String> extract(List<CraftPdfObject> entries, String hex,
     {String? base, bool unicode = false, String fontName = 'Helvetica'}) async {
   final output = BytesBuilder();
   final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
   final page = await document.appendBlankPage();
   final encoding = CraftPdfDictionary()
     ..put(CraftPdfName('Differences'), CraftPdfArray.fromList(entries));
-  if (base != null)
+  if (base != null) {
     encoding.put(CraftPdfName('BaseEncoding'), CraftPdfName(base));
+  }
   final font = CraftPdfDictionary()
     ..put(CraftPdfName.subtype, CraftPdfName('Type1'))
     ..put(CraftPdfName.baseFont, CraftPdfName(fontName))

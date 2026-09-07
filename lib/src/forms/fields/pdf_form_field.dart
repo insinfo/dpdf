@@ -24,7 +24,7 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
 
   final List<CraftAbstractPdfFormField> childFields = [];
 
-  CraftPdfFormField(CraftPdfDictionary pdfObject) : super(pdfObject);
+  CraftPdfFormField(super.pdfObject);
 
   static Future<CraftPdfFormField> makeFormField(
       CraftPdfObject pdfObject, CraftPdfDocument? document) async {

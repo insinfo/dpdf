@@ -37,8 +37,9 @@ class PdfPageOverlay {
     final bounds = media is CraftPdfArray
         ? await CraftRectangle.fromPdfArray(media)
         : null;
-    if (bounds == null)
+    if (bounds == null) {
       throw FormatException('Page has no valid inherited MediaBox.');
+    }
 
     if (_prepared[dictionary] != true) {
       final previous = await page.contentPayload();

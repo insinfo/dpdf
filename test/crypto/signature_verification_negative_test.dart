@@ -40,11 +40,12 @@ void main() {
       bool duplicateDigest = false,
       bool omitContentType = false}) {
     final attrs = <ASN1Object>[];
-    if (!omitContentType)
+    if (!omitContentType) {
       attrs.add(ASN1Sequence(elements: [
         oid(CraftOID.contentType),
         ASN1Set(elements: [oid(CraftOID.data)])
       ]));
+    }
     final digestAttr = ASN1Sequence(elements: [
       oid(CraftOID.messageDigest),
       ASN1Set(elements: [

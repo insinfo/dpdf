@@ -1,7 +1,6 @@
 import '../pdf_dictionary.dart';
 import '../pdf_name.dart';
 import '../pdf_number.dart';
-import '../../geom/rectangle.dart';
 import '../action/pdf_action.dart';
 import 'pdf_annotation.dart';
 
@@ -11,10 +10,9 @@ class CraftPdfWidgetAnnotation extends CraftPdfAnnotation {
   static const int hiddenButPrintable = 3;
   static const int visible = 4;
 
-  CraftPdfWidgetAnnotation(CraftPdfDictionary pdfObject) : super(pdfObject);
+  CraftPdfWidgetAnnotation(super.pdfObject);
 
-  CraftPdfWidgetAnnotation.fromRect(CraftRectangle rect)
-      : super.fromRect(rect) {
+  CraftPdfWidgetAnnotation.fromRect(super.rect) : super.fromRect() {
     put(CraftPdfName.subtype, CraftPdfName.widget);
   }
 

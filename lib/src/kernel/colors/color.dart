@@ -41,11 +41,13 @@ class CraftColor {
   static CraftColor? createColorWithColorSpace(List<double>? colorValue) {
     if (colorValue == null || colorValue.isEmpty) return null;
     if (colorValue.length == 1) return CraftDeviceGray(colorValue[0]);
-    if (colorValue.length == 3)
+    if (colorValue.length == 3) {
       return CraftDeviceRgb(colorValue[0], colorValue[1], colorValue[2]);
-    if (colorValue.length == 4)
+    }
+    if (colorValue.length == 4) {
       return CraftDeviceCmyk(
           colorValue[0], colorValue[1], colorValue[2], colorValue[3]);
+    }
     return null;
   }
 

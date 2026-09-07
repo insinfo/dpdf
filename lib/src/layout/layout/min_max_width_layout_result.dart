@@ -1,16 +1,12 @@
 import 'package:dpdf/src/layout/layout/layout_result.dart';
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/layout/renderer/renderer.dart';
 import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
 class CraftMinMaxWidthLayoutResult extends CraftLayoutResult {
   CraftMinMaxWidth? minMaxWidth;
 
-  CraftMinMaxWidthLayoutResult(int status, CraftLayoutArea? occupiedArea,
-      CraftRenderer? splitRenderer, CraftRenderer? overflowRenderer,
-      [CraftRenderer? causeOfNothing])
-      : super(status, occupiedArea, splitRenderer, overflowRenderer,
-            causeOfNothing) {
+  CraftMinMaxWidthLayoutResult(super.status, super.occupiedArea,
+      super.splitRenderer, super.overflowRenderer,
+      [super.causeOfNothing]) {
     minMaxWidth = CraftMinMaxWidth();
   }
 

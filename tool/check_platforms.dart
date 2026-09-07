@@ -46,10 +46,13 @@ instance.invokeMain();
   await for (final entity in Directory('lib').list(recursive: true)) {
     if (entity is! File || !entity.path.endsWith('.dart')) continue;
     final path = entity.path.replaceAll('\\', '/');
-    if (path.startsWith('lib/src/platform/') || path.endsWith('_vm.dart'))
+    if (path.startsWith('lib/src/platform/') || path.endsWith('_vm.dart')) {
       continue;
+    }
     if (RegExp(r'^\s*part of\b', multiLine: true)
-        .hasMatch(await entity.readAsString())) continue;
+        .hasMatch(await entity.readAsString())) {
+      continue;
+    }
     imports.add(
         "import 'package:dpdf/${path.substring(4)}' as surface${imports.length};");
   }

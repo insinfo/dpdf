@@ -17,19 +17,17 @@ class CraftStandardHandlerUsingAes128
       Uint8List.fromList([0x73, 0x41, 0x6c, 0x54]); // 'sAlT'
 
   CraftStandardHandlerUsingAes128(
-      CraftPdfDictionary encryptionDictionary,
-      Uint8List? userPassword,
-      Uint8List? ownerPassword,
-      int permissions,
-      bool encryptMetadata,
-      bool embeddedFilesOnly,
-      Uint8List? documentId)
-      : super(encryptionDictionary, userPassword, ownerPassword, permissions,
-            encryptMetadata, embeddedFilesOnly, documentId);
+      super.encryptionDictionary,
+      super.userPassword,
+      super.ownerPassword,
+      super.permissions,
+      super.encryptMetadata,
+      super.embeddedFilesOnly,
+      super.documentId);
 
-  CraftStandardHandlerUsingAes128.read(CraftPdfDictionary encryptionDictionary,
-      Uint8List password, Uint8List? documentId, bool encryptMetadata)
-      : super.read(encryptionDictionary, password, documentId, encryptMetadata);
+  CraftStandardHandlerUsingAes128.read(super.encryptionDictionary,
+      super.password, super.documentId, super.encryptMetadata)
+      : super.read();
 
   @override
   CraftOutputStreamEncryption getEncryptionStream(dynamic os) {

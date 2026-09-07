@@ -23,7 +23,7 @@ void main() {
       final overlay = await PdfPageOverlay.create((await document.pageAt(1))!);
       overlay.beginText();
       await overlay.setFontAndSize(
-          await CraftPdfFontFactory.createFont('Helvetica'), 12);
+          CraftPdfFontFactory.createFont('Helvetica'), 12);
       overlay.moveText(40, 60).showText('ADDED').endText();
       (await document.documentDetails()).setTitle('Created in latest trailer');
       await document.close();
@@ -149,8 +149,7 @@ Future<CraftPdfDocument> _open(
 Future<void> _text(CraftPdfPage page, String text) async {
   final canvas = await CraftPdfCanvas.fromPage(page);
   canvas.beginText();
-  await canvas.setFontAndSize(
-      await CraftPdfFontFactory.createFont('Helvetica'), 18);
+  await canvas.setFontAndSize(CraftPdfFontFactory.createFont('Helvetica'), 18);
   canvas.moveText(40, 100).showText(text).endText();
 }
 

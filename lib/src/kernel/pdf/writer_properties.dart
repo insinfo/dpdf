@@ -1,24 +1,8 @@
 import 'dart:typed_data';
 
+import 'compression_constants.dart';
 import 'pdf_version.dart';
 import 'encryption_constants.dart';
-
-/// Compression level constants for PDF streams.
-class CraftCompressionConstants {
-  /// Default compression level (corresponds to deflate default)
-  static const int defaultCompression = -1;
-
-  /// No compression
-  static const int noCompression = 0;
-
-  /// Best speed compression
-  static const int bestSpeed = 1;
-
-  /// Best compression
-  static const int bestCompression = 9;
-
-  CraftCompressionConstants._();
-}
 
 /// Properties for configuring PDF document writing.
 ///

@@ -87,13 +87,15 @@ class _TextMachine {
     final operands = <Object>[];
     final output = StringBuffer();
     void requireCount(int count) {
-      if (operands.length != count)
+      if (operands.length != count) {
         throw FormatException('Invalid content operand count.');
+      }
     }
 
     double number(int i) {
-      if (i >= operands.length || operands[i] is! num)
+      if (i >= operands.length || operands[i] is! num) {
         throw FormatException('Expected numeric operand.');
+      }
       final n = (operands[i] as num).toDouble();
       if (!n.isFinite) throw FormatException('Non-finite content operand.');
       return n;
@@ -120,8 +122,9 @@ class _TextMachine {
       final pieces = <String>[];
       for (final code in item) {
         final glyphWidth = width(state.font!, code);
-        if (!glyphWidth.isFinite || glyphWidth < 0)
+        if (!glyphWidth.isFinite || glyphWidth < 0) {
           throw FormatException('Invalid character width.');
+        }
         final delta = (glyphWidth / 1000 * state.size +
                 state.charSpace +
                 (code == 32 ? state.wordSpace : 0)) *
@@ -212,8 +215,9 @@ class _TextMachine {
               .then(state.ctm);
         case 'Tf':
           requireCount(2);
-          if (operands[0] is! _Name)
+          if (operands[0] is! _Name) {
             throw FormatException('Expected font resource name.');
+          }
           state.font = (operands[0] as _Name).value;
           state.size = number(1);
           if (allowedFonts != null && !allowedFonts!.contains(state.font)) {
@@ -253,9 +257,10 @@ class _TextMachine {
           state.rise = number(0);
         case 'Tr':
           requireCount(1);
-          if (number(0) != 0)
+          if (number(0) != 0) {
             throw UnsupportedError(
                 'Only filled text rendering mode is supported.');
+          }
         case 'Tj':
           requireCount(1);
           show(operands[0]);
@@ -280,12 +285,14 @@ class _TextMachine {
         case 'TJ':
           requireText();
           requireCount(1);
-          if (operands[0] is! List<Object>)
+          if (operands[0] is! List<Object>) {
             throw FormatException('Expected TJ array.');
+          }
           for (final item in operands[0] as List<Object>) {
             if (item is num) {
-              if (!item.isFinite)
+              if (!item.isFinite) {
                 throw FormatException('Non-finite TJ adjustment.');
+              }
               text = text.shift(-item / 1000 * state.size * state.scale, 0);
               output.writeln('[${_pdfNumber(item)}] TJ');
             } else {
@@ -316,12 +323,14 @@ class _TextMachine {
       if (token.value == 'Tf' && fontNames.containsKey(state.font)) {
         operands[0] = _Name(fontNames[state.font]!);
       }
-      if (emit)
+      if (emit) {
         output.writeln('${operands.map(_serialize).join(' ')} ${token.value}');
+      }
       operands.clear();
     }
-    if (inText || saved.isNotEmpty || operands.isNotEmpty)
+    if (inText || saved.isNotEmpty || operands.isNotEmpty) {
       throw FormatException('Unbalanced content state.');
+    }
     return _TextResult(
         characters, Uint8List.fromList(ascii.encode(output.toString())));
   }
@@ -348,8 +357,9 @@ class _TextMachine {
 
 // PDF real numbers use decimal notation; exponent notation is not permitted.
 String _pdfNumber(num value) {
-  if (!value.isFinite)
+  if (!value.isFinite) {
     throw FormatException('Non-finite generated PDF number.');
+  }
   final text = value.toString();
   final index = text.indexOf('e');
   if (index < 0) return text;
@@ -361,7 +371,8 @@ String _pdfNumber(num value) {
       (dot < 0 ? mantissa.length : dot) + int.parse(text.substring(index + 1));
   final digits = mantissa.replaceAll('.', '');
   if (decimal <= 0) return '${sign}0.${'0' * -decimal}$digits';
-  if (decimal >= digits.length)
+  if (decimal >= digits.length) {
     return '$sign$digits${'0' * (decimal - digits.length)}';
+  }
   return '$sign${digits.substring(0, decimal)}.${digits.substring(decimal)}';
 }

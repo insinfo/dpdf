@@ -8,9 +8,8 @@ import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
 class CraftOutputStreamStandardEncryption extends CraftOutputStreamEncryption {
   late CraftARCFOUREncryption _arcfour;
 
-  CraftOutputStreamStandardEncryption(dynamic output, Uint8List key,
-      [int off = 0, int? len])
-      : super(output) {
+  CraftOutputStreamStandardEncryption(super.output, Uint8List key,
+      [int off = 0, int? len]) {
     _arcfour = CraftARCFOUREncryption();
     _arcfour.prepareARCFOURKey(key, off, len);
   }

@@ -41,7 +41,7 @@ void main() {
         throwsFormatException);
   });
   test('Object copier rejects cyclic indirect-reference chains', () async {
-    final output = await CraftPdfDocument.create(
+    final output = CraftPdfDocument.create(
         CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
     final a = CraftPdfIndirectReference(101),
         b = CraftPdfIndirectReference(102);

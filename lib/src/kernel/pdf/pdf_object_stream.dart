@@ -92,9 +92,4 @@ class CraftPdfObjectStream extends CraftPdfStream {
   int getSize() => _size.intValue();
 
   CraftPdfOutputStream getIndexStream() => _indexStream;
-
-  @override
-  void releaseContent() {
-    super.releaseContent();
-  }
 }

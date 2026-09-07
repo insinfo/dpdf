@@ -355,11 +355,14 @@ class X509Certificate implements CertificateDetails {
           final fields = obj.elements!;
           if (fields.isEmpty ||
               fields.first is! ASN1Boolean ||
-              (fields.first as ASN1Boolean).boolValue != true) return -1;
+              (fields.first as ASN1Boolean).boolValue != true) {
+            return -1;
+          }
           if (fields.length > 1 && fields[1] is ASN1Integer) {
             final pathLength = (fields[1] as ASN1Integer).integer!;
-            if (pathLength < BigInt.zero)
+            if (pathLength < BigInt.zero) {
               throw FormatException('Negative CA path length');
+            }
             return pathLength.toInt();
           }
           return 0x7fffffff;
@@ -375,8 +378,9 @@ class X509Certificate implements CertificateDetails {
   }
 
   String _name(ASN1Object? name) {
-    if (name is! ASN1Sequence)
+    if (name is! ASN1Sequence) {
       throw FormatException('Invalid distinguished name');
+    }
     const labels = {
       '2.5.4.3': 'CN',
       '2.5.4.6': 'C',
@@ -387,14 +391,16 @@ class X509Certificate implements CertificateDetails {
     };
     final rdns = <String>[];
     for (final rdn in name.elements!) {
-      if (rdn is! ASN1Set)
+      if (rdn is! ASN1Set) {
         throw FormatException('Invalid relative distinguished name');
+      }
       final attrs = <String>[];
       for (final attr in rdn.elements!) {
         if (attr is! ASN1Sequence ||
             attr.elements!.length != 2 ||
-            attr.elements![0] is! ASN1ObjectIdentifier)
+            attr.elements![0] is! ASN1ObjectIdentifier) {
           throw FormatException('Invalid name attribute');
+        }
         final oid = (attr.elements![0] as ASN1ObjectIdentifier)
             .objectIdentifierAsString!;
         final value = attr.elements![1];

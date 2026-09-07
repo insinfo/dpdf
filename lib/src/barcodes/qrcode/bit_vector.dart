@@ -21,8 +21,9 @@ class CraftBitVector {
   }
 
   void appendBit(int bit) {
-    if (bit != 0 && bit != 1)
+    if (bit != 0 && bit != 1) {
       throw ArgumentError.value(bit, 'bit', 'Expected binary digit');
+    }
     _reserve(_length + 1);
     final byte = _length ~/ 8;
     final shift = 7 - _length % 8;
@@ -33,9 +34,10 @@ class CraftBitVector {
 
   /// Appends the low [numBits] bits of [value], highest selected bit first.
   void appendBits(int value, int numBits) {
-    if (numBits < 0 || numBits > 32)
+    if (numBits < 0 || numBits > 32) {
       throw ArgumentError.value(
           numBits, 'numBits', 'Expected a count from 0 through 32');
+    }
     _reserve(_length + numBits);
     for (var shift = numBits; shift > 0;) {
       appendBit((value >> --shift) & 1);
@@ -51,8 +53,9 @@ class CraftBitVector {
   }
 
   void xor(CraftBitVector other) {
-    if (other.size() != _length)
+    if (other.size() != _length) {
       throw ArgumentError('XOR requires equal bit counts');
+    }
     for (var byte = 0; byte < sizeInBytes(); byte++) {
       _storage[byte] ^= other._storage[byte];
     }

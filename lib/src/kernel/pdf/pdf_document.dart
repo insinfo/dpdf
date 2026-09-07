@@ -59,7 +59,7 @@ class CraftPdfDocument {
   final CraftPdfWriter? _writer;
 
   /// PdfReader associated with the document.
-  CraftPdfReader? _reader;
+  final CraftPdfReader? _reader;
 
   /// Document catalog.
   CraftPdfCatalog? _catalog;
@@ -169,9 +169,9 @@ class CraftPdfDocument {
     _fingerPrint = CraftFingerPrint();
     // Initialize xref table
     if (_reader != null) {
-      _xrefTable = _reader!.xref;
-      _version = _reader!.getPdfVersion();
-      _reader!.setDocument(this);
+      _xrefTable = _reader.xref;
+      _version = _reader.getPdfVersion();
+      _reader.setDocument(this);
     } else {
       _xrefTable = CraftPdfXrefTable();
       _version = CraftPdfVersion.PDF_1_7;
@@ -190,9 +190,7 @@ class CraftPdfDocument {
       if (_reader == null) documentDetailsSync().addModDate();
 
       // Initialize trailer
-      if (_trailer == null) {
-        _trailer = CraftPdfDictionary();
-      }
+      _trailer ??= CraftPdfDictionary();
 
       // Rebuild writer-owned trailer entries for a fresh revision while keeping
       // extension entries supplied by the input document.
@@ -239,9 +237,9 @@ class CraftPdfDocument {
   Future<void> load() async {
     if (_reader == null) return;
 
-    await _reader!.read();
+    await _reader.read();
     if (_writer != null &&
-        _reader!.rebuiltXref &&
+        _reader.rebuiltXref &&
         (_properties?.usesIncrementalRevision() ?? false)) {
       if (_properties!.repairedSaveMode == PdfRepairedSaveMode.reject) {
         throw FormatException(
@@ -251,7 +249,7 @@ class CraftPdfDocument {
     }
 
     // Get catalog from reader's trailer
-    final catalogDict = await _reader!.rootCatalog();
+    final catalogDict = await _reader.rootCatalog();
     if (catalogDict == null) {
       throw CraftPdfException('Corrupted root entry in trailer');
     }
@@ -266,7 +264,7 @@ class CraftPdfDocument {
     }
 
     // Get trailer from reader
-    _trailer = _reader!.trailer;
+    _trailer = _reader.trailer;
 
     // Bind edits to the actual information object, not a constructor-time
     // placeholder that is absent from the input cross-reference table.
@@ -296,7 +294,7 @@ class CraftPdfDocument {
     }
 
     // Initialize version from reader
-    _version = _reader!.getPdfVersion();
+    _version = _reader.getPdfVersion();
 
     // Initialize Pages Tree from saved catalog
     final tree = pageHierarchy();
@@ -748,7 +746,7 @@ class CraftPdfDocument {
     }
     if (reference.isFree()) return null;
     if (_reader != null) {
-      return await _reader!.readObject(reference.objectNumber());
+      return await _reader.readObject(reference.objectNumber());
     }
     return null;
   }
@@ -835,9 +833,7 @@ class CraftPdfDocument {
 
   /// Gets the tag structure context.
   CraftTagStructureContext? taggingContext() {
-    if (_tagStructureContext == null) {
-      _tagStructureContext = CraftTagStructureContext(this);
-    }
+    _tagStructureContext ??= CraftTagStructureContext(this);
     return _tagStructureContext;
   }
 
@@ -973,7 +969,7 @@ class CraftPdfDocument {
     _checkClosingStatus();
 
     // Default to append at end
-    int insertIndex = insertBeforePage ?? (await toDocument.pageTotal() + 1);
+    int insertIndex = insertBeforePage ?? (toDocument.pageTotal() + 1);
 
     final List<CraftPdfPage> copiedPages = [];
     if (toDocument != this) {
@@ -1046,8 +1042,9 @@ class CraftPdfDocument {
           CraftPdfDictionary? ancestor = source;
           final visited = <CraftPdfDictionary>{};
           while (ancestor != null) {
-            if (!visited.add(ancestor))
+            if (!visited.add(ancestor)) {
               throw FormatException('Cyclic page tree.');
+            }
             final value = await ancestor.get(key);
             if (value != null) {
               target.put(key, await copier.copy(value));

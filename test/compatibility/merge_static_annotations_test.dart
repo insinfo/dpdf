@@ -9,7 +9,7 @@ typedef Configure = void Function(CraftPdfDocument document,
 Future<Uint8List> source({Configure? configure}) async {
   final bytes = BytesBuilder();
   final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
   final pages = [
     await document.appendBlankPage(),
     await document.appendBlankPage()

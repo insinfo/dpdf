@@ -15,7 +15,7 @@ void main() {
     test('Layout simple document', () async {
       final file = File('test/tmp/document_layout_test.pdf');
       final writer = CraftPdfWriter.toFile(file.path);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
       final doc = CraftDocument(pdfDoc);
 
       final ttf =

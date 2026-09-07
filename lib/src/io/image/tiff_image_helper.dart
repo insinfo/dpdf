@@ -333,11 +333,13 @@ class CraftTiffImageHelper {
       double rotation = 0;
       if (dir.isTagPresent(TiffConstants.tifftagOrientation)) {
         int rot = dir.getFieldAsLong(TiffConstants.tifftagOrientation).toInt();
-        if (rot == 3 || rot == 4)
+        if (rot == 3 || rot == 4) {
           rotation = math.pi;
-        else if (rot == 5 || rot == 8)
+        } else if (rot == 5 || rot == 8) {
           rotation = math.pi / 2.0;
-        else if (rot == 6 || rot == 7) rotation = -(math.pi / 2.0);
+        } else if (rot == 6 || rot == 7) {
+          rotation = -(math.pi / 2.0);
+        }
       }
 
       if (dir.isTagPresent(TiffConstants.tifftagPlanarconfig) &&

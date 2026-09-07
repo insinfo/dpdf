@@ -13,7 +13,7 @@ class CraftFontSet {
 class CraftFontProvider {
   final CraftFontSet fontSet;
   CraftFontProvider([CraftFontSet? fontSet])
-      : this.fontSet = fontSet ?? CraftFontSet();
+      : fontSet = fontSet ?? CraftFontSet();
 
   CraftPdfFont? getPdfFont(CraftFontInfo fontInfo) => null;
 }

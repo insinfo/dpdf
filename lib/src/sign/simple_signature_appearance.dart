@@ -44,7 +44,7 @@ class SimpleSignatureAppearance {
         .restoreState();
 
     // Prepare Text
-    final font = await CraftPdfFontFactory.createFont('Helvetica');
+    final font = CraftPdfFontFactory.createFont('Helvetica');
     // if (font != null) { // Removed check
     double fontSize = 10;
     double leading = 12;

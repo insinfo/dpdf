@@ -12,9 +12,7 @@ class TemplateResolveUtils {
   static void resolve(
       CraftBranchSvgNodeRenderer renderer, CraftSvgDrawContext context) {
     String? href = renderer.getAttribute(CraftSvgConstants.Attributes.HREF);
-    if (href == null) {
-      href = renderer.getAttribute(CraftSvgConstants.Attributes.XLINK_HREF);
-    }
+    href ??= renderer.getAttribute(CraftSvgConstants.Attributes.XLINK_HREF);
     if (href == null || href.isEmpty || href[0] != '#') {
       return;
     }

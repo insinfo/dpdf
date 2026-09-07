@@ -16,6 +16,7 @@ class CraftCell extends CraftBlockElement<CraftCell> {
     setProperty(CraftProperty.COLSPAN, colspan);
   }
 
+  @override
   CraftCell add(CraftElement element) {
     childElements.add(element);
     return this;

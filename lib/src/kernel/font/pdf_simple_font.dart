@@ -22,8 +22,7 @@ abstract class CraftPdfSimpleFont<T extends CraftFontProgram>
 
   // CMapToUnicode toUnicode; // Stubbed for now
 
-  CraftPdfSimpleFont([CraftPdfDictionary? fontDictionary])
-      : super(fontDictionary) {
+  CraftPdfSimpleFont([super.fontDictionary]) {
     // toUnicode = FontUtil.ProcessToUnicode(fontDictionary.Get(PdfName.ToUnicode));
   }
 
@@ -74,12 +73,15 @@ abstract class CraftPdfSimpleFont<T extends CraftFontProgram>
           ? fontProgram!.getGlyphByCode(scalar & 255)
           : getGlyph(scalar);
       if (glyph == null) {
-        if (rawCodes || !CraftTextUtil.isWhitespaceOrNonPrintable(scalar))
+        if (rawCodes || !CraftTextUtil.isWhitespaceOrNonPrintable(scalar)) {
           break;
+        }
       } else {
         if (!rawCodes &&
             !containsGlyph(glyph.getUnicode()) &&
-            !isAppendableGlyph(glyph)) break;
+            !isAppendableGlyph(glyph)) {
+          break;
+        }
         glyphs.add(glyph);
       }
       cursor += units;

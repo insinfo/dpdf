@@ -12,7 +12,7 @@ void main() {
       () async {
     final base = BytesBuilder();
     final document =
-        await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(base));
+        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(base));
     await document.appendBlankPage();
     await document.close();
     final input = base.takeBytes();

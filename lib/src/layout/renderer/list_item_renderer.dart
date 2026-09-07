@@ -19,7 +19,7 @@ class CraftListItemRenderer extends CraftDivRenderer {
   double symbolAreaWidth = 0;
   bool symbolAddedInside = false;
 
-  CraftListItemRenderer(CraftListItem modelElement) : super(modelElement);
+  CraftListItemRenderer(CraftListItem super.modelElement);
 
   void addSymbolRenderer(
       CraftRenderer? symbolRenderer, double symbolAreaWidth) {

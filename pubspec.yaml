@@ -1,5 +1,17 @@
 name: dpdf
+description: >-
+  Biblioteca PDF pura em Dart: criação, leitura, edição, layout de texto,
+  conversão de HTML, formulários, assinatura digital e conformidade PDF/A.
 version: 1.0.0
+repository: https://github.com/insinfo/dpdf
+issue_tracker: https://github.com/insinfo/dpdf/issues
+documentation: https://github.com/insinfo/dpdf#readme
+
+topics:
+  - pdf
+  - pdf-generation
+  - digital-signature
+  - html-to-pdf
 
 environment:
   sdk: ^3.6.0
@@ -9,6 +21,7 @@ dependencies:
   html: ^0.15.7
 
 dev_dependencies:
+  lints: ^5.0.0
   test: ^1.26.3
   # Independent test oracle; never imported by the runtime library.
   crypto: ^3.0.7

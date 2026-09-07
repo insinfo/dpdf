@@ -40,6 +40,7 @@ class CraftList extends CraftBlockElement<CraftList> {
     }
   }
 
+  @override
   CraftList add(dynamic item) {
     if (item is CraftListItem) {
       childElements.add(item);

@@ -2,29 +2,10 @@ import 'dart:typed_data';
 
 import 'pdf_dictionary.dart';
 import 'pdf_name.dart';
+import 'compression_constants.dart';
 import 'pdf_object.dart';
 import 'pdf_output_stream.dart';
 import '../utils/filter_handlers.dart';
-
-/// Compression level constants.
-class CraftCompressionConstants {
-  CraftCompressionConstants._();
-
-  /// Undefined compression level.
-  static const int undefinedCompression = -1;
-
-  /// No compression.
-  static const int noCompression = 0;
-
-  /// Best speed compression.
-  static const int bestSpeed = 1;
-
-  /// Best compression.
-  static const int bestCompression = 9;
-
-  /// Default compression level.
-  static const int defaultCompression = -1;
-}
 
 /// PDF stream dictionary and payload representation.
 ///
@@ -128,6 +109,7 @@ class CraftPdfStream extends CraftPdfDictionary {
   int getLength() => _length;
 
   /// Gets the offset where stream data starts in the file.
+  @override
   int getOffset() => _offset;
 
   /// Gets the output stream.

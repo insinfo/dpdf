@@ -75,8 +75,9 @@ class CraftBitMatrix {
   int getWidth() => _width;
   int getHeight() => _height;
   int getDimension() {
-    if (_width != _height)
+    if (_width != _height) {
       throw StateError('A rectangular raster has no single dimension');
+    }
     return _width;
   }
 

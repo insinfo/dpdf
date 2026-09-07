@@ -14,7 +14,7 @@ void main() {
     test('BarcodeQRCode Basic Test', () async {
       final file = File('test/tmp/barcode_qr_code_test.pdf');
       final writer = CraftPdfWriter(file.openWrite());
-      final pdf = await CraftPdfDocument.create(writer);
+      final pdf = CraftPdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
       final canvas = await CraftPdfCanvas.fromPage(page);
 
@@ -52,7 +52,7 @@ void main() {
     test('BarcodeQRCode CreateFormXObject Test', () async {
       final file = File('test/tmp/barcode_qr_code_xobject_test.pdf');
       final writer = CraftPdfWriter(file.openWrite());
-      final pdf = await CraftPdfDocument.create(writer);
+      final pdf = CraftPdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
       final canvas = await CraftPdfCanvas.fromPage(page);
 

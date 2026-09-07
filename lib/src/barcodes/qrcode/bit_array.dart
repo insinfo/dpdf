@@ -6,8 +6,9 @@ class CraftBitArray {
   late Int32List _words;
 
   CraftBitArray(this._size) {
-    if (_size <= 0)
+    if (_size <= 0) {
       throw ArgumentError.value(_size, 'size', 'Expected a positive bit count');
+    }
     _words = Int32List((_size + 31) ~/ 32);
   }
 

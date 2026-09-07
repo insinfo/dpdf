@@ -28,6 +28,7 @@ class CraftPdfStructTreeRoot extends CraftPdfObjectWrapper<CraftPdfDictionary>
     _document = doc;
   }
 
+  @override
   CraftPdfDocument? getDocument() => _document;
 
   Future<void> addKid(CraftPdfStructElem structElem, [int index = -1]) async {

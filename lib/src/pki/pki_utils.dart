@@ -214,7 +214,9 @@ class PkiUtils {
     final result = Uint8List.fromList(u);
     for (var round = 1; round < iterations; round++) {
       u = hmac(u);
-      for (var i = 0; i < 32; i++) result[i] ^= u[i];
+      for (var i = 0; i < 32; i++) {
+        result[i] ^= u[i];
+      }
     }
     return result;
   }

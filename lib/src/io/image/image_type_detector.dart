@@ -23,12 +23,15 @@ class CraftImageTypeDetector {
   static CraftImageType _detectImageTypeByHeader(Uint8List header) {
     if (_imageTypeIs(header, _gif)) return CraftImageType.GIF;
     if (_imageTypeIs(header, _jpeg)) return CraftImageType.JPEG;
-    if (_imageTypeIs(header, _jpeg2000_1) || _imageTypeIs(header, _jpeg2000_2))
+    if (_imageTypeIs(header, _jpeg2000_1) ||
+        _imageTypeIs(header, _jpeg2000_2)) {
       return CraftImageType.JPEG2000;
+    }
     if (_imageTypeIs(header, _png)) return CraftImageType.PNG;
     if (_imageTypeIs(header, _bmp)) return CraftImageType.BMP;
-    if (_imageTypeIs(header, _tiff_1) || _imageTypeIs(header, _tiff_2))
+    if (_imageTypeIs(header, _tiff_1) || _imageTypeIs(header, _tiff_2)) {
       return CraftImageType.TIFF;
+    }
     if (_imageTypeIs(header, _jbig2)) return CraftImageType.JBIG2;
     if (_imageTypeIs(header, _wmf)) return CraftImageType.WMF;
 

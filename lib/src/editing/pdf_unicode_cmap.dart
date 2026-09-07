@@ -166,11 +166,13 @@ String _unicode(List<int> bytes) {
     final unit = bytes[i] * 256 + bytes[i + 1];
     units.add(unit);
     if (unit >= 0xd800 && unit <= 0xdbff) {
-      if (i + 3 >= bytes.length)
+      if (i + 3 >= bytes.length) {
         throw const FormatException('Unpaired surrogate');
+      }
       final low = bytes[i + 2] * 256 + bytes[i + 3];
-      if (low < 0xdc00 || low > 0xdfff)
+      if (low < 0xdc00 || low > 0xdfff) {
         throw const FormatException('Unpaired surrogate');
+      }
       units.add(low);
       i += 2;
     } else if (unit >= 0xdc00 && unit <= 0xdfff) {
@@ -186,8 +188,9 @@ class _CodeSpace {
   bool matches(List<int> bytes, int offset) {
     if (bytes.length - offset < low.length) return false;
     for (var i = 0; i < low.length; i++) {
-      if (bytes[offset + i] < low[i] || bytes[offset + i] > high[i])
+      if (bytes[offset + i] < low[i] || bytes[offset + i] > high[i]) {
         return false;
+      }
     }
     return true;
   }
@@ -258,8 +261,9 @@ class _CMapTokens {
       while (position < source.length && source[position] != '>') {
         position++;
       }
-      if (position == source.length)
+      if (position == source.length) {
         throw const FormatException('Unterminated hex string');
+      }
       position++;
     } else if (first == '(') {
       var depth = 1;
@@ -273,8 +277,9 @@ class _CMapTokens {
           depth--;
         }
       }
-      if (depth != 0)
+      if (depth != 0) {
         throw const FormatException('Unterminated literal string');
+      }
     } else if ('<>'.contains(first)) {
       if (position < source.length && source[position] == first) position++;
     } else if (!'[]{}'.contains(first)) {

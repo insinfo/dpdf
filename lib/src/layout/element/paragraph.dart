@@ -12,6 +12,7 @@ class CraftParagraph extends CraftBlockElement<CraftParagraph> {
     }
   }
 
+  @override
   CraftParagraph add(CraftElement element) {
     childElements.add(element);
     return this;

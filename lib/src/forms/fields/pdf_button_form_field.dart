@@ -15,7 +15,7 @@ class CraftPdfButtonFormField extends CraftPdfFormField {
   static const int ffPushButton = 1 << 16; // Bit 17
   static const int ffRadiosInUnison = 1 << 25; // Bit 26
 
-  CraftPdfButtonFormField(CraftPdfDictionary pdfObject) : super(pdfObject);
+  CraftPdfButtonFormField(super.pdfObject);
 
   // Factory methods to create specific button types (Push, Radio, Checkbox)
   // These are typically in PdfFormCreator in C# but useful to have helpers here or there.

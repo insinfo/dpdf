@@ -4,7 +4,7 @@ import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 import 'pdf_action.dart';
 
 class PdfActionURI extends CraftPdfAction {
-  PdfActionURI(CraftPdfDictionary pdfObject) : super(pdfObject);
+  PdfActionURI(super.pdfObject);
 
   static PdfActionURI createURI(String uri) {
     CraftPdfDictionary dict = CraftPdfDictionary();

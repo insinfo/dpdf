@@ -27,9 +27,8 @@ class CraftStampingProperties extends CraftDocumentProperties {
   }
 
   /// Creates a copy of [DocumentProperties] instance.
-  CraftStampingProperties.fromDocumentProperties(
-      CraftDocumentProperties documentProperties)
-      : super.copy(documentProperties);
+  CraftStampingProperties.fromDocumentProperties(super.documentProperties)
+      : super.copy();
 
   /// Defines if the document will be edited in append mode.
   ///

@@ -1,4 +1,3 @@
-import '../../kernel/geom/rectangle.dart';
 import '../../kernel/pdf/action/pdf_action_uri.dart';
 import '../../kernel/pdf/annot/pdf_annotation.dart';
 import '../../kernel/pdf/pdf_array.dart';
@@ -7,8 +6,8 @@ import '../../kernel/pdf/pdf_number.dart';
 
 /// Invisible URI link annotation created for visible HTML anchor text.
 class CraftHtmlPdfLinkAnnotation extends CraftPdfAnnotation {
-  CraftHtmlPdfLinkAnnotation(CraftRectangle rectangle, String target)
-      : super.fromRect(rectangle) {
+  CraftHtmlPdfLinkAnnotation(super.rectangle, String target)
+      : super.fromRect() {
     put(CraftPdfName.subtype, CraftPdfName.link);
     put(CraftPdfName.a, PdfActionURI.createURI(target).pdfRepresentation());
     // A zero-width border keeps the text presentation controlled by CSS.

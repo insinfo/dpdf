@@ -3,7 +3,7 @@ import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
 
 /// Abstract class for CIE-based color spaces.
 abstract class CraftPdfCieBasedCs extends CraftPdfColorSpace {
-  CraftPdfCieBasedCs(CraftPdfArray pdfObject) : super(pdfObject);
+  CraftPdfCieBasedCs(CraftPdfArray super.pdfObject);
 
   @override
   bool requiresIndirectStorage() => false;
@@ -11,7 +11,7 @@ abstract class CraftPdfCieBasedCs extends CraftPdfColorSpace {
 
 /// Represents a CalGray color space.
 class PdfCieBasedCsCalGray extends CraftPdfCieBasedCs {
-  PdfCieBasedCsCalGray(CraftPdfArray pdfObject) : super(pdfObject);
+  PdfCieBasedCsCalGray(super.pdfObject);
 
   @override
   int getNumberOfComponents() => 1;
@@ -19,7 +19,7 @@ class PdfCieBasedCsCalGray extends CraftPdfCieBasedCs {
 
 /// Represents a CalRGB color space.
 class PdfCieBasedCsCalRgb extends CraftPdfCieBasedCs {
-  PdfCieBasedCsCalRgb(CraftPdfArray pdfObject) : super(pdfObject);
+  PdfCieBasedCsCalRgb(super.pdfObject);
 
   @override
   int getNumberOfComponents() => 3;
@@ -27,7 +27,7 @@ class PdfCieBasedCsCalRgb extends CraftPdfCieBasedCs {
 
 /// Represents a Lab color space.
 class PdfCieBasedCsLab extends CraftPdfCieBasedCs {
-  PdfCieBasedCsLab(CraftPdfArray pdfObject) : super(pdfObject);
+  PdfCieBasedCsLab(super.pdfObject);
 
   @override
   int getNumberOfComponents() => 3;
@@ -35,7 +35,7 @@ class PdfCieBasedCsLab extends CraftPdfCieBasedCs {
 
 /// Represents an ICCBased color space.
 class PdfCieBasedCsIccBased extends CraftPdfCieBasedCs {
-  PdfCieBasedCsIccBased(CraftPdfArray pdfObject) : super(pdfObject);
+  PdfCieBasedCsIccBased(super.pdfObject);
 
   @override
   int getNumberOfComponents() {

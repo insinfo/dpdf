@@ -11,7 +11,7 @@ import 'package:dpdf/src/layout/borders/border.dart';
 import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
 class CraftBlockRenderer extends CraftAbstractRenderer {
-  CraftBlockRenderer(CraftElement modelElement) : super(modelElement);
+  CraftBlockRenderer(CraftElement super.modelElement);
 
   @override
   CraftMinMaxWidth? getMinMaxWidth() {

@@ -84,7 +84,7 @@ class TestExternalSignature implements CraftExternalSignature {
 
   @override
   Future<Uint8List> sign(Uint8List message) async {
-    final signer = Signer('${digestAlgorithm}/RSA');
+    final signer = Signer('$digestAlgorithm/RSA');
     signer.init(true, PrivateKeyParameter<RSAPrivateKey>(key));
     final sig = signer.generateSignature(message);
     return sig.bytes;

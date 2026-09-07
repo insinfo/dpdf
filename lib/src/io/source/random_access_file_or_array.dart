@@ -29,8 +29,9 @@ class CraftRandomAccessFileOrArray {
     while (offset < bytes.length) {
       final count =
           _source.readInto(offset, bytes, offset, bytes.length - offset);
-      if (count <= 0)
+      if (count <= 0) {
         throw FormatException('Input ended while materializing bytes.');
+      }
       offset += count;
     }
     return bytes;
@@ -72,8 +73,9 @@ class CraftRandomAccessFileOrArray {
       final received = _source.readInto(
           _position, target, buffer is Uint8List ? offset : 0, toRead);
       if (received <= 0) return count == 0 ? -1 : count;
-      if (buffer is! Uint8List)
+      if (buffer is! Uint8List) {
         buffer.setRange(offset, offset + received, target);
+      }
       _position += received;
       count += received;
     }

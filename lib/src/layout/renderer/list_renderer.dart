@@ -24,7 +24,7 @@ import 'package:dpdf/src/layout/renderer/list_item_renderer.dart';
 import 'package:dpdf/src/layout/renderer/text_renderer.dart';
 
 class CraftListRenderer extends CraftBlockRenderer {
-  CraftListRenderer(elements.CraftList modelElement) : super(modelElement);
+  CraftListRenderer(elements.CraftList super.modelElement);
 
   @override
   CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
@@ -357,8 +357,7 @@ class CraftListRenderer extends CraftBlockRenderer {
 class _ConstantFontTextRenderer extends CraftTextRenderer {
   final String constantFontName;
 
-  _ConstantFontTextRenderer(CraftText textElement, this.constantFontName)
-      : super(textElement);
+  _ConstantFontTextRenderer(super.textElement, this.constantFontName);
 
   @override
   Future<void> draw(CraftDrawContext drawContext) async {

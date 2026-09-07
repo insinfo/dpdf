@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
 import 'pdf_byte_source.dart';
@@ -11,7 +10,7 @@ class PdfFileSource implements PdfByteSource {
   final int length;
   final int blockSize;
   final int maxBlocks;
-  final _cache = LinkedHashMap<int, Uint8List>();
+  final _cache = <int, Uint8List>{};
   bool _closed = false;
   int _bytesRead = 0;
   int get bytesRead => _bytesRead;
@@ -49,9 +48,10 @@ class PdfFileSource implements PdfByteSource {
     var received = 0;
     while (received < size) {
       final count = _file.readIntoSync(bytes, received, size);
-      if (count == 0)
+      if (count == 0) {
         throw FileSystemException(
             'PDF file changed or was truncated while reading.');
+      }
       received += count;
     }
     _bytesRead += received;

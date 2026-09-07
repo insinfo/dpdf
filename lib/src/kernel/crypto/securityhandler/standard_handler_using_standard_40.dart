@@ -68,7 +68,7 @@ class CraftStandardHandlerUsingStandard40 extends CraftStandardSecurityHandler {
       bool encryptMetadata,
       bool embeddedFilesOnly,
       Uint8List? documentId) {
-    this._encryptMetadata = encryptMetadata;
+    _encryptMetadata = encryptMetadata;
     _initKeyAndFillDictionary(encryptionDictionary, userPassword, ownerPassword,
         permissions, encryptMetadata, embeddedFilesOnly, documentId);
   }
@@ -78,9 +78,9 @@ class CraftStandardHandlerUsingStandard40 extends CraftStandardSecurityHandler {
       Uint8List password,
       Uint8List? documentId,
       bool encryptMetadata) {
-    this.keyLength = 40;
+    keyLength = 40;
     this.documentId = documentId;
-    this._encryptMetadata = encryptMetadata;
+    _encryptMetadata = encryptMetadata;
   }
 
   Future<void> initForReading(CraftPdfDictionary encryptionDictionary,
@@ -97,10 +97,10 @@ class CraftStandardHandlerUsingStandard40 extends CraftStandardSecurityHandler {
     final oValue = oObj.getValueBytes();
     final uValue = uObj.getValueBytes();
 
-    this.permissions = pObj.intValue();
+    permissions = pObj.intValue();
 
     this.documentId = documentId;
-    this.keyLength = defaultKeyLengthValue;
+    keyLength = defaultKeyLengthValue;
 
     if (oValue == null || uValue == null) {
       throw CraftPdfException(

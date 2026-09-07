@@ -21,8 +21,9 @@ class CraftHtmlDataImage {
       final image = CraftImageDataFactory.create(
           base64Decode(source.substring(comma + 1)));
       final type = image.getOriginalType();
-      if (type != CraftImageType.PNG && type != CraftImageType.JPEG)
+      if (type != CraftImageType.PNG && type != CraftImageType.JPEG) {
         return null;
+      }
       final naturalWidth = image.getWidth();
       final naturalHeight = image.getHeight();
       if (naturalWidth <= 0 || naturalHeight <= 0) return null;

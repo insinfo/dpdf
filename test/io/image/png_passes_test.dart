@@ -78,16 +78,18 @@ void main() {
                 for (var c = 0; c < colors; c++)
                   model == 3 ? (x + y) % 2 : x + y + c + 1
           ]);
-          if (model == 4 || model == 6)
+          if (model == 4 || model == 6) {
             expect(image.imageMask!.getData(), [
               for (var y = 0; y < side; y++)
                 for (var x = 0; x < side; x++) x + y + colors + 1
             ]);
-          if (model == 3)
+          }
+          if (model == 3) {
             expect(image.imageMask!.getData(), [
               for (var y = 0; y < side; y++)
                 for (var x = 0; x < side; x++) (x + y).isEven ? 128 : 255
             ]);
+          }
         });
       }
     }

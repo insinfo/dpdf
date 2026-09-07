@@ -16,7 +16,7 @@ class CraftTableRenderer extends CraftAbstractRenderer {
   List<double>? columns;
   List<List<CraftCellRenderer?>> rows = [];
 
-  CraftTableRenderer(CraftTable modelElement) : super(modelElement);
+  CraftTableRenderer(CraftTable super.modelElement);
 
   @override
   CraftTable getModelElement() {
@@ -127,7 +127,9 @@ class CraftTableRenderer extends CraftAbstractRenderer {
 
     double tableWidth = 0;
     if (columns != null) {
-      for (var w in columns!) tableWidth += w;
+      for (var w in columns!) {
+        tableWidth += w;
+      }
     } else {
       tableWidth = availableWidth;
     }

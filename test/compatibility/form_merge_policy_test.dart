@@ -20,8 +20,7 @@ Future<Uint8List> source(
     String name = 'nome',
     bool resources = false}) async {
   final bytes = BytesBuilder();
-  final doc =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
   final page = await doc.appendBlankPage();
   final widget =
       CraftPdfWidgetAnnotation.fromRect(CraftRectangle(10, 10, 100, 20));
@@ -121,7 +120,7 @@ void main() {
       () async {
     final buffer = BytesBuilder();
     final original =
-        await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
+        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
     final first = await original.appendBlankPage();
     final second = await original.appendBlankPage();
     final form = await CraftPdfAcroForm.getAcroForm(original, true);

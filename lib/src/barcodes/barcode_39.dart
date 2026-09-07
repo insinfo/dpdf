@@ -70,13 +70,13 @@ class CraftBarcode39 extends CraftBarcode1D {
   static const String CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. \$/+%*";
 
   /// The character combinations to make the code 39 extended.
-  static const String EXTENDED = "%U" +
-      "\$A\$B\$C\$D\$E\$F\$G\$H\$I\$J\$K\$L\$M\$N\$O\$P\$Q\$R\$S\$T\$U\$V\$W\$X\$Y\$Z" +
-      "%A%B%C%D%E  /A/B/C/D/E/F/G/H/I/J/K/L - ./O" +
-      " 0 1 2 3 4 5 6 7 8 9/Z%F%G%H%I%J%V" +
-      " A B C D E F G H I J K L M N O P Q R S T U V W X Y Z" +
-      "%K%L%M%N%O%W" +
-      "+A+B+C+D+E+F+G+H+I+J+K+L+M+N+O+P+Q+R+S+T+U+V+W+X+Y+Z" +
+  static const String EXTENDED = "%U"
+      "\$A\$B\$C\$D\$E\$F\$G\$H\$I\$J\$K\$L\$M\$N\$O\$P\$Q\$R\$S\$T\$U\$V\$W\$X\$Y\$Z"
+      "%A%B%C%D%E  /A/B/C/D/E/F/G/H/I/J/K/L - ./O"
+      " 0 1 2 3 4 5 6 7 8 9/Z%F%G%H%I%J%V"
+      " A B C D E F G H I J K L M N O P Q R S T U V W X Y Z"
+      "%K%L%M%N%O%W"
+      "+A+B+C+D+E+F+G+H+I+J+K+L+M+N+O+P+Q+R+S+T+U+V+W+X+Y+Z"
       "%P%Q%R%S%T";
 
   /// Creates a new [Barcode39].
@@ -93,18 +93,17 @@ class CraftBarcode39 extends CraftBarcode1D {
     return CraftBarcode39._internal(document, resolvedFont);
   }
 
-  CraftBarcode39._internal(CraftPdfDocument document, CraftPdfFont font)
-      : super(document) {
-    this.x = 0.8;
-    this.n = 2;
+  CraftBarcode39._internal(super.document, CraftPdfFont font) {
+    x = 0.8;
+    n = 2;
     this.font = font;
-    this.size = 8;
-    this.baseline = size;
-    this.barHeight = size * 3;
-    this.generateChecksum = false;
-    this.checksumText = false;
-    this.startStopText = true;
-    this.extended = false;
+    size = 8;
+    baseline = size;
+    barHeight = size * 3;
+    generateChecksum = false;
+    checksumText = false;
+    startStopText = true;
+    extended = false;
   }
 
   /// Creates the bars.
@@ -113,7 +112,7 @@ class CraftBarcode39 extends CraftBarcode1D {
   /// stop characters
   /// Returns the bars
   static Uint8List getBarsCode39(String text) {
-    text = "*" + text + "*";
+    text = "*$text*";
     Uint8List bars = Uint8List(text.length * 10 - 1);
     for (int k = 0; k < text.length; ++k) {
       String ch = text[k];

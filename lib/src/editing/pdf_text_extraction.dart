@@ -21,6 +21,7 @@ import '../kernel/pdf/pdf_writer.dart';
 part 'pdf_text_positions.dart';
 part 'pdf_text_redaction.dart';
 part 'pdf_graphics_envelope.dart';
+part 'pdf_area_redaction.dart';
 
 /// Decodes PDF character codes for a selected font resource.
 /// A decoder must apply that font's Encoding/ToUnicode mapping.
@@ -119,8 +120,9 @@ class PdfTextExtraction {
 
   static String _replacementText(Uint8List bytes) {
     if (bytes.length >= 2 && bytes[0] == 0xfe && bytes[1] == 0xff) {
-      if (bytes.length.isOdd)
+      if (bytes.length.isOdd) {
         throw FormatException('ActualText has incomplete UTF-16 data.');
+      }
       final units = <int>[];
       for (var i = 2; i < bytes.length; i += 2) {
         final unit = (bytes[i] << 8) | bytes[i + 1];
@@ -262,8 +264,9 @@ class PdfTextExtraction {
     } else if (filter is CraftPdfArray) {
       for (var j = 0; j < filter.size(); j++) {
         final name = await filter.get(j);
-        if (name is! CraftPdfName)
+        if (name is! CraftPdfName) {
           throw FormatException('Invalid stream filter.');
+        }
         names.add(name.getValue());
       }
     } else if (filter != null) {
@@ -333,8 +336,9 @@ class PdfTextExtraction {
           font = _FontBinding((operands[0] as _Name).value, decoder);
         case 'Tj':
         case "'":
-          if (operands.length != 1)
+          if (operands.length != 1) {
             throw FormatException('Invalid text operands.');
+          }
           if (token.value == "'") emit('\n');
           show(operands.single);
         case '"':
@@ -373,8 +377,9 @@ class PdfTextExtraction {
           if (operands.length != 1 || operands.single is! _Name) {
             throw FormatException('BMC requires a marked-content tag.');
           }
-          if (marked.length >= 128)
+          if (marked.length >= 128) {
             throw FormatException('Marked content is too deeply nested.');
+          }
           marked.add(null);
         case 'BDC':
           if (operands.length != 2 || operands.first is! _Name) {
@@ -382,9 +387,10 @@ class PdfTextExtraction {
           }
           Object? property = operands[1];
           if (property is _Name) {
-            if (properties == null)
+            if (properties == null) {
               throw UnsupportedError(
                   'Named marked-content properties require page resources.');
+            }
             property = properties[property.value];
           }
           if (property is! Map<String, Object>) {
@@ -401,8 +407,9 @@ class PdfTextExtraction {
           } else if (replacement != null) {
             throw FormatException('ActualText must be a PDF text string.');
           }
-          if (marked.length >= 128)
+          if (marked.length >= 128) {
             throw FormatException('Marked content is too deeply nested.');
+          }
           marked.add(text);
         case 'EMC':
           if (operands.isNotEmpty || marked.isEmpty) {
@@ -574,22 +581,27 @@ class _ContentTokens {
     }
     if (first == 60) {
       if (!done && bytes[position] == 60) {
-        if (!allowDictionaries)
+        if (!allowDictionaries) {
           throw UnsupportedError('Inline dictionaries are not supported.');
+        }
         position++;
-        if (++_compoundDepth > 128)
+        if (++_compoundDepth > 128) {
           throw FormatException('Inline dictionary nesting limit exceeded.');
+        }
         final entries = <String, Object>{};
         while (true) {
           final key = next();
           if (key is _Operator && key.value == '>>') break;
-          if (key is! _Name)
+          if (key is! _Name) {
             throw FormatException('Inline dictionary requires name keys.');
+          }
           final value = next();
-          if (value == null || value is _Operator)
+          if (value == null || value is _Operator) {
             throw FormatException('Invalid inline dictionary value.');
-          if (entries.containsKey(key.value))
+          }
+          if (entries.containsKey(key.value)) {
             throw FormatException('Duplicate inline property.');
+          }
           entries[key.value] = value;
         }
         _compoundDepth--;
@@ -624,8 +636,9 @@ class _ContentTokens {
           if (allowDictionaries) _compoundDepth--;
           return values;
         }
-        if (value == null || value is _Operator)
+        if (value == null || value is _Operator) {
           throw FormatException('Invalid content array.');
+        }
         values.add(value);
       }
     }
@@ -643,8 +656,9 @@ class _ContentTokens {
       position++;
     }
     final word = latin1.decode(bytes.sublist(start - 1, position));
-    if (allowDictionaries && (word == 'true' || word == 'false'))
+    if (allowDictionaries && (word == 'true' || word == 'false')) {
       return word == 'true';
+    }
     if (allowDictionaries && word == 'null') return const _ContentNull();
     return RegExp(r'^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$').hasMatch(word)
         ? num.parse(word)

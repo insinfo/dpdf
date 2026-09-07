@@ -1,0 +1,10 @@
+include: package:lints/recommended.yaml
+
+linter:
+  rules:
+    # The kernel, io and barcode layers mirror the PDF, OpenType and GS1
+    # specifications, where SCREAMING_CAPS names are part of the published
+    # vocabulary (TIMES_ROMAN, GUARD_EAN13, ...). Renaming them would hide the
+    # correspondence a reader checks against the spec.
+    constant_identifier_names: false
+    non_constant_identifier_names: false

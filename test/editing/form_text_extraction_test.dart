@@ -33,8 +33,8 @@ CraftPdfDictionary resources(Map<String, CraftPdfStream> forms,
           CraftPdfDictionary.fromEntries(forms.entries
               .map((e) => MapEntry(CraftPdfName(e.key), e.value))));
 Future<String> extract(String content, CraftPdfDictionary directory) async {
-  final doc = await CraftPdfDocument.create(
-      CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
+  final doc =
+      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
   final page = await doc.appendBlankPage();
   page.pdfRepresentation()
     ..put(CraftPdfName.resources, directory)
@@ -46,8 +46,7 @@ Future<String> extract(String content, CraftPdfDictionary directory) async {
 void main() {
   test('Shared indirect Form survives write and reopen', () async {
     final bytes = BytesBuilder();
-    final doc =
-        await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+    final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
     final page = await doc.appendBlankPage();
     page.pdfRepresentation()
       ..put(CraftPdfName.resources,

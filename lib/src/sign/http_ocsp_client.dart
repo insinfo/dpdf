@@ -46,20 +46,27 @@ class HttpOcspClient implements CraftOcspClient {
       final seq = ASN1Parser(ocspResponse).nextObject() as ASN1Sequence;
       if (seq.elements!.length != 2) return null;
       final status = seq.elements![0];
-      if (status is! ASN1Enumerated || status.integer != BigInt.zero)
+      if (status is! ASN1Enumerated || status.integer != BigInt.zero) {
         return null;
+      }
       final wrapper = seq.elements![1];
       if (wrapper is! ASN1Sequence ||
           wrapper.tag != 0xa0 ||
-          wrapper.elements!.length != 1) return null;
-      final responseBytes = wrapper.elements!.first;
-      if (responseBytes is! ASN1Sequence || responseBytes.elements!.length != 2)
+          wrapper.elements!.length != 1) {
         return null;
+      }
+      final responseBytes = wrapper.elements!.first;
+      if (responseBytes is! ASN1Sequence ||
+          responseBytes.elements!.length != 2) {
+        return null;
+      }
       final type = responseBytes.elements![0],
           response = responseBytes.elements![1];
       if (type is! ASN1ObjectIdentifier ||
           type.objectIdentifierAsString != '1.3.6.1.5.5.7.48.1.1' ||
-          response is! ASN1OctetString) return null;
+          response is! ASN1OctetString) {
+        return null;
+      }
       // Transport extraction only: callers must validate the signed response.
       return ASN1Parser(response.octets).nextObject();
     } catch (e) {
@@ -69,9 +76,7 @@ class HttpOcspClient implements CraftOcspClient {
 
   Future<Uint8List?> _getOcspResponse(CertificateDetails checkCert,
       CertificateDetails rootCert, String? url) async {
-    if (url == null) {
-      url = CraftCertificateUtil.getOCSPURL(checkCert);
-    }
+    url ??= CraftCertificateUtil.getOCSPURL(checkCert);
     if (url == null) return null;
 
     // Generate Request

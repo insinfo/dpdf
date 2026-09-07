@@ -14,6 +14,7 @@ class CraftPdfType3Font extends CraftPdfSimpleFont<CraftType3Font> {
     return CraftPdfType3Font(dictionary);
   }
 
+  @override
   Future<void> initFromDictionary(CraftPdfDictionary dictionary) async {
     final firstCharObj = await dictionary.integerEntry(CraftPdfName.firstChar);
     final lastCharObj = await dictionary.integerEntry(CraftPdfName.lastChar);

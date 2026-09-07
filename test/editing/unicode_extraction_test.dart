@@ -27,7 +27,7 @@ Future<String> extract(
     bool inherited = false}) async {
   final output = BytesBuilder();
   final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
   final page = await document.appendBlankPage();
   final font = CraftPdfDictionary()
     ..put(CraftPdfName.subtype, CraftPdfName(cmap == null ? 'Type1' : 'Type0'))
@@ -37,10 +37,12 @@ Future<String> extract(
     final bytes = ascii.encode(cmap);
     final stream = CraftPdfStream.withBytes(
         Uint8List.fromList(compressed ? zlib.encode(bytes) : bytes), 0);
-    if (compressed)
+    if (compressed) {
       stream.put(CraftPdfName.filter, CraftPdfName('FlateDecode'));
-    if (inherited)
+    }
+    if (inherited) {
       stream.put(CraftPdfName('UseCMap'), CraftPdfName('Unsupported'));
+    }
     font.put(CraftPdfName('ToUnicode'), stream);
   }
   page.pdfRepresentation().put(
@@ -62,7 +64,7 @@ Future<String> extract(
 
 void main() {
   test('Malformed Contents fails instead of reporting empty text', () async {
-    final document = await CraftPdfDocument.create(
+    final document = CraftPdfDocument.create(
         CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
     final page = await document.appendBlankPage();
     page

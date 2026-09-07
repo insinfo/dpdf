@@ -21,8 +21,9 @@ void main() {
     final match = RegExp(
             r'-----BEGIN CERTIFICATE-----([\s\S]*?)-----END CERTIFICATE-----')
         .firstMatch(text);
-    if (match == null)
+    if (match == null) {
       throw FormatException('Certificate is neither DER nor PEM: ${file.path}');
+    }
     return base64Decode(match.group(1)!.replaceAll(RegExp(r'\s'), ''));
   }
 

@@ -5,8 +5,9 @@ abstract final class LegacyDigest {
   static Uint8List compute(String algorithm, Uint8List message) {
     final name = algorithm.toUpperCase().replaceAll('-', '');
     if (name == 'MD2') return _md2(message);
-    if (!['RIPEMD128', 'RIPEMD160', 'RIPEMD256'].contains(name))
+    if (!['RIPEMD128', 'RIPEMD160', 'RIPEMD256'].contains(name)) {
       throw UnsupportedError('Unsupported legacy digest $algorithm');
+    }
     return _ripemd(message, int.parse(name.substring(6)));
   }
 
@@ -421,8 +422,9 @@ abstract final class LegacyDigest {
       }
     }
     final result = ByteData(bits ~/ 8);
-    for (var i = 0; i < hash.length; i++)
+    for (var i = 0; i < hash.length; i++) {
       result.setUint32(i * 4, hash[i], Endian.little);
+    }
     return result.buffer.asUint8List();
   }
 
@@ -699,8 +701,9 @@ abstract final class LegacyDigest {
     final state = Uint8List(48);
     for (var offset = 0; offset < encoded.length; offset += 16) {
       state.setRange(16, 32, encoded, offset);
-      for (var index = 0; index < 16; index++)
+      for (var index = 0; index < 16; index++) {
         state[32 + index] = state[index] ^ state[16 + index];
+      }
       var feedback = 0;
       for (var round = 0; round < 18; round++) {
         for (var index = 0; index < 48; index++) {

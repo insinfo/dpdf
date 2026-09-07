@@ -8,7 +8,6 @@ import 'package:dpdf/dpdf_platform.dart';
 import 'package:dpdf/src/io/codec/ccitt_g4_encoder.dart';
 import 'package:dpdf/src/io/codec/tiff_fax_decoder.dart';
 import 'package:dpdf/src/io/codec/png_writer.dart';
-import 'package:dpdf/src/io/image/image_data_factory.dart';
 import 'package:dpdf/src/pki/pki_utils.dart';
 import 'package:dpdf/src/sign/signature_mechanism_params.dart';
 import 'package:dpdf/src/sign/signature_util.dart';
@@ -21,8 +20,7 @@ Future<void> main() async {
     throw StateError('PDF date lost its declared UTC offset');
   }
   final marker = Uint8List(2048)..setRange(0, 9, ascii.encode('startxref'));
-  if (await CraftPdfTokenizer(CraftRandomAccessFileOrArray(marker))
-          .getStartxref() !=
+  if (CraftPdfTokenizer(CraftRandomAccessFileOrArray(marker)).getStartxref() !=
       0) {
     throw StateError('Reverse marker search skipped the first bytes');
   }
@@ -34,11 +32,12 @@ Future<void> main() async {
   final word = CraftRandomAccessFileOrArray(
           Uint8List.fromList([127, 255, 255, 255, 255, 255, 255, 255]))
       .readBigInt64();
-  if (word != (BigInt.one << 63) - BigInt.one)
+  if (word != (BigInt.one << 63) - BigInt.one) {
     throw StateError('64-bit platform backend lost precision');
+  }
   final buffer = BytesBuilder();
   final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
+      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
   final page = await document.appendBlankPage();
   final font = CraftPdfDictionary()
     ..put(CraftPdfName.type, CraftPdfName.font)
@@ -104,15 +103,15 @@ Future<void> _checkCompatibility(Uint8List input) async {
   final page = (await document.pageAt(1))!;
   final overlay = await PdfPageOverlay.create(page);
   overlay.beginText();
-  await overlay.setFontAndSize(
-      await CraftPdfFontFactory.createFont('Helvetica'), 12);
+  await overlay.setFontAndSize(CraftPdfFontFactory.createFont('Helvetica'), 12);
   overlay.moveText(20, 40).showText('WEB OVERLAY').endText();
   (await document.documentDetails()).setTitle('Revisão 世界');
   await document.close();
   final bytes = output.takeBytes();
   final quick = await PdfQuickInfo.fromBytes(bytes);
-  if (quick.pageCount != 1 || quick.hasDocMdp)
+  if (quick.pageCount != 1 || quick.hasDocMdp) {
     throw StateError('Quick inspection failed');
+  }
   final reopened = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
   try {
     final title = await (await reopened.documentDetails())
@@ -123,8 +122,9 @@ Future<void> _checkCompatibility(Uint8List input) async {
           'Incremental metadata update was lost: ${title?.decodeMappingText()}');
     }
     final text = await PdfTextExtraction.fromPage((await reopened.pageAt(1))!);
-    if (!text.contains('WEB OVERLAY'))
+    if (!text.contains('WEB OVERLAY')) {
       throw StateError('Incremental overlay was lost: $text');
+    }
   } finally {
     await reopened.close();
   }
@@ -173,8 +173,9 @@ Future<void> _checkSigning(Uint8List input) async {
     final names = await signatures.getSignatureNames();
     if (names.length != 1) throw StateError('Missing PDF signature');
     final cms = await signatures.readSignatureData(names.single);
-    if (cms == null || !cms.verify())
+    if (cms == null || !cms.verify()) {
       throw StateError('RSA signature verification failed');
+    }
   } finally {
     await signed.close();
   }
@@ -198,8 +199,7 @@ class _LocalSignature implements CraftExternalSignature {
 
 Future<void> _checkFormExtraction() async {
   final bytes = BytesBuilder();
-  final doc =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
   final page = await doc.appendBlankPage();
   final fonts = CraftPdfDictionary()
     ..put(
@@ -233,8 +233,9 @@ Future<void> _checkFormExtraction() async {
   try {
     final extracted =
         await PdfTextExtraction.fromPage((await reopened.pageAt(1))!);
-    if (extracted != 'embedded•€')
+    if (extracted != 'embedded•€') {
       throw StateError('Form text extraction failed: $extracted');
+    }
   } finally {
     await reopened.close();
   }
@@ -248,15 +249,17 @@ Future<void> _checkRecoveryAndFlatten(Uint8List input) async {
     ..recoveryMode = PdfRecoveryMode.skipStreams;
   final recovered = await CraftPdfDocument.open(
       CraftPdfReader.fromSource(PdfMemorySource(broken), options));
-  if (!recovered.wasRepaired || recovered.pageTotal() != 1)
+  if (!recovered.wasRepaired || recovered.pageTotal() != 1) {
     throw StateError('Optional recovery failed');
+  }
   await recovered.close();
   final flattened = await PdfPageAssembly.merge(
       [PdfPageSelection(broken, readerProperties: options)],
       mode: PdfMergeMode.flatten);
   final reopened =
       await CraftPdfDocument.open(CraftPdfReader.fromBytes(flattened));
-  if ((await PdfTextExtraction.fromPage((await reopened.pageAt(1))!)).isEmpty)
+  if ((await PdfTextExtraction.fromPage((await reopened.pageAt(1))!)).isEmpty) {
     throw StateError('Flatten lost page content');
+  }
   await reopened.close();
 }

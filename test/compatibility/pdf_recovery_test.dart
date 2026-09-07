@@ -24,7 +24,7 @@ void main() {
         final input = reader(source(suffix: suffix), mode);
         final doc = await CraftPdfDocument.open(input);
         expect(input.rebuiltXref, isTrue);
-        expect(await doc.pageTotal(), 0);
+        expect(doc.pageTotal(), 0);
         await doc.close();
       });
     }
@@ -124,7 +124,7 @@ void main() {
       final overlay = await PdfPageOverlay.create(page);
       overlay.beginText();
       await overlay.setFontAndSize(
-          await CraftPdfFontFactory.createFont('Helvetica'), 12);
+          CraftPdfFontFactory.createFont('Helvetica'), 12);
       overlay.moveText(20, 30).showText('RECOVERED OBJECT STREAM').endText();
       await original.close();
       final encoded = latin1.decode(buffer.takeBytes());

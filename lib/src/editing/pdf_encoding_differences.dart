@@ -113,8 +113,9 @@ final class PdfEncodingDifferences {
       } else {
         return null;
       }
-      if (values.any((v) => v > 0x10ffff || (v >= 0xd800 && v <= 0xdfff)))
+      if (values.any((v) => v > 0x10ffff || (v >= 0xd800 && v <= 0xdfff))) {
         return null;
+      }
       output.write(String.fromCharCodes(values));
     }
     return output.isEmpty ? null : output.toString();

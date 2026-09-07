@@ -189,15 +189,14 @@ class CraftBarcode128 extends CraftBarcode1D {
     return CraftBarcode128._internal(document, resolvedFont);
   }
 
-  CraftBarcode128._internal(CraftPdfDocument document, CraftPdfFont font)
-      : super(document) {
-    this.x = 0.8;
+  CraftBarcode128._internal(super.document, CraftPdfFont font) {
+    x = 0.8;
     this.font = font;
-    this.size = 8;
-    this.baseline = size;
-    this.barHeight = size * 3;
-    this.textAlignment = CraftBarcode1D.ALIGN_CENTER;
-    this.codeType = CODE128;
+    size = 8;
+    baseline = size;
+    barHeight = size * 3;
+    textAlignment = CraftBarcode1D.ALIGN_CENTER;
+    codeType = CODE128;
     _initializeAis();
   }
 
@@ -271,12 +270,12 @@ class CraftBarcode128 extends CraftBarcode1D {
 
   /// Sets the code set to use.
   void setCodeSet(Barcode128CodeSet codeSet) {
-    this._codeSet = codeSet;
+    _codeSet = codeSet;
   }
 
   /// Get the code set that is used.
   Barcode128CodeSet getCodeSet() {
-    return this._codeSet;
+    return _codeSet;
   }
 
   /// Removes the FNC1 codes in the text.
@@ -565,7 +564,7 @@ class CraftBarcode128 extends CraftBarcode1D {
         }
         sai = ai.toString();
         if (sai.length == 1) {
-          sai = "0" + sai;
+          sai = "0$sai";
         }
         idx = code.indexOf('(', end);
         int next = (idx < 0 ? code.length : idx);

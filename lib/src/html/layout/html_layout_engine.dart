@@ -3,6 +3,7 @@ import '../model/html_text.dart';
 import 'html_box_geometry.dart';
 import 'html_display_list.dart';
 import 'html_layout_plan.dart';
+import 'html_text_measure.dart';
 
 /// CSS box layout profile for text, block flow, flex rows/columns and grids.
 ///
@@ -137,10 +138,10 @@ class CraftHtmlLayoutEngine {
       for (var index = 0; index < forcedLines.length; index++) {
         for (final word in CraftHtmlText.words(forcedLines[index])) {
           if (word.isEmpty) continue;
-          final glyphWidth = word.length * style.fontSize * .52;
-          final space = line.isEmpty ? 0.0 : style.fontSize * .52;
+          final glyphWidth = CraftHtmlTextMeasure.text(word, style);
+          final space = line.isEmpty ? 0.0 : CraftHtmlTextMeasure.space(style);
           if (line.isNotEmpty && used + space + glyphWidth > width) flush();
-          final offset = used + (line.isEmpty ? 0 : style.fontSize * .52);
+          final offset = used + space;
           line.add(_InlineWord(word, style, offset, leaf.linkTarget));
           used = offset + glyphWidth;
           final height = style.fontSize * 1.35;
@@ -154,8 +155,9 @@ class CraftHtmlLayoutEngine {
 
   double _flex(CraftHtmlBox box, double x, double width) {
     if (box.children.isEmpty) return 0;
-    if (box.style.flexDirection.toLowerCase().startsWith('column'))
+    if (box.style.flexDirection.toLowerCase().startsWith('column')) {
       return _flow(box, x, width);
+    }
     final geometry = CraftHtmlBoxGeometry.resolve(box.style, x, width);
     final start = _cursor;
     _cursor += geometry.marginTop + geometry.paddingTop;
@@ -222,7 +224,7 @@ class CraftHtmlLayoutEngine {
       return box.style.width.resolve(maximum).clamp(1.0, maximum).toDouble();
     }
     if (box.isText) {
-      return (box.text!.length * box.style.text.fontSize * .52)
+      return CraftHtmlTextMeasure.text(box.text!, box.style.text)
           .clamp(1.0, maximum)
           .toDouble();
     }
@@ -326,7 +328,7 @@ class CraftHtmlLayoutEngine {
       String value, CraftHtmlTextStyle style, double x, double width,
       {String? linkTarget}) {
     final lineHeight = style.fontSize * 1.35;
-    final limit = (width / (style.fontSize * .52)).floor().clamp(1, 10000);
+    final limit = CraftHtmlTextMeasure.charactersPerLine(style, width);
     for (final line in _wrap(value, limit)) {
       _cursor += lineHeight;
       _fragments.add(CraftHtmlTextFragment(line, style, x, _cursor,

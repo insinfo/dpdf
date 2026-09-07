@@ -20,7 +20,9 @@ class AesCbcCore {
     var inverse = 0;
     if (x != 0) {
       inverse = 1;
-      for (var i = 0; i < 254; i++) inverse = _multiply(inverse, x);
+      for (var i = 0; i < 254; i++) {
+        inverse = _multiply(inverse, x);
+      }
     }
     var value = inverse ^ 0x63;
     for (var i = 1; i <= 4; i++) {
@@ -48,8 +50,9 @@ class AesCbcCore {
       } else if (key.length == 32 && offset % key.length == 16) {
         word = word.map((v) => _s[v]).toList();
       }
-      for (var j = 0; j < 4; j++)
+      for (var j = 0; j < 4; j++) {
         _schedule[offset + j] = _schedule[offset - key.length + j] ^ word[j];
+      }
     }
   }
   void processBlock(
@@ -57,15 +60,18 @@ class AesCbcCore {
     final original = Uint8List.fromList(input.sublist(offset, offset + 16));
     var state = List<int>.from(original);
     void addKey(int round) {
-      for (var i = 0; i < 16; i++) state[i] ^= _schedule[16 * round + i];
+      for (var i = 0; i < 16; i++) {
+        state[i] ^= _schedule[16 * round + i];
+      }
     }
 
     void shift(bool inverse) {
       final copy = List<int>.from(state);
-      for (var r = 0; r < 4; r++)
+      for (var r = 0; r < 4; r++) {
         for (var c = 0; c < 4; c++) {
           state[4 * c + r] = copy[4 * ((c + (inverse ? 4 - r : r)) % 4) + r];
         }
+      }
     }
 
     void mix(bool inverse) {
@@ -74,15 +80,18 @@ class AesCbcCore {
         final col = state.sublist(4 * c, 4 * c + 4);
         for (var r = 0; r < 4; r++) {
           var value = 0;
-          for (var k = 0; k < 4; k++)
+          for (var k = 0; k < 4; k++) {
             value ^= _multiply(col[k], matrix[(k - r + 4) % 4]);
+          }
           state[4 * c + r] = value;
         }
       }
     }
 
     if (encrypt) {
-      for (var i = 0; i < 16; i++) state[i] ^= _chain[i];
+      for (var i = 0; i < 16; i++) {
+        state[i] ^= _chain[i];
+      }
       addKey(0);
       for (var round = 1; round <= _rounds; round++) {
         state = state.map((v) => _s[v]).toList();
@@ -98,7 +107,9 @@ class AesCbcCore {
         addKey(round);
         if (round != 0) mix(true);
       }
-      for (var i = 0; i < 16; i++) state[i] ^= _chain[i];
+      for (var i = 0; i < 16; i++) {
+        state[i] ^= _chain[i];
+      }
     }
     output.setRange(outputOffset, outputOffset + 16, state);
     _chain = encrypt ? Uint8List.fromList(state) : original;

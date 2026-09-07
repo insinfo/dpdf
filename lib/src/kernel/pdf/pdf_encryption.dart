@@ -22,10 +22,10 @@ class CraftPdfEncryption extends CraftPdfObjectWrapper<CraftPdfDictionary> {
 
   static int _seq = CraftSystemUtil.getTimeBasedSeed();
 
-  int _cryptoMode = 0;
+  final int _cryptoMode = 0;
   int? _permissions;
-  bool _encryptMetadata = true;
-  bool _embeddedFilesOnly = false;
+  final bool _encryptMetadata = true;
+  final bool _embeddedFilesOnly = false;
   Uint8List? _documentId;
   CraftSecurityHandler? _securityHandler;
 
@@ -36,7 +36,7 @@ class CraftPdfEncryption extends CraftPdfObjectWrapper<CraftPdfDictionary> {
       CraftPdfDictionary pdfDict, Uint8List password, Uint8List documentId)
       : super(pdfDict) {
     setForbidRelease();
-    this._documentId = documentId;
+    _documentId = documentId;
     _readAndSetCryptoModeForStdHandler(pdfDict, password, documentId);
   }
 

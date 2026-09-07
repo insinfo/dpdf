@@ -24,15 +24,14 @@ class IoException extends DpdfException {
   ///
   /// [message] the detail message.
   /// [obj] an object for more details.
-  IoException.withObject(String message, this.obj) : super(message);
+  IoException.withObject(super.message, this.obj);
 
   /// Creates a new IoException with message, cause and object.
   ///
   /// [message] the detail message.
   /// [cause] the cause of the exception.
   /// [obj] an object for more details.
-  IoException.full(String message, Object? cause, this.obj)
-      : super(message, cause);
+  IoException.full(super.message, super.cause, this.obj);
 
   @override
   String get message {

@@ -41,8 +41,9 @@ class PdfTextRedaction {
   static Future<Uint8List> _rewrite(
       Uint8List source, List<PdfTextRemoval> requests,
       {bool replacementMode = false}) async {
-    if (requests.isEmpty)
+    if (requests.isEmpty) {
       throw ArgumentError('At least one text removal is required.');
+    }
     for (final request in requests) {
       if (request.text.isEmpty ||
           request.text.codeUnits
@@ -54,17 +55,20 @@ class PdfTextRedaction {
     final reader = CraftPdfReader.fromBytes(source);
     final input = await CraftPdfDocument.open(reader);
     try {
-      if (reader.encrypted)
+      if (reader.encrypted) {
         throw UnsupportedError('Encrypted redaction is unsupported.');
+      }
       _keys(input.rootCatalog().pdfRepresentation(),
           {'Type', 'Pages', 'Version'}, 'catalog');
       final info = await input.fileTrailer().dictionaryEntry(CraftPdfName.info);
-      if (info != null && info.size() != 0)
+      if (info != null && info.size() != 0) {
         throw UnsupportedError('Document metadata is unsupported.');
+      }
       final count = input.pageTotal();
       for (final request in requests) {
-        if (request.page < 1 || request.page > count)
+        if (request.page < 1 || request.page > count) {
           throw RangeError.range(request.page, 1, count, 'page');
+        }
       }
       final plans = <({
         CraftPdfArray media,
@@ -89,8 +93,9 @@ class PdfTextRedaction {
             'page');
         final resources =
             await _inherited(page.pdfRepresentation(), 'Resources');
-        if (resources is! CraftPdfDictionary)
+        if (resources is! CraftPdfDictionary) {
           throw UnsupportedError('Page resources are required.');
+        }
         _keys(resources, {'Font', 'ProcSet'}, 'resources');
         final fonts = await resources.dictionaryEntry(CraftPdfName.font);
         if (fonts == null || fonts.size() == 0) {
@@ -140,8 +145,9 @@ class PdfTextRedaction {
         }
         for (var s = 0; s < streamCount; s++) {
           final stream = await page.contentSegmentAt(s);
-          if (stream is! CraftPdfStream)
+          if (stream is! CraftPdfStream) {
             throw FormatException('Invalid content stream.');
+          }
           _keys(stream, {'Length', 'Filter'}, 'content stream');
         }
         final media =
@@ -185,8 +191,9 @@ class PdfTextRedaction {
             }
             remove.addAll(List.generate(request.text.length, (i) => at + i));
           }
-          if (!found)
+          if (!found) {
             throw StateError('Requested text was not found on page $n.');
+          }
         }
         final fontNames = <String, String>{};
         for (final name in fontPlans.keys) {
@@ -207,8 +214,8 @@ class PdfTextRedaction {
       }
       // No output is allocated until all pages and all requests pass validation.
       final result = BytesBuilder();
-      final output = await CraftPdfDocument.create(
-          CraftPdfWriter.fromBytesBuilder(result));
+      final output =
+          CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(result));
       for (final plan in plans) {
         final page = await output.appendBlankPage();
         final dictionary = page.pdfRepresentation();
@@ -261,17 +268,20 @@ class PdfTextRedaction {
   }
 
   static Future<CraftPdfArray> _box(Object? object) async {
-    if (object is! CraftPdfArray || object.size() != 4)
+    if (object is! CraftPdfArray || object.size() != 4) {
       throw FormatException('Invalid page box.');
+    }
     final values = <double>[];
     for (var i = 0; i < 4; i++) {
       final number = await object.get(i);
-      if (number is! CraftPdfNumber || !number.doubleValue().isFinite)
+      if (number is! CraftPdfNumber || !number.doubleValue().isFinite) {
         throw FormatException('Invalid page box coordinate.');
+      }
       values.add(number.doubleValue());
     }
-    if (values[2] <= values[0] || values[3] <= values[1])
+    if (values[2] <= values[0] || values[3] <= values[1]) {
       throw FormatException('Empty page box.');
+    }
     return CraftPdfArray.fromDoubles(values);
   }
 }

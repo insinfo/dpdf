@@ -23,8 +23,9 @@ void main() async {
     print('  Soma r1+r2: ${r1 + r2} (Início da assinatura)');
     print('  Soma r3+r4: ${r3 + r4} (Final do arquivo segundo este range)');
 
-    if (r1 + r2 > bytes.length)
+    if (r1 + r2 > bytes.length) {
       print('  ERRO: r1+r2 excede o tamanho do arquivo!');
+    }
     if (r3 + r4 != bytes.length) {
       print(
           '  AVISO: r3+r4 (${r3 + r4}) não é igual ao tamanho total (${bytes.length})');

@@ -11,7 +11,7 @@ import '../../kernel/pdf/canvas/pdf_canvas.dart';
 import '../../kernel/colors/device_gray.dart';
 
 class CraftPdfFormAnnotation extends CraftAbstractPdfFormField {
-  CraftPdfFormAnnotation(CraftPdfDictionary pdfObject) : super(pdfObject);
+  CraftPdfFormAnnotation(super.pdfObject);
 
   CraftPdfWidgetAnnotation getWidget() {
     return CraftPdfWidgetAnnotation(pdfRepresentation());
@@ -46,7 +46,7 @@ class CraftPdfFormAnnotation extends CraftAbstractPdfFormField {
     // Draw Off state
     final xObjectOff = CraftPdfFormXObject(
         CraftRectangle(0, 0, rect.getWidth(), rect.getHeight()));
-    final doc = await getDocument();
+    final doc = getDocument();
     if (doc == null) return;
 
     final canvasOff = CraftPdfCanvas(xObjectOff.pdfRepresentation(),

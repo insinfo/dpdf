@@ -43,20 +43,19 @@ class CraftSvgStyleResolver implements CraftCssResolver {
   late CraftResourceResolver resourceResolver;
 
   CraftSvgStyleResolver(CraftSvgProcessorContext context) {
-    this.css =
-        CraftCssStyleSheet(); // In full version this would load default CSS
-    this.resourceResolver = context.getResourceResolver();
-    this.css.appendCssStyleSheet(context.getCssStyleSheet());
-    this.deviceDescription = context.getDeviceDescription();
+    css = CraftCssStyleSheet(); // In full version this would load default CSS
+    resourceResolver = context.getResourceResolver();
+    css.appendCssStyleSheet(context.getCssStyleSheet());
+    deviceDescription = context.getDeviceDescription();
   }
 
   CraftSvgStyleResolver.fromRoot(
       CraftMarkupNode rootNode, CraftSvgProcessorContext context) {
-    this.deviceDescription = context.getDeviceDescription();
-    this.resourceResolver = context.getResourceResolver();
-    this.css = CraftCssStyleSheet();
-    this.css.appendCssStyleSheet(context.getCssStyleSheet());
-    collectCssDeclarations(rootNode, this.resourceResolver);
+    deviceDescription = context.getDeviceDescription();
+    resourceResolver = context.getResourceResolver();
+    css = CraftCssStyleSheet();
+    css.appendCssStyleSheet(context.getCssStyleSheet());
+    collectCssDeclarations(rootNode, resourceResolver);
     collectFonts();
   }
 

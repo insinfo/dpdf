@@ -1,4 +1,5 @@
 import '../layout/html_display_list.dart';
+import '../layout/html_text_measure.dart';
 import '../css/css_color.dart';
 import '../../kernel/colors/device_rgb.dart';
 import 'html_standard_font.dart';
@@ -99,9 +100,10 @@ class CraftHtmlPdfPainter {
           .endText();
       final target = fragment.linkTarget;
       if (target != null && target.isNotEmpty) {
-        final textWidth = (fragment.text.length * fragment.style.fontSize * .52)
-            .clamp(1.0, double.infinity)
-            .toDouble();
+        final textWidth =
+            CraftHtmlTextMeasure.text(fragment.text, fragment.style)
+                .clamp(1.0, double.infinity)
+                .toDouble();
         final textBaseline = pageSize.height - margin - baseline;
         await pages[pageIndex].addAnnotation(CraftHtmlPdfLinkAnnotation(
           CraftRectangle(

@@ -14,8 +14,7 @@ import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 Future<Uint8List> source(List<String> contents,
     {String firstBase = 'Courier'}) async {
   final bytes = BytesBuilder();
-  final doc =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
   for (var i = 0; i < contents.length; i++) {
     final page = await doc.appendBlankPage();
     final fonts = CraftPdfDictionary();
@@ -128,7 +127,7 @@ void main() {
       () async {
     final bytes = BytesBuilder();
     final document =
-        await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
     final page = await document.appendBlankPage();
     const key = 'Space #/é';
     const value = 'Value #[]é';

@@ -16,16 +16,14 @@ class CraftCanvas extends CraftRootElement<CraftCanvas> {
       : super(pdfCanvas.getDocument()!) {
     this.pdfCanvas = pdfCanvas;
     this.rootArea = rootArea;
-    this.immediateFlush = true;
+    immediateFlush = true;
   }
 
   // TODO: Add other constructors and methods
 
   @override
   CraftRootRenderer ensureRootRendererNotNull() {
-    if (rootRenderer == null) {
-      rootRenderer = CraftCanvasRenderer(this);
-    }
+    rootRenderer ??= CraftCanvasRenderer(this);
     return rootRenderer!;
   }
 

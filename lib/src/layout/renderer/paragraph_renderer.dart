@@ -11,7 +11,7 @@ import 'package:dpdf/src/layout/properties/property.dart';
 class CraftParagraphRenderer extends CraftBlockRenderer {
   List<CraftRenderer>? _originalChildren;
 
-  CraftParagraphRenderer(CraftParagraph modelElement) : super(modelElement);
+  CraftParagraphRenderer(CraftParagraph super.modelElement);
 
   @override
   CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
@@ -111,8 +111,8 @@ class CraftParagraphRenderer extends CraftBlockRenderer {
     // Now layout the lines vertically
     // Basically behaving like BlockRenderer but with lines
 
-    this.childRenderers.clear();
-    this.childRenderers.addAll(lines);
+    childRenderers.clear();
+    childRenderers.addAll(lines);
 
     double currentHeightUsed = mt + pt; // Top offsets
     // Note: BlockRenderer adds top/bottom margins/padding.

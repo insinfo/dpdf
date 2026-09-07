@@ -35,7 +35,7 @@ class LocalExternalSignature implements CraftExternalSignature {
 
   @override
   Future<Uint8List> sign(Uint8List message) async {
-    final signer = Signer('${digestAlgorithm}/RSA');
+    final signer = Signer('$digestAlgorithm/RSA');
     signer.init(true, PrivateKeyParameter<RSAPrivateKey>(key));
     final sig = signer.generateSignature(message);
     return sig.bytes;
@@ -83,7 +83,7 @@ void main() async {
   // 2. Criar PDF inicial com texto visível
   print('Criando PDF base...');
   final writer = CraftPdfWriter.toFile(filePath);
-  final pdfDoc = await CraftPdfDocument.create(writer);
+  final pdfDoc = CraftPdfDocument.create(writer);
   final doc = CraftDocument(pdfDoc);
 
   // Texto grande e repetido

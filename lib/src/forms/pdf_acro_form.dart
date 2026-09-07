@@ -44,7 +44,7 @@ class CraftPdfAcroForm extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   static Future<CraftPdfAcroForm> getAcroForm(
       CraftPdfDocument document, bool createIfNotExist) async {
     CraftPdfDictionary? catalogDict =
-        await document.rootCatalog().pdfRepresentation();
+        document.rootCatalog().pdfRepresentation();
     CraftPdfDictionary? acroFormDict =
         await catalogDict.dictionaryEntry(CraftPdfName.acroForm);
 
@@ -254,9 +254,7 @@ class CraftPdfAcroForm extends CraftPdfObjectWrapper<CraftPdfDictionary> {
       for (var widget in widgets) {
         CraftPdfDictionary fieldObject = widget.pdfRepresentation();
         CraftPdfPage? page = await widget.pageAt();
-        if (page == null) {
-          page = await _getFieldPage(fieldObject);
-        }
+        page ??= await _getFieldPage(fieldObject);
 
         if (page == null) continue;
 
@@ -266,9 +264,7 @@ class CraftPdfAcroForm extends CraftPdfObjectWrapper<CraftPdfDictionary> {
 
         if (appDic != null) {
           asNormal = await appDic.streamEntry(CraftPdfName.n);
-          if (asNormal == null) {
-            asNormal = await appDic.dictionaryEntry(CraftPdfName.n);
-          }
+          asNormal ??= await appDic.dictionaryEntry(CraftPdfName.n);
         }
 
         if (_generateAppearance) {

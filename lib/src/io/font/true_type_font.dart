@@ -89,10 +89,11 @@ class CraftTrueTypeFont extends CraftFontProgram {
 
   void fillFontGlyphs() {
     Map<int, List<int>>? cmap = fontParser.cmaps.cmap31;
-    if (cmap == null) cmap = fontParser.cmaps.cmap10;
-    if (cmap == null) cmap = fontParser.cmaps.cmap310;
-    if (cmap == null && fontParser.cmaps.cmap03 != null)
+    cmap ??= fontParser.cmaps.cmap10;
+    cmap ??= fontParser.cmaps.cmap310;
+    if (cmap == null && fontParser.cmaps.cmap03 != null) {
       cmap = fontParser.cmaps.cmap03;
+    }
 
     if (cmap != null) {
       cmap.forEach((unicode, entry) {

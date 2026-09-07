@@ -69,8 +69,9 @@ class PdfPageAssembly {
       bool preservePageLabels = false,
       PdfMergeSignaturePolicy signaturePolicy =
           PdfMergeSignaturePolicy.reject}) async {
-    if (sources.isEmpty)
+    if (sources.isEmpty) {
       throw ArgumentError('At least one source is required.');
+    }
     final opened = <CraftPdfDocument>[];
     final selected = <List<CraftPdfPage>>[];
     final formPlans = <PdfFormMergePlan?>[];
@@ -126,10 +127,11 @@ class PdfPageAssembly {
             }
           }
           if ((includeAnnotations || preserveForms) &&
-              mode != PdfMergeMode.flatten)
+              mode != PdfMergeMode.flatten) {
             await _validateAnnotations(page,
                 allowWidgets: preserveForms,
                 allowLocalLinks: resolveNamedDestinations);
+          }
           pages.add(page);
         }
         formPlans.add(preserveForms && mode != PdfMergeMode.flatten
@@ -146,7 +148,7 @@ class PdfPageAssembly {
       }
       final bytes = BytesBuilder();
       final output =
-          await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+          CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
       final mergedOutlines = <CraftPdfDictionary>[];
       final labelPairs = CraftPdfArray();
       var outputPageIndex = 0;
@@ -193,17 +195,22 @@ class PdfPageAssembly {
                   .pdfRepresentation()
                   .arrayEntry(CraftPdfName.annots);
               final retained = CraftPdfArray();
-              if (annotations != null)
+              if (annotations != null) {
                 for (var i = 0; i < annotations.size(); i++) {
                   final annotation = await annotations.dictionaryEntry(i);
-                  if (annotation == null)
+                  if (annotation == null) {
                     throw FormatException('Invalid annotation.');
+                  }
                   if ((await annotation.nameEntry(CraftPdfName.subtype))
                           ?.getValue() !=
-                      'Widget') retained.add(await copier.copy(annotation));
+                      'Widget') {
+                    retained.add(await copier.copy(annotation));
+                  }
                 }
-              if (retained.size() != 0)
+              }
+              if (retained.size() != 0) {
                 dictionary.put(CraftPdfName.annots, retained);
+              }
               continue;
             }
             dictionary.put(entry.key, await copier.copy(entry.value));
@@ -228,8 +235,9 @@ class PdfPageAssembly {
           }
           if (mode == PdfMergeMode.flatten) {
             final box = await dictionary.arrayEntry(CraftPdfName.mediaBox);
-            if (box == null)
+            if (box == null) {
               throw FormatException('Flattening requires a page MediaBox.');
+            }
             final form = CraftPdfStream.withBytes(
                 PdfGraphicsEnvelope.wrap(await page.contentPayload()))
               ..put(CraftPdfName.type, CraftPdfName.xObject)
@@ -259,8 +267,9 @@ class PdfPageAssembly {
                 opened[sourceIndex].pageOrdinal(pages[pageIndex]) - 1;
             var ruleStart = -1;
             for (final start in labels.keys) {
-              if (start <= originalIndex && start > ruleStart)
+              if (start <= originalIndex && start > ruleStart) {
                 ruleStart = start;
+              }
             }
             final rule = ruleStart < 0
                 ? (CraftPdfDictionary()
@@ -328,15 +337,19 @@ class PdfPageAssembly {
     final result = <int, CraftPdfDictionary>{};
     final visited = HashSet<CraftPdfDictionary>.identity();
     Future<void> visit(CraftPdfDictionary node) async {
-      if (!visited.add(node) || visited.length > 10000)
+      if (!visited.add(node) || visited.length > 10000) {
         throw FormatException('Invalid page label tree.');
-      for (final entry in await node.entrySet())
-        if (!const {'Nums', 'Kids', 'Limits'}.contains(entry.key.getValue()))
+      }
+      for (final entry in await node.entrySet()) {
+        if (!const {'Nums', 'Kids', 'Limits'}.contains(entry.key.getValue())) {
           throw UnsupportedError('Unknown page label tree entry.');
+        }
+      }
       final pairs = await node.arrayEntry(CraftPdfName('Nums'));
       if (pairs != null) {
-        if (pairs.size().isOdd)
+        if (pairs.size().isOdd) {
           throw FormatException('Page label number tree requires pairs.');
+        }
         for (var i = 0; i < pairs.size(); i += 2) {
           final index = await pairs.numberEntry(i),
               rule = await pairs.dictionaryEntry(i + 1);
@@ -344,37 +357,46 @@ class PdfPageAssembly {
               index.doubleValue() != index.intValue() ||
               index.intValue() < 0 ||
               rule == null ||
-              result.containsKey(index.intValue()))
+              result.containsKey(index.intValue())) {
             throw FormatException('Invalid page label rule.');
-          for (final entry in await rule.entrySet())
-            if (!const {'Type', 'S', 'P', 'St'}.contains(entry.key.getValue()))
+          }
+          for (final entry in await rule.entrySet()) {
+            if (!const {'Type', 'S', 'P', 'St'}
+                .contains(entry.key.getValue())) {
               throw UnsupportedError('Unknown page label rule entry.');
+            }
+          }
           for (final entry in await rule.entrySet()) {
             final value = await rule.get(entry.key, true);
             final key = entry.key.getValue();
             if ((key == 'P' && value is! CraftPdfString) ||
                 ((key == 'S' || key == 'Type') && value is! CraftPdfName) ||
-                (key == 'St' && value is! CraftPdfNumber))
+                (key == 'St' && value is! CraftPdfNumber)) {
               throw FormatException('Invalid page label value type.');
+            }
           }
           final style = await rule.nameEntry(CraftPdfName('S'));
           if (style != null &&
-              !const {'D', 'R', 'r', 'A', 'a'}.contains(style.getValue()))
+              !const {'D', 'R', 'r', 'A', 'a'}.contains(style.getValue())) {
             throw FormatException('Unknown page numbering style.');
+          }
           final start = await rule.numberEntry(CraftPdfName('St'));
           if (start != null &&
-              (start.intValue() < 1 || start.doubleValue() != start.intValue()))
+              (start.intValue() < 1 ||
+                  start.doubleValue() != start.intValue())) {
             throw FormatException('Invalid page label starting number.');
+          }
           result[index.intValue()] = rule;
         }
       }
       final kids = await node.arrayEntry(CraftPdfName('Kids'));
-      if (kids != null)
+      if (kids != null) {
         for (var i = 0; i < kids.size(); i++) {
           final child = await kids.dictionaryEntry(i);
           if (child == null) throw FormatException('Invalid label tree child.');
           await visit(child);
         }
+      }
     }
 
     if (root != null) await visit(root);
@@ -388,10 +410,12 @@ class PdfPageAssembly {
         .pdfRepresentation()
         .dictionaryEntry(CraftPdfName('OCProperties'));
     if (root == null) return <CraftPdfObject, CraftPdfObject>{};
-    for (final entry in await root.entrySet())
-      if (!const {'OCGs', 'D'}.contains(entry.key.getValue()))
+    for (final entry in await root.entrySet()) {
+      if (!const {'OCGs', 'D'}.contains(entry.key.getValue())) {
         throw UnsupportedError(
             'Alternate layer configurations are not supported.');
+      }
+    }
     final groups = await root.arrayEntry(CraftPdfName('OCGs'));
     if (groups == null) throw FormatException('Layer catalog requires OCGs.');
     final copier = _PageGraphCopy(output, protectPageReferences: true);
@@ -399,12 +423,14 @@ class PdfPageAssembly {
     for (var i = 0; i < groups.size(); i++) {
       final group = await groups.dictionaryEntry(i);
       if (group == null ||
-          (await group.nameEntry(CraftPdfName.type))?.getValue() != 'OCG')
+          (await group.nameEntry(CraftPdfName.type))?.getValue() != 'OCG') {
         throw FormatException('Invalid layer group.');
+      }
       for (final entry in await group.entrySet()) {
         if (!const {'Type', 'Name', 'Intent', 'Usage'}
-            .contains(entry.key.getValue()))
+            .contains(entry.key.getValue())) {
           throw UnsupportedError('Unsupported layer group entry.');
+        }
       }
       originals.add(group);
       await copier.copy(group);
@@ -429,7 +455,7 @@ class PdfPageAssembly {
     final config = await root.dictionaryEntry(CraftPdfName('D'));
     final targetConfig = (await merged.dictionaryEntry(CraftPdfName('D')))!;
     if (config != null) {
-      for (final entry in await config.entrySet())
+      for (final entry in await config.entrySet()) {
         if (!const {
           'Name',
           'Creator',
@@ -441,28 +467,34 @@ class PdfPageAssembly {
           'Locked',
           'ListMode',
           'Intent'
-        }.contains(entry.key.getValue()))
+        }.contains(entry.key.getValue())) {
           throw UnsupportedError(
               'Layer configuration requires unsupported automatic rules.');
+        }
+      }
       final state =
           (await config.nameEntry(CraftPdfName('BaseState')))?.getValue() ??
               'ON';
-      if (state != 'ON' && state != 'OFF')
+      if (state != 'ON' && state != 'OFF') {
         throw UnsupportedError('Unchanged layer base state cannot be merged.');
+      }
       final disabled = HashSet<CraftPdfDictionary>.identity();
       if (state == 'OFF') disabled.addAll(originals);
       for (final key in ['ON', 'OFF']) {
         final list = await config.arrayEntry(CraftPdfName(key));
-        if (list != null)
+        if (list != null) {
           for (var i = 0; i < list.size(); i++) {
             final group = await list.dictionaryEntry(i);
-            if (group == null || !originals.contains(group))
+            if (group == null || !originals.contains(group)) {
               throw FormatException('Layer state references a foreign group.');
-            if (key == 'ON')
+            }
+            if (key == 'ON') {
               disabled.remove(group);
-            else
+            } else {
               disabled.add(group);
+            }
           }
+        }
       }
       final off = (await targetConfig.arrayEntry(CraftPdfName('OFF')))!;
       for (final group in disabled) {
@@ -472,22 +504,25 @@ class PdfPageAssembly {
       Future<void> validateOrder(CraftPdfObject object) async {
         if (object is CraftPdfIndirectReference) {
           final direct = await object.targetObject(true);
-          if (direct == null)
+          if (direct == null) {
             throw FormatException('Unresolved layer order reference.');
+          }
           await validateOrder(direct);
           return;
         }
         if (!checked.add(object)) return;
         if (object is CraftPdfDictionary) {
-          if (!originals.contains(object))
+          if (!originals.contains(object)) {
             throw FormatException('Layer order references a foreign group.');
+          }
         } else if (object is CraftPdfArray) {
           for (var i = 0; i < object.size(); i++) {
             final value = await object.get(i, true);
             if (value != null) await validateOrder(value);
           }
-        } else if (object is! CraftPdfString)
+        } else if (object is! CraftPdfString) {
           throw FormatException('Invalid layer order value.');
+        }
       }
 
       for (final key in ['Order', 'RBGroups', 'Locked']) {
@@ -521,13 +556,15 @@ class PdfPageAssembly {
     final forms = (await resources.dictionaryEntry(CraftPdfName.xObject))!;
     final commands = StringBuffer('q /Page Do Q\n');
     Future<List<double>> numbers(CraftPdfArray? array, int count) async {
-      if (array == null || array.size() != count)
+      if (array == null || array.size() != count) {
         throw FormatException('Invalid annotation appearance geometry.');
+      }
       final result = <double>[];
       for (var i = 0; i < count; i++) {
         final value = await array.numberEntry(i);
-        if (value == null || !value.doubleValue().isFinite)
+        if (value == null || !value.doubleValue().isFinite) {
           throw FormatException('Invalid appearance coordinate.');
+        }
         result.add(value.doubleValue());
       }
       return result;
@@ -549,11 +586,13 @@ class PdfPageAssembly {
       }
       if (signature) {
         if (signaturePolicy == PdfMergeSignaturePolicy.reject ||
-            signaturePolicy == PdfMergeSignaturePolicy.keepInvalid)
+            signaturePolicy == PdfMergeSignaturePolicy.keepInvalid) {
           throw UnsupportedError(
               'Flattening signatures requires an explicit removal policy.');
-        if (signaturePolicy == PdfMergeSignaturePolicy.removeAppearance)
+        }
+        if (signaturePolicy == PdfMergeSignaturePolicy.removeAppearance) {
           continue;
+        }
       }
       final flags =
           (await annotation.numberEntry(CraftPdfName('F')))?.intValue() ?? 0;
@@ -564,9 +603,10 @@ class PdfPageAssembly {
         final state = await annotation.nameEntry(CraftPdfName('AS'));
         normal = state == null ? null : await normal.get(state, true);
       }
-      if (normal is! CraftPdfStream)
+      if (normal is! CraftPdfStream) {
         throw UnsupportedError(
             'Visible annotations require an existing normal appearance to flatten.');
+      }
       final rect =
           await numbers(await annotation.arrayEntry(CraftPdfName('Rect')), 4);
       final box = await numbers(await normal.arrayEntry(CraftPdfName.bBox), 4);
@@ -575,23 +615,29 @@ class PdfPageAssembly {
           ? <double>[1, 0, 0, 1, 0, 0]
           : await numbers(matrix, 6);
       final xs = <double>[], ys = <double>[];
-      for (final x in [box[0], box[2]])
+      for (final x in [box[0], box[2]]) {
         for (final y in [box[1], box[3]]) {
           xs.add(m[0] * x + m[2] * y + m[4]);
           ys.add(m[1] * x + m[3] * y + m[5]);
         }
+      }
       xs.sort();
       ys.sort();
       final width = xs.last - xs.first, height = ys.last - ys.first;
-      if (width <= 0 || height <= 0 || rect[2] <= rect[0] || rect[3] <= rect[1])
+      if (width <= 0 ||
+          height <= 0 ||
+          rect[2] <= rect[0] ||
+          rect[3] <= rect[1]) {
         throw FormatException('Empty annotation appearance bounds.');
+      }
       final sx = (rect[2] - rect[0]) / width, sy = (rect[3] - rect[1]) / height;
       final tx = rect[0] - sx * xs.first, ty = rect[1] - sy * ys.first;
       final name = 'Appearance$i';
       forms.put(CraftPdfName(name), await copier.copy(normal));
       String decimal(double value) {
-        if (!value.isFinite)
+        if (!value.isFinite) {
           throw FormatException('Appearance transform is not finite.');
+        }
         return value.toStringAsFixed(16);
       }
 
@@ -616,34 +662,40 @@ class PdfPageAssembly {
     final names = await catalog.dictionaryEntry(CraftPdfName('Names'));
     if (names != null) {
       for (final entry in await names.entrySet()) {
-        if (entry.key.getValue() != 'Dests')
+        if (entry.key.getValue() != 'Dests') {
           throw UnsupportedError(
               'Only destination name trees may be resolved.');
+        }
       }
       final visited = HashSet<CraftPdfDictionary>.identity();
       Future<void> walk(CraftPdfDictionary node) async {
-        if (!visited.add(node) || visited.length > 10000)
+        if (!visited.add(node) || visited.length > 10000) {
           throw FormatException('Cyclic destination name tree.');
+        }
         final pairs = await node.arrayEntry(CraftPdfName('Names'));
         if (pairs != null) {
-          if (pairs.size().isOdd)
+          if (pairs.size().isOdd) {
             throw FormatException('Destination name array must contain pairs.');
+          }
           for (var i = 0; i < pairs.size(); i += 2) {
             final key = await pairs.get(i, true),
                 value = await pairs.get(i + 1, true);
-            if (key is! CraftPdfString || value == null)
+            if (key is! CraftPdfString || value == null) {
               throw FormatException('Invalid destination name pair.');
+            }
             destinations[key.getValue()] = value;
           }
         }
         final kids = await node.arrayEntry(CraftPdfName('Kids'));
-        if (kids != null)
+        if (kids != null) {
           for (var i = 0; i < kids.size(); i++) {
             final child = await kids.get(i, true);
-            if (child is! CraftPdfDictionary)
+            if (child is! CraftPdfDictionary) {
               throw FormatException('Invalid destination tree child.');
+            }
             await walk(child);
           }
+        }
       }
 
       final tree = await names.dictionaryEntry(CraftPdfName('Dests'));
@@ -654,8 +706,9 @@ class PdfPageAssembly {
       final objects = HashSet<CraftPdfObject>.identity();
       var current = object;
       while (true) {
-        if (!objects.add(current))
+        if (!objects.add(current)) {
           throw FormatException('Cyclic destination object.');
+        }
         if (current is CraftPdfIndirectReference) {
           final direct = await current.targetObject(true);
           if (direct == null) throw FormatException('Unresolved destination.');
@@ -664,8 +717,9 @@ class PdfPageAssembly {
         }
         if (current is CraftPdfDictionary) {
           final value = await current.get(CraftPdfName('D'), true);
-          if (value == null || identical(value, current))
+          if (value == null || identical(value, current)) {
             throw FormatException('Invalid destination dictionary.');
+          }
           current = value;
           continue;
         }
@@ -675,8 +729,11 @@ class PdfPageAssembly {
             : current is CraftPdfString
                 ? current.getValue()
                 : null;
-        if (name == null || !seen.add(name) || !destinations.containsKey(name))
+        if (name == null ||
+            !seen.add(name) ||
+            !destinations.containsKey(name)) {
           throw FormatException('Unknown or cyclic named destination.');
+        }
         current = destinations[name]!;
       }
     }
@@ -690,8 +747,9 @@ class PdfPageAssembly {
       if (action != null &&
           (await action.nameEntry(CraftPdfName('S')))?.getValue() == 'GoTo') {
         final target = await action.get(CraftPdfName('D'), true);
-        if (target == null)
+        if (target == null) {
           throw FormatException('Missing local action destination.');
+        }
         action.put(CraftPdfName('D'), await resolve(target));
       }
       for (final key in ['First', 'Next']) {
@@ -706,11 +764,12 @@ class PdfPageAssembly {
       final annotations = await (await doc.pageAt(p))!
           .pdfRepresentation()
           .arrayEntry(CraftPdfName.annots);
-      if (annotations != null)
+      if (annotations != null) {
         for (var i = 0; i < annotations.size(); i++) {
           final annotation = await annotations.get(i, true);
           if (annotation is CraftPdfDictionary) await patch(annotation);
         }
+      }
     }
   }
 
@@ -733,8 +792,9 @@ class PdfPageAssembly {
     final visited = HashSet<CraftPdfDictionary>.identity();
     Future<List<_OutlineEntry>> children(
         CraftPdfDictionary parent, int depth) async {
-      if (depth > 128)
+      if (depth > 128) {
         throw FormatException('Outline hierarchy exceeds 128 levels.');
+      }
       final entries = <_OutlineEntry>[];
       var object = await parent.get(CraftPdfName('First'), true);
       CraftPdfDictionary? last;
@@ -754,8 +814,9 @@ class PdfPageAssembly {
               'Outline parent or previous-sibling reference is inconsistent.');
         }
         final title = await object.get(CraftPdfName('Title'), true);
-        if (title is! CraftPdfString)
+        if (title is! CraftPdfString) {
           throw FormatException('Outline title must be a text string.');
+        }
         for (final entry in await object.entrySet()) {
           if (!const {
             'Title',
@@ -792,8 +853,9 @@ class PdfPageAssembly {
             }
           }
           destination = await action.get(CraftPdfName('D'), true);
-          if (destination == null)
+          if (destination == null) {
             throw FormatException('Outline GoTo action has no destination.');
+          }
         }
         CraftPdfDictionary? target;
         final parameters = <CraftPdfObject>[];
@@ -841,22 +903,26 @@ class PdfPageAssembly {
         for (final key in ['C', 'F']) {
           final value = await object.get(CraftPdfName(key), true);
           if (value == null) continue;
-          if (key == 'F' && value is! CraftPdfNumber)
+          if (key == 'F' && value is! CraftPdfNumber) {
             throw FormatException('Outline style flags must be numeric.');
+          }
           if (key == 'C') {
-            if (value is! CraftPdfArray || value.size() != 3)
+            if (value is! CraftPdfArray || value.size() != 3) {
               throw FormatException('Outline color requires three components.');
+            }
             for (var index = 0; index < 3; index++) {
-              if (await value.get(index, true) is! CraftPdfNumber)
+              if (await value.get(index, true) is! CraftPdfNumber) {
                 throw FormatException(
                     'Outline color components must be numeric.');
+              }
             }
           }
           appearance[CraftPdfName(key)] = value;
         }
         final count = await object.get(CraftPdfName('Count'), true);
-        if (count != null && count is! CraftPdfNumber)
+        if (count != null && count is! CraftPdfNumber) {
           throw FormatException('Outline count must be numeric.');
+        }
         entries.add(_OutlineEntry(
             title,
             target,
@@ -889,10 +955,13 @@ class PdfPageAssembly {
         ..put(CraftPdfName('Title'), entry.title.clone());
       if (entry.target != null) {
         final target = pages[entry.target];
-        if (target == null)
+        if (target == null) {
           throw StateError('Validated outline target was not imported.');
+        }
         final destination = CraftPdfArray.withObject(target);
-        for (final value in entry.parameters) destination.add(value.clone());
+        for (final value in entry.parameters) {
+          destination.add(value.clone());
+        }
         node.put(CraftPdfName('Dest'), destination);
       }
       for (final appearance in entry.appearance.entries) {
@@ -918,8 +987,9 @@ class PdfPageAssembly {
     for (var index = 0; index < nodes.length; index++) {
       nodes[index].put(CraftPdfName.parent, parent);
       if (index > 0) nodes[index].put(CraftPdfName('Prev'), nodes[index - 1]);
-      if (index + 1 < nodes.length)
+      if (index + 1 < nodes.length) {
         nodes[index].put(CraftPdfName('Next'), nodes[index + 1]);
+      }
     }
   }
 
@@ -938,8 +1008,9 @@ class PdfPageAssembly {
     final pageObject = page.pdfRepresentation();
     final value = await pageObject.get(CraftPdfName.annots, true);
     if (value == null) return;
-    if (value is! CraftPdfArray)
+    if (value is! CraftPdfArray) {
       throw FormatException('Page annotations must be an array.');
+    }
     final annotations = HashSet<CraftPdfDictionary>.identity();
     for (var index = 0; index < value.size(); index++) {
       final entry = await value.get(index, true);
@@ -1080,8 +1151,9 @@ class _PageGraphCopy {
       // during serialization, even when a source container was direct.
       result.attachToDocument(destination);
       for (final entry in await object.entrySet()) {
-        if (object is CraftPdfStream && entry.key == CraftPdfName.length)
+        if (object is CraftPdfStream && entry.key == CraftPdfName.length) {
           continue;
+        }
         result.put(entry.key, await copy(entry.value));
       }
       return result;

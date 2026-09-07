@@ -406,11 +406,13 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
   }
 
   CraftClipPathSvgNodeRenderer? getParentClipPath() {
-    if (this is CraftClipPathSvgNodeRenderer)
+    if (this is CraftClipPathSvgNodeRenderer) {
       return this as CraftClipPathSvgNodeRenderer;
+    }
     final parent = getParent();
-    if (parent is CraftAbstractSvgNodeRenderer)
+    if (parent is CraftAbstractSvgNodeRenderer) {
       return parent.getParentClipPath();
+    }
     return null;
   }
 

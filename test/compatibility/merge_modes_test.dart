@@ -7,8 +7,7 @@ import 'form_merge_policy_test.dart' as forms;
 
 Future<Uint8List> links() async {
   final out = BytesBuilder();
-  final doc =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(out));
+  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(out));
   final a = await doc.appendBlankPage(), b = await doc.appendBlankPage();
   final destination =
       CraftPdfArray.fromList([b.pdfRepresentation(), CraftPdfName('Fit')]);
@@ -65,7 +64,7 @@ void main() {
     Future<Uint8List> input() async {
       final bytes = BytesBuilder();
       final doc =
-          await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+          CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
       final group = CraftPdfDictionary()
         ..put(CraftPdfName.type, CraftPdfName('OCG'))
         ..put(CraftPdfName('Name'), CraftPdfString('Shared name'))
@@ -149,8 +148,7 @@ void main() {
   test('flatten retains annotation normal appearance and removes interaction',
       () async {
     final bytes = BytesBuilder();
-    final doc =
-        await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+    final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
     final page = await doc.appendBlankPage();
     final appearance =
         CraftPdfStream.withBytes(Uint8List.fromList('0 0 10 10 re f'.codeUnits))

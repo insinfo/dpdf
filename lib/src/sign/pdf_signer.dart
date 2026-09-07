@@ -358,7 +358,9 @@ class CraftPdfSigner {
     if (s.length > 100) {
       throw CraftPdfException("ByteRange string too long for placeholder");
     }
-    while (s.length < 100) s += " ";
+    while (s.length < 100) {
+      s += " ";
+    }
 
     final brBytes = s.codeUnits;
     final bytes = _tempBuilder!.toBytes();
@@ -449,7 +451,9 @@ class CraftPdfSigner {
 
     // Set Up Exclusions (Placeholders)
     final byteRangePlaceholder = Uint8List(100);
-    for (int i = 0; i < 100; i++) byteRangePlaceholder[i] = 0x20; // spaces
+    for (int i = 0; i < 100; i++) {
+      byteRangePlaceholder[i] = 0x20; // spaces
+    }
 
     final byteRangeLit = CraftPdfLiteral.fromBytes(byteRangePlaceholder);
     _exclusionLocations[CraftPdfName.byteRange] = byteRangeLit;

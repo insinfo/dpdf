@@ -143,7 +143,7 @@ class CraftStandardHandlerUsingAes256 extends CraftStandardSecurityHandler {
       final aes256Perms = getAes256Perms(permissions, encryptMetadata);
 
       this.permissions = permissions;
-      this._encryptMetadata = encryptMetadata;
+      _encryptMetadata = encryptMetadata;
 
       setStandardHandlerDicEntries(encryptionDictionary, userKey, ownerKey);
       _setAES256DicEntries(encryptionDictionary, oeKey, ueKey, aes256Perms,
@@ -176,7 +176,7 @@ class CraftStandardHandlerUsingAes256 extends CraftStandardSecurityHandler {
       final perms = getIsoBytes(
           (await encryptionDictionary.stringEntry(CraftPdfName.perms))!);
       final pValue = (await encryptionDictionary.numberEntry(CraftPdfName.p))!;
-      this.permissions = pValue.intValue();
+      permissions = pValue.intValue();
 
       final oValSalt = oValue.sublist(
           VALIDATION_SALT_OFFSET, VALIDATION_SALT_OFFSET + SALT_LENGTH);
@@ -223,8 +223,8 @@ class CraftStandardHandlerUsingAes256 extends CraftStandardSecurityHandler {
           ((decPerms[3] & 0xff) << 24);
       final encryptMetadata = decPerms[8] == 0x54; // 'T'
 
-      this.permissions = permissionsDecoded;
-      this._encryptMetadata = encryptMetadata;
+      permissions = permissionsDecoded;
+      _encryptMetadata = encryptMetadata;
     } on CraftBadPasswordException {
       rethrow;
     } catch (e) {

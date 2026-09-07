@@ -86,8 +86,9 @@ class CraftType1Font extends CraftFontProgram {
           fontNames.setFontWeight(CraftFontWeights.fromType1FontWeight(text)),
       'ItalicAngle': (text) => fontMetrics.setItalicAngle(double.parse(text)),
       'IsFixedPitch': (text) {
-        if (text != 'true' && text != 'false')
+        if (text != 'true' && text != 'false') {
           throw FormatException('AFM pitch flag must be boolean.');
+        }
         fontMetrics.setIsFixedPitch(text == 'true');
       },
       'FontBBox': (text) {
@@ -114,9 +115,10 @@ class CraftType1Font extends CraftFontProgram {
         final (keyword, payload) = row;
         if (section == 'glyphs') {
           if (keyword == 'EndCharMetrics') {
-            if (consumed != expected)
+            if (consumed != expected) {
               throw FormatException(
                   'AFM character count does not match its section.');
+            }
             section = 'tail';
             continue;
           }
@@ -130,17 +132,19 @@ class CraftType1Font extends CraftFontProgram {
         }
         if (section == 'kerning') {
           if (keyword == 'EndKernPairs') {
-            if (consumed != expected)
+            if (consumed != expected) {
               throw FormatException(
                   'AFM kerning count does not match its section.');
+            }
             section = 'tail';
             continue;
           }
           if (keyword == 'KPX') {
             final values = payload.split(RegExp(r'\s+'));
-            if (values.length != 3)
+            if (values.length != 3) {
               throw FormatException(
                   'AFM horizontal kerning needs two names and an adjustment.');
+            }
             final first = CraftAdobeGlyphList.nameToUnicode(values[0]);
             final second = CraftAdobeGlyphList.nameToUnicode(values[1]);
             final adjustment = _afmNumbers(values[2], 1).single;
@@ -150,8 +154,9 @@ class CraftType1Font extends CraftFontProgram {
           continue;
         }
         if (keyword == 'StartCharMetrics') {
-          if (sawCharacters)
+          if (sawCharacters) {
             throw FormatException('AFM character metrics section is repeated.');
+          }
           sawCharacters = true;
           section = 'glyphs';
           expected = int.parse(payload);
@@ -171,8 +176,9 @@ class CraftType1Font extends CraftFontProgram {
             header[keyword]?.call(payload);
           }
         }
-        if (expected < 0)
+        if (expected < 0) {
           throw FormatException('AFM section count cannot be negative.');
+        }
       }
       if (!sawCharacters ||
           !completed ||
@@ -213,8 +219,9 @@ class CraftType1Font extends CraftFontProgram {
 
   static List<int> _afmNumbers(String text, int count) {
     final tokens = text.trim().split(RegExp(r'[\s,]+'));
-    if (tokens.length != count)
+    if (tokens.length != count) {
       throw FormatException('AFM numeric field requires $count values.');
+    }
     return tokens.map((token) {
       final value = double.parse(token);
       if (!value.isFinite) throw FormatException('AFM metric must be finite.');
@@ -232,8 +239,9 @@ class CraftType1Font extends CraftFontProgram {
     if (fields.containsKey('C')) code = int.parse(fields['C']!);
     if (fields.containsKey('CH')) {
       final value = fields['CH']!;
-      if (!RegExp(r'^<[0-9A-Fa-f]+>$').hasMatch(value))
+      if (!RegExp(r'^<[0-9A-Fa-f]+>$').hasMatch(value)) {
         throw FormatException('AFM hexadecimal character code is malformed.');
+      }
       code = int.parse(value.substring(1, value.length - 1), radix: 16);
     }
     final advance = fields['WX'] ?? fields['W0X'];

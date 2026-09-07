@@ -25,7 +25,7 @@ class CraftPdfWriter {
 
   final IOSink _output;
   int _currentPos = 0;
-  String _pdfVersion = '1.7';
+  final String _pdfVersion = '1.7';
 
   CraftPdfDocument? document;
   final CraftWriterProperties properties;
@@ -459,8 +459,9 @@ class CraftPdfWriter {
       if (ref != null) {
         if (ref.getObjStreamNumber() > 0) {
           // Compressed: type 2
-          if (ref.getObjStreamNumber() > maxOffset)
+          if (ref.getObjStreamNumber() > maxOffset) {
             maxOffset = ref.getObjStreamNumber();
+          }
           if (ref.getIndex() > maxIndex) maxIndex = ref.getIndex();
         } else {
           if (ref.isFree()) {
@@ -472,8 +473,9 @@ class CraftPdfWriter {
           } else {
             // In-use: type 1
             if (ref.getOffset() > maxOffset) maxOffset = ref.getOffset();
-            if (ref.generationNumber() > maxIndex)
+            if (ref.generationNumber() > maxIndex) {
               maxIndex = ref.generationNumber();
+            }
           }
         }
       }
@@ -483,16 +485,18 @@ class CraftPdfWriter {
     final w1 = 1; // Type always 1 byte (0,1,2)
     var w2 = 4;
     // Helper to calc bytes for integer
-    if (maxOffset < 65536)
+    if (maxOffset < 65536) {
       w2 = 2;
-    // else if (maxOffset < 4294967296) w2 = 4; // Dart ints are 64-bit, but offsets fit in 32? PDF allows big files.
-    else if (maxOffset > 4294967295) w2 = 8;
+    } else if (maxOffset > 4294967295) {
+      w2 = 8;
+    }
 
     var w3 = 2;
-    if (maxIndex < 65536)
+    if (maxIndex < 65536) {
       w3 = 2;
-    else
+    } else {
       w3 = 4;
+    }
 
     xrefStream.put(
         CraftPdfName.w,

@@ -4,7 +4,7 @@ import 'package:dpdf/src/layout/layout/layout_context.dart';
 import 'package:dpdf/src/layout/layout/layout_result.dart';
 
 class CraftCellRenderer extends CraftBlockRenderer {
-  CraftCellRenderer(CraftCell modelElement) : super(modelElement);
+  CraftCellRenderer(CraftCell super.modelElement);
 
   // Cell specific layout logic if needed, e.g. vertical alignment.
   // For now, standard Block layout is sufficient for content INSIDE the cell.

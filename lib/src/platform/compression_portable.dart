@@ -303,8 +303,9 @@ class _Tree {
   _Tree(List<int> lengths, {bool allowEmpty = false}) {
     final counts = List<int>.filled(16, 0);
     for (final length in lengths) {
-      if (length < 0 || length > 15)
+      if (length < 0 || length > 15) {
         throw const FormatException('Invalid Huffman length');
+      }
       if (length != 0) {
         counts[length]++;
         if (length > maximum) maximum = length;
@@ -319,8 +320,9 @@ class _Tree {
     var code = 0;
     for (var length = 1; length <= 15; length++) {
       space = space * 2 - counts[length];
-      if (space < 0)
+      if (space < 0) {
         throw const FormatException('Oversubscribed Huffman alphabet');
+      }
       code = (code + counts[length - 1]) << 1;
       next[length] = code;
     }
@@ -480,8 +482,9 @@ const _distanceExtra = [
     if (kind == 0) {
       bits.align();
       final count = bits.take(16);
-      if ((count ^ bits.take(16)) != 65535)
+      if ((count ^ bits.take(16)) != 65535) {
         throw const FormatException('Invalid stored block length');
+      }
       for (var i = 0; i < count; i++) {
         output.add(bits.take(8));
       }
@@ -504,8 +507,9 @@ const _distanceExtra = [
     } else {
       final literalCount = bits.take(5) + 257;
       final distanceCount = bits.take(5) + 1;
-      if (literalCount > 286)
+      if (literalCount > 286) {
         throw const FormatException('Invalid literal alphabet size');
+      }
       final codeCount = bits.take(4) + 4;
       // Code-length alphabet order specified by RFC 1951 section 3.2.7.
       const sequence = [
@@ -541,20 +545,23 @@ const _distanceExtra = [
           lengths.add(value);
           continue;
         }
-        if (value == 16 && lengths.isEmpty)
+        if (value == 16 && lengths.isEmpty) {
           throw const FormatException('Missing preceding code length');
+        }
         final repeat = value == 16
             ? bits.take(2) + 3
             : value == 17
                 ? bits.take(3) + 3
                 : bits.take(7) + 11;
         final length = value == 16 ? lengths.last : 0;
-        if (lengths.length + repeat > literalCount + distanceCount)
+        if (lengths.length + repeat > literalCount + distanceCount) {
           throw const FormatException('Code-length run exceeds alphabet');
+        }
         lengths.addAll(List<int>.filled(repeat, length));
       }
-      if (lengths[256] == 0)
+      if (lengths[256] == 0) {
         throw const FormatException('Missing end-of-block symbol');
+      }
       literals = _Tree(lengths.sublist(0, literalCount));
       distances = _Tree(lengths.sublist(literalCount), allowEmpty: true);
     }
@@ -565,17 +572,20 @@ const _distanceExtra = [
         continue;
       }
       if (value == 256) break;
-      if (value > 285)
+      if (value > 285) {
         throw const FormatException('Reserved match length symbol');
+      }
       final index = value - 257;
       final count = _lengthBase[index] + bits.take(_lengthExtra[index]);
       final distanceSymbol = distances.read(bits);
-      if (distanceSymbol >= 30)
+      if (distanceSymbol >= 30) {
         throw const FormatException('Reserved match distance symbol');
+      }
       final distance = _distanceBase[distanceSymbol] +
           bits.take(_distanceExtra[distanceSymbol]);
-      if (distance > output.length)
+      if (distance > output.length) {
         throw const FormatException('Match precedes decoded history');
+      }
       for (var i = 0; i < count; i++) {
         output.add(output[output.length - distance]);
       }

@@ -15,7 +15,7 @@ class CraftLayoutArea {
   }
 
   void setBBox(CraftRectangle bbox) {
-    this.bBox = bbox;
+    bBox = bbox;
   }
 
   CraftLayoutArea clone() {

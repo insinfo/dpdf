@@ -12,7 +12,7 @@ class CraftPdfSignatureFormField extends CraftPdfFormField {
   CraftPdfFormXObject? n0;
   CraftPdfFormXObject? n2;
 
-  CraftPdfSignatureFormField(CraftPdfDictionary pdfObject) : super(pdfObject);
+  CraftPdfSignatureFormField(super.pdfObject);
 
   /// Creates a signature form field for or a given document.
   static CraftPdfSignatureFormField createFromDocument(
@@ -74,7 +74,7 @@ class CraftPdfSignatureFormField extends CraftPdfFormField {
 
   /// Sets the boolean value which indicates if page rotation should be ignored for the signature appearance.
   void setIgnorePageRotation(bool ignore) {
-    this.ignorePageRotation = ignore;
+    ignorePageRotation = ignore;
   }
 
   /// Gets the boolean value which indicates if we need to ignore page rotation for the signature appearance.

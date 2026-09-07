@@ -275,8 +275,9 @@ class CraftPdfPKCS7 {
       if (idx < signedDataElements.length && signedDataElements[idx].isSet) {
         final signerInfos =
             ASN1Utils.parseElements(signedDataElements[idx].content);
-        if (signerInfos.length != 1)
+        if (signerInfos.length != 1) {
           throw FormatException('Exactly one signer is required');
+        }
         _parseSignerInfo(signerInfos[0]);
         idx++;
       }
@@ -305,8 +306,9 @@ class CraftPdfPKCS7 {
     if (signerInfo.tag != 0x30) throw FormatException('Invalid SignerInfo tag');
 
     final elements = ASN1Utils.parseElements(signerInfo.content);
-    if (elements.length < 5 || !elements[0].isInteger)
+    if (elements.length < 5 || !elements[0].isInteger) {
       throw FormatException('Incomplete SignerInfo');
+    }
     int idx = 0;
 
     // Version
@@ -371,7 +373,9 @@ class CraftPdfPKCS7 {
     }
     if (idx < elements.length &&
         elements[idx].isContextSpecific &&
-        elements[idx].tagNumber == 1) idx++; // unsigned attributes
+        elements[idx].tagNumber == 1) {
+      idx++; // unsigned attributes
+    }
     if (idx != elements.length ||
         _signatureValue == null ||
         (_signerIssuer == null && _signerSubjectKeyIdentifier == null)) {
@@ -387,11 +391,13 @@ class CraftPdfPKCS7 {
       if (!attr.isSequence) throw FormatException('Invalid signed attribute');
 
       final attrElements = ASN1Utils.parseElements(attr.content);
-      if (attrElements.length != 2 || !attrElements[1].isSet)
+      if (attrElements.length != 2 || !attrElements[1].isSet) {
         throw FormatException('Invalid attribute values');
+      }
 
-      if (!attrElements[0].isOid)
+      if (!attrElements[0].isOid) {
         throw FormatException('Invalid attribute identifier');
+      }
       final attrOid = _parseOID(attrElements[0].content);
 
       // Message digest attribute
@@ -413,8 +419,9 @@ class CraftPdfPKCS7 {
         contentTypeFound = true;
       }
     }
-    if (!digestFound || !contentTypeFound)
+    if (!digestFound || !contentTypeFound) {
       throw FormatException('Required signed attributes are absent');
+    }
   }
 
   /// Parses a certificate set.
@@ -502,14 +509,17 @@ class CraftPdfPKCS7 {
         return false;
       }
       if (_filterSubtype == CraftPdfName.adbePkcs7Sha1 &&
-          !_legacyContentMatches()) return false;
+          !_legacyContentMatches()) {
+        return false;
+      }
       if (_encapMessageContent != null) {
         if (!_receivedContent) return false;
         if (_filterSubtype == CraftPdfName.adbePkcs7Sha1) {
           final digest = CraftDigestAlgorithms.getMessageDigest('SHA1')
             ..update(_verificationContent.toBytes());
-          if (!_arraysEqual(digest.digest(), _encapMessageContent!))
+          if (!_arraysEqual(digest.digest(), _encapMessageContent!)) {
             return false;
+          }
         } else if (_filterSubtype == CraftPdfName.adbePkcs7Detached ||
             _filterSubtype == CraftPdfName.etsiCadesDetached ||
             !_arraysEqual(
@@ -525,10 +535,8 @@ class CraftPdfPKCS7 {
       }
 
       // 2. Prepare message digest
-      if (_messageDigest == null) {
-        _messageDigest =
-            CraftDigestAlgorithms.getMessageDigest(getDigestAlgorithmName());
-      }
+      _messageDigest ??=
+          CraftDigestAlgorithms.getMessageDigest(getDigestAlgorithmName());
 
       // Validate the document digest before authenticating signed attributes.
       if (_sigAttr != null) {
@@ -541,8 +549,9 @@ class CraftPdfPKCS7 {
           return false;
         }
         _calculatedContentDigest ??= _currentContentDigest();
-        if (!_arraysEqual(_calculatedContentDigest!, _digestAttr!))
+        if (!_arraysEqual(_calculatedContentDigest!, _digestAttr!)) {
           return false;
+        }
       }
 
       // 4. Verify Signature (Authenticity)
@@ -851,7 +860,9 @@ class CraftPdfPKCS7 {
     // Certificates [0] IMPLICIT SET
     if (_certsDer.isNotEmpty) {
       final certs = <Uint8List>[];
-      for (var c in _certsDer) certs.add(c);
+      for (var c in _certsDer) {
+        certs.add(c);
+      }
       final setOfCerts = ASN1Utils.createSet(certs);
       // Change 0x31 (SET) to 0xA0 ([0] IMPLICIT)
       final implicitCerts = Uint8List.fromList(setOfCerts);
@@ -864,7 +875,9 @@ class CraftPdfPKCS7 {
         (ocsp != null && ocsp.isNotEmpty)) {
       final revs = <Uint8List>[];
       if (crlBytes != null) {
-        for (var c in crlBytes) revs.add(c);
+        for (var c in crlBytes) {
+          revs.add(c);
+        }
       }
       if (ocsp != null) {
         for (var o in ocsp) {
@@ -991,7 +1004,9 @@ class CraftPdfPKCS7 {
     }
 
     if (_filterSubtype == CraftPdfName.adbePkcs7Sha1 &&
-        !_legacyContentMatches()) return false;
+        !_legacyContentMatches()) {
+      return false;
+    }
     final content = _encapMessageContent;
     final calculatedDigest = content == null
         ? (_calculatedContentDigest ??= _currentContentDigest())

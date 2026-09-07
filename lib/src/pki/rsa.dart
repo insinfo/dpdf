@@ -56,8 +56,9 @@ class Signer {
   RSAPublicKey? _public;
   RSAPrivateKey? _private;
   Signer(this.algorithm) {
-    if (!algorithm.toUpperCase().endsWith('/RSA'))
+    if (!algorithm.toUpperCase().endsWith('/RSA')) {
       throw UnsupportedError('Unsupported signature algorithm: $algorithm');
+    }
     _encoding(Uint8List(0));
   }
   void init(bool signing, dynamic parameter) {
@@ -97,8 +98,9 @@ class Signer {
 
   Uint8List _em(Uint8List data, int length) {
     final digestInfo = _encoding(data);
-    if (length < digestInfo.length + 11)
+    if (length < digestInfo.length + 11) {
       throw ArgumentError('RSA key too small for digest');
+    }
     return Uint8List.fromList([
       0,
       1,
@@ -143,7 +145,9 @@ class Signer {
     final actual = RsaMath.encode(s.modPow(key.exponent, key.modulus), size);
     final expected = _em(data, size);
     var difference = 0;
-    for (var i = 0; i < size; i++) difference |= actual[i] ^ expected[i];
+    for (var i = 0; i < size; i++) {
+      difference |= actual[i] ^ expected[i];
+    }
     return difference == 0;
   }
 }
@@ -154,7 +158,9 @@ abstract final class RsaMath {
       Uint8List.fromList(List.generate(count, (_) => _random.nextInt(256)));
   static BigInt decode(List<int> bytes) {
     var n = BigInt.zero;
-    for (final b in bytes) n = (n << 8) | BigInt.from(b);
+    for (final b in bytes) {
+      n = (n << 8) | BigInt.from(b);
+    }
     return n;
   }
 
@@ -169,8 +175,9 @@ abstract final class RsaMath {
   }
 
   static BigInt randomBelow(BigInt limit) {
-    if (limit <= BigInt.zero)
+    if (limit <= BigInt.zero) {
       throw ArgumentError.value(limit, 'limit', 'Must be positive');
+    }
     final bits = limit.bitLength;
     final size = (bits + 7) ~/ 8;
     while (true) {

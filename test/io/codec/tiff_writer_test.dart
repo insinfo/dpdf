@@ -45,9 +45,9 @@ void main() {
 
     test('FieldAscii includes null terminator', () {
       final field = FieldAscii(305, 'dpdf');
-      expect(field.count, equals(9)); // 8 ASCII characters + terminator
-      expect(field.data.length, equals(9));
-      expect(field.data[8], equals(0));
+      expect(field.count, equals(5)); // 4 ASCII characters + terminator
+      expect(field.data.length, equals(5));
+      expect(field.data[4], equals(0));
     });
 
     test('FieldRational encodes numerator/denominator', () {

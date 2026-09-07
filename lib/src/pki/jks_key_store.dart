@@ -18,8 +18,9 @@ class JksKeyStore {
   /// Integrity is checked before any entries are exposed.
   factory JksKeyStore.read(Uint8List bytes,
       {required String password, int maximumBytes = 64 * 1024 * 1024}) {
-    if (maximumBytes < 32)
+    if (maximumBytes < 32) {
       throw ArgumentError.value(maximumBytes, 'maximumBytes');
+    }
     if (bytes.length < 32 || bytes.length > maximumBytes) {
       throw FormatException(
           'JKS container length is outside the permitted range.');
@@ -37,21 +38,25 @@ class JksKeyStore {
       secret.fillRange(0, secret.length, 0);
     }
     final input = _JksInput(content);
-    if (input.word() != 0xfeedfeed)
+    if (input.word() != 0xfeedfeed) {
       throw FormatException('Input is not a JKS container.');
+    }
     final version = input.word();
-    if (version != 1 && version != 2)
+    if (version != 1 && version != 2) {
       throw UnsupportedError('Unsupported JKS version $version.');
+    }
     final count = input.word();
-    if (count > input.remaining ~/ 18)
+    if (count > input.remaining ~/ 18) {
       throw FormatException('JKS entry count exceeds the available data.');
+    }
     final entries = <String, JksEntry>{};
     for (var index = 0; index < count; index++) {
       final type = input.word();
       final alias = input.text();
       final timestamp = input.timestamp();
-      if (entries.containsKey(alias))
+      if (entries.containsKey(alias)) {
         throw FormatException('Duplicate JKS alias.');
+      }
       if (type == 2) {
         entries[alias] = JksTrustedCertificate._(
             alias, timestamp, _certificate(input, version));
@@ -72,8 +77,9 @@ class JksKeyStore {
         throw UnsupportedError('Unsupported JKS entry tag $type.');
       }
     }
-    if (input.remaining != 0)
+    if (input.remaining != 0) {
       throw FormatException('Unexpected data after JKS entries.');
+    }
     return JksKeyStore._(version, entries);
   }
 
@@ -88,8 +94,9 @@ sealed class JksEntry {
   final BigInt timestampMilliseconds;
   JksEntry._(this.alias, this.timestampMilliseconds);
   DateTime? get creationTimeUtc {
-    if (timestampMilliseconds.abs() > BigInt.from(8640000000000000))
+    if (timestampMilliseconds.abs() > BigInt.from(8640000000000000)) {
       return null;
+    }
     return DateTime.fromMillisecondsSinceEpoch(timestampMilliseconds.toInt(),
         isUtc: true);
   }
@@ -105,18 +112,18 @@ class JksCertificate {
 
 class JksTrustedCertificate extends JksEntry {
   final JksCertificate certificate;
-  JksTrustedCertificate._(String alias, BigInt time, this.certificate)
-      : super._(alias, time);
+  JksTrustedCertificate._(super.alias, super.time, this.certificate)
+      : super._();
 }
 
 class JksPrivateKey extends JksEntry {
   final Uint8List _protectedBytes;
   final List<JksCertificate> certificateChain;
-  JksPrivateKey._(String alias, BigInt time, Uint8List protected,
-      List<JksCertificate> chain)
+  JksPrivateKey._(
+      super.alias, super.time, Uint8List protected, List<JksCertificate> chain)
       : _protectedBytes = Uint8List.fromList(protected),
         certificateChain = List.unmodifiable(chain),
-        super._(alias, time);
+        super._();
   Uint8List get protectedBytes => Uint8List.fromList(_protectedBytes);
 
   /// Recovers authenticated PKCS#8 bytes protected by the JKS SHA-1 scheme.
@@ -145,8 +152,9 @@ class JksPrivateKey extends JksEntry {
       throw UnsupportedError('JKS key protection algorithm is unsupported.');
     }
     final protected = encoded.octets;
-    if (protected.length <= 40)
+    if (protected.length <= 40) {
       throw FormatException('JKS protected key is truncated.');
+    }
     final secret = _passwordBytes(password);
     final clear = Uint8List(protected.length - 40);
     var chain = Uint8List.fromList(protected.sublist(0, 20));
@@ -192,8 +200,9 @@ Uint8List _sha1(Iterable<List<int>> pieces) {
 bool _equal(List<int> first, List<int> second) {
   if (first.length != second.length) return false;
   var difference = 0;
-  for (var index = 0; index < first.length; index++)
+  for (var index = 0; index < first.length; index++) {
     difference |= first[index] ^ second[index];
+  }
   return difference == 0;
 }
 
@@ -203,8 +212,9 @@ class _JksInput {
   _JksInput(this.bytes);
   int get remaining => bytes.length - position;
   Uint8List take(int length) {
-    if (length < 0 || length > remaining)
+    if (length < 0 || length > remaining) {
       throw FormatException('JKS field extends beyond its container.');
+    }
     final result = Uint8List.sublistView(bytes, position, position + length);
     position += length;
     return result;
@@ -215,7 +225,9 @@ class _JksInput {
   BigInt timestamp() {
     final data = take(8);
     var result = BigInt.zero;
-    for (final byte in data) result = (result << 8) + BigInt.from(byte);
+    for (final byte in data) {
+      result = (result << 8) + BigInt.from(byte);
+    }
     return data.first >= 128 ? result - (BigInt.one << 64) : result;
   }
 
@@ -234,13 +246,15 @@ class _JksInput {
           : lead >= 0xe0 && lead <= 0xef
               ? 2
               : -1;
-      if (extra < 0 || index + extra > data.length)
+      if (extra < 0 || index + extra > data.length) {
         throw FormatException('Malformed JKS modified UTF-8 string.');
+      }
       var unit = lead & (extra == 1 ? 31 : 15);
       for (var part = 0; part < extra; part++) {
         final next = data[index++];
-        if (next & 0xc0 != 0x80)
+        if (next & 0xc0 != 0x80) {
           throw FormatException('Malformed JKS UTF-8 continuation.');
+        }
         unit = unit * 64 + (next & 63);
       }
       if ((extra == 1 && unit < 128 && unit != 0) ||

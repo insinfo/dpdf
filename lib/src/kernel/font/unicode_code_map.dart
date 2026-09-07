@@ -90,8 +90,9 @@ class UnicodeCodeMap extends CraftAbstractCMap {
 
   static Future<UnicodeCodeMap> fromStream(CraftPdfStream stream) async {
     final bytes = await stream.getBytes();
-    if (bytes == null)
+    if (bytes == null) {
       throw FormatException('Unicode mapping stream has no data.');
+    }
     final map = UnicodeCodeMap();
     await CraftCMapParser.loadCidMappings(
         '', map, CraftCMapLocationFromBytes(bytes));
@@ -124,7 +125,8 @@ class UnicodeCodeMap extends CraftAbstractCMap {
             'Unicode text starts a pair with a low surrogate.');
       }
     }
-    if (expectsLow)
+    if (expectsLow) {
       throw FormatException('Unicode text ends with a high surrogate.');
+    }
   }
 }

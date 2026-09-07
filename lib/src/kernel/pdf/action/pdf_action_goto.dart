@@ -4,7 +4,7 @@ import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
 import 'pdf_action.dart';
 
 class PdfActionGoTo extends CraftPdfAction {
-  PdfActionGoTo(CraftPdfDictionary pdfObject) : super(pdfObject);
+  PdfActionGoTo(super.pdfObject);
 
   static PdfActionGoTo createGoTo(CraftPdfObject destination) {
     CraftPdfDictionary dict = CraftPdfDictionary();

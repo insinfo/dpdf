@@ -220,7 +220,7 @@ abstract class CraftPdfFont extends CraftPdfObjectWrapper<CraftPdfDictionary> {
       String fontName, bool isSubset, bool isEmbedded) {
     if (isSubset && isEmbedded) {
       //  uses a 6-character random prefix for subsets.
-      return "ABCDEF+" + fontName;
+      return "ABCDEF+$fontName";
     }
     return fontName;
   }

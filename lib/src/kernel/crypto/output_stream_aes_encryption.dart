@@ -11,9 +11,8 @@ class CraftOutputStreamAesEncryption extends CraftOutputStreamEncryption {
   late CraftAESCipher _cipher;
   bool _finished = false;
 
-  CraftOutputStreamAesEncryption(dynamic output, Uint8List key,
-      [int off = 0, int? len])
-      : super(output) {
+  CraftOutputStreamAesEncryption(super.output, Uint8List key,
+      [int off = 0, int? len]) {
     final iv = CraftIVGenerator.getIV();
     final nkey =
         Uint8List.fromList(key.sublist(off, off + (len ?? (key.length - off))));

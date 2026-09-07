@@ -19,7 +19,7 @@ void main() {
       }
 
       final writer = CraftPdfWriter(file.openWrite());
-      final pdf = await CraftPdfDocument.create(writer);
+      final pdf = CraftPdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
       final pageSize = await page.mediaBounds();
 
@@ -46,7 +46,7 @@ void main() {
       }
 
       final writer = CraftPdfWriter(file.openWrite());
-      final pdf = await CraftPdfDocument.create(writer);
+      final pdf = CraftPdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
 
       final pdfCanvas = await CraftPdfCanvas.fromPage(page);

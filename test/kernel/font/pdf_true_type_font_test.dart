@@ -18,7 +18,7 @@ void main() {
 
       File file = File('test_ttf.pdf');
       final writer = CraftPdfWriter.toFile(file.path);
-      final doc = await CraftPdfDocument.create(writer);
+      final doc = CraftPdfDocument.create(writer);
 
       final resources = CraftPdfResources();
       final stream = CraftPdfStream();

@@ -63,5 +63,6 @@ class Properties extends IterableBase<MapEntry<String, String>> {
   @override
   Iterator<MapEntry<String, String>> get iterator => _map.entries.iterator;
 
+  @override
   int get length => _map.length;
 }

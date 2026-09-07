@@ -13,15 +13,15 @@ import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 
 Future<Uint8List> source(String content, String encoding) async {
   final data = BytesBuilder();
-  final doc =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(data));
+  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(data));
   final page = await doc.appendBlankPage();
   final font = CraftPdfDictionary()
     ..put(CraftPdfName.type, CraftPdfName.font)
     ..put(CraftPdfName.subtype, CraftPdfName('Type1'))
     ..put(CraftPdfName.baseFont, CraftPdfName('Helvetica'));
-  if (encoding == 'WinAnsiEncoding')
+  if (encoding == 'WinAnsiEncoding') {
     font.put(CraftPdfName.encoding, CraftPdfName(encoding));
+  }
   page.pdfRepresentation()
     ..put(
         CraftPdfName.resources,
@@ -47,11 +47,50 @@ void main() {
     expect(w(181), 556);
     expect(w(39, 'StandardEncoding'), 222);
     expect(w(39), 191);
-    expect(() => w(128, 'StandardEncoding'), throwsFormatException);
+    // Byte 128 is undefined in StandardEncoding, so the face has no metric
+    // for it.
+    expect(() => w(128, 'StandardEncoding'), throwsUnsupportedError);
     expect(
-        () =>
-            PdfStandardFontMetrics.width('Times-Roman', 'StandardEncoding', 65),
+        () => PdfStandardFontMetrics.width('NoSuchFace', 'WinAnsiEncoding', 65),
         throwsUnsupportedError);
+  });
+
+  test('All fourteen standard faces are measurable', () {
+    double w(String font, int code) =>
+        PdfStandardFontMetrics.width(font, 'WinAnsiEncoding', code);
+
+    expect(PdfStandardFontMetrics.availableFonts, hasLength(14));
+    for (final font in PdfStandardFontMetrics.availableFonts) {
+      expect(PdfStandardFontMetrics.supports(font), isTrue, reason: font);
+    }
+
+    // Capital A, straight from each AFM.
+    expect(w('Times-Roman', 65), 722);
+    expect(w('Times-Bold', 65), 722);
+    expect(w('Times-Italic', 65), 611);
+    expect(w('Helvetica-Bold', 65), 722);
+    expect(w('Courier', 65), 600);
+    // Courier is monospaced: every glyph advances the same.
+    expect(w('Courier', 105), 600);
+    expect(w('Courier-BoldOblique', 87), 600);
+    // The two symbolic faces answer through their own built-in encoding.
+    expect(w('Symbol', 65), 722);
+    expect(w('ZapfDingbats', 97), 789);
+  });
+
+  test('Text width sums the advances of a whole string', () {
+    expect(
+        PdfStandardFontMetrics.textWidth(
+            'Times-Roman', 'WinAnsiEncoding', 'AV', 10),
+        closeTo((722 + 722) / 1000 * 10, 1e-9));
+    expect(
+        PdfStandardFontMetrics.textWidth(
+            'Courier', 'WinAnsiEncoding', 'abcd', 12),
+        closeTo(600 * 4 / 1000 * 12, 1e-9));
+    expect(
+        PdfStandardFontMetrics.textWidth(
+            'Helvetica', 'WinAnsiEncoding', '', 12),
+        isZero);
   });
   for (final encoding in ['StandardEncoding', 'WinAnsiEncoding']) {
     for (final replacement in [false, true]) {

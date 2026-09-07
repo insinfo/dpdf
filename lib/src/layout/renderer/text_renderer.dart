@@ -23,8 +23,8 @@ class CraftTextRenderer extends CraftAbstractRenderer {
 
   CraftTextRenderer.fromTextRenderer(CraftTextRenderer other)
       : super(other.getModelElement()) {
-    this.text = other.text;
-    this.line = other.line;
+    text = other.text;
+    line = other.line;
   }
 
   @override
@@ -106,9 +106,7 @@ class CraftTextRenderer extends CraftAbstractRenderer {
           CraftLayoutResult.NOTHING, occupiedArea, null, null, this);
     }
 
-    if (line == null) {
-      line = font.createGlyphLine(text);
-    }
+    line ??= font.createGlyphLine(text);
 
     double currentLineWidth = 0;
     int splitIndex = -1;

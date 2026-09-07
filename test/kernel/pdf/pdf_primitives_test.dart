@@ -1,5 +1,7 @@
 /// Serialization and value semantics for PDF primitives.
 /// See: dpdf.tests/dpdf.kernel.tests/dpdf/kernel/pdf/PdfPrimitivesTest.cs
+library;
+
 import 'dart:typed_data';
 
 import 'package:test/test.dart';

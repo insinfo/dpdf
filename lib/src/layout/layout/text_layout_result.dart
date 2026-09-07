@@ -1,6 +1,4 @@
 import 'package:dpdf/src/layout/layout/min_max_width_layout_result.dart';
-import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/layout/renderer/renderer.dart';
 
 class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
   bool wordHasBeenSplit = false;
@@ -11,11 +9,9 @@ class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
   double leftMinWidth = 0;
   double rightMinWidth = 0;
 
-  CraftTextLayoutResult(int status, CraftLayoutArea? occupiedArea,
-      CraftRenderer? splitRenderer, CraftRenderer? overflowRenderer,
-      [CraftRenderer? causeOfNothing])
-      : super(status, occupiedArea, splitRenderer, overflowRenderer,
-            causeOfNothing);
+  CraftTextLayoutResult(super.status, super.occupiedArea, super.splitRenderer,
+      super.overflowRenderer,
+      [super.causeOfNothing]);
 
   bool isWordHasBeenSplit() {
     return wordHasBeenSplit;

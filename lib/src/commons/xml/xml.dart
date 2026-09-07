@@ -8,12 +8,13 @@ String _escape(String value, {bool attribute = false}) {
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;');
-  if (attribute)
+  if (attribute) {
     result = result
         .replaceAll('"', '&quot;')
         .replaceAll('\t', '&#9;')
         .replaceAll('\n', '&#10;')
         .replaceAll('\r', '&#13;');
+  }
   return result;
 }
 
@@ -69,8 +70,9 @@ Iterable<XmlElement> _find(
   for (final child in children.whereType<XmlElement>()) {
     if ((namespace == null
         ? child.name.qualified == name
-        : child.name.local == name && child.name.namespaceUri == namespace))
+        : child.name.local == name && child.name.namespaceUri == namespace)) {
       yield child;
+    }
     yield* _find(child.children, name, namespace);
   }
 }
@@ -238,8 +240,9 @@ class _Parser {
         final hex = entity.startsWith('#x');
         final number =
             int.tryParse(entity.substring(hex ? 2 : 1), radix: hex ? 16 : 10);
-        if (number == null || !validChar(number))
+        if (number == null || !validChar(number)) {
           fail('Invalid XML character reference');
+        }
         out.writeCharCode(number);
       } else {
         fail('Unsupported XML entity');
@@ -259,8 +262,9 @@ class _Parser {
     if (children.whereType<XmlElement>().length != 1 ||
         children
             .whereType<XmlText>()
-            .any((n) => n is XmlCDATA || n.value.trim().isNotEmpty))
+            .any((n) => n is XmlCDATA || n.value.trim().isNotEmpty)) {
       fail('Expected one XML document element');
+    }
     return XmlDocument(children);
   }
 
@@ -269,8 +273,9 @@ class _Parser {
     if (starts('<!--')) {
       offset += 4;
       final text = until('-->');
-      if (text.contains('--') || text.endsWith('-'))
+      if (text.contains('--') || text.endsWith('-')) {
         fail('Invalid XML comment');
+      }
       return XmlComment(text);
     }
     if (starts('<?')) {
@@ -302,12 +307,14 @@ class _Parser {
       if (!starts('=')) fail('Expected attribute value');
       offset++;
       space();
-      if (offset >= source.length || !'"\''.contains(source[offset]))
+      if (offset >= source.length || !'"\''.contains(source[offset])) {
         fail('Expected quoted attribute');
+      }
       final quote = source[offset++];
       final raw = until(quote);
-      if (raw.contains('<') || attrs.containsKey(key))
+      if (raw.contains('<') || attrs.containsKey(key)) {
         fail('Invalid or duplicate XML attribute');
+      }
       attrs[key] = decode(raw.replaceAll(RegExp(r'[\t\n\r]'), ' '));
     }
     final namespaces = {...inherited};
@@ -322,10 +329,11 @@ class _Parser {
               entry.value == 'http://www.w3.org/XML/1998/namespace')) {
         fail('Invalid reserved namespace binding');
       }
-      if (entry.key == 'xmlns')
+      if (entry.key == 'xmlns') {
         namespaces[''] = entry.value;
-      else if (entry.key.startsWith('xmlns:'))
+      } else if (entry.key.startsWith('xmlns:')) {
         namespaces[entry.key.substring(6)] = entry.value;
+      }
     }
     String? resolve(String key, bool attribute) {
       final parts = key.split(':');
@@ -338,8 +346,9 @@ class _Parser {
 
     final expanded = <String>{};
     for (final key in attrs.keys) {
-      if (!expanded.add('${resolve(key, true)}|${key.split(':').last}'))
+      if (!expanded.add('${resolve(key, true)}|${key.split(':').last}')) {
         fail('Duplicate expanded attribute');
+      }
     }
     final element = XmlElement(XmlName(tag, resolve(tag, false)), attrs);
     element._namespaceBindings = namespaces;

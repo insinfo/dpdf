@@ -1,9 +1,7 @@
 import 'package:dpdf/src/layout/layout/layout_area.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
 
 class CraftRootLayoutArea extends CraftLayoutArea {
-  CraftRootLayoutArea(int pageNumber, CraftRectangle bBox)
-      : super(pageNumber, bBox);
+  CraftRootLayoutArea(super.pageNumber, super.bBox);
 
   // Clone needs to return RootLayoutArea?
   @override

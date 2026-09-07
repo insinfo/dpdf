@@ -54,7 +54,7 @@ abstract class CraftFontProgram {
 
   List<int>? getCharBBox(int unicode) {
     CraftGlyph? glyph = getGlyph(unicode);
-    return glyph != null ? glyph.getBbox() : null;
+    return glyph?.getBbox();
   }
 
   CraftGlyph? getGlyph(int unicode) {
@@ -156,9 +156,9 @@ abstract class CraftFontProgram {
   }
 
   void setFontName(String fontName) {
-    this.fontNames.setFontName(fontName);
-    if (this.fontNames.getFullName() == null) {
-      this.fontNames.setFullNameString(fontName);
+    fontNames.setFontName(fontName);
+    if (fontNames.getFullName() == null) {
+      fontNames.setFullNameString(fontName);
     }
   }
 

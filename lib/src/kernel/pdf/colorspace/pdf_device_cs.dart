@@ -2,7 +2,7 @@ import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
 
 abstract class CraftPdfDeviceCs extends CraftPdfColorSpace {
-  CraftPdfDeviceCs(CraftPdfName pdfObject) : super(pdfObject);
+  CraftPdfDeviceCs(CraftPdfName super.pdfObject);
 
   @override
   bool requiresIndirectStorage() {

@@ -27,8 +27,9 @@ class CraftSignUtils {
       'SHA512': '2.16.840.1.101.3.4.2.3'
     };
     final oid = oids[hashAlgorithm.toUpperCase().replaceAll('-', '')];
-    if (oid == null)
+    if (oid == null) {
       throw UnsupportedError('Unsupported OCSP hash $hashAlgorithm');
+    }
     final spki =
         ASN1Parser(issuerCert.getPublicKey()).nextObject() as ASN1Sequence;
     final publicBits = spki.elements![1] as ASN1BitString;

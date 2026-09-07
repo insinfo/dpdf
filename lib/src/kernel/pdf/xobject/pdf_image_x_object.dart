@@ -16,8 +16,7 @@ class CraftPdfImageXObject extends CraftPdfXObject {
     _height = image.height;
   }
 
-  CraftPdfImageXObject._(CraftPdfStream stream, this._width, this._height)
-      : super(stream);
+  CraftPdfImageXObject._(super.stream, this._width, this._height);
 
   static Future<CraftPdfImageXObject> createFromStream(
       CraftPdfStream stream) async {

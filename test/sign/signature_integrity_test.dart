@@ -33,7 +33,7 @@ class LocalExternalSignature implements CraftExternalSignature {
 
   @override
   Future<Uint8List> sign(Uint8List message) async {
-    final signer = pc.Signer('${digestAlgorithm}/RSA');
+    final signer = pc.Signer('$digestAlgorithm/RSA');
     signer.init(true, pc.PrivateKeyParameter<pc.RSAPrivateKey>(key));
     final sig = signer.generateSignature(message);
     return sig.bytes;
@@ -52,7 +52,7 @@ void main() {
 
       // 1. Create Base PDF
       final writer = CraftPdfWriter.toFile(filePath);
-      final pdfDoc = await CraftPdfDocument.create(writer);
+      final pdfDoc = CraftPdfDocument.create(writer);
       final doc = CraftDocument(pdfDoc);
       await doc.add(
           CraftParagraph("Documento de teste para integridade de assinatura."));
@@ -173,8 +173,7 @@ void main() {
       final file = File(filePath);
 
       // Create base
-      final pdfDoc =
-          await CraftPdfDocument.create(CraftPdfWriter.toFile(filePath));
+      final pdfDoc = CraftPdfDocument.create(CraftPdfWriter.toFile(filePath));
       await (CraftDocument(pdfDoc))
           .add(CraftParagraph("Multi-signature integrity test."));
       await pdfDoc.close();

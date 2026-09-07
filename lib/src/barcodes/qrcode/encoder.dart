@@ -105,9 +105,10 @@ class CraftEncoder {
         break;
       }
     }
-    if (selected == null)
+    if (selected == null) {
       throw ArgumentError(
           'Text exceeds QR version 40 capacity at this correction level');
+    }
     prefix.appendBits(count, mode.getCharacterCountBits(selected));
     prefix.appendBitVector(payload);
     _fillCapacity(prefix, capacity);

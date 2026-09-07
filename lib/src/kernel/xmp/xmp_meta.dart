@@ -4,7 +4,7 @@ export '../../commons/xml/xml.dart';
 import 'xmp_const.dart';
 
 class CraftXMPMeta {
-  xml.XmlDocument _doc;
+  final xml.XmlDocument _doc;
   xml.XmlElement? _rdfDescription;
 
   CraftXMPMeta(this._doc) {
@@ -45,11 +45,13 @@ class CraftXMPMeta {
     if (_rdfDescription == null) return;
 
     String? prefix;
-    if (schemaNS == CraftXMPConst.NS_DC)
+    if (schemaNS == CraftXMPConst.NS_DC) {
       prefix = 'dc';
-    else if (schemaNS == CraftXMPConst.NS_XMP)
+    } else if (schemaNS == CraftXMPConst.NS_XMP) {
       prefix = 'xmp';
-    else if (schemaNS == CraftXMPConst.NS_PDF) prefix = 'pdf';
+    } else if (schemaNS == CraftXMPConst.NS_PDF) {
+      prefix = 'pdf';
+    }
 
     if (prefix != null) {
       if (_rdfDescription!.getAttribute('xmlns:$prefix') == null) {
@@ -75,11 +77,13 @@ class CraftXMPMeta {
   String? getPropertyString(String schemaNS, String propName) {
     if (_rdfDescription == null) return null;
     String? prefix;
-    if (schemaNS == CraftXMPConst.NS_DC)
+    if (schemaNS == CraftXMPConst.NS_DC) {
       prefix = 'dc';
-    else if (schemaNS == CraftXMPConst.NS_XMP)
+    } else if (schemaNS == CraftXMPConst.NS_XMP) {
       prefix = 'xmp';
-    else if (schemaNS == CraftXMPConst.NS_PDF) prefix = 'pdf';
+    } else if (schemaNS == CraftXMPConst.NS_PDF) {
+      prefix = 'pdf';
+    }
 
     if (prefix == null) return null;
     final pattern = '$prefix:$propName';

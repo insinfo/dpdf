@@ -14,7 +14,7 @@ void main() {
     test('Barcode39 Standard Test', () async {
       final file = File('test/tmp/barcode_39_test.pdf');
       final writer = CraftPdfWriter(file.openWrite());
-      final pdf = await CraftPdfDocument.create(writer);
+      final pdf = CraftPdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
       final canvas = await CraftPdfCanvas.fromPage(page);
 
@@ -40,7 +40,7 @@ void main() {
     test('Barcode39 Extended Test', () async {
       final file = File('test/tmp/barcode_39_ext_test.pdf');
       final writer = CraftPdfWriter(file.openWrite());
-      final pdf = await CraftPdfDocument.create(writer);
+      final pdf = CraftPdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
       final canvas = await CraftPdfCanvas.fromPage(page);
 

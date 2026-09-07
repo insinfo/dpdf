@@ -19,9 +19,7 @@ class CraftDocument extends CraftRootElement<CraftDocument> {
 
   @override
   CraftRootRenderer ensureRootRendererNotNull() {
-    if (rootRenderer == null) {
-      rootRenderer = CraftDocumentRenderer(this);
-    }
+    rootRenderer ??= CraftDocumentRenderer(this);
     return rootRenderer!;
   }
 

@@ -1,4 +1,5 @@
 /// Helper class for internal usage only.
+library;
 
 class CraftDateTimeUtil {
   CraftDateTimeUtil._();

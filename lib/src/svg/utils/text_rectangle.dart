@@ -7,9 +7,8 @@ class CraftTextRectangle extends CraftRectangle {
   double textBaseLineYCoordinate;
 
   /// Create new instance of text rectangle.
-  CraftTextRectangle(double x, double y, double width, double height,
-      this.textBaseLineYCoordinate)
-      : super(x, y, width, height);
+  CraftTextRectangle(super.x, super.y, super.width, super.height,
+      this.textBaseLineYCoordinate);
 
   /// Returns the rightmost point on the text baseline.
   CraftPoint getTextBaseLineRightPoint() {

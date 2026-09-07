@@ -11,8 +11,10 @@ import '../kernel/pdf/pdf_name.dart';
 import '../kernel/pdf/pdf_number.dart';
 import '../kernel/pdf/pdf_page.dart';
 import '../kernel/pdf/pdf_stream.dart';
+import '../kernel/pdf/pdf_string.dart';
 import '../io/image/png_encoder.dart';
 import 'content_parser.dart';
+import 'glyph_source.dart';
 import 'image_decoder.dart';
 
 /// How a page is turned into pixels.
@@ -295,10 +297,20 @@ class _Renderer {
   /// A `W` or `W*` seen before the painting operator that ends the path.
   BLFillRule? _pendingClip;
 
-  /// The text line matrix, in user space. The text matrix it seeds is not
-  /// tracked separately yet: nothing reads it until glyphs are drawn, and a
-  /// field that is written and never read is worse than no field.
+  /// The text line matrix, in user space: where the current line starts.
   BLMatrix2D _textLineMatrix = BLMatrix2D.identity;
+
+  /// The text matrix. It starts each line as a copy of the line matrix and
+  /// then advances glyph by glyph, which is why the two cannot be one field.
+  BLMatrix2D _textMatrix = BLMatrix2D.identity;
+
+  /// The font selected by the last `Tf`, resolved to outlines and advances.
+  PdfGlyphSource? _font;
+
+  /// Fonts already resolved, keyed by resource name. Resolving parses the
+  /// embedded program, so a page that sets the same font hundreds of times
+  /// should pay for it once.
+  final _fontCache = <String, PdfGlyphSource?>{};
 
   _Renderer(this.context, BLMatrix2D base) {
     state = _State(ctm: base);
@@ -461,10 +473,12 @@ class _Renderer {
       // --- text ---
       case 'BT':
         _textLineMatrix = BLMatrix2D.identity;
+        _textMatrix = BLMatrix2D.identity;
       case 'ET':
         break;
       case 'Tf':
         state.fontSize = op.number(1) ?? state.fontSize;
+        await _selectFont(op.name(0), resources);
       case 'Tc':
         state.charSpacing = op.number(0) ?? state.charSpacing;
       case 'Tw':
@@ -490,6 +504,7 @@ class _Renderer {
         final m = op.numbers(6);
         if (m != null) {
           _textLineMatrix = BLMatrix2D(m[0], m[1], m[2], m[3], m[4], m[5]);
+          _textMatrix = _textLineMatrix;
         }
       case 'T*':
         _textNewline(0, -state.leading);
@@ -497,13 +512,7 @@ class _Renderer {
       case 'TJ':
       case "'":
       case '"':
-        // Glyph outlines are not wired up yet; the report counts what was
-        // skipped so a caller knows the page is incomplete rather than blank
-        // by design.
-        if (op.operator == "'" || op.operator == '"') {
-          _textNewline(0, -state.leading);
-        }
-        glyphsSkipped++;
+        await _showText(op);
 
       // --- XObjects and images ---
       case 'Do':
@@ -832,6 +841,186 @@ class _Renderer {
 
   void _textNewline(double tx, double ty) {
     _textLineMatrix = BLMatrix2D(1, 0, 0, 1, tx, ty).multiply(_textLineMatrix);
+    // Uma nova linha reinicia a matriz de texto a partir da matriz de linha:
+    // os avanços de glifo da linha anterior não se acumulam na próxima.
+    _textMatrix = _textLineMatrix;
+  }
+
+  // --- text -----------------------------------------------------------------
+
+  /// Resolves the `Tf` operand to a font, remembering the result per page.
+  Future<void> _selectFont(String? name, CraftPdfDictionary? resources) async {
+    if (name == null) {
+      _font = null;
+      return;
+    }
+    if (_fontCache.containsKey(name)) {
+      _font = _fontCache[name];
+      return;
+    }
+    PdfGlyphSource? resolved;
+    try {
+      resolved = await PdfGlyphSource.resolve(resources, name);
+    } catch (_) {
+      // A malformed font dictionary must not abort the page; the report says
+      // the text was skipped and the rest of the content still draws.
+      resolved = null;
+    }
+    _fontCache[name] = resolved;
+    _font = resolved;
+  }
+
+  /// Draws `Tj`, `TJ`, `'` and `"`.
+  Future<void> _showText(PdfContentOperation op) async {
+    var operandIndex = 0;
+    switch (op.operator) {
+      case "'":
+        _textNewline(0, -state.leading);
+      case '"':
+        // `aw ac string "` sets word and character spacing before showing.
+        state.wordSpacing = op.number(0) ?? state.wordSpacing;
+        state.charSpacing = op.number(1) ?? state.charSpacing;
+        operandIndex = 2;
+        _textNewline(0, -state.leading);
+    }
+
+    if (operandIndex >= op.operands.length) return;
+    final operand = op.operands[operandIndex];
+
+    if (operand is CraftPdfString) {
+      await _showString(operand.getValueBytes());
+      return;
+    }
+
+    if (operand is CraftPdfArray) {
+      // In `TJ` a number displaces the next glyph by -n/1000 text units,
+      // which is how justified text and kerning corrections are encoded.
+      for (var i = 0; i < operand.size(); i++) {
+        final item = await operand.get(i);
+        if (item is CraftPdfString) {
+          await _showString(item.getValueBytes());
+        } else if (item is CraftPdfNumber) {
+          _advanceText(-item.doubleValue() /
+              1000.0 *
+              state.fontSize *
+              state.horizontalScale);
+        }
+      }
+      return;
+    }
+
+    glyphsSkipped++;
+  }
+
+  Future<void> _showString(Uint8List? bytes) async {
+    if (bytes == null || bytes.isEmpty) return;
+
+    final font = _font;
+    if (font == null || !font.isDrawable) {
+      // Positioning still has to happen even when the glyphs cannot be drawn,
+      // or everything after this run on the line would sit in the wrong place.
+      // Without metrics the best available estimate is half an em per code.
+      final codes = font?.codes(bytes) ?? bytes;
+      for (final code in codes) {
+        final width = font?.width(code) ?? 0.5;
+        _advanceForCode(code, width, composite: font?.composite ?? false);
+      }
+      glyphsSkipped++;
+      return;
+    }
+
+    // Render mode 3 is invisible and 7 only adds to the clip; neither paints.
+    // This is what makes the text layer of a scanned page stay hidden.
+    final invisible = state.renderMode == 3 || state.renderMode == 7;
+    final stroke = state.renderMode == 1 || state.renderMode == 5;
+
+    for (final code in font.codes(bytes)) {
+      if (!invisible) {
+        await _drawGlyph(font, code, stroke: stroke);
+      }
+      _advanceForCode(code, font.width(code), composite: font.composite);
+    }
+  }
+
+  /// Advances the text matrix past one glyph.
+  ///
+  /// ISO 32000-1 §9.4.4: `tx = ((w0 - Tj/1000) * Tfs + Tc + Tw) * Th`. The
+  /// `Tj` displacement is applied separately by the array branch above.
+  void _advanceForCode(int code, double width, {required bool composite}) {
+    var advance = width * state.fontSize + state.charSpacing;
+    // Word spacing applies to the single byte 32, and never to a two-byte
+    // code — a composite font can legitimately have 0x0020 as half a code.
+    if (code == 32 && !composite) advance += state.wordSpacing;
+    _advanceText(advance * state.horizontalScale);
+  }
+
+  void _advanceText(double tx) {
+    _textMatrix = BLMatrix2D(1, 0, 0, 1, tx, 0).multiply(_textMatrix);
+  }
+
+  /// Fills (or strokes) one glyph's outline.
+  Future<void> _drawGlyph(
+    PdfGlyphSource font,
+    int code, {
+    required bool stroke,
+  }) async {
+    final face = font.face!;
+    final gid = font.glyph(code);
+    if (gid == null) {
+      glyphsSkipped++;
+      return;
+    }
+
+    final outline = face.glyphOutlineUnits(gid);
+    if (outline == null || outline.vertices.isEmpty)
+      return; // blank, e.g. space
+
+    // Glyph space to text space, then the text state parameters, then the
+    // text matrix, then the CTM. Composing once and mapping each vertex is
+    // what keeps the curve flattening in device resolution.
+    final scale = state.fontSize / face.unitsPerEm;
+    final parameters = BLMatrix2D(
+      scale * state.horizontalScale,
+      0,
+      0,
+      scale,
+      0,
+      state.rise,
+    );
+    final transform = parameters.multiply(_textMatrix).multiply(state.ctm);
+
+    final source = outline.vertices;
+    final mapped = List<double>.filled(source.length, 0);
+    for (var i = 0; i < source.length; i += 2) {
+      final (x, y) = transform.mapPoint(source[i], source[i + 1]);
+      mapped[i] = x;
+      mapped[i + 1] = y;
+    }
+
+    if (stroke) {
+      final scale = _averageScale(state.ctm);
+      await context.strokePolygon(
+        mapped,
+        contourVertexCounts: outline.contourVertexCounts,
+        color: _withAlpha(state.strokeColour, state.strokeAlpha),
+        options: BLStrokeOptions(
+          width: state.lineWidth * scale,
+          startCap: state.lineCap,
+          endCap: state.lineCap,
+          join: state.lineJoin,
+          miterLimit: state.miterLimit,
+        ),
+      );
+    } else {
+      // Glyph outlines are always non-zero: counters are wound the other way
+      // round, and even-odd would punch holes through overlapping contours.
+      await context.fillPolygon(
+        mapped,
+        contourVertexCounts: outline.contourVertexCounts,
+        color: _withAlpha(state.fillColour, state.fillAlpha),
+        rule: BLFillRule.nonZero,
+      );
+    }
   }
 
   // --- XObjects -------------------------------------------------------------

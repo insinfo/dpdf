@@ -1823,6 +1823,20 @@ class _Renderer {
     if (content != null) await nested.run(content, groupResources, depth + 1);
     maskContext.flush();
 
+    PdfFunction? transfer;
+    final transferObject = await mask.get(PdfName('TR'), true);
+    if (transferObject != null &&
+        !(transferObject is PdfName &&
+            (transferObject.getValue() == 'Identity' ||
+                transferObject.getValue() == 'Default'))) {
+      transfer = await PdfFunction.parse(transferObject);
+      if (transfer == null ||
+          transfer.inputCount != 1 ||
+          transfer.outputCount != 1) {
+        _note('gs:SMask-transfer');
+        transfer = null;
+      }
+    }
     final coverage = Uint8List(surface.pixels.length);
     for (var i = 0; i < coverage.length; i++) {
       final pixel = surface.pixels[i];
@@ -1836,6 +1850,17 @@ class _Renderer {
         final luminance = (red * 299 + green * 587 + blue * 114 + 500) ~/ 1000;
         coverage[i] = (luminance * alpha + 127) ~/ 255;
       }
+      if (transfer != null) {
+        try {
+          coverage[i] =
+              (transfer.evaluate([coverage[i] / 255]).first.clamp(0.0, 1.0) *
+                      255)
+                  .round();
+        } on Object {
+          _note('gs:SMask-transfer');
+          transfer = null;
+        }
+      }
     }
     context.intersectClipMask(coverage);
     for (final entry in nested.unsupported.entries) {
@@ -1844,7 +1869,6 @@ class _Renderer {
     glyphsSkipped += nested.glyphsSkipped;
     imagesSkipped += nested.imagesSkipped;
     fontFailures.addAll(nested.fontFailures);
-    if (mask.containsKey(PdfName('TR'))) _note('gs:SMask-transfer');
   }
 
   void _setDash(PdfContentOperation op) {

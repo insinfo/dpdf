@@ -828,6 +828,40 @@ void main() {
       expect(_at(page, 50, 50).r, closeTo(191, 4));
       expect(page.report.unsupportedOperators, isEmpty);
     });
+
+    test('applies a soft-mask transfer function to coverage', () async {
+      final group = PdfStream.withBytes(
+          Uint8List.fromList(latin1.encode('0 g 0 0 50 100 re f')), 0)
+        ..put(PdfName.subtype, PdfName.form)
+        ..put(PdfName.bBox, PdfArray.fromDoubles([0, 0, 100, 100]))
+        ..put(PdfName.resources, PdfDictionary());
+      final transfer = PdfDictionary()
+        ..put(PdfName('FunctionType'), PdfNumber.fromInt(2))
+        ..put(PdfName('Domain'), PdfArray.fromDoubles([0, 1]))
+        ..put(PdfName('C0'), PdfArray.fromDoubles([1]))
+        ..put(PdfName('C1'), PdfArray.fromDoubles([0]))
+        ..put(PdfName('N'), PdfNumber(1));
+      final resources = PdfDictionary()
+        ..put(
+            PdfName.extGState,
+            PdfDictionary()
+              ..put(
+                  PdfName('GS0'),
+                  PdfDictionary()
+                    ..put(
+                        PdfName.sMask,
+                        PdfDictionary()
+                          ..put(PdfName.s, PdfName('Alpha'))
+                          ..put(PdfName('G'), group)
+                          ..put(PdfName('TR'), transfer))));
+
+      final page =
+          await _render('/GS0 gs 0 g 0 0 100 100 re f', resources: resources);
+
+      expect(_at(page, 25, 50).r, greaterThan(240));
+      expect(_at(page, 75, 50).r, lessThan(15));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
   });
 
   group('PdfPageRenderer images', () {

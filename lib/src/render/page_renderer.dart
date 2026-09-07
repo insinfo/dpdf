@@ -1039,6 +1039,13 @@ class _Renderer {
       return;
     }
     final coords = await coordsArray.toDoubleArray();
+    var extendStart = false;
+    var extendEnd = false;
+    final extend = await shading.arrayEntry(PdfName('Extend'));
+    if (extend != null && extend.size() == 2) {
+      extendStart = (await extend.booleanEntry(0))?.getValue() ?? false;
+      extendEnd = (await extend.booleanEntry(1))?.getValue() ?? false;
+    }
     var domainStart = 0.0;
     var domainEnd = 1.0;
     final shadingDomain = await shading.arrayEntry(PdfName('Domain'));
@@ -1074,7 +1081,11 @@ class _Renderer {
       final p0 = toDevice.mapPoint(coords[0], coords[1]);
       final p1 = toDevice.mapPoint(coords[2], coords[3]);
       context.setLinearGradient(BLLinearGradient(
-          p0: BLPoint(p0.$1, p0.$2), p1: BLPoint(p1.$1, p1.$2), stops: stops));
+          p0: BLPoint(p0.$1, p0.$2),
+          p1: BLPoint(p1.$1, p1.$2),
+          stops: stops,
+          extendStart: extendStart,
+          extendEnd: extendEnd));
     } else {
       final c0 = toDevice.mapPoint(coords[0], coords[1]);
       final c1 = toDevice.mapPoint(coords[3], coords[4]);
@@ -1084,7 +1095,9 @@ class _Renderer {
           c1: BLPoint(c1.$1, c1.$2),
           r0: coords[2] * scale,
           r1: coords[5] * scale,
-          stops: stops));
+          stops: stops,
+          extendStart: extendStart,
+          extendEnd: extendEnd));
     }
     await context.fillPath(path, rule: rule);
     context.setFillStyle(stroke ? state.strokeColour : state.fillColour);

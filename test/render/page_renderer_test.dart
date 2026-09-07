@@ -426,6 +426,30 @@ void main() {
       expect(page.report.unsupportedOperators, isEmpty);
     });
 
+    test('honours asymmetric Extend flags on an axial shading', () async {
+      final function = PdfDictionary()
+        ..put(PdfName('FunctionType'), PdfNumber.fromInt(2))
+        ..put(PdfName('Domain'), PdfArray.fromDoubles([0, 1]))
+        ..put(PdfName('C0'), PdfArray.fromDoubles([1, 0, 0]))
+        ..put(PdfName('C1'), PdfArray.fromDoubles([0, 0, 1]))
+        ..put(PdfName('N'), PdfNumber(1));
+      final shading = PdfDictionary()
+        ..put(PdfName.shadingType, PdfNumber.fromInt(2))
+        ..put(PdfName.colorSpace, PdfName.deviceRgb)
+        ..put(PdfName.coords, PdfArray.fromDoubles([25, 0, 75, 0]))
+        ..put(PdfName.function, function)
+        ..put(PdfName('Extend'), PdfArray.fromBooleans([false, true]));
+      final resources = PdfDictionary()
+        ..put(PdfName.shading, PdfDictionary()..put(PdfName('S'), shading));
+
+      final page = await _render('/S sh', resources: resources);
+
+      expect(_at(page, 10, 50).r, 255);
+      expect(_at(page, 10, 50).g, 255);
+      expect(_at(page, 90, 50).b, greaterThan(240));
+      expect(_at(page, 90, 50).r, lessThan(15));
+    });
+
     test('applies a luminosity soft mask transparency group', () async {
       final group = PdfStream.withBytes(
           Uint8List.fromList(

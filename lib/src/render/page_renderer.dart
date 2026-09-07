@@ -1075,6 +1075,15 @@ class _Renderer {
     final colorSpace = colorObject == null
         ? null
         : await PdfColorSpace.makeColorSpace(colorObject);
+    if (shadingType == 4 && shading is PdfStream && colorSpace != null) {
+      if (await _fillFreeFormShading(
+          path, rule, pattern, shading, colorSpace, function,
+          stroke: stroke)) {
+        return;
+      }
+      _note('scn:unsupported-shading-pattern');
+      return;
+    }
     if (shadingType == 5 && shading is PdfStream && colorSpace != null) {
       if (await _fillLatticeShading(
           path, rule, pattern, shading, colorSpace, function,
@@ -1155,6 +1164,118 @@ class _Renderer {
     }
     await context.fillPath(path, rule: rule);
     context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
+  }
+
+  Future<bool> _fillFreeFormShading(
+    BLPath clipPath,
+    BLFillRule rule,
+    PdfDictionary pattern,
+    PdfStream shading,
+    PdfColorSpace colorSpace,
+    PdfFunction? function, {
+    required bool stroke,
+  }) async {
+    final bitsCoordinate =
+        await shading.integerEntry(PdfName('BitsPerCoordinate'));
+    final bitsComponent =
+        await shading.integerEntry(PdfName('BitsPerComponent'));
+    final bitsFlag = await shading.integerEntry(PdfName('BitsPerFlag'));
+    final decodeArray = await shading.arrayEntry(PdfName('Decode'));
+    final inputCount =
+        function?.inputCount ?? colorSpace.getNumberOfComponents();
+    if (bitsCoordinate == null ||
+        bitsComponent == null ||
+        bitsFlag == null ||
+        bitsCoordinate < 1 ||
+        bitsCoordinate > 32 ||
+        bitsComponent < 1 ||
+        bitsComponent > 16 ||
+        (bitsFlag != 2 && bitsFlag != 4 && bitsFlag != 8) ||
+        inputCount < 1 ||
+        decodeArray == null ||
+        decodeArray.size() != 4 + inputCount * 2) {
+      return false;
+    }
+    final decode = await decodeArray.toDoubleArray();
+    final bytes = await shading.getBytes();
+    if (bytes == null) return false;
+    final reader = _MeshBitReader(bytes);
+    final bitsPerRecord =
+        bitsFlag + bitsCoordinate * 2 + bitsComponent * inputCount;
+    final coordinateMax = (1 << bitsCoordinate) - 1;
+    final componentMax = (1 << bitsComponent) - 1;
+    final records = <({int flag, _MeshVertex vertex})>[];
+    try {
+      while (reader.remaining >= bitsPerRecord && records.length < 100000) {
+        final flag = reader.read(bitsFlag);
+        final x = _meshDecode(
+            reader.read(bitsCoordinate), coordinateMax, decode[0], decode[1]);
+        final y = _meshDecode(
+            reader.read(bitsCoordinate), coordinateMax, decode[2], decode[3]);
+        final inputs = <double>[];
+        for (var i = 0; i < inputCount; i++) {
+          inputs.add(_meshDecode(reader.read(bitsComponent), componentMax,
+              decode[4 + i * 2], decode[5 + i * 2]));
+        }
+        final components = function?.evaluate(inputs) ?? inputs;
+        final rgb = colorSpace.toRgb(components);
+        records.add(
+            (flag: flag, vertex: _MeshVertex(x, y, rgb[0], rgb[1], rgb[2])));
+      }
+    } on Object {
+      return false;
+    }
+    if (reader.remaining >= bitsPerRecord || records.length < 3) return false;
+    final triangles = <List<_MeshVertex>>[];
+    List<_MeshVertex>? previous;
+    for (var index = 0; index < records.length;) {
+      final record = records[index];
+      late final List<_MeshVertex> triangle;
+      if (record.flag == 0) {
+        if (index + 2 >= records.length) return false;
+        triangle = <_MeshVertex>[
+          record.vertex,
+          records[index + 1].vertex,
+          records[index + 2].vertex,
+        ];
+        index += 3;
+      } else if (record.flag == 1 && previous != null) {
+        triangle = <_MeshVertex>[previous[1], previous[2], record.vertex];
+        index++;
+      } else if (record.flag == 2 && previous != null) {
+        triangle = <_MeshVertex>[previous[0], previous[2], record.vertex];
+        index++;
+      } else {
+        return false;
+      }
+      triangles.add(triangle);
+      previous = triangle;
+    }
+
+    var matrix = BLMatrix2D.identity;
+    final matrixArray = await pattern.arrayEntry(PdfName.matrix);
+    if (matrixArray != null && matrixArray.size() == 6) {
+      final values = await matrixArray.toDoubleArray();
+      matrix = BLMatrix2D(
+          values[0], values[1], values[2], values[3], values[4], values[5]);
+    }
+    final toDevice = matrix.multiply(state.ctm);
+    final alpha = stroke ? state.strokeAlpha : state.fillAlpha;
+    context.save();
+    context.clipToPath(clipPath, rule: rule);
+    try {
+      for (final triangle in triangles) {
+        await _fillMeshTriangle(
+            triangle[0].transform(toDevice),
+            triangle[1].transform(toDevice),
+            triangle[2].transform(toDevice),
+            alpha);
+      }
+    } finally {
+      context.restore();
+      context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
+    }
+    return true;
   }
 
   Future<bool> _fillLatticeShading(

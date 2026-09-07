@@ -139,8 +139,8 @@ subsampling.
   outlines and the default instance of variable `blend` charstrings render;
   selecting non-default variation coordinates remains partial. Axial/radial PatternType 2 shadings, colored/uncolored
   tiling patterns and patterned strokes render, including asymmetric shading
-  extension. Type 5 lattice Gouraud meshes render with decoded vertex colours;
-  free-form and Coons/tensor mesh types remain partial. Alpha and
+  extension. Type 4 free-form and Type 5 lattice Gouraud meshes render with
+  decoded vertex colours; Coons/tensor mesh types remain partial. Alpha and
   luminosity soft masks render; transfer functions and some advanced
   transparency-group replacement cases remain partial.
 - Area redaction rewrites direct and Form-nested opaque, transparent and shared

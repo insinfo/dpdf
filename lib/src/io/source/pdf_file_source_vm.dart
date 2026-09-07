@@ -11,6 +11,8 @@ class PdfFileSource implements PdfByteSource {
   final int blockSize;
   final int maxBlocks;
   final _cache = <int, Uint8List>{};
+  int _lastBlockNumber = -1;
+  Uint8List? _lastBlock;
   bool _closed = false;
   int _bytesRead = 0;
   int get bytesRead => _bytesRead;
@@ -36,9 +38,12 @@ class PdfFileSource implements PdfByteSource {
 
   Uint8List _block(int number) {
     _check();
+    if (number == _lastBlockNumber) return _lastBlock!;
     final previous = _cache.remove(number);
     if (previous != null) {
       _cache[number] = previous;
+      _lastBlockNumber = number;
+      _lastBlock = previous;
       return previous;
     }
     final start = number * blockSize;
@@ -57,6 +62,8 @@ class PdfFileSource implements PdfByteSource {
     _bytesRead += received;
     if (_cache.length >= maxBlocks) _cache.remove(_cache.keys.first);
     _cache[number] = bytes;
+    _lastBlockNumber = number;
+    _lastBlock = bytes;
     return bytes;
   }
 
@@ -95,6 +102,8 @@ class PdfFileSource implements PdfByteSource {
     if (_closed) return;
     _closed = true;
     _cache.clear();
+    _lastBlock = null;
+    _lastBlockNumber = -1;
     _file.closeSync();
   }
 }

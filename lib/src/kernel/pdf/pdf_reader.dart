@@ -53,16 +53,20 @@ class PdfReader {
 
   static Future<PdfReader> fromFile(String path,
       [ReaderProperties? properties]) async {
-    if (properties?.readFileInBlocks == true) {
+    final effective = properties ?? ReaderProperties();
+    final file = File(path);
+    final threshold = effective.largeFileBlockThreshold;
+    final useBlocks = effective.readFileInBlocks ||
+        (threshold != null && await file.length() >= threshold);
+    if (useBlocks) {
       return PdfReader.fromSource(
           PdfFileSource.open(path,
-              blockSize: properties!.fileBlockSize,
-              maxBlocks: properties.fileCacheBlocks),
-          properties);
+              blockSize: effective.fileBlockSize,
+              maxBlocks: effective.fileCacheBlocks),
+          effective);
     }
-    final file = File(path);
     final bytes = await file.readAsBytes();
-    return PdfReader.fromBytes(bytes, properties);
+    return PdfReader.fromBytes(bytes, effective);
   }
 
   void setDocument(PdfDocument doc) {
@@ -80,6 +84,7 @@ class PdfReader {
   bool get rebuiltXref => _rebuiltXref;
   bool get xrefStm => _xrefStm;
   bool get encrypted => _encrypted;
+  bool get readsFileInBlocks => !_tokens.getSafeFile().isMemoryBacked;
   int get lastXref => _lastXref;
   PdfEncryption? securityCodec() => _encryption;
 

@@ -8,7 +8,6 @@ selecionadas pelo chamador.
 
 ```dart
 final options = ReaderProperties()
-  ..readFileInBlocks = true
   ..fileBlockSize = 256 * 1024
   ..fileCacheBlocks = 32
   ..recoveryMode = PdfRecoveryMode.skipStreams;
@@ -18,7 +17,10 @@ print(document.wasRepaired);
 await document.close();
 ```
 
-`readFileInBlocks` atua no Dart VM. Na web, use bytes ou uma implementação de
+`PdfReader.fromFile` seleciona automaticamente a leitura por blocos a partir de
+64 MiB; `largeFileBlockThreshold` altera esse limite e `readFileInBlocks` força
+o modo para qualquer tamanho. Isso evita materializar PDFs de vários GiB.
+Na web, use bytes ou uma implementação de
 `PdfByteSource`, passada a `PdfReader.fromSource`. A fonte de arquivo é
 selecionada por importação condicional, sem incluir `dart:io` na compilação web.
 `PdfFileSource` expõe `cachedBytes` e `bytesRead` para medir o cache.
@@ -27,9 +29,10 @@ selecionada por importação condicional, sem incluir `dart:io` na compilação 
 `skipStreams` usa `/Length` para saltar payloads somente após verificar seu fim,
 com varredura de delimitadores como fallback. Ambos recuperam referências,
 gerações, catálogo, objetos comprimidos em ObjStm e comprimentos de streams.
-`recoveryScanLimit` limita o tamanho lógico aceito para recuperação (256 MiB por
+`recoveryScanLimit` limita o tamanho lógico aceito para recuperação (4 GiB por
 padrão); `recoveryObjectLimit` limita identificadores e quantidade de objetos.
-Esses limites podem ser aumentados explicitamente para arquivos maiores.
+O modo `skipStreams` foi testado com uma fonte lógica corrompida acima de 3 GiB:
+o payload declarado foi saltado e menos de 2 MiB precisaram ser lidos.
 
 O cache limita entrada de arquivo, não a memória de todo o documento: objetos e
 streams efetivamente usados ainda precisam de memória. A gravação incremental

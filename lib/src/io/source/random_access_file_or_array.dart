@@ -92,6 +92,9 @@ class RandomAccessFileOrArray {
 
   int length() => _source.length;
 
+  /// Whether reads are served by an already materialized byte array.
+  bool get isMemoryBacked => _source is PdfMemorySource;
+
   void seek(int pos) {
     _position = pos;
     _back = null;

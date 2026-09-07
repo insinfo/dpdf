@@ -18,12 +18,21 @@ enum PdfRecoveryMode { strict, scan, skipStreams }
 class ReaderProperties {
   /// Opt-in bounded file cache for PdfReader.fromFile on the VM.
   bool readFileInBlocks = false;
+
+  /// Files at least this large are read through the bounded block cache even
+  /// when [readFileInBlocks] was not explicitly enabled. Set to `null` to
+  /// preserve the legacy always-materialize behaviour.
+  int? largeFileBlockThreshold = 64 * 1024 * 1024;
   int fileBlockSize = 262144;
   int fileCacheBlocks = 32;
   PdfRecoveryMode recoveryMode = PdfRecoveryMode.strict;
 
-  /// Maximum input bytes examined by recovery (default 256 MiB).
-  int recoveryScanLimit = 256 * 1024 * 1024;
+  /// Maximum input bytes examined by recovery (default 4 GiB).
+  ///
+  /// Recovery remains opt-in through [recoveryMode]. The larger default lets
+  /// `skipStreams` repair multi-gigabyte scans while object and decompression
+  /// limits continue to bound allocations.
+  int recoveryScanLimit = 4 * 1024 * 1024 * 1024;
 
   /// Bounds object identifiers and recovered object count.
   int recoveryObjectLimit = 1000000;
@@ -41,6 +50,7 @@ class ReaderProperties {
   /// Creates a copy of another ReaderProperties.
   ReaderProperties.from(ReaderProperties other)
       : readFileInBlocks = other.readFileInBlocks,
+        largeFileBlockThreshold = other.largeFileBlockThreshold,
         fileBlockSize = other.fileBlockSize,
         fileCacheBlocks = other.fileCacheBlocks,
         password =

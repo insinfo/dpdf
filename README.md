@@ -161,8 +161,8 @@ subsampling.
   installed/catalogued faces without downloading a fallback. WOFF/WOFF2
   decoding remains delegated to the application/provider.
 - JBIG2 automatically chooses between generic regions and deduplicated symbol
-  dictionaries with text regions; refinement and multi-page dictionaries remain
-  partial.
+  dictionaries with text regions, including shared `/JBIG2Globals` across PDF
+  images. Refinement aggregation remains partial.
 
 Optional reading, recovery, merge, and signing modes are documented in
 [test/compatibility/OPTIONAL_MODES.md](test/compatibility/OPTIONAL_MODES.md).

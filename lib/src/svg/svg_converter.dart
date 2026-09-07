@@ -13,6 +13,7 @@ import 'package:dpdf/src/svg/processors/impl/default_svg_processor.dart';
 import 'package:dpdf/src/svg/renderers/impl/pdf_root_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/branch_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 
@@ -120,6 +121,7 @@ class SvgConverter {
     if (tree == null) return null;
 
     final context = SvgDrawContext(null, null);
+    _registerNamedObjects(tree, context);
     context.setCustomViewport(customViewport);
     final em = context.getCssContext().getRootFontSize();
     var size = SvgCssUtils.extractWidthAndHeight(tree, em, context);
@@ -130,6 +132,17 @@ class SvgConverter {
           SvgValues.DEFAULT_VIEWPORT_HEIGHT);
     }
     return _PreparedSvg(tree, size, context);
+  }
+
+  static void _registerNamedObjects(
+      SvgNodeRenderer renderer, SvgDrawContext context) {
+    final id = renderer.getAttribute(SvgAttributes.ID);
+    if (id != null && id.isNotEmpty) context.addNamedObject(id, renderer);
+    if (renderer is BranchSvgNodeRenderer) {
+      for (final child in renderer.getChildren()) {
+        _registerNamedObjects(child, context);
+      }
+    }
   }
 
   /// Localiza o primeiro `<svg>` do documento.

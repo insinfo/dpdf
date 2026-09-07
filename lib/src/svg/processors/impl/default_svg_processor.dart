@@ -62,7 +62,8 @@ class DefaultSvgProcessor {
     element.attributes.forEach((key, value) {
       // Chaves com namespace (`xmlns`, `xlink:href`) chegam como objeto e não
       // como String; nenhuma delas influencia o subconjunto suportado.
-      if (key is String) own[key] = value;
+      final name = key is String ? key : key.toString();
+      own[name] = value;
     });
     final resolved = Map<String, String>.from(inherited);
     resolved.addAll(own);
@@ -163,7 +164,7 @@ class _SvgStyleRule {
 
   bool matches(dom.Element element) {
     if (tag != null && element.localName != tag) return false;
-    if (id != null && element.attributes['id'] != id) return false;
+    if (id != null && element.id != id) return false;
     // `Element.classes` segue regras HTML e pode não refletir corretamente
     // elementos no namespace SVG; o atributo cru tem a semântica necessária.
     final actual = (element.attributes['class'] ?? '')

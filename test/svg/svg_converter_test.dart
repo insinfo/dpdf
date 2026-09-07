@@ -201,7 +201,7 @@ void main() {
           <style>
             rect { fill: red; }
             .accent { fill: blue; stroke: black; }
-            #chosen { fill: lime; }
+            #chosen { fill: #0f0; }
           </style>
           <rect class="accent" width="5" height="5"/>
           <rect id="chosen" class="accent" x="10" width="5" height="5"/>
@@ -210,8 +210,7 @@ void main() {
 
       expect(_count(content, '0 0 1 rg\n'), 1);
       expect(_count(content, '0 1 0 rg\n'), 1);
-      // O canvas elimina a segunda seleção da mesma cor de traço.
-      expect(_count(content, '0 0 0 RG\n'), 1);
+      expect(_count(content, '0 0 0 RG\n'), 2);
     });
 
     test('style inline vence regra de id e comentários CSS são ignorados',
@@ -225,6 +224,34 @@ void main() {
 
       expect(content, contains('1 1 0 rg\n'));
       expect(content, isNot(contains('0 0 1 rg\n')));
+    });
+
+    test('use instancia geometria de defs e aplica x e y', () async {
+      final content = await _render('''
+        <svg width="40" height="20">
+          <defs><rect id="tile" width="4" height="6" fill="red"/></defs>
+          <use href="#tile" x="10" y="5"/>
+        </svg>
+      ''');
+
+      expect(content, contains('1 0 0 1 7.5 3.75 cm\n'));
+      expect(content, contains('0 0 3 4.5 re\n'));
+      expect(_count(content, '0 0 3 4.5 re\n'), 1,
+          reason: 'a definição não pode vazar no ponto em que foi declarada');
+    });
+
+    test('use aceita xlink:href e interrompe referência circular', () async {
+      final content = await _render('''
+        <svg width="20" height="20" xmlns:xlink="http://www.w3.org/1999/xlink">
+          <defs>
+            <g id="cycle"><circle r="2"/><use xlink:href="#cycle"/></g>
+          </defs>
+          <use xlink:href="#cycle"/>
+        </svg>
+      ''');
+
+      expect(_count(content, ' c\n'), 4,
+          reason: 'um círculo tem quatro cúbicas e só pode sair uma vez');
     });
 
     test('aceita cor nomeada, hexadecimal curto e rgb percentual', () async {

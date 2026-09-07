@@ -573,6 +573,80 @@ void main() {
       }
     });
 
+    test('pattern vira um tiling pattern nativo com conteúdo próprio',
+        () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="80" height="30">
+          <defs>
+            <pattern id="tiles" width="10" height="8"
+                     patternUnits="userSpaceOnUse">
+              <rect width="5" height="8" fill="red"/>
+            </pattern>
+          </defs>
+          <rect x="4" y="3" width="60" height="20"
+                fill="url(#tiles)" stroke="blue"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final content = String.fromCharCodes(await page.contentPayload());
+        expect(content, contains('/Pattern cs\n'));
+        expect(content, contains(' scn\n'));
+        expect(content, contains('B\n'),
+            reason: 'o caminho conserva pattern fill e stroke');
+        expect(content, isNot(contains('0 0 0 rg\n')),
+            reason: 'o paint server não deve cair no preenchimento preto');
+
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final patterns = await resources?.dictionaryEntry(PdfName.pattern);
+        expect(patterns, isNotNull);
+        final values = await patterns!.values();
+        expect(values, hasLength(1));
+        final pattern = values.single as PdfStream;
+        expect(
+            (await pattern.numberEntry(PdfName('PatternType')))!.intValue(), 1);
+        expect(
+            (await pattern.numberEntry(PdfName('PaintType')))!.intValue(), 1);
+        expect((await pattern.numberEntry(PdfName('XStep')))!.doubleValue(),
+            closeTo(7.5, 1e-9));
+        expect((await pattern.numberEntry(PdfName('YStep')))!.doubleValue(),
+            closeTo(6, 1e-9));
+        final tileContent = String.fromCharCodes((await pattern.getBytes())!);
+        expect(tileContent, contains('0 0 3.75 6 re\n'));
+        expect(tileContent, contains('1 0 0 rg\n'));
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('pattern objectBoundingBox dimensiona a célula pela geometria',
+        () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="80" height="40">
+          <pattern id="p" width="25%" height="50%">
+            <circle cx="0.5" cy="0.5" r="0.4" fill="green"/>
+          </pattern>
+          <rect x="10" y="5" width="40" height="20" fill="url(#p)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final patterns = await resources!.dictionaryEntry(PdfName.pattern);
+        final pattern = (await patterns!.values()).single as PdfStream;
+        expect((await pattern.numberEntry(PdfName('XStep')))!.doubleValue(),
+            closeTo(7.5, 1e-9));
+        expect((await pattern.numberEntry(PdfName('YStep')))!.doubleValue(),
+            closeTo(7.5, 1e-9));
+      } finally {
+        await document.close();
+      }
+    });
+
     test('image externa usa o resolvedor explícito', () async {
       Uri? requested;
       final bytes = await SvgConverter.convertToBytes('''

@@ -131,14 +131,17 @@ subsampling.
 
 ## Known limitations
 
-- SVG patterns and masks are not rendered yet. Gradient opacity and some
-  advanced paint-server inheritance and marker viewport cases remain partial.
+- SVG colored tiling patterns are emitted as native PDF patterns. Masks,
+  gradient opacity, pattern/gradient inheritance, and some marker viewport
+  cases remain partial.
 - PDF rendering may require a supplied fallback for fonts that are not embedded;
   some advanced CFF/CID and pattern cases remain partial.
 - Area redaction of shared, transparent or Form-nested images still covers
   rather than rewriting their source pixels.
 - HTML uses the 14 standard PDF fonts and does not discover system fonts.
-- JBIG2 encoding uses generic regions rather than symbol dictionaries.
+- JBIG2 automatically chooses between generic regions and deduplicated symbol
+  dictionaries with text regions; refinement and multi-page dictionaries remain
+  partial.
 
 Optional reading, recovery, merge, and signing modes are documented in
 [test/compatibility/OPTIONAL_MODES.md](test/compatibility/OPTIONAL_MODES.md).

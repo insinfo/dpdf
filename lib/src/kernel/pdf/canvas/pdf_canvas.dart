@@ -672,6 +672,18 @@ class PdfCanvas {
     return this;
   }
 
+  /// Seleciona um tiling pattern colorido como pintura de preenchimento.
+  Future<PdfCanvas> setFillPattern(PdfStream patternStream) async {
+    if (resources == null || document == null) {
+      throw StateError('A pattern needs a document-backed canvas.');
+    }
+    final name = await resources!.addPattern(document!, patternStream);
+    contentStream!.getOutputStream()
+      ..writeBytes(ByteUtils.getIsoBytes('/Pattern cs\n'))
+      ..writeBytes(ByteUtils.getIsoBytes('/${name.getValue()} scn\n'));
+    return this;
+  }
+
   Future<PdfCanvas> beginMarkedContent(PdfName tag,
       [PdfDictionary? properties]) async {
     if (properties == null) {

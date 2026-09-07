@@ -8,6 +8,7 @@ import 'package:dpdf/src/svg/renderers/impl/line_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/marker_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/no_op_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/path_svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/impl/pattern_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/polygon_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/polyline_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/rectangle_svg_node_renderer.dart';
@@ -48,6 +49,7 @@ class SvgRendererFactory {
     SvgTags.RADIAL_GRADIENT: RadialGradientSvgNodeRenderer.new,
     SvgTags.STOP: GradientStopSvgNodeRenderer.new,
     SvgTags.MARKER: MarkerSvgNodeRenderer.new,
+    SvgTags.PATTERN: PatternSvgNodeRenderer.new,
     // Reconhecidos e explicitamente sem pintura própria.
     SvgTags.DEFS: NoOpSvgNodeRenderer.new,
     SvgTags.TITLE: NoOpSvgNodeRenderer.new,

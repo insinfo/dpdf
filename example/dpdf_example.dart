@@ -12,9 +12,11 @@ import 'package:dpdf/dpdf.dart';
 /// dart run example/dpdf_example.dart
 /// ```
 ///
-/// Passe um diretório como argumento para gravar os PDFs gerados.
+/// Sem argumento, grava os artefatos no diretório atual. Passe outro diretório
+/// como argumento para escolher o destino.
 Future<void> main(List<String> arguments) async {
-  final destination = arguments.isEmpty ? null : Directory(arguments.first);
+  final destination =
+      arguments.isEmpty ? Directory.current : Directory(arguments.first);
 
   final relatorio = await _converterHtml();
   await _salvar(destination, 'relatorio.html.pdf', relatorio);
@@ -24,6 +26,16 @@ Future<void> main(List<String> arguments) async {
 
   final redigido = await _redigirPorArea();
   await _salvar(destination, 'redigido.pdf', redigido);
+  final document = await PdfDocument.open(PdfReader.fromBytes(redigido));
+  final page = await document.pageAt(1);
+  if (page == null) {
+    await document.close();
+    throw StateError('O PDF redigido não contém a primeira página.');
+  }
+  final result = await PdfPageRenderer.render(page);
+  final png = result.toPng();
+  await document.close();
+  await _salvar(destination, 'redigido.png', png);
 }
 
 /// HTML para PDF. O conversor mede o texto com as métricas da face que ele

@@ -20,7 +20,39 @@ abstract class CraftPdfColorSpace
 
   int getNumberOfComponents();
 
-  /// Creates a [PdfColorSpace] from a [PdfObject].
+  /// Converts a colour of this space into sRGB.
+  ///
+  /// [components] holds [getNumberOfComponents] values in this space's own
+  /// component ranges (see [getComponentRange]); the result holds red, green
+  /// and blue in 0..1. Implementations are synchronous so that a rasterizer
+  /// can call them per pixel; everything a space needs is resolved by
+  /// [makeColorSpace].
+  ///
+  /// Throws [UnsupportedError] for `/Pattern`, which carries no colour of its
+  /// own.
+  List<double> toRgb(List<double> components);
+
+  /// The range of component [index] in this space.
+  ///
+  /// This is the interval a sample of an image or an indexed lookup table maps
+  /// onto, i.e. the default `/Decode` of clause 8.9.5.2. All spaces except Lab
+  /// and Indexed use 0..1.
+  List<double> getComponentRange(int index) => const <double>[0.0, 1.0];
+
+  /// Clamps [value] into 0..1.
+  static double clampUnit(double value) {
+    if (value.isNaN) return 0.0;
+    if (value < 0.0) return 0.0;
+    if (value > 1.0) return 1.0;
+    return value;
+  }
+
+  /// Reads component [index] of [components], falling back to 0.
+  static double componentAt(List<double> components, int index) {
+    return index < components.length ? components[index] : 0.0;
+  }
+
+  /// Creates a [CraftPdfColorSpace] from a [CraftPdfObject].
   static Future<CraftPdfColorSpace?> makeColorSpace(
       CraftPdfObject? pdfObject) async {
     if (pdfObject == null) return null;
@@ -51,11 +83,21 @@ abstract class CraftPdfColorSpace
       } else if (CraftPdfName.calRgb == csType) {
         return PdfCieBasedCsCalRgb(pdfObject);
       } else if (CraftPdfName.lab == csType) {
-        return PdfCieBasedCsLab(pdfObject);
+        return await PdfCieBasedCsLab.parseArray(pdfObject);
       } else if (CraftPdfName.iccBased == csType) {
-        return PdfCieBasedCsIccBased(pdfObject);
+        return await PdfCieBasedCsIccBased.parseArray(pdfObject);
+      } else if (CraftPdfName.indexed == csType) {
+        return await PdfSpecialCsIndexed.parseArray(pdfObject);
+      } else if (CraftPdfName.separation == csType) {
+        return await PdfSpecialCsSeparation.parseArray(pdfObject);
+      } else if (CraftPdfName.deviceN == csType) {
+        return await PdfSpecialCsDeviceN.parseArray(pdfObject);
+      } else if (CraftPdfName.pattern == csType) {
+        // `[/Pattern base]` — an uncoloured pattern space; the base space
+        // describes the colour the pattern is painted with.
+        return PdfSpecialCsPattern.withBase(
+            pdfObject, await makeColorSpace(await pdfObject.get(1)));
       }
-      // TODO: Indexed, Separation, DeviceN
     }
 
     return null;

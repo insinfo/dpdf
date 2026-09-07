@@ -5,7 +5,6 @@ import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_boolean.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_null.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 import 'package:dpdf/src/render/content_parser.dart';
 import 'package:test/test.dart';

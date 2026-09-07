@@ -747,4 +747,3 @@ class CraftPdfCanvas {
     return this;
   }
 }
-

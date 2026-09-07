@@ -34,13 +34,12 @@ class CraftDeviceCmyk extends CraftColor {
   }
 
   static CraftDeviceRgb _convertCmykToRgb(CraftDeviceCmyk cmykColor) {
-    double c = cmykColor.getColorValue()[0];
-    double m = cmykColor.getColorValue()[1];
-    double y = cmykColor.getColorValue()[2];
-    double k = cmykColor.getColorValue()[3];
-
-    return CraftDeviceRgb(
-        (1.0 - c) * (1.0 - k), (1.0 - m) * (1.0 - k), (1.0 - y) * (1.0 - k));
+    final values = cmykColor.getColorValue();
+    // The naive (1 - c)(1 - k) formula lives in PdfDeviceCsCmyk so that the
+    // colour objects and the colour space conversion cannot drift apart.
+    final rgb =
+        PdfDeviceCsCmyk.cmykToRgb(values[0], values[1], values[2], values[3]);
+    return CraftDeviceRgb(rgb[0], rgb[1], rgb[2]);
   }
 
   static CraftDeviceCmyk _convertRgbToCmyk(CraftDeviceRgb rgbColor) {

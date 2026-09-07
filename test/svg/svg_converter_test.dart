@@ -195,6 +195,38 @@ void main() {
       expect(content, isNot(contains('1 0 0 rg\n')));
     });
 
+    test('aplica regras de style por tag, classe e id com cascata', () async {
+      final content = await _render('''
+        <svg width="40" height="20">
+          <style>
+            rect { fill: red; }
+            .accent { fill: blue; stroke: black; }
+            #chosen { fill: lime; }
+          </style>
+          <rect class="accent" width="5" height="5"/>
+          <rect id="chosen" class="accent" x="10" width="5" height="5"/>
+        </svg>
+      ''');
+
+      expect(_count(content, '0 0 1 rg\n'), 1);
+      expect(_count(content, '0 1 0 rg\n'), 1);
+      // O canvas elimina a segunda seleção da mesma cor de traço.
+      expect(_count(content, '0 0 0 RG\n'), 1);
+    });
+
+    test('style inline vence regra de id e comentários CSS são ignorados',
+        () async {
+      final content = await _render('''
+        <svg width="20" height="20">
+          <style>/* fill: red */ #box { fill: blue; }</style>
+          <rect id="box" style="fill:yellow" width="5" height="5"/>
+        </svg>
+      ''');
+
+      expect(content, contains('1 1 0 rg\n'));
+      expect(content, isNot(contains('0 0 1 rg\n')));
+    });
+
     test('aceita cor nomeada, hexadecimal curto e rgb percentual', () async {
       final named = await _render(
           '<svg width="20" height="20"><rect width="4" height="4" fill="yellow"/></svg>');

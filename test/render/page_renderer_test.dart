@@ -270,6 +270,81 @@ void main() {
       expect(_at(page, 9, 50).b, greaterThan(240));
     });
 
+    test('colours a PaintType 2 pattern from scn components', () async {
+      final pattern = PdfStream.withBytes(
+          Uint8List.fromList(latin1.encode('0 0 5 10 re f')), 0)
+        ..put(PdfName.type, PdfName.pattern)
+        ..put(PdfName('PatternType'), PdfNumber.fromInt(1))
+        ..put(PdfName('PaintType'), PdfNumber.fromInt(2))
+        ..put(PdfName('TilingType'), PdfNumber.fromInt(1))
+        ..put(PdfName.bBox, PdfArray.fromDoubles([0, 0, 10, 10]))
+        ..put(PdfName('XStep'), PdfNumber(10))
+        ..put(PdfName('YStep'), PdfNumber(10))
+        ..put(PdfName.resources, PdfDictionary());
+      final resources = PdfDictionary()
+        ..put(
+            PdfName('ColorSpace'),
+            PdfDictionary()
+              ..put(PdfName('PCS'),
+                  PdfArray.fromList([PdfName.pattern, PdfName.deviceRgb])))
+        ..put(PdfName.pattern, PdfDictionary()..put(PdfName('P0'), pattern));
+
+      final page = await _render('/PCS cs 0 0 1 /P0 scn 0 0 100 100 re f',
+          resources: resources);
+
+      expect(_at(page, 2, 50).b, greaterThan(240));
+      expect(_at(page, 2, 50).r, lessThan(15));
+      expect(_at(page, 7, 50).r, greaterThan(240));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
+
+    test('fills a stroke outline with a tiling pattern', () async {
+      final pattern = PdfStream.withBytes(
+          Uint8List.fromList(
+              latin1.encode('1 0 0 rg 0 0 5 10 re f 0 0 1 rg 5 0 5 10 re f')),
+          0)
+        ..put(PdfName.type, PdfName.pattern)
+        ..put(PdfName('PatternType'), PdfNumber.fromInt(1))
+        ..put(PdfName('PaintType'), PdfNumber.fromInt(1))
+        ..put(PdfName('TilingType'), PdfNumber.fromInt(1))
+        ..put(PdfName.bBox, PdfArray.fromDoubles([0, 0, 10, 10]))
+        ..put(PdfName('XStep'), PdfNumber(10))
+        ..put(PdfName('YStep'), PdfNumber(10))
+        ..put(PdfName.resources, PdfDictionary());
+      final resources = PdfDictionary()
+        ..put(PdfName.pattern, PdfDictionary()..put(PdfName('P0'), pattern));
+
+      final page = await _render('/Pattern CS /P0 SCN 8 w 5 50 m 95 50 l S',
+          resources: resources);
+
+      expect(_at(page, 12, 50).r, greaterThan(240));
+      expect(_at(page, 17, 50).b, greaterThan(240));
+      expect(_at(page, 50, 20).r, greaterThan(240));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
+
+    test('preserves dashes on a patterned stroke', () async {
+      final pattern = PdfStream.withBytes(
+          Uint8List.fromList(latin1.encode('1 0 0 rg 0 0 10 10 re f')), 0)
+        ..put(PdfName.type, PdfName.pattern)
+        ..put(PdfName('PatternType'), PdfNumber.fromInt(1))
+        ..put(PdfName('PaintType'), PdfNumber.fromInt(1))
+        ..put(PdfName.bBox, PdfArray.fromDoubles([0, 0, 10, 10]))
+        ..put(PdfName('XStep'), PdfNumber(10))
+        ..put(PdfName('YStep'), PdfNumber(10))
+        ..put(PdfName.resources, PdfDictionary());
+      final resources = PdfDictionary()
+        ..put(PdfName.pattern, PdfDictionary()..put(PdfName('P0'), pattern));
+
+      final page = await _render(
+          '/Pattern CS /P0 SCN 6 w [10 10] 0 d 5 50 m 95 50 l S',
+          resources: resources);
+
+      expect(_at(page, 10, 50).g, lessThan(15));
+      expect(_at(page, 20, 50).g, greaterThan(240));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
+
     test('applies a luminosity soft mask transparency group', () async {
       final group = PdfStream.withBytes(
           Uint8List.fromList(

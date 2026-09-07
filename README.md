@@ -136,9 +136,10 @@ subsampling.
   shading soft mask; some marker viewport and advanced paint-server cases
   remain partial.
 - PDF rendering may require a supplied fallback for fonts that are not embedded;
-  some advanced CFF/CID cases, uncoloured patterns, and patterned strokes remain
-  partial. Alpha and luminosity soft masks render; transfer functions and some
-  advanced transparency-group replacement cases remain partial.
+  some advanced CFF/CID and PatternType 2 shading-pattern cases remain partial.
+  Colored/uncolored tiling patterns and patterned strokes render. Alpha and
+  luminosity soft masks render; transfer functions and some advanced
+  transparency-group replacement cases remain partial.
 - Area redaction of shared, transparent or Form-nested images still covers
   rather than rewriting their source pixels.
 - HTML uses the 14 standard PDF fonts and does not discover system fonts.

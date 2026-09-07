@@ -679,6 +679,16 @@ class _Renderer {
     final colour = _withAlpha(state.strokeColour, state.strokeAlpha);
 
     if (state.dashArray.isNotEmpty && state.dashArray.any((d) => d > 0)) {
+      if (state.strokePattern != null) {
+        final dashed = BLDasher.dashPath(
+            _path, state.dashArray.map((d) => d * scale).toList(),
+            dashOffset: state.dashPhase * scale);
+        final outline = BLStroker.strokePath(dashed, options);
+        await _fillTilingPattern(
+            outline, BLFillRule.nonZero, state.strokePattern!,
+            stroke: true);
+        return;
+      }
       await context.strokeDashedPath(
         _path,
         dashArray: state.dashArray.map((d) => d * scale).toList(),
@@ -686,6 +696,13 @@ class _Renderer {
         color: colour,
         options: options,
       );
+      return;
+    }
+    if (state.strokePattern != null) {
+      final outline = BLStroker.strokePath(_path, options);
+      await _fillTilingPattern(
+          outline, BLFillRule.nonZero, state.strokePattern!,
+          stroke: true);
       return;
     }
     await context.strokePath(_path, color: colour, options: options);
@@ -814,21 +831,26 @@ class _Renderer {
     for (final operand in op.operands) {
       if (operand is PdfNumber) components.add(operand.doubleValue());
     }
-    if (components.isEmpty) {
-      final name = op.operands.whereType<PdfName>().lastOrNull?.getValue();
+    final name = op.operands.whereType<PdfName>().lastOrNull?.getValue();
+    if (name != null) {
       final patterns = await resources?.dictionaryEntry(PdfName.pattern);
-      final pattern =
-          name == null ? null : await patterns?.streamEntry(PdfName(name));
+      final pattern = await patterns?.streamEntry(PdfName(name));
       if (pattern == null) {
         _note('${stroke ? 'SCN' : 'scn'}:pattern');
       } else if (stroke) {
         state.strokePattern = pattern;
-        _note('SCN:tiling-pattern-stroke');
+        if (components.isNotEmpty) {
+          state.strokeColour = _componentsColour(components);
+        }
       } else {
         state.fillPattern = pattern;
+        if (components.isNotEmpty) {
+          state.fillColour = _componentsColour(components);
+        }
       }
       return;
     }
+    if (components.isEmpty) return;
 
     int colour;
     if (space == null) {
@@ -860,16 +882,28 @@ class _Renderer {
     }
   }
 
+  static int _componentsColour(List<double> components) =>
+      switch (components.length) {
+        1 => _rgb(components[0], components[0], components[0]),
+        3 => _rgb(components[0], components[1], components[2]),
+        4 => _rgb(
+            (1 - components[0]) * (1 - components[3]),
+            (1 - components[1]) * (1 - components[3]),
+            (1 - components[2]) * (1 - components[3])),
+        _ => 0xFF000000,
+      };
+
   Future<void> _fillTilingPattern(
-      BLPath path, BLFillRule rule, PdfStream pattern) async {
+      BLPath path, BLFillRule rule, PdfStream pattern,
+      {bool stroke = false}) async {
     final type = await pattern.integerEntry(PdfName('PatternType'));
     if (type != 1) {
       _note('scn:pattern-type-${type ?? 'missing'}');
       return;
     }
     final paintType = await pattern.integerEntry(PdfName('PaintType'));
-    if (paintType != 1) {
-      _note('scn:uncoloured-pattern');
+    if (paintType != 1 && paintType != 2) {
+      _note('scn:unknown-paint-type');
       return;
     }
     final bboxArray = await pattern.arrayEntry(PdfName.bBox);
@@ -911,12 +945,18 @@ class _Renderer {
     final tileContext = BLContext(tile);
     final nested =
         _Renderer(tileContext, patternToPixel, fontFallback: _fontFallback);
+    if (paintType == 2) {
+      final baseColour = stroke ? state.strokeColour : state.fillColour;
+      nested.state.fillColour = baseColour;
+      nested.state.strokeColour = baseColour;
+    }
     final patternResources = await pattern.dictionaryEntry(PdfName.resources);
     final bytes = await pattern.getBytes();
     if (bytes != null) await nested.run(bytes, patternResources, 0);
     tileContext.flush();
-    if (state.fillAlpha < 1) {
-      final alpha = state.fillAlpha.clamp(0.0, 1.0);
+    final graphicsAlpha = stroke ? state.strokeAlpha : state.fillAlpha;
+    if (graphicsAlpha < 1) {
+      final alpha = graphicsAlpha.clamp(0.0, 1.0);
       for (var i = 0; i < tile.pixels.length; i++) {
         final pixel = tile.pixels[i];
         final a = (((pixel >>> 24) & 0xff) * alpha).round();
@@ -939,7 +979,7 @@ class _Renderer {
       transform: deviceToPattern.multiply(patternToPixel),
     ));
     await context.fillPath(path, rule: rule);
-    context.setFillStyle(state.fillColour);
+    context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
   }
 
   // --- graphics state dictionary --------------------------------------------

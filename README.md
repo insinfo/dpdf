@@ -115,11 +115,10 @@ final redacted = await PdfAreaRedaction.apply(input, [
 ]);
 ```
 
-Area redaction removes matching text, replaces covered pixels in uniquely
-referenced opaque page images, and draws an opaque cover. Shared images,
-transparency and images nested in Form XObjects are conservatively left intact
-under the cover. `PdfTextRedaction` offers a stricter reconstruction path and
-rejects documents it cannot safely rebuild.
+Area redaction removes matching text, replaces covered pixels in direct or
+Form-nested images (cloning shared resources), preserves transparency outside
+the rectangle, and draws an opaque cover. `PdfTextRedaction` offers a stricter
+reconstruction path and rejects documents it cannot safely rebuild.
 
 ## JPEG support
 
@@ -143,8 +142,8 @@ subsampling.
   extension. Mesh shadings remain partial. Alpha and
   luminosity soft masks render; transfer functions and some advanced
   transparency-group replacement cases remain partial.
-- Area redaction rewrites direct opaque, transparent and shared image uses;
-  images nested in Form XObjects still require overlay coverage.
+- Area redaction rewrites direct and Form-nested opaque, transparent and shared
+  image uses. Vector artwork still requires overlay coverage.
 - HTML accepts a `BLFontCollection` and embeds matching TrueType/OpenType CSS
   faces. Native applications can populate it with
   `BLFontLoader.loadSystemFonts` from `package:dgfx/dgfx_io.dart`; web clients

@@ -97,9 +97,9 @@ class PdfAreaRedactionOptions {
 ///
 /// What it does not do, and what a caller must not assume:
 ///
-/// * Pixels de imagens diretamente usadas pela página são removidos,
-///   preservando transparência fora da área. Imagens dentro de Form XObjects
-///   ainda são apenas cobertas pelo overlay.
+/// * Pixels de imagens diretamente usadas ou aninhadas em Form XObjects são
+///   removidos, preservando transparência fora da área e clonando recursos
+///   compartilhados.
 /// * Vector art inside the area is likewise covered, not removed.
 /// * Composite (Type0/CID) fonts are rejected, because a single-byte text
 ///   machine cannot locate their glyphs.
@@ -216,19 +216,21 @@ class PdfAreaRedaction {
     }
   }
 
-  static Future<void> _redactImages(
-    PdfDocument document,
-    PdfDictionary page,
-    PdfDictionary inheritedResources,
-    Uint8List content,
-    List<PdfRedactionArea> areas,
-    List<double> colour,
-  ) async {
+  static Future<bool> _redactImages(
+      PdfDocument document,
+      PdfDictionary page,
+      PdfDictionary inheritedResources,
+      Uint8List content,
+      List<PdfRedactionArea> areas,
+      List<double> colour,
+      [int depth = 0]) async {
+    if (depth > 32) return false;
     final sourceXObjects =
         await inheritedResources.dictionaryEntry(PdfName.xObject);
-    if (sourceXObjects == null || content.isEmpty) return;
+    if (sourceXObjects == null || content.isEmpty) return false;
 
     final regions = <String, List<_ImageUnitRect>>{};
+    final formAreas = <String, List<PdfRedactionArea>>{};
     var matrix = const _RedactionMatrix(1, 0, 0, 1, 0, 0);
     final stack = <_RedactionMatrix>[];
     try {
@@ -247,11 +249,28 @@ class PdfAreaRedaction {
             final name = operation.name(0);
             if (name == null) continue;
             final image = await sourceXObjects.streamEntry(PdfName(name));
-            if (image == null ||
-                (await image.nameEntry(PdfName.subtype))?.getValue() !=
-                    'Image') {
+            if (image == null) continue;
+            final subtype =
+                (await image.nameEntry(PdfName.subtype))?.getValue();
+            if (subtype == 'Form') {
+              var formToPage = matrix;
+              final formMatrix = await image.arrayEntry(PdfName.matrix);
+              if (formMatrix != null && formMatrix.size() == 6) {
+                formToPage =
+                    _RedactionMatrix.from(await formMatrix.toDoubleArray())
+                        .multiply(formToPage);
+              }
+              final inverse = formToPage.inverse();
+              if (inverse != null) {
+                for (final area in areas) {
+                  formAreas
+                      .putIfAbsent(name, () => [])
+                      .add(_transformArea(area, inverse));
+                }
+              }
               continue;
             }
+            if (subtype != 'Image') continue;
             final inverse = matrix.inverse();
             if (inverse == null) continue;
             for (final area in areas) {
@@ -263,9 +282,9 @@ class PdfAreaRedaction {
         }
       }
     } on PdfContentException {
-      return;
+      return false;
     }
-    if (regions.isEmpty) return;
+    if (regions.isEmpty && formAreas.isEmpty) return false;
 
     final pageResources = PdfDictionary.fromDictionary(inheritedResources);
     final pageXObjects = PdfDictionary.fromDictionary(sourceXObjects);
@@ -341,11 +360,57 @@ class PdfAreaRedaction {
       }
       changed = true;
     }
+    for (final entry in formAreas.entries) {
+      final original = await sourceXObjects.streamEntry(PdfName(entry.key));
+      if (original == null) continue;
+      final formContent = await original.getBytes();
+      if (formContent == null) continue;
+      final formResources = await original.dictionaryEntry(PdfName.resources) ??
+          inheritedResources;
+      final rewritten = await _cloneDecodedStream(original, formContent);
+      final nestedChanged = await _redactImages(document, rewritten,
+          formResources, formContent, entry.value, colour, depth + 1);
+      if (!nestedChanged) continue;
+      rewritten.attachToDocument(document);
+      pageXObjects.put(PdfName(entry.key), rewritten.indirectHandle()!);
+      changed = true;
+    }
     if (changed) {
       pageResources.put(PdfName.xObject, pageXObjects);
       page.put(PdfName.resources, pageResources);
       page.markChanged();
     }
+    return changed;
+  }
+
+  static PdfRedactionArea _transformArea(
+      PdfRedactionArea area, _RedactionMatrix matrix) {
+    final points = [
+      matrix.point(area.left, area.bottom),
+      matrix.point(area.left, area.top),
+      matrix.point(area.right, area.bottom),
+      matrix.point(area.right, area.top),
+    ];
+    final xs = points.map((point) => point.$1);
+    final ys = points.map((point) => point.$2);
+    return PdfRedactionArea(area.page,
+        left: xs.reduce(math.min),
+        bottom: ys.reduce(math.min),
+        right: xs.reduce(math.max),
+        top: ys.reduce(math.max));
+  }
+
+  static Future<PdfStream> _cloneDecodedStream(
+      PdfStream source, Uint8List decoded) async {
+    final clone = PdfStream.withBytes(decoded, 0);
+    for (final entry in await source.entrySet()) {
+      final name = entry.key.getValue();
+      if (name == 'Length' || name == 'Filter' || name == 'DecodeParms') {
+        continue;
+      }
+      clone.put(entry.key, entry.value);
+    }
+    return clone;
   }
 
   static Future<int> _referenceCount(

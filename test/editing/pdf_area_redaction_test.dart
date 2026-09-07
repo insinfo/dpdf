@@ -89,6 +89,47 @@ Future<Uint8List> _imagePage({bool transparent = false, int pages = 1}) async {
   return output.takeBytes();
 }
 
+Future<Uint8List> _formImagePage() async {
+  const width = 10, height = 10;
+  final pixels = Uint8List(width * height * 3);
+  for (var i = 0; i < width * height; i++) {
+    pixels.setRange(i * 3, i * 3 + 3, const [240, 30, 180]);
+  }
+  final output = BytesBuilder(copy: false);
+  final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
+  final image = PdfStream.withBytes(pixels, 0)
+    ..put(PdfName.type, PdfName('XObject'))
+    ..put(PdfName.subtype, PdfName('Image'))
+    ..put(PdfName.width, PdfNumber.fromInt(width))
+    ..put(PdfName.height, PdfNumber.fromInt(height))
+    ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+    ..put(PdfName('ColorSpace'), PdfName('DeviceRGB'));
+  image.attachToDocument(document);
+  final form = PdfStream.withBytes(
+      Uint8List.fromList(ascii.encode('/Scan Do')), 0)
+    ..put(PdfName.type, PdfName('XObject'))
+    ..put(PdfName.subtype, PdfName('Form'))
+    ..put(PdfName.bBox, PdfArray.fromDoubles(const [0, 0, 1, 1]))
+    ..put(PdfName.matrix, PdfArray.fromDoubles(const [100, 0, 0, 100, 50, 50]))
+    ..put(
+        PdfName.resources,
+        PdfDictionary()
+          ..put(PdfName.xObject,
+              PdfDictionary()..put(PdfName('Scan'), image.indirectHandle()!)));
+  form.attachToDocument(document);
+  final page = await document.appendBlankPage();
+  page.pdfRepresentation()
+    ..put(
+        PdfName.resources,
+        PdfDictionary()
+          ..put(PdfName.xObject,
+              PdfDictionary()..put(PdfName('Panel'), form.indirectHandle()!)))
+    ..put(PdfName.contents,
+        PdfStream.withBytes(Uint8List.fromList(ascii.encode('/Panel Do')), 0));
+  await document.close();
+  return output.takeBytes();
+}
+
 void main() {
   group('PdfAreaRedaction', () {
     test('removes only the characters inside the rectangle', () async {
@@ -176,6 +217,37 @@ void main() {
               expect(
                   decoded!.rgba!.sublist(at, at + 3), equals([240, 30, 180]));
             }
+          }
+        }
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('removes source pixels from an image nested in a Form XObject',
+        () async {
+      final redacted = await PdfAreaRedaction.apply(
+        await _formImagePage(),
+        const [PdfRedactionArea(1, left: 50, bottom: 50, right: 100, top: 150)],
+        options: const PdfAreaRedactionOptions(paintOverlay: false),
+      );
+      final document = await PdfDocument.open(PdfReader.fromBytes(redacted));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final pageObjects = await resources!.dictionaryEntry(PdfName.xObject);
+        final form = await pageObjects!.streamEntry(PdfName('Panel'));
+        final formResources = await form!.dictionaryEntry(PdfName.resources);
+        final formObjects =
+            await formResources!.dictionaryEntry(PdfName.xObject);
+        final image = await formObjects!.streamEntry(PdfName('Scan'));
+        final decoded = await PdfImageDecoder.decode(image!);
+        for (var y = 0; y < 10; y++) {
+          for (var x = 0; x < 10; x++) {
+            final rgb =
+                decoded!.rgba!.sublist((y * 10 + x) * 4, (y * 10 + x) * 4 + 3);
+            expect(rgb, x < 5 ? equals([0, 0, 0]) : equals([240, 30, 180]));
           }
         }
       } finally {

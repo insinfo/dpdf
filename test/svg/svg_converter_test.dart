@@ -647,6 +647,77 @@ void main() {
       }
     });
 
+    test('mask luminance vira soft mask com grupo de transparência', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="80" height="40">
+          <defs>
+            <mask id="fade" maskUnits="userSpaceOnUse"
+                  x="5" y="4" width="50" height="24">
+              <rect x="5" y="4" width="25" height="24" fill="white"/>
+              <rect x="30" y="4" width="25" height="24" fill="black"/>
+            </mask>
+          </defs>
+          <rect x="5" y="4" width="50" height="24"
+                fill="red" mask="url(#fade)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final content = String.fromCharCodes(await page.contentPayload());
+        expect(
+            content.indexOf(' gs\n'), lessThan(content.indexOf('37.5 18 re')));
+
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final states = await resources!.dictionaryEntry(PdfName.extGState);
+        expect(states, isNotNull);
+        final state = (await states!.values()).single as PdfDictionary;
+        final softMask = await state.dictionaryEntry(PdfName.smaskG);
+        expect(
+            (await softMask!.nameEntry(PdfName.s))!.getValue(), 'Luminosity');
+        final group = await softMask.streamEntry(PdfName('G'));
+        expect(group, isNotNull);
+        final groupInfo = await group!.dictionaryEntry(PdfName('Group'));
+        expect((await groupInfo!.nameEntry(PdfName.s))!.getValue(),
+            'Transparency');
+        final maskContent = String.fromCharCodes((await group.getBytes())!);
+        expect(maskContent, contains('1 1 1 rg\n'));
+        expect(maskContent, contains('0 0 0 rg\n'));
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('mask-type alpha e maskContentUnits objectBoundingBox são emitidos',
+        () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="60" height="30">
+          <mask id="alpha" mask-type="alpha"
+                maskContentUnits="objectBoundingBox">
+            <rect width="0.5" height="1" fill="white"/>
+          </mask>
+          <rect x="10" y="5" width="40" height="20"
+                fill="blue" mask="url(#alpha)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final states = await resources!.dictionaryEntry(PdfName.extGState);
+        final state = (await states!.values()).single as PdfDictionary;
+        final softMask = await state.dictionaryEntry(PdfName.smaskG);
+        expect((await softMask!.nameEntry(PdfName.s))!.getValue(), 'Alpha');
+        final group = await softMask.streamEntry(PdfName('G'));
+        final maskContent = String.fromCharCodes((await group!.getBytes())!);
+        expect(maskContent, contains('30 0 0 15 7.5 3.75 cm\n'));
+      } finally {
+        await document.close();
+      }
+    });
+
     test('image externa usa o resolvedor explícito', () async {
       Uri? requested;
       final bytes = await SvgConverter.convertToBytes('''

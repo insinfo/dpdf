@@ -100,4 +100,10 @@ class PdfExtGState extends PdfObjectWrapper<PdfDictionary> {
     pdfRepresentation().put(PdfName.caUppercase, PdfNumber(opacity));
     return this;
   }
+
+  /// Defines a transparency-group soft mask for subsequent painting.
+  PdfExtGState setSoftMask(PdfDictionary softMask) {
+    pdfRepresentation().put(PdfName.smaskG, softMask);
+    return this;
+  }
 }

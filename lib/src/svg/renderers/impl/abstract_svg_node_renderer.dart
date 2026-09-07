@@ -12,6 +12,7 @@ import 'package:dpdf/src/styledxmlparser/css/util/css_utils.dart';
 import 'package:dpdf/src/svg/css/svg_stroke_parameter_converter.dart';
 import 'package:dpdf/src/svg/marker_vertex_type.dart';
 import 'package:dpdf/src/svg/renderers/marker_capable.dart';
+import 'package:dpdf/src/svg/renderers/svg_mask_paint_server.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_paint_server.dart';
 import 'package:dpdf/src/svg/renderers/svg_pattern_paint_server.dart';
@@ -171,6 +172,7 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
       FillProperties? fillProps = _calculateFillProperties(context);
       StrokeProperties? strokeProps = _calculateStrokeProperties(context);
       await _applyFillAndStrokeProperties(fillProps, strokeProps, context);
+      await _applyMask(context);
     }
   }
 
@@ -292,6 +294,17 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
     final id = raw.replaceAll('url(#', '').replaceAll(')', '').trim();
     final renderer = context.getNamedObject(CssUtils.extractUnquotedString(id));
     return renderer is SvgPatternPaintServer ? renderer : null;
+  }
+
+  Future<void> _applyMask(SvgDrawContext context) async {
+    final raw = getAttribute(SvgAttributes.MASK);
+    if (raw == null || !raw.startsWith('url(')) return;
+    final id = raw.replaceAll('url(#', '').replaceAll(')', '').trim();
+    final renderer = context.getNamedObject(CssUtils.extractUnquotedString(id));
+    if (renderer is SvgMaskPaintServer) {
+      await renderer.applyMask(
+          context, getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0));
+    }
   }
 
   void _doStrokeOrFill(String fillRule, PdfCanvas currentCanvas) {

@@ -20,6 +20,7 @@ class SvgDrawContext {
   final ListQueue<Rectangle> _viewports = ListQueue<Rectangle>();
   final ListQueue<String> _useIds = ListQueue<String>();
   final ListQueue<String> _patternIds = ListQueue<String>();
+  final ListQueue<String> _maskIds = ListQueue<String>();
 
   final ResourceResolver _resourceResolver;
   final FontProvider _fontProvider;
@@ -105,6 +106,14 @@ class SvgDrawContext {
   }
 
   void popPatternId() => _patternIds.removeFirst();
+
+  bool pushMaskId(String maskId) {
+    if (_maskIds.contains(maskId)) return false;
+    _maskIds.addFirst(maskId);
+    return true;
+  }
+
+  void popMaskId() => _maskIds.removeFirst();
 
   SvgTextProperties getSvgTextProperties() => _textProperties;
   void setSvgTextProperties(SvgTextProperties textProperties) =>

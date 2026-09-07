@@ -358,6 +358,18 @@ class SvgAttributes {
   /// Units used for marker geometry and its viewport dimensions.
   static const String MARKER_UNITS = "markerUnits";
 
+  /// Soft-mask reference applied to an element.
+  static const String MASK = "mask";
+
+  /// Units used by a mask's x, y, width, and height.
+  static const String MASK_UNITS = "maskUnits";
+
+  /// Units used by graphics inside a mask.
+  static const String MASK_CONTENT_UNITS = "maskContentUnits";
+
+  /// Selects luminance (default) or alpha mask evaluation.
+  static const String MASK_TYPE = "mask-type";
+
   /// Location of a gradient color stop.
   static const String OFFSET = "offset";
 

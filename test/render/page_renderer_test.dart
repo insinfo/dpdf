@@ -894,6 +894,41 @@ void main() {
       expect(_at(page, 50, 50).r, lessThan(15));
       expect(page.report.unsupportedOperators, isEmpty);
     });
+
+    test('SMask None removes opacity without clearing geometric clipping',
+        () async {
+      final group = PdfStream.withBytes(
+          Uint8List.fromList(latin1.encode('0 g 0 0 50 100 re f')), 0)
+        ..put(PdfName.subtype, PdfName.form)
+        ..put(PdfName.bBox, PdfArray.fromDoubles([0, 0, 100, 100]))
+        ..put(PdfName.resources, PdfDictionary());
+      final resources = PdfDictionary()
+        ..put(
+            PdfName.extGState,
+            PdfDictionary()
+              ..put(
+                  PdfName('Masked'),
+                  PdfDictionary()
+                    ..put(
+                        PdfName.sMask,
+                        PdfDictionary()
+                          ..put(PdfName.s, PdfName('Alpha'))
+                          ..put(PdfName('G'), group)))
+              ..put(PdfName('Unmasked'),
+                  PdfDictionary()..put(PdfName.sMask, PdfName('None'))));
+
+      final page = await _render(
+          '0 0 75 100 re W n '
+          '/Masked gs 1 0 0 rg 0 0 100 100 re f '
+          '/Unmasked gs 0 0 1 rg 50 0 50 100 re f',
+          resources: resources);
+
+      expect(_at(page, 25, 50).r, greaterThan(240));
+      expect(_at(page, 60, 50).b, greaterThan(240));
+      expect(_at(page, 60, 50).r, lessThan(15));
+      expect(_at(page, 90, 50).r, greaterThan(240));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
   });
 
   group('PdfPageRenderer images', () {

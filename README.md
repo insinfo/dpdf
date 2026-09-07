@@ -143,8 +143,9 @@ subsampling.
   decoded vertex colours, including parameter interpolation before nonlinear
   shading functions. Type 6 Coons and Type 7 tensor patches render with
   bicubic geometry and implicit shared edges. Alpha and
-  luminosity soft masks, backdrop colours and transfer functions render; some
-  advanced transparency-group replacement cases remain partial.
+  luminosity soft masks, backdrop colours and transfer functions render;
+  masks can be replaced or removed without losing the geometric clip. Some
+  advanced transparency-group cases remain partial.
 - Area redaction rewrites direct and Form-nested opaque, transparent and shared
   image uses. Vector artwork still requires overlay coverage.
 - HTML accepts a `BLFontCollection` and embeds matching TrueType/OpenType CSS

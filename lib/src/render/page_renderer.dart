@@ -1765,8 +1765,12 @@ class _Renderer {
       final maskObject = await gs.get(PdfName('SMask'), true);
       if (maskObject is PdfDictionary) {
         await _applySoftMask(maskObject, resources, depth);
-      } else if (maskObject is PdfName && maskObject.getValue() != 'None') {
-        _note('gs:SMask');
+      } else if (maskObject is PdfName) {
+        if (maskObject.getValue() == 'None') {
+          context.setOpacityMask(null);
+        } else {
+          _note('gs:SMask');
+        }
       }
     }
     final blend = await gs.nameEntry(PdfName('BM'));
@@ -1885,7 +1889,7 @@ class _Renderer {
         }
       }
     }
-    context.intersectClipMask(coverage);
+    context.setOpacityMask(coverage);
     for (final entry in nested.unsupported.entries) {
       unsupported[entry.key] = (unsupported[entry.key] ?? 0) + entry.value;
     }

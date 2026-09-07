@@ -40,7 +40,22 @@ class PdfRenderOptions {
     this.background = 0xFFFFFFFF,
     this.applyRotation = true,
     this.maxPixels = 64 * 1000 * 1000,
+    this.fontFallback,
   });
+
+  /// Supplies a typeface for text whose font the PDF does not embed.
+  ///
+  /// Most real documents reference at least one font without carrying it —
+  /// the standard fourteen, or whatever the producer assumed the reader has.
+  /// Without this, that text is measured and positioned but not drawn, and
+  /// the report says so. This package bundles no typefaces on purpose: which
+  /// font to substitute, and under which licence, is the caller's decision.
+  ///
+  /// ```dart
+  /// PdfRenderOptions(fontFallback: (request) async =>
+  ///     File(request.isSerif ? 'serif.ttf' : 'sans.ttf').readAsBytes());
+  /// ```
+  final PdfFontFallback? fontFallback;
 }
 
 /// What the renderer could not draw.
@@ -58,10 +73,19 @@ class PdfRenderReport {
   /// Images that could not be decoded.
   final int imagesSkipped;
 
+  /// Why each font that could not be drawn was rejected, by resource name.
+  ///
+  /// Counting skipped text is enough to know a page is incomplete, but not to
+  /// do anything about it. This says whether the font simply carries no
+  /// program, or carries one this cannot read, or uses an encoding this
+  /// refuses to guess at.
+  final Map<String, PdfGlyphFailure> fontFailures;
+
   const PdfRenderReport({
     required this.unsupportedOperators,
     required this.glyphsSkipped,
     required this.imagesSkipped,
+    this.fontFailures = const {},
   });
 
   bool get isComplete =>
@@ -112,8 +136,14 @@ class PdfRenderedPage {
 /// What it draws today: paths (fill, stroke, both, with either winding rule),
 /// clipping, the device and CIE colour spaces including Indexed, Separation
 /// and DeviceN, image XObjects with their masks, inline images, and form
-/// XObjects recursively. Text is measured and positioned but not yet drawn as
-/// glyphs; the report says how many text operators were skipped.
+/// XObjects recursively, and text as real glyph outlines.
+///
+/// Text is drawn when the PDF embeds the font program. A document that
+/// references a font without carrying it — the standard fourteen, most often —
+/// has that text measured and positioned but not drawn, and
+/// [PdfRenderReport.fontFailures] says why. Supply
+/// [PdfRenderOptions.fontFallback] to have it drawn with a typeface of your
+/// choosing.
 class PdfPageRenderer {
   PdfPageRenderer._();
 
@@ -161,7 +191,8 @@ class PdfPageRenderer {
       _ => base,
     };
 
-    final renderer = _Renderer(context, base);
+    final renderer =
+        _Renderer(context, base, fontFallback: options.fontFallback);
     final resources =
         await page.pdfRepresentation().dictionaryEntry(CraftPdfName.resources);
     await renderer.run(await page.contentPayload(), resources, 0);
@@ -175,6 +206,7 @@ class PdfPageRenderer {
         unsupportedOperators: Map.unmodifiable(renderer.unsupported),
         glyphsSkipped: renderer.glyphsSkipped,
         imagesSkipped: renderer.imagesSkipped,
+        fontFailures: Map.unmodifiable(renderer.fontFailures),
       ),
     );
   }
@@ -284,6 +316,9 @@ class _Renderer {
   final BLContext context;
   final unsupported = <String, int>{};
   var glyphsSkipped = 0;
+
+  /// Por que cada fonte que não pôde ser desenhada foi recusada.
+  final fontFailures = <String, PdfGlyphFailure>{};
   var imagesSkipped = 0;
 
   late _State state;
@@ -312,7 +347,12 @@ class _Renderer {
   /// should pay for it once.
   final _fontCache = <String, PdfGlyphSource?>{};
 
-  _Renderer(this.context, BLMatrix2D base) {
+  /// Fonte de substituição fornecida pelo chamador; veja
+  /// [PdfRenderOptions.fontFallback].
+  final PdfFontFallback? _fontFallback;
+
+  _Renderer(this.context, BLMatrix2D base, {PdfFontFallback? fontFallback})
+      : _fontFallback = fontFallback {
     state = _State(ctm: base);
   }
 
@@ -860,7 +900,8 @@ class _Renderer {
     }
     PdfGlyphSource? resolved;
     try {
-      resolved = await PdfGlyphSource.resolve(resources, name);
+      resolved = await PdfGlyphSource.resolve(resources, name,
+          fallback: _fontFallback);
     } catch (_) {
       // A malformed font dictionary must not abort the page; the report says
       // the text was skipped and the rest of the content still draws.
@@ -868,6 +909,10 @@ class _Renderer {
     }
     _fontCache[name] = resolved;
     _font = resolved;
+    final failure = resolved?.failure;
+    if (failure != null) {
+      fontFailures[name] = failure;
+    }
   }
 
   /// Draws `Tj`, `TJ`, `'` and `"`.
@@ -972,8 +1017,9 @@ class _Renderer {
     }
 
     final outline = face.glyphOutlineUnits(gid);
-    if (outline == null || outline.vertices.isEmpty)
+    if (outline == null || outline.vertices.isEmpty) {
       return; // blank, e.g. space
+    }
 
     // Glyph space to text space, then the text state parameters, then the
     // text matrix, then the CTM. Composing once and mapping each vertex is

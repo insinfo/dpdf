@@ -3,11 +3,59 @@ import 'dart:typed_data';
 import 'package:dgfx/dgfx.dart';
 
 import '../editing/pdf_simple_encoding.dart';
+import '../editing/pdf_standard_font_metrics.dart';
 import '../io/font/adobe_glyph_list.dart';
 import '../kernel/pdf/pdf_array.dart';
 import '../kernel/pdf/pdf_dictionary.dart';
 import '../kernel/pdf/pdf_name.dart';
 import '../kernel/pdf/pdf_number.dart';
+
+/// What the renderer needs a substitute font for.
+class PdfFontRequest {
+  /// The `/BaseFont` name from the PDF, e.g. `Helvetica-Bold` or
+  /// `ABCDEF+Arial`. The six-letter subset prefix, when present, is kept:
+  /// a caller may want it, and stripping it is one line.
+  final String baseFont;
+
+  /// `/Flags` from the font descriptor, or 0 when there is none. Bit 1 is
+  /// fixed pitch, bit 2 serif, bit 3 symbolic, bit 7 italic; bit 19 (0x40000)
+  /// marks bold.
+  final int flags;
+
+  /// True for a Type0 font, whose codes index CIDs rather than bytes.
+  final bool composite;
+
+  const PdfFontRequest({
+    required this.baseFont,
+    required this.flags,
+    required this.composite,
+  });
+
+  /// `/BaseFont` without the `ABCDEF+` subset prefix.
+  String get familyName => baseFont.length > 7 && baseFont[6] == '+'
+      ? baseFont.substring(7)
+      : baseFont;
+
+  bool get isBold => (flags & 0x40000) != 0 || familyName.contains('Bold');
+  bool get isItalic =>
+      (flags & 0x40) != 0 ||
+      familyName.contains('Italic') ||
+      familyName.contains('Oblique');
+  bool get isSerif => (flags & 2) != 0;
+  bool get isFixedPitch => (flags & 1) != 0;
+
+  @override
+  String toString() => 'PdfFontRequest($baseFont, flags: $flags)';
+}
+
+/// Supplies the bytes of a font to draw with when the PDF embeds none.
+///
+/// A PDF may reference a font without carrying it, expecting the reader to
+/// have it. This package bundles no typefaces — that would be a licensing
+/// decision imposed on every user, for megabytes most do not need — so a
+/// caller that wants such text drawn provides the font here. Return `null` to
+/// leave the text undrawn and reported.
+typedef PdfFontFallback = Future<Uint8List?> Function(PdfFontRequest request);
 
 /// Why a font could not be drawn, for the render report.
 enum PdfGlyphFailure {
@@ -123,17 +171,23 @@ class PdfGlyphSource {
 
   /// Resolves the `/Font` entry named [name] in [resources].
   static Future<PdfGlyphSource?> resolve(
-      CraftPdfDictionary? resources, String name) async {
+    CraftPdfDictionary? resources,
+    String name, {
+    PdfFontFallback? fallback,
+  }) async {
     final fonts = await resources?.dictionaryEntry(CraftPdfName('Font'));
     final font = await fonts?.dictionaryEntry(CraftPdfName(name));
     if (font == null) return null;
 
     final subtype = (await font.nameEntry(CraftPdfName.subtype))?.getValue();
-    if (subtype == 'Type0') return _resolveComposite(font);
-    return _resolveSimple(font);
+    if (subtype == 'Type0') return _resolveComposite(font, fallback);
+    return _resolveSimple(font, fallback);
   }
 
-  static Future<PdfGlyphSource> _resolveSimple(CraftPdfDictionary font) async {
+  static Future<PdfGlyphSource> _resolveSimple(
+    CraftPdfDictionary font,
+    PdfFontFallback? fallback,
+  ) async {
     final widths = <int, double>{};
     final first =
         (await font.numberEntry(CraftPdfName('FirstChar')))?.intValue() ?? 0;
@@ -152,12 +206,26 @@ class PdfGlyphSource {
                 ?.doubleValue() ??
             0;
 
+    final baseFont =
+        (await font.nameEntry(CraftPdfName.baseFont))?.getValue() ?? '';
     final codeToUnicode = await _simpleEncoding(font, descriptor);
+
+    // Uma das catorze fontes padrão pode legitimamente omitir `/Widths`: o
+    // leitor tem de conhecer as métricas. Sem isto todo avanço vira zero e a
+    // linha inteira se empilha no mesmo ponto — o texto some mesmo quando os
+    // contornos estão disponíveis.
+    if (widths.isEmpty) {
+      _fillStandardWidths(widths, baseFont, codeToUnicode);
+    }
+
     final program = await _embeddedProgram(descriptor);
 
+    final resolved = await _applyFallback(program, fallback, baseFont,
+        descriptor: descriptor, composite: false);
+
     return PdfGlyphSource._(
-      face: program.face,
-      failure: program.failure,
+      face: resolved.face,
+      failure: resolved.failure,
       composite: false,
       widths: widths,
       defaultWidth: missing,
@@ -167,7 +235,7 @@ class PdfGlyphSource {
   }
 
   static Future<PdfGlyphSource> _resolveComposite(
-      CraftPdfDictionary font) async {
+      CraftPdfDictionary font, PdfFontFallback? fallback) async {
     // Only the Identity CMaps are decoded here. Anything else would need the
     // full CMap machinery, and guessing would place glyphs at wrong codes —
     // worse than reporting the font as unsupported.
@@ -211,9 +279,14 @@ class PdfGlyphSource {
     final program = await _embeddedProgram(descriptor);
     final cidToGid = await _cidToGidMap(descendant);
 
+    final baseFont =
+        (await font.nameEntry(CraftPdfName.baseFont))?.getValue() ?? '';
+    final resolved = await _applyFallback(program, fallback, baseFont,
+        descriptor: descriptor, composite: true);
+
     return PdfGlyphSource._(
-      face: program.face,
-      failure: program.failure,
+      face: resolved.face,
+      failure: resolved.failure,
       composite: true,
       widths: widths,
       defaultWidth: defaultWidth,
@@ -346,6 +419,91 @@ class PdfGlyphSource {
       }
     }
     return out;
+  }
+
+  /// Preenche [widths] com as métricas AFM de uma das catorze fontes padrão.
+  ///
+  /// As larguras vão em espaço de glifo (1/1000), como o `/Widths` do PDF.
+  static void _fillStandardWidths(
+    Map<int, double> widths,
+    String baseFont,
+    Map<int, int> codeToUnicode,
+  ) {
+    final face = _standardFaceFor(baseFont);
+    if (face == null) return;
+
+    // `Symbol` e `ZapfDingbats` trazem a própria codificação embutida; as
+    // demais são consultadas pela codificação padrão do PDF.
+    const encoding = 'StandardEncoding';
+    for (var code = 0; code < 256; code++) {
+      try {
+        widths[code] = PdfStandardFontMetrics.width(face, encoding, code);
+      } on UnsupportedError {
+        // Código que esta face não define.
+      } on RangeError {
+        // Idem.
+      }
+    }
+  }
+
+  /// Mapeia um `/BaseFont` para a face padrão correspondente, se houver.
+  static String? _standardFaceFor(String baseFont) {
+    final name = baseFont.length > 7 && baseFont[6] == '+'
+        ? baseFont.substring(7)
+        : baseFont;
+    if (PdfStandardFontMetrics.supports(name)) return name;
+
+    // Os apelidos que produtores usam no lugar dos nomes canônicos.
+    const aliases = <String, String>{
+      'Arial': 'Helvetica',
+      'Arial-Bold': 'Helvetica-Bold',
+      'Arial,Bold': 'Helvetica-Bold',
+      'Arial-Italic': 'Helvetica-Oblique',
+      'Arial-BoldItalic': 'Helvetica-BoldOblique',
+      'ArialMT': 'Helvetica',
+      'Arial-BoldMT': 'Helvetica-Bold',
+      'TimesNewRoman': 'Times-Roman',
+      'TimesNewRomanPSMT': 'Times-Roman',
+      'TimesNewRomanPS-BoldMT': 'Times-Bold',
+      'TimesNewRomanPS-ItalicMT': 'Times-Italic',
+      'CourierNew': 'Courier',
+      'CourierNewPSMT': 'Courier',
+    };
+    final alias = aliases[name];
+    if (alias != null && PdfStandardFontMetrics.supports(alias)) return alias;
+    return null;
+  }
+
+  /// Pede ao chamador uma fonte de substituição quando o PDF não embute uma.
+  static Future<({BLFontFace? face, PdfGlyphFailure? failure})> _applyFallback(
+    ({BLFontFace? face, PdfGlyphFailure? failure}) program,
+    PdfFontFallback? fallback,
+    String baseFont, {
+    required CraftPdfDictionary? descriptor,
+    required bool composite,
+  }) async {
+    if (program.face != null || fallback == null) return program;
+    // Só faz sentido substituir o que simplesmente não veio. Um programa
+    // presente mas ilegível é outro problema, e mascará-lo esconderia o defeito.
+    if (program.failure != PdfGlyphFailure.notEmbedded) return program;
+
+    final flags =
+        (await descriptor?.numberEntry(CraftPdfName('Flags')))?.intValue() ?? 0;
+    final Uint8List? bytes;
+    try {
+      bytes = await fallback(PdfFontRequest(
+          baseFont: baseFont, flags: flags, composite: composite));
+    } catch (_) {
+      // Um `fallback` que lança não pode derrubar a página.
+      return program;
+    }
+    if (bytes == null || bytes.isEmpty) return program;
+
+    try {
+      return (face: BLFontFace.parse(bytes), failure: null);
+    } catch (_) {
+      return (face: null, failure: PdfGlyphFailure.unreadableProgram);
+    }
   }
 
   static Future<({BLFontFace? face, PdfGlyphFailure? failure})>

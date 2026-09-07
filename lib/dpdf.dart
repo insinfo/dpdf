@@ -196,5 +196,9 @@ export 'src/io/image/png_encoder.dart';
 
 // Content stream parsing, shared by rendering, extraction and rewriting.
 export 'src/render/content_parser.dart';
+// `PdfFontFallback`, `PdfFontRequest` e `PdfGlyphFailure` fazem parte da API
+// do renderizador: aparecem nas opções e no relatório.
+export 'src/render/glyph_source.dart'
+    show PdfFontFallback, PdfFontRequest, PdfGlyphFailure;
 export 'src/render/image_decoder.dart';
 export 'src/render/page_renderer.dart';

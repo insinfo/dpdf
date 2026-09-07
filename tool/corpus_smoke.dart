@@ -28,10 +28,18 @@ Future<int> _countPages(CraftPdfDocument document) async {
 }
 
 Future<void> main(List<String> args) async {
-  final directory = Directory(args.isEmpty
+  final positional = args.where((a) => !a.startsWith('--')).toList();
+  final directory = Directory(positional.isEmpty
       ? r'C:\MyDartProjects\insinfo_dart_pdf\test\assets'
-      : args[0]);
+      : positional.first);
   final onlyRender = args.contains('--render');
+  // Um TTF passado com --fallback é usado para o texto cuja fonte o documento
+  // não embute, que é o caso da maioria absoluta.
+  final fallbackArg =
+      args.where((a) => a.startsWith('--fallback=')).firstOrNull;
+  final fallbackBytes = fallbackArg == null
+      ? null
+      : File(fallbackArg.substring('--fallback='.length)).readAsBytesSync();
 
   final files = directory
       .listSync()
@@ -48,6 +56,7 @@ Future<void> main(List<String> args) async {
   var compressed = 0;
   var compressFailed = 0;
   final unsupported = <String, int>{};
+  final fontFailures = <String, int>{};
   final failures = <String, String>{};
 
   for (final file in files) {
@@ -82,7 +91,13 @@ Future<void> main(List<String> args) async {
       final page = await document.pageAt(1);
       if (page != null) {
         final image = await PdfPageRenderer.render(page,
-            options: const PdfRenderOptions(dpi: 36, maxPixels: 30000000));
+            options: PdfRenderOptions(
+              dpi: 36,
+              maxPixels: 30000000,
+              fontFallback: fallbackBytes == null
+                  ? null
+                  : (request) async => fallbackBytes,
+            ));
         rendered++;
         if (!image.report.isComplete) {
           incomplete++;
@@ -90,6 +105,9 @@ Future<void> main(List<String> args) async {
           image.report.unsupportedOperators.forEach((op, count) {
             unsupported[op] = (unsupported[op] ?? 0) + count;
           });
+          for (final failure in image.report.fontFailures.values) {
+            fontFailures[failure.name] = (fontFailures[failure.name] ?? 0) + 1;
+          }
         }
       }
     } catch (e) {
@@ -145,6 +163,16 @@ Future<void> main(List<String> args) async {
     print('operadores não implementados, por frequência:');
     for (final entry in ranked.take(15)) {
       print('  ${entry.key.padRight(8)} ${entry.value}');
+    }
+  }
+
+  if (fontFailures.isNotEmpty) {
+    final ranked = fontFailures.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    print('');
+    print('fontes recusadas, por motivo (contagem de fontes distintas):');
+    for (final entry in ranked) {
+      print('  ${entry.key.padRight(20)} ${entry.value}');
     }
   }
 

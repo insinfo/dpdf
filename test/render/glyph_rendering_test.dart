@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:dpdf/dpdf.dart';
 import 'package:dpdf/src/io/font/true_type_font.dart';
 import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
-import 'package:dpdf/src/render/page_renderer.dart';
 import 'package:test/test.dart';
 
 const _fontPath = 'test/assets/ABeeZee-Regular.ttf';
@@ -46,6 +45,17 @@ Future<Uint8List> _pageWithText(
   return output.takeBytes();
 }
 
+Future<PdfRenderedPage> _renderWithFallback(
+    Uint8List bytes, PdfFontFallback fallback) async {
+  final document = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+  try {
+    return await PdfPageRenderer.render((await document.pageAt(1))!,
+        options: PdfRenderOptions(dpi: 72, fontFallback: fallback));
+  } finally {
+    await document.close();
+  }
+}
+
 Future<PdfRenderedPage> _render(Uint8List bytes, {double dpi = 72}) async {
   final document = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
   try {
@@ -76,6 +86,24 @@ int _inked(PdfRenderedPage page) {
     }
   }
   return left == null ? null : (left, right!);
+}
+
+/// A page whose text uses a standard font, which carries no program.
+Future<Uint8List> _pageWithStandardFont(String text) async {
+  final output = BytesBuilder(copy: false);
+  final pdf = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final page = await pdf.appendBlankPage();
+  page
+      .pdfRepresentation()
+      .put(CraftPdfName.mediaBox, CraftPdfArray.fromDoubles([0, 0, 320, 100]));
+  final canvas = await CraftPdfCanvas.fromPage(page);
+  canvas.beginText();
+  await canvas.setFontAndSize(pdf.defaultTypeface()!, 36);
+  canvas.moveText(20, 40);
+  canvas.showText(text);
+  canvas.endText();
+  await pdf.close();
+  return output.takeBytes();
 }
 
 void main() {
@@ -161,6 +189,72 @@ void main() {
       // Four times the pixels means roughly four times the ink; anti-aliasing
       // and stem rounding keep it from being exact.
       expect(_inked(at144), greaterThan(_inked(at72) * 3));
+    });
+
+    test('draws a non-embedded font when the caller supplies one', () async {
+      // A maioria dos documentos reais referencia ao menos uma fonte sem
+      // carregá-la. Sem substituto o texto é posicionado mas não desenhado; com
+      // ele, tem de aparecer tinta.
+      final bytes = await _pageWithStandardFont('Hamburg');
+
+      final without = await _render(bytes);
+      expect(without.report.glyphsSkipped, greaterThan(0));
+      expect(_inked(without), isZero,
+          reason: 'sem substituto não há contorno nenhum para desenhar');
+
+      final program = File(_fontPath).readAsBytesSync();
+      final with_ =
+          await _renderWithFallback(bytes, (request) async => program);
+
+      expect(with_.report.glyphsSkipped, isZero,
+          reason: 'com o substituto nada mais fica por desenhar');
+      expect(_inked(with_), greaterThan(200),
+          reason: 'sete glifos a 36pt têm de deixar tinta de verdade');
+    });
+
+    test('a substitute that returns null leaves the text reported', () async {
+      final bytes = await _pageWithStandardFont('Hamburg');
+      final page = await _renderWithFallback(bytes, (request) async => null);
+
+      expect(page.report.glyphsSkipped, greaterThan(0));
+      expect(_inked(page), isZero);
+    });
+
+    test('a substitute that throws does not take the page down', () async {
+      // Um `fontFallback` que lê de disco pode falhar. Isso não pode custar
+      // o resto da página, que desenha normalmente.
+      final bytes = await _pageWithStandardFont('Hamburg');
+      final page = await _renderWithFallback(
+          bytes, (request) async => throw StateError('sem fonte'));
+
+      expect(page.report.glyphsSkipped, greaterThan(0));
+    });
+
+    test('the request describes the font being substituted', () async {
+      final bytes = await _pageWithStandardFont('Hamburg');
+      PdfFontRequest? seen;
+      await _renderWithFallback(bytes, (request) async {
+        seen = request;
+        return null;
+      });
+
+      expect(seen, isNotNull);
+      expect(seen!.familyName, contains('Helvetica'));
+      expect(seen!.composite, isFalse);
+    });
+
+    test('positions a standard font from its bundled metrics', () async {
+      // Uma das catorze padrão pode omitir `/Widths`; o leitor tem de conhecer
+      // as métricas. Sem isso todo avanço vira zero e a linha se empilha num
+      // ponto só.
+      final program = File(_fontPath).readAsBytesSync();
+      final one = _inkExtent(await _renderWithFallback(
+          await _pageWithStandardFont('I'), (r) async => program))!;
+      final many = _inkExtent(await _renderWithFallback(
+          await _pageWithStandardFont('IIIIIIII'), (r) async => program))!;
+
+      expect(many.$2 - many.$1, greaterThan((one.$2 - one.$1) * 4),
+          reason: 'sem as métricas AFM os oito glifos ficariam sobrepostos');
     });
 
     test('reports text as skipped when the font is not embedded', () async {

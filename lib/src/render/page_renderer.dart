@@ -135,8 +135,8 @@ class PdfRenderedPage {
 ///
 /// What it draws today: paths (fill, stroke, both, with either winding rule),
 /// clipping, the device and CIE colour spaces including Indexed, Separation
-/// and DeviceN, image XObjects with their masks, inline images, and form
-/// XObjects recursively, and text as real glyph outlines.
+/// and DeviceN, coloured tiling patterns, image XObjects with their masks,
+/// inline images, form XObjects recursively, and text as real glyph outlines.
 ///
 /// Text is drawn when the PDF embeds the font program. A document that
 /// references a font without carrying it — the standard fourteen, most often —
@@ -255,6 +255,8 @@ class _State {
   double dashPhase;
   double fillAlpha;
   double strokeAlpha;
+  PdfStream? fillPattern;
+  PdfStream? strokePattern;
 
   // Text state.
   double fontSize;
@@ -279,6 +281,8 @@ class _State {
     this.dashPhase = 0,
     this.fillAlpha = 1,
     this.strokeAlpha = 1,
+    this.fillPattern,
+    this.strokePattern,
     this.fontSize = 0,
     this.charSpacing = 0,
     this.wordSpacing = 0,
@@ -302,6 +306,8 @@ class _State {
         dashPhase: dashPhase,
         fillAlpha: fillAlpha,
         strokeAlpha: strokeAlpha,
+        fillPattern: fillPattern,
+        strokePattern: strokePattern,
         fontSize: fontSize,
         charSpacing: charSpacing,
         wordSpacing: wordSpacing,
@@ -505,10 +511,10 @@ class _Renderer {
         await _setSpace(op, resources, stroke: true);
       case 'sc':
       case 'scn':
-        _setComponents(op, stroke: false);
+        await _setComponents(op, resources, stroke: false);
       case 'SC':
       case 'SCN':
-        _setComponents(op, stroke: true);
+        await _setComponents(op, resources, stroke: true);
 
       // --- text ---
       case 'BT':
@@ -639,8 +645,12 @@ class _Renderer {
   Future<void> _endPath({BLFillRule? fill, required bool stroke}) async {
     if (!_pathEmpty) {
       if (fill != null) {
-        await context.fillPath(_path,
-            color: _withAlpha(state.fillColour, state.fillAlpha), rule: fill);
+        if (state.fillPattern != null) {
+          await _fillTilingPattern(_path, fill, state.fillPattern!);
+        } else {
+          await context.fillPath(_path,
+              color: _withAlpha(state.fillColour, state.fillAlpha), rule: fill);
+        }
       }
       if (stroke) {
         await _strokeCurrentPath();
@@ -711,9 +721,11 @@ class _Renderer {
     if (stroke) {
       state.strokeColour = colour;
       state.strokeSpace = null;
+      state.strokePattern = null;
     } else {
       state.fillColour = colour;
       state.fillSpace = null;
+      state.fillPattern = null;
     }
   }
 
@@ -724,9 +736,11 @@ class _Renderer {
     if (stroke) {
       state.strokeColour = colour;
       state.strokeSpace = null;
+      state.strokePattern = null;
     } else {
       state.fillColour = colour;
       state.fillSpace = null;
+      state.fillPattern = null;
     }
   }
 
@@ -741,9 +755,11 @@ class _Renderer {
     if (stroke) {
       state.strokeColour = colour;
       state.strokeSpace = null;
+      state.strokePattern = null;
     } else {
       state.fillColour = colour;
       state.fillSpace = null;
+      state.fillPattern = null;
     }
   }
 
@@ -782,22 +798,34 @@ class _Renderer {
     if (stroke) {
       state.strokeSpace = space;
       state.strokeColour = 0xFF000000;
+      state.strokePattern = null;
     } else {
       state.fillSpace = space;
       state.fillColour = 0xFF000000;
+      state.fillPattern = null;
     }
   }
 
-  void _setComponents(PdfContentOperation op, {required bool stroke}) {
+  Future<void> _setComponents(PdfContentOperation op, PdfDictionary? resources,
+      {required bool stroke}) async {
     final space = stroke ? state.strokeSpace : state.fillSpace;
     final components = <double>[];
     for (final operand in op.operands) {
       if (operand is PdfNumber) components.add(operand.doubleValue());
     }
     if (components.isEmpty) {
-      // `scn` with a name operand selects a pattern, which needs a shading or
-      // tiling evaluator this renderer does not have.
-      _note('${stroke ? 'SCN' : 'scn'}:pattern');
+      final name = op.operands.whereType<PdfName>().lastOrNull?.getValue();
+      final patterns = await resources?.dictionaryEntry(PdfName.pattern);
+      final pattern =
+          name == null ? null : await patterns?.streamEntry(PdfName(name));
+      if (pattern == null) {
+        _note('${stroke ? 'SCN' : 'scn'}:pattern');
+      } else if (stroke) {
+        state.strokePattern = pattern;
+        _note('SCN:tiling-pattern-stroke');
+      } else {
+        state.fillPattern = pattern;
+      }
       return;
     }
 
@@ -824,9 +852,93 @@ class _Renderer {
 
     if (stroke) {
       state.strokeColour = colour;
+      state.strokePattern = null;
     } else {
       state.fillColour = colour;
+      state.fillPattern = null;
     }
+  }
+
+  Future<void> _fillTilingPattern(
+      BLPath path, BLFillRule rule, PdfStream pattern) async {
+    final type = await pattern.integerEntry(PdfName('PatternType'));
+    if (type != 1) {
+      _note('scn:pattern-type-${type ?? 'missing'}');
+      return;
+    }
+    final paintType = await pattern.integerEntry(PdfName('PaintType'));
+    if (paintType != 1) {
+      _note('scn:uncoloured-pattern');
+      return;
+    }
+    final bboxArray = await pattern.arrayEntry(PdfName.bBox);
+    final xStep = await pattern.decimalEntry(PdfName('XStep'));
+    final yStep = await pattern.decimalEntry(PdfName('YStep'));
+    if (bboxArray == null ||
+        bboxArray.size() != 4 ||
+        xStep == null ||
+        yStep == null ||
+        xStep.abs() < 1e-9 ||
+        yStep.abs() < 1e-9) {
+      _note('scn:malformed-pattern');
+      return;
+    }
+    final bbox = await bboxArray.toDoubleArray();
+    var matrix = BLMatrix2D.identity;
+    final matrixArray = await pattern.arrayEntry(PdfName.matrix);
+    if (matrixArray != null && matrixArray.size() == 6) {
+      final m = await matrixArray.toDoubleArray();
+      matrix = BLMatrix2D(m[0], m[1], m[2], m[3], m[4], m[5]);
+    }
+    final patternToDevice = matrix.multiply(state.ctm);
+    final sx = math.sqrt(patternToDevice.m00 * patternToDevice.m00 +
+        patternToDevice.m01 * patternToDevice.m01);
+    final sy = math.sqrt(patternToDevice.m10 * patternToDevice.m10 +
+        patternToDevice.m11 * patternToDevice.m11);
+    if (sx < 1e-9 || sy < 1e-9) return;
+    final tileWidth = math.max(1, (xStep.abs() * sx).ceil());
+    final tileHeight = math.max(1, (yStep.abs() * sy).ceil());
+    if (tileWidth * tileHeight > 16 * 1000 * 1000) {
+      _note('scn:pattern-too-large');
+      return;
+    }
+    final px = tileWidth / xStep.abs();
+    final py = tileHeight / yStep.abs();
+    final patternToPixel =
+        BLMatrix2D(px, 0, 0, -py, -bbox[0] * px, bbox[3] * py);
+    final tile = BLImage(tileWidth, tileHeight)..clear(0x00000000);
+    final tileContext = BLContext(tile);
+    final nested =
+        _Renderer(tileContext, patternToPixel, fontFallback: _fontFallback);
+    final patternResources = await pattern.dictionaryEntry(PdfName.resources);
+    final bytes = await pattern.getBytes();
+    if (bytes != null) await nested.run(bytes, patternResources, 0);
+    tileContext.flush();
+    if (state.fillAlpha < 1) {
+      final alpha = state.fillAlpha.clamp(0.0, 1.0);
+      for (var i = 0; i < tile.pixels.length; i++) {
+        final pixel = tile.pixels[i];
+        final a = (((pixel >>> 24) & 0xff) * alpha).round();
+        tile.pixels[i] = (pixel & 0x00ffffff) | (a << 24);
+      }
+    }
+    for (final entry in nested.unsupported.entries) {
+      unsupported[entry.key] = (unsupported[entry.key] ?? 0) + entry.value;
+    }
+    glyphsSkipped += nested.glyphsSkipped;
+    imagesSkipped += nested.imagesSkipped;
+    fontFailures.addAll(nested.fontFailures);
+
+    final deviceToPattern = patternToDevice.invert();
+    if (deviceToPattern == null) return;
+    context.setPattern(BLPattern(
+      image: tile,
+      extendModeX: BLGradientExtendMode.repeat,
+      extendModeY: BLGradientExtendMode.repeat,
+      transform: deviceToPattern.multiply(patternToPixel),
+    ));
+    await context.fillPath(path, rule: rule);
+    context.setFillStyle(state.fillColour);
   }
 
   // --- graphics state dictionary --------------------------------------------

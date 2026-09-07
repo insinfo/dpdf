@@ -220,6 +220,55 @@ void main() {
       // Half-transparent black over white is mid grey.
       expect(_at(page, 50, 50).r, closeTo(128, 4));
     });
+
+    test('renders a coloured tiling pattern and repeats its cell', () async {
+      final pattern = PdfStream.withBytes(
+          Uint8List.fromList(
+              latin1.encode('1 0 0 rg 0 0 5 10 re f 0 1 0 rg 5 0 5 10 re f')),
+          0)
+        ..put(PdfName.type, PdfName.pattern)
+        ..put(PdfName('PatternType'), PdfNumber.fromInt(1))
+        ..put(PdfName('PaintType'), PdfNumber.fromInt(1))
+        ..put(PdfName('TilingType'), PdfNumber.fromInt(1))
+        ..put(PdfName.bBox, PdfArray.fromDoubles([0, 0, 10, 10]))
+        ..put(PdfName('XStep'), PdfNumber(10))
+        ..put(PdfName('YStep'), PdfNumber(10))
+        ..put(PdfName.resources, PdfDictionary());
+      final resources = PdfDictionary()
+        ..put(PdfName.pattern, PdfDictionary()..put(PdfName('P0'), pattern));
+
+      final page = await _render('/Pattern cs /P0 scn 0 0 100 100 re f',
+          resources: resources);
+
+      expect(_at(page, 2, 50).r, greaterThan(240));
+      expect(_at(page, 2, 50).g, lessThan(15));
+      expect(_at(page, 7, 50).g, greaterThan(240));
+      expect(_at(page, 12, 50).r, greaterThan(240));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
+
+    test('applies the pattern matrix before repeating the cell', () async {
+      final pattern = PdfStream.withBytes(
+          Uint8List.fromList(
+              latin1.encode('1 0 0 rg 0 0 5 10 re f 0 0 1 rg 5 0 5 10 re f')),
+          0)
+        ..put(PdfName.type, PdfName.pattern)
+        ..put(PdfName('PatternType'), PdfNumber.fromInt(1))
+        ..put(PdfName('PaintType'), PdfNumber.fromInt(1))
+        ..put(PdfName.bBox, PdfArray.fromDoubles([0, 0, 10, 10]))
+        ..put(PdfName('XStep'), PdfNumber(10))
+        ..put(PdfName('YStep'), PdfNumber(10))
+        ..put(PdfName.matrix, PdfArray.fromDoubles([1, 0, 0, 1, 3, 0]))
+        ..put(PdfName.resources, PdfDictionary());
+      final resources = PdfDictionary()
+        ..put(PdfName.pattern, PdfDictionary()..put(PdfName('P0'), pattern));
+
+      final page = await _render('/Pattern cs /P0 scn 0 0 100 100 re f',
+          resources: resources);
+
+      expect(_at(page, 4, 50).r, greaterThan(240));
+      expect(_at(page, 9, 50).b, greaterThan(240));
+    });
   });
 
   group('PdfPageRenderer images', () {

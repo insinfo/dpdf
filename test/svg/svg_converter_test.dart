@@ -13,6 +13,7 @@ import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/render/page_renderer.dart';
 import 'package:dpdf/src/svg/svg_converter.dart';
 import 'package:test/test.dart';
 
@@ -683,6 +684,20 @@ void main() {
         final tileContent = String.fromCharCodes((await pattern.getBytes())!);
         expect(tileContent, contains('0 0 3.75 6 re\n'));
         expect(tileContent, contains('1 0 0 rg\n'));
+
+        final rendered = await PdfPageRenderer.render(page,
+            options: const PdfRenderOptions(dpi: 72));
+        int redAt(int x, int y) =>
+            (rendered.pixels[y * rendered.width + x] >> 16) & 0xff;
+        int greenAt(int x, int y) =>
+            (rendered.pixels[y * rendered.width + x] >> 8) & 0xff;
+        expect(redAt(6, 10), greaterThan(240),
+            reason: 'a metade transparente deixa o fundo branco');
+        expect(greenAt(11, 10), lessThan(15));
+        expect(redAt(11, 10), greaterThan(240));
+        expect(redAt(18, 10), greaterThan(240),
+            reason: 'a célula de 7,5 pt deve recomeçar');
+        expect(rendered.report.unsupportedOperators, isEmpty);
       } finally {
         await document.close();
       }

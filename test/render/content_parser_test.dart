@@ -97,8 +97,9 @@ void main() {
 
     test('reads an inline image, dictionary and samples', () {
       // Four bytes of samples between ID and EI.
-      final ops = _parse(
-          'q /Fm0 Do BI /W 2 /H 2 /BPC 8 /CS /G ID \x01\x02\x03\x04 EI Q');
+      const input =
+          'q /Fm0 Do BI /W 2 /H 2 /BPC 8 /CS /G ID \x01\x02\x03\x04 EI Q';
+      final ops = _parse(input);
 
       expect(ops.map((o) => o.operator), equals(['q', 'Do', 'BI', 'Q']));
       final image = ops[2];
@@ -106,6 +107,10 @@ void main() {
       expect(image.inlineImage!.getNumberSync(PdfName('W'))?.intValue(),
           equals(2));
       expect(image.inlineImageData, equals([1, 2, 3, 4]));
+      expect(image.sourceStart, equals(input.indexOf('BI')));
+      expect(image.sourceEnd, equals(input.lastIndexOf('EI') + 2));
+      expect(input.substring(image.sourceStart!, image.sourceEnd!),
+          startsWith('BI /W 2'));
     });
 
     test('does not mistake EI inside a word for the end of an image', () {

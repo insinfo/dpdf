@@ -130,6 +130,27 @@ Future<Uint8List> _formImagePage() async {
   return output.takeBytes();
 }
 
+Future<Uint8List> _inlineImagePage() async {
+  const width = 10, height = 10;
+  final pixels = Uint8List(width * height * 3);
+  for (var i = 0; i < width * height; i++) {
+    pixels.setRange(i * 3, i * 3 + 3, const [240, 30, 180]);
+  }
+  final content = BytesBuilder(copy: false)
+    ..add(ascii
+        .encode('q 100 0 0 100 50 50 cm BI /W 10 /H 10 /BPC 8 /CS /RGB ID\n'))
+    ..add(pixels)
+    ..add(ascii.encode('\nEI Q'));
+  final output = BytesBuilder(copy: false);
+  final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
+  final page = await document.appendBlankPage();
+  page.pdfRepresentation()
+    ..put(PdfName.resources, PdfDictionary())
+    ..put(PdfName.contents, PdfStream.withBytes(content.takeBytes(), 0));
+  await document.close();
+  return output.takeBytes();
+}
+
 void main() {
   group('PdfAreaRedaction', () {
     test('removes only the characters inside the rectangle', () async {
@@ -248,6 +269,35 @@ void main() {
             final rgb =
                 decoded!.rgba!.sublist((y * 10 + x) * 4, (y * 10 + x) * 4 + 3);
             expect(rgb, x < 5 ? equals([0, 0, 0]) : equals([240, 30, 180]));
+          }
+        }
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('removes source pixels from an inline image', () async {
+      final redacted = await PdfAreaRedaction.apply(
+        await _inlineImagePage(),
+        const [PdfRedactionArea(1, left: 50, bottom: 50, right: 100, top: 150)],
+        options: const PdfAreaRedactionOptions(paintOverlay: false),
+      );
+      final document = await PdfDocument.open(PdfReader.fromBytes(redacted));
+      try {
+        final page = (await document.pageAt(1))!;
+        final content = latin1.decode(await page.contentPayload());
+        expect(content, isNot(contains(' BI ')));
+        expect(content, contains('/DpRedact0 Do'));
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final xobjects = await resources!.dictionaryEntry(PdfName.xObject);
+        final image = await xobjects!.streamEntry(PdfName('DpRedact0'));
+        final decoded = await PdfImageDecoder.decode(image!);
+        for (var y = 0; y < 10; y++) {
+          for (var x = 0; x < 10; x++) {
+            final at = (y * 10 + x) * 4;
+            expect(decoded!.rgba!.sublist(at, at + 3),
+                x < 5 ? equals([0, 0, 0]) : equals([240, 30, 180]));
           }
         }
       } finally {

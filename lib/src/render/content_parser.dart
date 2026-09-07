@@ -26,11 +26,19 @@ class PdfContentOperation {
   /// The raw sample bytes between `ID` and `EI`, still filtered as stored.
   final Uint8List? inlineImageData;
 
+  /// Byte range occupied by this operation in the original content stream.
+  /// Present for inline images, whose binary payload sometimes needs an exact
+  /// source rewrite rather than a lossy operator serialization.
+  final int? sourceStart;
+  final int? sourceEnd;
+
   const PdfContentOperation(
     this.operator,
     this.operands, {
     this.inlineImage,
     this.inlineImageData,
+    this.sourceStart,
+    this.sourceEnd,
   });
 
   /// The operand at [index] as a number, or null when it is not one.
@@ -100,12 +108,13 @@ abstract final class PdfContentParser {
       reader.skipWhitespaceAndComments();
       if (reader.atEnd) break;
 
+      final sourceStart = reader.offset;
       final token = reader.readToken();
       if (token == null) break;
 
       if (token is _Operator) {
         if (token.name == 'BI') {
-          yield reader.readInlineImage();
+          yield reader.readInlineImage(sourceStart);
           operands = <PdfObject>[];
           continue;
         }
@@ -458,7 +467,7 @@ class _Reader {
   /// The samples are found by scanning for `EI` at a token boundary, because
   /// an inline image declares no length. That is what the specification leaves
   /// readers to do, and why `EI` can appear inside the data only by accident.
-  PdfContentOperation readInlineImage() {
+  PdfContentOperation readInlineImage(int sourceStart) {
     final dictionary = PdfDictionary();
     while (true) {
       skipWhitespaceAndComments();
@@ -514,6 +523,8 @@ class _Reader {
       const [],
       inlineImage: dictionary,
       inlineImageData: samples,
+      sourceStart: sourceStart,
+      sourceEnd: offset,
     );
   }
 }

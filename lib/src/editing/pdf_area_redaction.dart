@@ -179,7 +179,7 @@ class PdfAreaRedaction {
         : null;
 
     final metrics = await _PageFontMetrics.resolve(fonts);
-    final content = await page.contentPayload();
+    var content = await page.contentPayload();
 
     if (content.isNotEmpty && metrics.hasFonts) {
       final machine = _TextMachine(metrics.decode, metrics.width);
@@ -197,6 +197,7 @@ class PdfAreaRedaction {
       }
       if (remove.isNotEmpty) {
         final rewritten = machine.read(content, remove: remove);
+        content = rewritten.content;
         final stream = PdfStream.withBytes(rewritten.content, 0);
         stream.attachToDocument(document);
         dictionary.put(PdfName.contents, stream);
@@ -226,11 +227,13 @@ class PdfAreaRedaction {
       [int depth = 0]) async {
     if (depth > 32) return false;
     final sourceXObjects =
-        await inheritedResources.dictionaryEntry(PdfName.xObject);
-    if (sourceXObjects == null || content.isEmpty) return false;
+        await inheritedResources.dictionaryEntry(PdfName.xObject) ??
+            PdfDictionary();
+    if (content.isEmpty) return false;
 
     final regions = <String, List<_ImageUnitRect>>{};
     final formAreas = <String, List<PdfRedactionArea>>{};
+    final inline = <_InlineImageRedaction>[];
     var matrix = const _RedactionMatrix(1, 0, 0, 1, 0, 0);
     final stack = <_RedactionMatrix>[];
     try {
@@ -279,16 +282,56 @@ class PdfAreaRedaction {
                 regions.putIfAbsent(name, () => []).add(unit);
               }
             }
+          case 'BI':
+            final dictionary = operation.inlineImage;
+            final data = operation.inlineImageData;
+            final start = operation.sourceStart;
+            final end = operation.sourceEnd;
+            if (dictionary == null ||
+                data == null ||
+                start == null ||
+                end == null) {
+              continue;
+            }
+            final inverse = matrix.inverse();
+            if (inverse == null) continue;
+            final hits = <_ImageUnitRect>[];
+            for (final area in areas) {
+              final unit = _ImageUnitRect.fromArea(area, inverse);
+              if (!unit.isEmpty) hits.add(unit);
+            }
+            if (hits.isNotEmpty) {
+              inline.add(
+                  _InlineImageRedaction(start, end, dictionary, data, hits));
+            }
         }
       }
     } on PdfContentException {
       return false;
     }
-    if (regions.isEmpty && formAreas.isEmpty) return false;
+    if (regions.isEmpty && formAreas.isEmpty && inline.isEmpty) return false;
 
     final pageResources = PdfDictionary.fromDictionary(inheritedResources);
     final pageXObjects = PdfDictionary.fromDictionary(sourceXObjects);
     var changed = false;
+    final replacements = <_ContentReplacement>[];
+    var inlineNumber = 0;
+    for (final item in inline) {
+      final decoded = await PdfImageDecoder.decode(
+          inlineImageToStream(item.dictionary, item.data));
+      if (decoded?.rgba == null) continue;
+      final rewritten =
+          _redactedRaster(document, decoded!, item.regions, colour);
+      var name = 'DpRedact${inlineNumber++}';
+      while (pageXObjects.containsKey(PdfName(name))) {
+        name = 'DpRedact${inlineNumber++}';
+      }
+      rewritten.attachToDocument(document);
+      pageXObjects.put(PdfName(name), rewritten.indirectHandle()!);
+      replacements.add(_ContentReplacement(
+          item.start, item.end, Uint8List.fromList(ascii.encode('/$name Do'))));
+      changed = true;
+    }
     for (final entry in regions.entries) {
       final original = await sourceXObjects.streamEntry(PdfName(entry.key));
       if (original == null) continue;
@@ -375,12 +418,85 @@ class PdfAreaRedaction {
       pageXObjects.put(PdfName(entry.key), rewritten.indirectHandle()!);
       changed = true;
     }
+    if (replacements.isNotEmpty) {
+      replacements.sort((a, b) => a.start.compareTo(b.start));
+      final output = BytesBuilder(copy: false);
+      var cursor = 0;
+      for (final replacement in replacements) {
+        output.add(Uint8List.sublistView(content, cursor, replacement.start));
+        output.add(replacement.bytes);
+        cursor = replacement.end;
+      }
+      output.add(Uint8List.sublistView(content, cursor));
+      final rewrittenContent = PdfStream.withBytes(output.takeBytes(), 0);
+      rewrittenContent.attachToDocument(document);
+      page.put(PdfName.contents, rewrittenContent);
+    }
     if (changed) {
       pageResources.put(PdfName.xObject, pageXObjects);
       page.put(PdfName.resources, pageResources);
       page.markChanged();
     }
     return changed;
+  }
+
+  static PdfStream _redactedRaster(
+      PdfDocument document,
+      PdfDecodedImage decoded,
+      List<_ImageUnitRect> regions,
+      List<double> colour) {
+    final rgba = Uint8List.fromList(decoded.rgba!);
+    final replacement = colour.map((c) => (c * 255).round()).toList();
+    for (final region in regions) {
+      final x0 = (region.left * decoded.width).floor().clamp(0, decoded.width);
+      final x1 = (region.right * decoded.width).ceil().clamp(0, decoded.width);
+      final y0 =
+          ((1 - region.top) * decoded.height).floor().clamp(0, decoded.height);
+      final y1 = ((1 - region.bottom) * decoded.height)
+          .ceil()
+          .clamp(0, decoded.height);
+      for (var y = y0; y < y1; y++) {
+        for (var x = x0; x < x1; x++) {
+          final at = (y * decoded.width + x) * 4;
+          rgba[at] = replacement[0];
+          rgba[at + 1] = replacement[1];
+          rgba[at + 2] = replacement[2];
+          rgba[at + 3] = 255;
+        }
+      }
+    }
+    final rgb = Uint8List(decoded.width * decoded.height * 3);
+    final alpha = Uint8List(decoded.width * decoded.height);
+    var hasTransparency = false;
+    for (var pixel = 0; pixel < decoded.width * decoded.height; pixel++) {
+      rgb.setRange(
+          pixel * 3, pixel * 3 + 3, rgba.sublist(pixel * 4, pixel * 4 + 3));
+      alpha[pixel] = rgba[pixel * 4 + 3];
+      if (alpha[pixel] != 255) hasTransparency = true;
+    }
+    final image = PdfStream.withBytes(
+        Uint8List.fromList(ZLibEncoder(level: 9).convert(rgb)), 0)
+      ..put(PdfName.type, PdfName('XObject'))
+      ..put(PdfName.subtype, PdfName('Image'))
+      ..put(PdfName.width, PdfNumber.fromInt(decoded.width))
+      ..put(PdfName.height, PdfNumber.fromInt(decoded.height))
+      ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+      ..put(PdfName('ColorSpace'), PdfName('DeviceRGB'))
+      ..put(PdfName.filter, PdfName('FlateDecode'));
+    if (hasTransparency) {
+      final mask = PdfStream.withBytes(
+          Uint8List.fromList(ZLibEncoder(level: 9).convert(alpha)), 0)
+        ..put(PdfName.type, PdfName('XObject'))
+        ..put(PdfName.subtype, PdfName('Image'))
+        ..put(PdfName.width, PdfNumber.fromInt(decoded.width))
+        ..put(PdfName.height, PdfNumber.fromInt(decoded.height))
+        ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+        ..put(PdfName('ColorSpace'), PdfName('DeviceGray'))
+        ..put(PdfName.filter, PdfName('FlateDecode'));
+      mask.attachToDocument(document);
+      image.put(PdfName('SMask'), mask.indirectHandle()!);
+    }
+    return image;
   }
 
   static PdfRedactionArea _transformArea(
@@ -554,6 +670,23 @@ class _ImageUnitRect {
   }
 
   bool get isEmpty => right <= left || top <= bottom;
+}
+
+class _InlineImageRedaction {
+  final int start, end;
+  final PdfDictionary dictionary;
+  final Uint8List data;
+  final List<_ImageUnitRect> regions;
+
+  const _InlineImageRedaction(
+      this.start, this.end, this.dictionary, this.data, this.regions);
+}
+
+class _ContentReplacement {
+  final int start, end;
+  final Uint8List bytes;
+
+  const _ContentReplacement(this.start, this.end, this.bytes);
 }
 
 class _RedactionMatrix {

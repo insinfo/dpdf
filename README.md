@@ -147,8 +147,8 @@ subsampling.
   luminosity soft masks, backdrop colours and transfer functions render;
   masks can be replaced or removed without losing the geometric clip. Some
   advanced transparency-group cases remain partial.
-- Area redaction rewrites direct and Form-nested opaque, transparent and shared
-  image uses. Vector artwork still requires overlay coverage.
+- Area redaction rewrites inline, direct and Form-nested opaque, transparent
+  and shared image uses. Vector artwork still requires overlay coverage.
 - HTML accepts a `BLFontCollection` and embeds matching TrueType/OpenType CSS
   faces. Native applications can populate it with
   `BLFontLoader.loadSystemFonts` from `package:dgfx/dgfx_io.dart`; web clients

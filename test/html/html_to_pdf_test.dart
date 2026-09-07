@@ -51,6 +51,30 @@ void main() {
     expect(latin1.decode(bytes, allowInvalid: true), contains('/FontFile2'));
   });
 
+  test('carrega @font-face por URL relativa e baseUri', () async {
+    final fontBytes =
+        await File('test/assets/ABeeZee-Regular.ttf').readAsBytes();
+    Uri? requested;
+    final bytes = await HtmlConverter.convertToBytes('''
+      <style>
+        @font-face { font-family: "Web Face"; src: local(Ignored), url('./fonts/web.ttf') format('truetype'); }
+        p { font-family: "Web Face", sans-serif; }
+      </style>
+      <p>fonte web</p>
+    ''',
+        properties: HtmlConverterProperties(
+          baseUri: Uri.parse('https://cdn.example.test/assets/document.html'),
+          fontResourceLoader: (uri) async {
+            requested = uri;
+            return fontBytes;
+          },
+        ));
+
+    expect(
+        requested, Uri.parse('https://cdn.example.test/assets/fonts/web.ttf'));
+    expect(latin1.decode(bytes, allowInvalid: true), contains('/FontFile2'));
+  });
+
   test('converts text-flow HTML to an extractable PDF', () async {
     final bytes = await HtmlConverter.convertToBytes('''
       <h1>Relatório</h1><p>Olá <strong>mundo</strong>!</p>

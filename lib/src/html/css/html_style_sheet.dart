@@ -8,12 +8,15 @@ import 'css_syntax.dart';
 /// compounds of those forms. The parser safely skips unsupported selectors.
 class HtmlStyleSheet {
   final List<_Rule> _rules;
-  HtmlStyleSheet._(this._rules);
+  final List<HtmlFontFaceRule> fontFaces;
+  HtmlStyleSheet._(this._rules, this.fontFaces);
 
   factory HtmlStyleSheet.fromDocument(dom.Document document) {
     final rules = <_Rule>[];
+    final fontFaces = <HtmlFontFaceRule>[];
     var order = 0;
     for (final style in document.querySelectorAll('style')) {
+      fontFaces.addAll(_parseFontFaces(style.text));
       for (final rule in CssSyntax.parseStyleRules(style.text)) {
         for (final source in _splitSelectorList(rule.selectorText)) {
           final selector = _Selector.parse(source.trim(), order++);
@@ -23,7 +26,7 @@ class HtmlStyleSheet {
         }
       }
     }
-    return HtmlStyleSheet._(rules);
+    return HtmlStyleSheet._(rules, fontFaces);
   }
 
   Map<String, String> resolve(dom.Element element) {
@@ -56,6 +59,38 @@ class HtmlStyleSheet {
         for (final declaration in CssSyntax.parseDeclarations(source))
           declaration.property: declaration.value
       };
+}
+
+class HtmlFontFaceRule {
+  final String family;
+  final List<String> sources;
+  const HtmlFontFaceRule(this.family, this.sources);
+}
+
+List<HtmlFontFaceRule> _parseFontFaces(String source) {
+  final result = <HtmlFontFaceRule>[];
+  final rulePattern = RegExp(r'@font-face\s*\{([^{}]*)\}',
+      caseSensitive: false, multiLine: true);
+  final urlPattern = RegExp(
+      r'''url\(\s*(?:"([^"]*)"|'([^']*)'|([^\s\)]*))\s*\)''',
+      caseSensitive: false);
+  for (final match in rulePattern.allMatches(source)) {
+    final declarations = HtmlStyleSheet.declarationsOf(match.group(1)!);
+    var family = declarations['font-family']?.trim();
+    if (family == null || family.isEmpty) continue;
+    if (family.length >= 2 &&
+        ((family.startsWith('"') && family.endsWith('"')) ||
+            (family.startsWith("'") && family.endsWith("'")))) {
+      family = family.substring(1, family.length - 1);
+    }
+    final sources = <String>[];
+    for (final url in urlPattern.allMatches(declarations['src'] ?? '')) {
+      final value = url.group(1) ?? url.group(2) ?? url.group(3);
+      if (value != null && value.isNotEmpty) sources.add(value);
+    }
+    if (sources.isNotEmpty) result.add(HtmlFontFaceRule(family, sources));
+  }
+  return result;
 }
 
 class _Rule {

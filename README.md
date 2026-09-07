@@ -147,8 +147,9 @@ subsampling.
   faces. Native applications can populate it with
   `BLFontLoader.loadSystemFonts` from `package:dgfx/dgfx_io.dart`; web clients
   can attach a `BLCallbackFontProvider` backed by URLs, Google Fonts or
-  `FontFace`. Automatic parsing of CSS `@font-face` declarations remains
-  partial and is delegated to the provider.
+  `FontFace`. CSS `@font-face` URLs and data URIs can be loaded through
+  `HtmlConverterProperties.fontResourceLoader` and `baseUri`; `local()` and
+  WOFF/WOFF2 decoding remain delegated to the application/provider.
 - JBIG2 automatically chooses between generic regions and deduplicated symbol
   dictionaries with text regions; refinement and multi-page dictionaries remain
   partial.

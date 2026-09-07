@@ -11,6 +11,8 @@ import 'dom/html_box_builder.dart';
 import 'layout/html_layout_engine.dart';
 import 'paint/html_pdf_painter.dart';
 
+typedef HtmlFontResourceLoader = Future<Uint8List?> Function(Uri uri);
+
 /// Page and typography settings for [HtmlConverter].
 class HtmlConverterProperties {
   final PageSize? pageSize;
@@ -24,12 +26,18 @@ class HtmlConverterProperties {
   /// `FontFace`. Quando nenhuma face CSS é encontrada, o conversor conserva o
   /// fallback para as fontes PDF padrão.
   final BLFontCollection? fontCollection;
+  final HtmlFontResourceLoader? fontResourceLoader;
+
+  /// URI usada para resolver URLs relativas declaradas em `@font-face`.
+  final Uri? baseUri;
 
   const HtmlConverterProperties({
     this.pageSize,
     this.margin = 36,
     this.baseFontSize = 12,
     this.fontCollection,
+    this.fontResourceLoader,
+    this.baseUri,
   })  : assert(margin >= 0),
         assert(baseFontSize > 0);
 
@@ -61,15 +69,44 @@ class HtmlConverter {
     final body = parsed.body;
     if (body == null) return;
 
+    final styleSheet = HtmlStyleSheet.fromDocument(parsed);
+    final fonts = await _loadDeclaredFonts(styleSheet, options);
     final boxes = HtmlBoxBuilder(
-      HtmlStyleSheet.fromDocument(parsed),
+      styleSheet,
       options.baseFontSize,
     ).build(body.nodes);
     final pageSize = options.resolvedPageSize;
     final fragments = HtmlLayoutEngine(pageSize.width - options.margin * 2)
         .layoutDisplayList(boxes);
     await HtmlPdfPainter(document, pageSize, options.margin,
-            fontCollection: options.fontCollection)
+            fontCollection: fonts)
         .paint(fragments);
+  }
+
+  static Future<BLFontCollection?> _loadDeclaredFonts(
+      HtmlStyleSheet sheet, HtmlConverterProperties options) async {
+    if (sheet.fontFaces.isEmpty) return options.fontCollection;
+    final collection = options.fontCollection ?? BLFontCollection();
+    for (final rule in sheet.fontFaces) {
+      for (final source in rule.sources) {
+        try {
+          Uint8List? bytes;
+          final uri = Uri.parse(source);
+          if (uri.scheme == 'data') {
+            bytes = UriData.parse(source).contentAsBytes();
+          } else if (options.fontResourceLoader != null) {
+            final resolved = options.baseUri?.resolveUri(uri) ?? uri;
+            bytes = await options.fontResourceLoader!(resolved);
+          }
+          if (bytes != null) {
+            collection.addBytes(bytes, familyName: rule.family);
+            break;
+          }
+        } on Object {
+          // Tenta a próxima origem declarada no mesmo @font-face.
+        }
+      }
+    }
+    return collection;
   }
 }

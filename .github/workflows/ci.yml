@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Dart ${{ matrix.sdk }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        sdk: ['3.6', stable]
+
+    steps:
+      # `dependency_overrides` aponta para `../jbig2` e `../dgfx`, então os
+      # três precisam estar lado a lado. Enquanto esses dois não estiverem no
+      # pub.dev, o CI resolve pelo código-fonte do próprio GitHub — o que
+      # também detecta quando uma mudança lá quebra o dpdf.
+      - uses: actions/checkout@v4
+        with:
+          path: dpdf
+
+      - uses: actions/checkout@v4
+        with:
+          repository: insinfo/jbig2
+          path: jbig2
+
+      - uses: actions/checkout@v4
+        with:
+          repository: insinfo/dgfx
+          path: dgfx
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.sdk }}
+
+      - name: Resolver dependências
+        working-directory: dpdf
+        run: dart pub get
+
+      - name: Verificar formatação
+        working-directory: dpdf
+        run: dart format --output=none --set-exit-if-changed lib test example
+
+      # Sem `--fatal-infos` por enquanto: restam 77 avisos informativos
+      # (`use_super_parameters` e afins). Erros e warnings reprovam.
+      - name: Analisar
+        working-directory: dpdf
+        run: dart analyze
+
+      - name: Testar
+        working-directory: dpdf
+        run: dart test --reporter=expanded -j4

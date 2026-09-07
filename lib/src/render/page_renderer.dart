@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:marlin/graphics.dart';
+import 'package:dgfx/dgfx.dart';
 
 import '../kernel/geom/rectangle.dart';
 import '../kernel/pdf/colorspace/pdf_color_space.dart';

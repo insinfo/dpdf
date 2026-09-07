@@ -22,12 +22,11 @@ import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 /// Cobre a parte vetorial mais comum do formato: `svg`, `g`, `a`, `path`,
 /// `rect`, `circle`, `ellipse`, `line`, `polyline` e `polygon`, com `fill`,
 /// `stroke`, `stroke-width`, `fill-rule`, `display`, `visibility`, o atributo
-/// `style` inline, herança de atributos, `transform`, `viewBox` e
-/// `preserveAspectRatio`.
+/// `style` inline e interno, herança de atributos, `transform`, `viewBox`,
+/// `preserveAspectRatio`, referências `use` e recortes por `clip-path`.
 ///
 /// Ainda fora do alcance, com os elementos correspondentes simplesmente
-/// ignorados: texto, imagens, `use`, gradientes, padrões, máscaras, recortes
-/// por `clip-path`, marcadores e folhas de estilo em `<style>`.
+/// ignorados: texto, imagens, gradientes, padrões, máscaras e marcadores.
 ///
 /// `stroke-dasharray` não é emitido por causa de um defeito no canvas do
 /// kernel, e as opacidades parciais exigem um ExtGState — logo, só saem

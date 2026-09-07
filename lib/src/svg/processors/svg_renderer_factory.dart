@@ -1,4 +1,5 @@
 import 'package:dpdf/src/svg/renderers/impl/circle_svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/impl/clip_path_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/ellipse_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/group_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/line_svg_node_renderer.dart';
@@ -34,6 +35,7 @@ class SvgRendererFactory {
     SvgTags.POLYLINE: PolylineSvgNodeRenderer.new,
     SvgTags.POLYGON: PolygonSvgNodeRenderer.new,
     SvgTags.PATH: PathSvgNodeRenderer.new,
+    SvgTags.CLIP_PATH: ClipPathSvgNodeRenderer.new,
     SvgTags.USE: UseSvgNodeRenderer.new,
     // Reconhecidos e explicitamente sem pintura própria.
     SvgTags.DEFS: NoOpSvgNodeRenderer.new,

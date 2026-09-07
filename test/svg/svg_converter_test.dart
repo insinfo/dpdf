@@ -254,6 +254,41 @@ void main() {
           reason: 'um círculo tem quatro cúbicas e só pode sair uma vez');
     });
 
+    test('clip-path reúne as formas e recorta o elemento referenciador',
+        () async {
+      final content = await _render('''
+        <svg width="40" height="20">
+          <defs>
+            <clipPath id="cut">
+              <rect width="4" height="6"/>
+              <circle cx="10" cy="4" r="2"/>
+            </clipPath>
+          </defs>
+          <rect width="30" height="15" fill="red" clip-path="url(#cut)"/>
+        </svg>
+      ''');
+
+      final clip = content.indexOf('W\n');
+      final painted = content.indexOf('0 0 22.5 11.25 re\n');
+      expect(clip, greaterThan(0));
+      expect(painted, greaterThan(clip));
+      expect(_count(content, 'W\n'), 2,
+          reason: 'há o recorte do viewport e um único recorte composto');
+    });
+
+    test('clip-rule evenodd emite W estrela', () async {
+      final content = await _render('''
+        <svg width="20" height="20">
+          <clipPath id="cut" clip-rule="evenodd">
+            <path d="M0 0h10v10h-10z M2 2h6v6h-6z"/>
+          </clipPath>
+          <rect width="20" height="20" clip-path="url(#cut)"/>
+        </svg>
+      ''');
+
+      expect(content, contains('W*\n'));
+    });
+
     test('aceita cor nomeada, hexadecimal curto e rgb percentual', () async {
       final named = await _render(
           '<svg width="20" height="20"><rect width="4" height="4" fill="yellow"/></svg>');

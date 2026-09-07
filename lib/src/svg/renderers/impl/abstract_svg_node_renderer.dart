@@ -178,6 +178,13 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
         return;
       }
 
+      // Filhos de um clipPath apenas acrescentam sua geometria ao caminho
+      // corrente. Aplicar W após cada filho faria interseção entre as formas;
+      // SVG define a união delas como uma única máscara de recorte.
+      if (getParentClipPath() != null && this is! ClipPathSvgNodeRenderer) {
+        return;
+      }
+
       if (getParentClipPath() == null) {
         if (doFill && canElementFill()) {
           String fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, "");

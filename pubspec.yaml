@@ -23,12 +23,17 @@ dependencies:
   jbig2: ^1.0.0
   # JPEG 2000 codec, MIT; used to recompress continuous-tone images.
   j2k: ^0.9.0
+  # 2D rasterizer, used to render a PDF page to pixels. Only its web-safe
+  # `package:marlin/graphics.dart` facade is imported.
+  marlin: ^1.0.0
 
-# jbig2 is not on pub.dev yet. Remove this block once it is published, or the
-# publish of this package will be rejected.
+# jbig2 and marlin are not on pub.dev yet. Remove this block once they are
+# published, or the publish of this package will be rejected.
 dependency_overrides:
   jbig2:
     path: ../jbig2 #https://github.com/insinfo/jbig2.git
+  marlin:
+    path: ../marlin #https://github.com/insinfo/marlin.git
 
 dev_dependencies:
   lints: ^5.0.0

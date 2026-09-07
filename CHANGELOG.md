@@ -7,6 +7,20 @@ externos, e compila para VM (JIT/AOT), `dart2js` e `dart2wasm`.
 
 ### Adicionado
 
+- **Renderização de PDF para PNG** (`PdfPageRenderer`): interpreta o fluxo de
+  conteúdo e desenha caminhos (preenchimento, traço, ambas as regras de
+  enrolamento), recorte por caminho arbitrário, espaços de cor, imagens (XObject
+  e inline, com máscaras), e Form XObjects recursivamente. O relatório diz o que
+  não foi desenhado, em vez de entregar uma página silenciosamente incompleta.
+  Texto ainda não é desenhado como glifos.
+- **`PdfContentParser`**, analisador público de fluxo de conteúdo, incluindo
+  imagens inline — cujos bytes entre `ID` e `EI` os dois lexers existentes
+  liam como conteúdo.
+- **`PdfImageDecoder`**: XObject de imagem para RGBA, com amostras de 1 a 16
+  bits, `/Decode`, paletas Indexed, `/SMask` e `/Mask`.
+- **Funções PDF** (tipos 0, 2, 3 e 4) e **conversão de cor para RGB** em todos
+  os espaços, incluindo Indexed, Separation, DeviceN e Lab.
+- **`PngEncoder`** sobre o escritor PNG.
 - **Codec JPEG em Dart puro**: `JpegDecoder` (baseline sequencial, 4:4:4,
   4:2:2 e 4:2:0, intervalos de reinício, cinza/RGB/CMYK, transformação Adobe)
   e `JpegEncoder` (baseline, tabelas do Anexo K, qualidade 1-100, subamostragem
@@ -62,3 +76,15 @@ externos, e compila para VM (JIT/AOT), `dart2js` e `dart2wasm`.
   texto, sobreposição e montagem de páginas, e modos opcionais de leitura,
   recuperação, mesclagem e assinatura.
 - **Códigos de barras**: Code 39, Code 128, EAN/UPC e QR Code.
+
+### Corrigido
+
+- O escritor PNG gravava um CRC inválido em todo chunk de todo arquivo que
+  produzia: o registrador partia de `-1` e usava `>>>` num inteiro de 64 bits
+  do Dart, então bits acima do 31 desciam para o CRC. O chunk IEND saía
+  `0xAE429F7D` onde todo PNG termina com `0xAE426082`.
+- O filtro `/JBIG2Decode` apenas concatenava os globals e devolvia os bytes
+  crus, de modo que nenhuma página digitalizada em JBIG2 era legível.
+- `PdfSpecialCsPattern` era sombreado por um stub vazio declarado em
+  `pdf_canvas.dart`, e `PdfCieBasedCsIccBased.getNumberOfComponents()`
+  devolvia 0.

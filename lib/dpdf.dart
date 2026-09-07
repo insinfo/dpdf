@@ -197,3 +197,4 @@ export 'src/io/image/png_encoder.dart';
 // Content stream parsing, shared by rendering, extraction and rewriting.
 export 'src/render/content_parser.dart';
 export 'src/render/image_decoder.dart';
+export 'src/render/page_renderer.dart';

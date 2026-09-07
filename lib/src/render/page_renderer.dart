@@ -517,6 +517,8 @@ class _Renderer {
       case 'SC':
       case 'SCN':
         await _setComponents(op, resources, stroke: true);
+      case 'sh':
+        await _paintNamedShading(op.name(0), resources);
 
       // --- text ---
       case 'BT':
@@ -892,6 +894,31 @@ class _Renderer {
             (1 - components[2]) * (1 - components[3])),
         _ => 0xFF000000,
       };
+
+  Future<void> _paintNamedShading(
+      String? name, PdfDictionary? resources) async {
+    if (name == null || resources == null) {
+      _note('sh');
+      return;
+    }
+    final shadings = await resources.dictionaryEntry(PdfName.shading);
+    final shadingObject = await shadings?.get(PdfName(name), true);
+    if (shadingObject is! PdfDictionary) {
+      _note('sh');
+      return;
+    }
+    final pattern = PdfDictionary()
+      ..put(PdfName('PatternType'), PdfNumber.fromInt(2))
+      ..put(PdfName.shading, shadingObject);
+    final surface = BLPath()
+      ..moveTo(0, 0)
+      ..lineTo(context.image.width.toDouble(), 0)
+      ..lineTo(context.image.width.toDouble(), context.image.height.toDouble())
+      ..lineTo(0, context.image.height.toDouble())
+      ..close();
+    await _fillShadingPattern(surface, BLFillRule.nonZero, pattern,
+        stroke: false);
+  }
 
   Future<void> _fillPattern(BLPath path, BLFillRule rule, PdfDictionary pattern,
       {bool stroke = false}) async {

@@ -403,6 +403,29 @@ void main() {
       expect(page.report.unsupportedOperators, isEmpty);
     });
 
+    test('renders a named axial shading with the sh operator', () async {
+      final function = PdfDictionary()
+        ..put(PdfName('FunctionType'), PdfNumber.fromInt(2))
+        ..put(PdfName('Domain'), PdfArray.fromDoubles([0, 1]))
+        ..put(PdfName('C0'), PdfArray.fromDoubles([0, 1, 0]))
+        ..put(PdfName('C1'), PdfArray.fromDoubles([0, 0, 1]))
+        ..put(PdfName('N'), PdfNumber(1));
+      final shading = PdfDictionary()
+        ..put(PdfName.shadingType, PdfNumber.fromInt(2))
+        ..put(PdfName.colorSpace, PdfName.deviceRgb)
+        ..put(PdfName.coords, PdfArray.fromDoubles([0, 0, 100, 0]))
+        ..put(PdfName.function, function);
+      final resources = PdfDictionary()
+        ..put(
+            PdfName.shading, PdfDictionary()..put(PdfName('Shade0'), shading));
+
+      final page = await _render('/Shade0 sh', resources: resources);
+
+      expect(_at(page, 10, 50).g, greaterThan(200));
+      expect(_at(page, 90, 50).b, greaterThan(200));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
+
     test('applies a luminosity soft mask transparency group', () async {
       final group = PdfStream.withBytes(
           Uint8List.fromList(

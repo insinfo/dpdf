@@ -1,6 +1,6 @@
 /// Diagnostic templates for DPDF. Public identifiers and format slots are stable.
-class CraftIoLogMessageConstant {
-  CraftIoLogMessageConstant._();
+class IoLogMessageConstant {
+  IoLogMessageConstant._();
 
   static const String actionWasSetToLinkAnnotationWithDestination =
       'Setting this link action removes the destination already assigned to the annotation.';

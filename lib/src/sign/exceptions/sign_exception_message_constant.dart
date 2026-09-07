@@ -1,6 +1,6 @@
 /// Diagnostic templates for DPDF. Public identifiers and format slots are stable.
-class CraftSignExceptionMessageConstant {
-  CraftSignExceptionMessageConstant._();
+class SignExceptionMessageConstant {
+  SignExceptionMessageConstant._();
 
   static const String algorithmsNotSupported =
       'The signing combination {0} with {1} is unsupported.';

@@ -17,25 +17,25 @@ final class PdfEncodingDifferences {
   final String? base;
   final Map<int, String> names;
 
-  static Future<PdfEncodingDifferences> parse(CraftPdfDictionary dictionary,
+  static Future<PdfEncodingDifferences> parse(PdfDictionary dictionary,
       {String? defaultBase}) async {
-    final rawBase = await dictionary.get(CraftPdfName('BaseEncoding'), true);
-    if (rawBase != null && rawBase is! CraftPdfName) {
+    final rawBase = await dictionary.get(PdfName('BaseEncoding'), true);
+    if (rawBase != null && rawBase is! PdfName) {
       throw FormatException('BaseEncoding must be a name.');
     }
     final base =
-        rawBase == null ? defaultBase : (rawBase as CraftPdfName).getValue();
+        rawBase == null ? defaultBase : (rawBase as PdfName).getValue();
     if (base != null) PdfSimpleEncoding.decode(base, Uint8List(0));
-    final differences = await dictionary.get(CraftPdfName('Differences'), true);
-    if (differences != null && differences is! CraftPdfArray) {
+    final differences = await dictionary.get(PdfName('Differences'), true);
+    if (differences != null && differences is! PdfArray) {
       throw FormatException('Differences must be an array.');
     }
     final names = <int, String>{};
     int? code;
-    if (differences is CraftPdfArray) {
+    if (differences is PdfArray) {
       for (var i = 0; i < differences.size(); i++) {
         final item = await differences.get(i);
-        if (item is CraftPdfNumber) {
+        if (item is PdfNumber) {
           final value = item.doubleValue();
           if (!value.isFinite ||
               value < 0 ||
@@ -44,7 +44,7 @@ final class PdfEncodingDifferences {
             throw FormatException('Differences index must be an integer byte.');
           }
           code = value.toInt();
-        } else if (item is CraftPdfName && code != null && code <= 255) {
+        } else if (item is PdfName && code != null && code <= 255) {
           names[code] = item.getValue();
           code++;
         } else {

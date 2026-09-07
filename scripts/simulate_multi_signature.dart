@@ -18,7 +18,7 @@ import 'package:dpdf/src/kernel/geom/rectangle.dart' as DpdfGeom;
 //C:\mupdf\mutool.exe info .\documento_assinado_04_02_2026.pdf
 //C:\mupdf\mutool.exe draw -o page1.png -r 72 documento_assinado_04_02_2026.pdf 1
 
-class LocalExternalSignature implements CraftExternalSignature {
+class LocalExternalSignature implements ExternalSignature {
   final RSAPrivateKey key;
   final String digestAlgorithm;
 
@@ -31,7 +31,7 @@ class LocalExternalSignature implements CraftExternalSignature {
   String getSignatureAlgorithmName() => 'RSA';
 
   @override
-  CraftSignatureMechanismParams? getSignatureMechanismParameters() => null;
+  SignatureMechanismParams? getSignatureMechanismParameters() => null;
 
   @override
   Future<Uint8List> sign(Uint8List message) async {
@@ -82,15 +82,15 @@ void main() async {
 
   // 2. Criar PDF inicial com texto visível
   print('Criando PDF base...');
-  final writer = CraftPdfWriter.toFile(filePath);
-  final pdfDoc = CraftPdfDocument.create(writer);
-  final doc = CraftDocument(pdfDoc);
+  final writer = PdfWriter.toFile(filePath);
+  final pdfDoc = PdfDocument.create(writer);
+  final doc = Document(pdfDoc);
 
   // Texto grande e repetido
   for (int i = 1; i <= 20; i++) {
-    final p = CraftParagraph(
+    final p = Paragraph(
         "Este é o parágrafo número $i de teste do documento assinado.");
-    p.setProperty(CraftProperty.FONT_SIZE, CraftUnitValue.createPointValue(14));
+    p.setProperty(Property.FONT_SIZE, UnitValue.createPointValue(14));
     await doc.add(p);
   }
 
@@ -105,8 +105,8 @@ void main() async {
     final inputBytes = await file.readAsBytes();
     final outputStream = file.openWrite();
 
-    final reader = CraftPdfReader.fromBytes(inputBytes);
-    final signer = CraftPdfSigner(reader, outputStream);
+    final reader = PdfReader.fromBytes(inputBytes);
+    final signer = PdfSigner(reader, outputStream);
     signer.setFieldName('Assinatura_$i');
 
     // Posicionar assinaturas em locais diferentes
@@ -114,7 +114,7 @@ void main() async {
     double x = (i == 1) ? 50 : 350;
     signer
         .getSignerProperties()
-        .setPageRect(DpdfGeom.CraftRectangle(x, 50, 200, 100));
+        .setPageRect(DpdfGeom.Rectangle(x, 50, 200, 100));
     signer.setReason('Teste de Multi-Assinatura #$i');
     signer.setLocation('Brasil');
 

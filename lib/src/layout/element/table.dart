@@ -5,25 +5,25 @@ import 'package:dpdf/src/layout/renderer/table_renderer.dart';
 import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
 import 'package:dpdf/src/layout/properties/unit_value.dart';
 
-class CraftTable extends CraftBlockElement<CraftTable> {
-  List<CraftUnitValue>? columnWidths;
+class Table extends BlockElement<Table> {
+  List<UnitValue>? columnWidths;
 
   // Basic constructor with point widths (float array)
-  CraftTable.fromPointColumnWidths(List<double> columnWidths) {
+  Table.fromPointColumnWidths(List<double> columnWidths) {
     this.columnWidths = [];
     for (double w in columnWidths) {
       if (w >= 0) {
-        this.columnWidths!.add(CraftUnitValue.createPointValue(w));
+        this.columnWidths!.add(UnitValue.createPointValue(w));
       } else {
         // Handle auto/percent? For now assume valid point values or simple default
-        this.columnWidths!.add(CraftUnitValue.createPointValue(0));
+        this.columnWidths!.add(UnitValue.createPointValue(0));
       }
     }
     _init();
   }
 
   // Standard constructor with UnitValue array
-  CraftTable(List<CraftUnitValue> columnWidths) {
+  Table(List<UnitValue> columnWidths) {
     this.columnWidths = columnWidths;
     _init();
   }
@@ -32,7 +32,7 @@ class CraftTable extends CraftBlockElement<CraftTable> {
     // Default properties if needed
   }
 
-  CraftTable addCell(CraftCell cell) {
+  Table addCell(Cell cell) {
     childElements.add(cell);
     return this;
   }
@@ -42,12 +42,12 @@ class CraftTable extends CraftBlockElement<CraftTable> {
   // We'll trust user adds Cells or wrappers.
 
   @override
-  CraftRenderer makeNewRenderer() {
-    return CraftTableRenderer(this);
+  Renderer makeNewRenderer() {
+    return TableRenderer(this);
   }
 
   @override
-  CraftAccessibilityProperties getAccessibilityProperties() {
-    return CraftAccessibilityProperties();
+  AccessibilityProperties getAccessibilityProperties() {
+    return AccessibilityProperties();
   }
 }

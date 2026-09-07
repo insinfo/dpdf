@@ -4,7 +4,7 @@ import 'dart:typed_data';
 ///
 /// Applications own these resources and their licensing. A provider lets a
 /// browser or embedded application supply them without relying on a file path.
-abstract class CraftCjkResourceProvider {
+abstract class CjkResourceProvider {
   /// Returns a fresh byte list for [name], or null when the resource is absent.
   Uint8List? readSync(String name);
 
@@ -16,10 +16,10 @@ abstract class CraftCjkResourceProvider {
 ///
 /// Resource names are restricted to plain file names. This prevents a CMap's
 /// `usecmap` directive from selecting an unintended host path.
-class CraftCjkMemoryResourceProvider implements CraftCjkResourceProvider {
+class CjkMemoryResourceProvider implements CjkResourceProvider {
   final Map<String, Uint8List> _resources;
 
-  CraftCjkMemoryResourceProvider(Map<String, List<int>> resources)
+  CjkMemoryResourceProvider(Map<String, List<int>> resources)
       : _resources = Map.unmodifiable({
           for (final entry in resources.entries)
             _validatedName(entry.key): Uint8List.fromList(entry.value),

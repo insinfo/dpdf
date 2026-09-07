@@ -6,16 +6,15 @@ import 'pdf_object_wrapper.dart';
 
 /// Represents a node in the pages tree.
 /// Follows the same logic as  C# PdfPages.
-class CraftPdfPages extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+class PdfPages extends PdfObjectWrapper<PdfDictionary> {
   int _from;
-  late CraftPdfNumber _count;
-  CraftPdfArray? _kids;
-  final CraftPdfPages? _parent;
+  late PdfNumber _count;
+  PdfArray? _kids;
+  final PdfPages? _parent;
 
-  CraftPdfPages(this._from,
-      {CraftPdfPages? parent, CraftPdfDictionary? pdfObject})
+  PdfPages(this._from, {PdfPages? parent, PdfDictionary? pdfObject})
       : _parent = parent,
-        super(pdfObject ?? CraftPdfDictionary()) {
+        super(pdfObject ?? PdfDictionary()) {
     setForbidRelease();
   }
 
@@ -25,26 +24,25 @@ class CraftPdfPages extends CraftPdfObjectWrapper<CraftPdfDictionary> {
 
     // Check if this is an existing Pages dictionary by looking for /Count key
     // Don't use isEmpty() as it may return true for loaded dictionaries
-    if (pdfObject.containsKey(CraftPdfName.count) ||
-        pdfObject.containsKey(CraftPdfName.kids)) {
+    if (pdfObject.containsKey(PdfName.count) ||
+        pdfObject.containsKey(PdfName.kids)) {
       // Load from existing dictionary
-      _count = await pdfObject.numberEntry(CraftPdfName.count) ??
-          CraftPdfNumber(0.0);
-      _kids = await pdfObject.arrayEntry(CraftPdfName.kids);
+      _count = await pdfObject.numberEntry(PdfName.count) ?? PdfNumber(0.0);
+      _kids = await pdfObject.arrayEntry(PdfName.kids);
     } else {
       // New empty pages node
-      _count = CraftPdfNumber(0.0);
-      _kids = CraftPdfArray();
-      pdfObject.put(CraftPdfName.type, CraftPdfName.pages);
-      pdfObject.put(CraftPdfName.kids, _kids!);
-      pdfObject.put(CraftPdfName.count, _count);
+      _count = PdfNumber(0.0);
+      _kids = PdfArray();
+      pdfObject.put(PdfName.type, PdfName.pages);
+      pdfObject.put(PdfName.kids, _kids!);
+      pdfObject.put(PdfName.count, _count);
       if (_parent != null) {
         // Use indirect reference for parent
         final parentRef = _parent.pdfRepresentation().indirectHandle();
         if (parentRef != null) {
-          pdfObject.put(CraftPdfName.parent, parentRef);
+          pdfObject.put(PdfName.parent, parentRef);
         } else {
-          pdfObject.put(CraftPdfName.parent, _parent.pdfRepresentation());
+          pdfObject.put(PdfName.parent, _parent.pdfRepresentation());
         }
       }
     }
@@ -61,20 +59,20 @@ class CraftPdfPages extends CraftPdfObjectWrapper<CraftPdfDictionary> {
     _from += correction;
   }
 
-  CraftPdfArray? getKids() => _kids;
+  PdfArray? getKids() => _kids;
 
-  CraftPdfPages? getParent() => _parent;
+  PdfPages? getParent() => _parent;
 
-  void appendPageObject(CraftPdfDictionary page) {
-    _kids ??= CraftPdfArray();
+  void appendPageObject(PdfDictionary page) {
+    _kids ??= PdfArray();
     _kids!.add(page);
     incrementCount();
     // Use indirect reference for parent to avoid writing inline dictionary
     final parentRef = pdfRepresentation().indirectHandle();
     if (parentRef != null) {
-      page.put(CraftPdfName.parent, parentRef);
+      page.put(PdfName.parent, parentRef);
     } else {
-      page.put(CraftPdfName.parent, pdfRepresentation());
+      page.put(PdfName.parent, pdfRepresentation());
     }
     page.markChanged();
   }
@@ -83,16 +81,16 @@ class CraftPdfPages extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   ///
   /// [index] - The 0-based index within this node's kids where to insert.
   /// [page] - The page dictionary to insert.
-  void insertPageObject(int index, CraftPdfDictionary page) {
-    _kids ??= CraftPdfArray();
+  void insertPageObject(int index, PdfDictionary page) {
+    _kids ??= PdfArray();
     _kids!.insert(index, page);
     incrementCount();
     // Use indirect reference for parent to avoid writing inline dictionary
     final parentRef = pdfRepresentation().indirectHandle();
     if (parentRef != null) {
-      page.put(CraftPdfName.parent, parentRef);
+      page.put(PdfName.parent, parentRef);
     } else {
-      page.put(CraftPdfName.parent, pdfRepresentation());
+      page.put(PdfName.parent, pdfRepresentation());
     }
     page.markChanged();
   }
@@ -124,16 +122,16 @@ class CraftPdfPages extends CraftPdfObjectWrapper<CraftPdfDictionary> {
     return true;
   }
 
-  void addPages(CraftPdfPages other) {
-    _kids ??= CraftPdfArray();
+  void addPages(PdfPages other) {
+    _kids ??= PdfArray();
     _kids!.add(other.pdfRepresentation());
     _count.setValue(_count.doubleValue() + other.getCount().toDouble());
     // Use indirect reference for parent
     final parentRef = pdfRepresentation().indirectHandle();
     if (parentRef != null) {
-      other.pdfRepresentation().put(CraftPdfName.parent, parentRef);
+      other.pdfRepresentation().put(PdfName.parent, parentRef);
     } else {
-      other.pdfRepresentation().put(CraftPdfName.parent, pdfRepresentation());
+      other.pdfRepresentation().put(PdfName.parent, pdfRepresentation());
     }
     other.markChanged();
     markChanged();

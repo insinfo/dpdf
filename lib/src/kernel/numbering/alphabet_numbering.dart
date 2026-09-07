@@ -1,5 +1,5 @@
 /// Positive integers in a bijective positional alphabet (A, ..., AA).
-class CraftAlphabetNumbering {
+class AlphabetNumbering {
   static String toAlphabetNumber(int number, List<String> alphabet) {
     if (number < 1) throw RangeError.range(number, 1, null, 'number');
     if (alphabet.isEmpty) {

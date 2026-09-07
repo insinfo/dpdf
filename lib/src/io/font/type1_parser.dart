@@ -4,7 +4,7 @@ import '../resources/embedded_font_resources.dart';
 import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 import 'package:dpdf/src/io/font/constants/standard_fonts.dart';
 
-class CraftType1Parser {
+class Type1Parser {
   static const String AFM_HEADER = "StartFontMetrics";
 
   String? afmPath;
@@ -13,44 +13,44 @@ class CraftType1Parser {
   Uint8List? afmData;
   bool isBuiltInFontValue = false;
 
-  CraftType1Parser(this.afmPath, this.pfbPath, this.afmData, this.pfbData);
+  Type1Parser(this.afmPath, this.pfbPath, this.afmData, this.pfbData);
 
-  CraftRandomAccessFileOrArray getMetricsFile() {
+  RandomAccessFileOrArray getMetricsFile() {
     isBuiltInFontValue = false;
-    if (afmPath != null && CraftStandardFonts.isStandardFont(afmPath!)) {
+    if (afmPath != null && StandardFonts.isStandardFont(afmPath!)) {
       isBuiltInFontValue = true;
       final bytes = EmbeddedFontResources.metrics(afmPath!) ?? afmData;
       if (bytes == null) {
         throw StateError('No embedded AFM metrics available for $afmPath');
       }
-      return CraftRandomAccessFileOrArray(bytes);
+      return RandomAccessFileOrArray(bytes);
     }
 
     if (afmPath != null) {
       if (afmPath!.toLowerCase().endsWith(".afm")) {
-        return CraftRandomAccessFileOrArray.fromFile(File(afmPath!));
+        return RandomAccessFileOrArray.fromFile(File(afmPath!));
       }
       // PFM support is not implemented.
     }
 
     if (afmData != null) {
-      return CraftRandomAccessFileOrArray(afmData!);
+      return RandomAccessFileOrArray(afmData!);
     }
 
     throw Exception("Invalid afm font file.");
   }
 
-  CraftRandomAccessFileOrArray getPostscriptBinary() {
+  RandomAccessFileOrArray getPostscriptBinary() {
     if (pfbData != null) {
-      return CraftRandomAccessFileOrArray(pfbData!);
+      return RandomAccessFileOrArray(pfbData!);
     }
     if (pfbPath != null && pfbPath!.toLowerCase().endsWith(".pfb")) {
-      return CraftRandomAccessFileOrArray.fromFile(File(pfbPath!));
+      return RandomAccessFileOrArray.fromFile(File(pfbPath!));
     } else if (afmPath != null) {
       String pfb = "${afmPath!.substring(0, afmPath!.length - 3)}pfb";
       File f = File(pfb);
       if (f.existsSync()) {
-        return CraftRandomAccessFileOrArray.fromFile(f);
+        return RandomAccessFileOrArray.fromFile(f);
       }
     }
     throw Exception("PFB file not found");

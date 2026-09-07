@@ -223,7 +223,7 @@ class PkiUtils {
 
   static Uint8List processAesCbc(
       bool encrypt, Uint8List key, Uint8List iv, Uint8List data) {
-    final cipher = CraftAESCipher(encrypt, key, iv);
+    final cipher = AESCipher(encrypt, key, iv);
     return Uint8List.fromList(
         [...cipher.update(data, 0, data.length), ...cipher.doFinal()]);
   }

@@ -1,1 +1,1 @@
-enum CraftLayoutPosition { STATIC, RELATIVE, FIXED, ABSOLUTE }
+enum LayoutPosition { STATIC, RELATIVE, FIXED, ABSOLUTE }

@@ -14,65 +14,64 @@ import 'pdf_boolean.dart';
 import 'pdf_stream.dart';
 
 /// The root of a document’s object hierarchy.
-class CraftPdfCatalog extends CraftPdfObjectWrapper<CraftPdfDictionary> {
-  late final CraftPdfPagesTree _pageTree;
+class PdfCatalog extends PdfObjectWrapper<PdfDictionary> {
+  late final PdfPagesTree _pageTree;
 
-  CraftPdfCatalog(CraftPdfDictionary pdfObject) : super(pdfObject) {
+  PdfCatalog(PdfDictionary pdfObject) : super(pdfObject) {
     // ignore: unnecessary_null_comparison
     if (pdfObject == null) {
-      throw CraftPdfException('Document has no PDF catalog object.');
+      throw PdfException('Document has no PDF catalog object.');
     }
-    _pageTree = CraftPdfPagesTree(this);
+    _pageTree = PdfPagesTree(this);
   }
 
   /// Initializes the catalog and its components (like the pages tree).
   Future<void> init() async {
-    pdfRepresentation().put(CraftPdfName.type, CraftPdfName.catalog);
+    pdfRepresentation().put(PdfName.type, PdfName.catalog);
     setForbidRelease();
     await _pageTree.init();
   }
 
-  CraftPdfPagesTree getPageTree() => _pageTree;
+  PdfPagesTree getPageTree() => _pageTree;
 
   @override
   bool requiresIndirectStorage() => true;
 
   /// Gets page mode of the document.
-  Future<CraftPdfName?> getPageMode() async {
-    return await pdfRepresentation().nameEntry(CraftPdfName.pageMode);
+  Future<PdfName?> getPageMode() async {
+    return await pdfRepresentation().nameEntry(PdfName.pageMode);
   }
 
   /// Sets page mode.
-  CraftPdfCatalog setPageMode(CraftPdfName pageMode) {
-    pdfRepresentation().put(CraftPdfName.pageMode, pageMode);
+  PdfCatalog setPageMode(PdfName pageMode) {
+    pdfRepresentation().put(PdfName.pageMode, pageMode);
     return this;
   }
 
   /// Gets page layout.
-  Future<CraftPdfName?> getPageLayout() async {
-    return await pdfRepresentation().nameEntry(CraftPdfName.pageLayout);
+  Future<PdfName?> getPageLayout() async {
+    return await pdfRepresentation().nameEntry(PdfName.pageLayout);
   }
 
   /// Sets page layout.
-  CraftPdfCatalog setPageLayout(CraftPdfName pageLayout) {
-    pdfRepresentation().put(CraftPdfName.pageLayout, pageLayout);
+  PdfCatalog setPageLayout(PdfName pageLayout) {
+    pdfRepresentation().put(PdfName.pageLayout, pageLayout);
     return this;
   }
 
   /// Sets viewer preferences.
-  CraftPdfCatalog setViewerPreferences(CraftPdfDictionary preferences) {
-    pdfRepresentation().put(CraftPdfName.viewerPreferences, preferences);
+  PdfCatalog setViewerPreferences(PdfDictionary preferences) {
+    pdfRepresentation().put(PdfName.viewerPreferences, preferences);
     return this;
   }
 
   /// Convenience method to set DisplayDocTitle.
-  CraftPdfCatalog setDisplayDocTitle(bool display) {
-    var prefsObj =
-        pdfRepresentation().getMap()?[CraftPdfName.viewerPreferences];
-    CraftPdfDictionary prefs;
-    if (prefsObj is! CraftPdfDictionary) {
-      prefs = CraftPdfDictionary();
-      pdfRepresentation().put(CraftPdfName.viewerPreferences, prefs);
+  PdfCatalog setDisplayDocTitle(bool display) {
+    var prefsObj = pdfRepresentation().getMap()?[PdfName.viewerPreferences];
+    PdfDictionary prefs;
+    if (prefsObj is! PdfDictionary) {
+      prefs = PdfDictionary();
+      pdfRepresentation().put(PdfName.viewerPreferences, prefs);
       final doc = pdfRepresentation().indirectHandle()?.getDocument();
       if (doc != null) {
         prefs.attachToDocument(doc);
@@ -80,19 +79,19 @@ class CraftPdfCatalog extends CraftPdfObjectWrapper<CraftPdfDictionary> {
     } else {
       prefs = prefsObj;
     }
-    prefs.put(CraftPdfName.displayDocTitle, CraftPdfBoolean(display));
+    prefs.put(PdfName.displayDocTitle, PdfBoolean(display));
     return this;
   }
 
-  CraftPdfOutline? _outlines;
-  final Map<CraftPdfObject, List<CraftPdfOutline>> _pagesWithOutlines = {};
+  PdfOutline? _outlines;
+  final Map<PdfObject, List<PdfOutline>> _pagesWithOutlines = {};
   bool _outlineMode = false;
 
   /// Returns true if the document is in outline mode.
   bool isOutlineMode() => _outlineMode;
 
   /// Removes outlines associated with the page.
-  Future<void> removeOutlines(CraftPdfPage page) async {
+  Future<void> removeOutlines(PdfPage page) async {
     final doc = pdfRepresentation().indirectHandle()?.getDocument();
     if (doc == null || doc.outputWriter() == null) {
       return;
@@ -102,7 +101,7 @@ class CraftPdfCatalog extends CraftPdfObjectWrapper<CraftPdfDictionary> {
       if (_pagesWithOutlines.isNotEmpty) {
         final outlines = _pagesWithOutlines[page.pdfRepresentation()];
         if (outlines != null) {
-          for (final outline in List<CraftPdfOutline>.from(outlines)) {
+          for (final outline in List<PdfOutline>.from(outlines)) {
             outline.removeOutline();
           }
         }
@@ -111,7 +110,7 @@ class CraftPdfCatalog extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   }
 
   /// Gets the outlines of the document.
-  Future<CraftPdfOutline?> outlineTree(bool updateOutlines) async {
+  Future<PdfOutline?> outlineTree(bool updateOutlines) async {
     if (_outlines != null && !updateOutlines) {
       return _outlines;
     }
@@ -121,14 +120,14 @@ class CraftPdfCatalog extends CraftPdfObjectWrapper<CraftPdfDictionary> {
     }
     _outlineMode = true;
     final outlineRoot =
-        await pdfRepresentation().dictionaryEntry(CraftPdfName.outlines);
+        await pdfRepresentation().dictionaryEntry(PdfName.outlines);
     final doc = pdfRepresentation().indirectHandle()?.getDocument();
 
     if (outlineRoot == null) {
       if (doc?.outputWriter() == null) {
         return null;
       }
-      _outlines = CraftPdfOutline.createRoot(doc!);
+      _outlines = PdfOutline.createRoot(doc!);
     } else {
       if (doc == null) {
         return null;
@@ -139,17 +138,17 @@ class CraftPdfCatalog extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   }
 
   Future<void> _constructOutlines(
-      CraftPdfDictionary outlineRoot, CraftPdfDocument document) async {
-    _outlines = CraftPdfOutline.wrap(outlineRoot, document);
+      PdfDictionary outlineRoot, PdfDocument document) async {
+    _outlines = PdfOutline.wrap(outlineRoot, document);
 
     final stack = <_OutlineProcessingItem>[];
 
-    final first = await outlineRoot.dictionaryEntry(CraftPdfName.first);
+    final first = await outlineRoot.dictionaryEntry(PdfName.first);
     if (first != null) {
       stack.add(_OutlineProcessingItem(first, _outlines!));
     }
 
-    final visited = <CraftPdfDictionary>{};
+    final visited = <PdfDictionary>{};
 
     while (stack.isNotEmpty) {
       final item = stack.removeLast();
@@ -159,8 +158,8 @@ class CraftPdfCatalog extends CraftPdfObjectWrapper<CraftPdfDictionary> {
       if (visited.contains(currentDict)) continue;
       visited.add(currentDict);
 
-      final title = await currentDict.stringEntry(CraftPdfName.title);
-      final currentOutline = CraftPdfOutline.wrap(currentDict, document);
+      final title = await currentDict.stringEntry(PdfName.title);
+      final currentOutline = PdfOutline.wrap(currentDict, document);
       if (title != null && currentOutline.getTitle() == null) {
         currentOutline.setTitle(title.decodeMappingText());
       }
@@ -169,37 +168,35 @@ class CraftPdfCatalog extends CraftPdfObjectWrapper<CraftPdfDictionary> {
       _addOutlineToPage(currentOutline, currentDict);
 
       // Next sibling
-      final next = await currentDict.dictionaryEntry(CraftPdfName.next);
+      final next = await currentDict.dictionaryEntry(PdfName.next);
       if (next != null) {
         stack.add(_OutlineProcessingItem(next, parentOutline));
       }
 
       // First child
-      final child = await currentDict.dictionaryEntry(CraftPdfName.first);
+      final child = await currentDict.dictionaryEntry(PdfName.first);
       if (child != null) {
         stack.add(_OutlineProcessingItem(child, currentOutline));
       }
     }
   }
 
-  void _addOutlineToPage(
-      CraftPdfOutline outline, CraftPdfDictionary outlineDict) {
-    var dest = outlineDict.getMap()?[CraftPdfName.dest];
+  void _addOutlineToPage(PdfOutline outline, PdfDictionary outlineDict) {
+    var dest = outlineDict.getMap()?[PdfName.dest];
     if (dest == null) {
-      final a = outlineDict.getMap()?[CraftPdfName.a];
-      if (a is CraftPdfDictionary &&
-          CraftPdfName.goTo == a.getMap()?[CraftPdfName.s]) {
-        dest = a.getMap()?[CraftPdfName.d];
+      final a = outlineDict.getMap()?[PdfName.a];
+      if (a is PdfDictionary && PdfName.goTo == a.getMap()?[PdfName.s]) {
+        dest = a.getMap()?[PdfName.d];
       }
     }
 
     if (dest != null) {
-      if (dest is CraftPdfIndirectReference) {
+      if (dest is PdfIndirectReference) {
         dest = dest.targetObjectSync();
       }
-      if (dest is CraftPdfArray) {
+      if (dest is PdfArray) {
         final pageRef = dest.toList().isNotEmpty ? dest.toList()[0] : null;
-        if (pageRef is CraftPdfIndirectReference) {
+        if (pageRef is PdfIndirectReference) {
           final pageObj = pageRef.targetObjectSync();
           if (pageObj != null) {
             _pagesWithOutlines.putIfAbsent(pageObj, () => []).add(outline);
@@ -211,48 +208,46 @@ class CraftPdfCatalog extends CraftPdfObjectWrapper<CraftPdfDictionary> {
 
   /// Indicates if the document has any outlines.
   bool containsOutlineTree() {
-    return pdfRepresentation().containsKey(CraftPdfName.outlines);
+    return pdfRepresentation().containsKey(PdfName.outlines);
   }
 
   /// Registers an outline with a page for removal tracking.
-  void registerOutlineWithPage(
-      CraftPdfOutline outline, CraftPdfObject pageObj) {
+  void registerOutlineWithPage(PdfOutline outline, PdfObject pageObj) {
     _pagesWithOutlines.putIfAbsent(pageObj, () => []).add(outline);
   }
 
   /// Adds a named destination.
-  Future<void> registerDestination(
-      CraftPdfString key, CraftPdfObject value) async {
-    final tree = await CraftPdfNameTree.create(this, CraftPdfName.dests);
+  Future<void> registerDestination(PdfString key, PdfObject value) async {
+    final tree = await PdfNameTree.create(this, PdfName.dests);
     tree.addEntry(key, value);
     final treeDict = tree.buildTree();
 
-    CraftPdfDictionary? names =
-        await pdfRepresentation().dictionaryEntry(CraftPdfName.names);
+    PdfDictionary? names =
+        await pdfRepresentation().dictionaryEntry(PdfName.names);
     if (names == null) {
-      names = CraftPdfDictionary();
-      put(CraftPdfName.names, names);
+      names = PdfDictionary();
+      put(PdfName.names, names);
       final doc = pdfRepresentation().indirectHandle()?.getDocument();
       if (doc != null) {
         names.attachToDocument(doc);
       }
     }
-    names.put(CraftPdfName.dests, treeDict);
+    names.put(PdfName.dests, treeDict);
     names.markChanged();
   }
 
   /// Adds a name to a NameTree.
   Future<void> addNameToNameTree(
-      CraftPdfString key, CraftPdfObject value, CraftPdfName treeName) async {
-    final tree = await CraftPdfNameTree.create(this, treeName);
+      PdfString key, PdfObject value, PdfName treeName) async {
+    final tree = await PdfNameTree.create(this, treeName);
     tree.addEntry(key, value);
     final treeDict = tree.buildTree();
 
-    CraftPdfDictionary? names =
-        await pdfRepresentation().dictionaryEntry(CraftPdfName.names);
+    PdfDictionary? names =
+        await pdfRepresentation().dictionaryEntry(PdfName.names);
     if (names == null) {
-      names = CraftPdfDictionary();
-      put(CraftPdfName.names, names);
+      names = PdfDictionary();
+      put(PdfName.names, names);
       final doc = pdfRepresentation().indirectHandle()?.getDocument();
       if (doc != null) {
         names.attachToDocument(doc);
@@ -263,46 +258,46 @@ class CraftPdfCatalog extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   }
 
   /// Gets the metadata stream from the catalog.
-  Future<CraftPdfStream?> getMetadata() async {
-    return await pdfRepresentation().streamEntry(CraftPdfName.metadata);
+  Future<PdfStream?> getMetadata() async {
+    return await pdfRepresentation().streamEntry(PdfName.metadata);
   }
 
   /// Sets the metadata stream for the document.
-  CraftPdfCatalog setMetadata(CraftPdfStream metadata) {
-    put(CraftPdfName.metadata, metadata);
+  PdfCatalog setMetadata(PdfStream metadata) {
+    put(PdfName.metadata, metadata);
     return this;
   }
 
   /// Gets the OutputIntents array.
-  Future<CraftPdfArray?> getOutputIntents() async {
-    return await pdfRepresentation().arrayEntry(CraftPdfName.outputIntents);
+  Future<PdfArray?> getOutputIntents() async {
+    return await pdfRepresentation().arrayEntry(PdfName.outputIntents);
   }
 
   /// Adds an output intent to the document.
-  CraftPdfCatalog registerOutputProfile(CraftPdfObject outputIntent) {
-    CraftPdfArray? intents = pdfRepresentation()
-        .getMap()?[CraftPdfName.outputIntents] as CraftPdfArray?;
+  PdfCatalog registerOutputProfile(PdfObject outputIntent) {
+    PdfArray? intents =
+        pdfRepresentation().getMap()?[PdfName.outputIntents] as PdfArray?;
     if (intents == null) {
-      intents = CraftPdfArray();
+      intents = PdfArray();
       final doc = pdfRepresentation().indirectHandle()?.getDocument();
       if (doc != null) {
         intents.attachToDocument(doc);
       }
-      put(CraftPdfName.outputIntents, intents);
+      put(PdfName.outputIntents, intents);
     }
     intents.add(outputIntent);
     intents.markChanged();
     return this;
   }
 
-  void put(CraftPdfName key, CraftPdfObject value) {
+  void put(PdfName key, PdfObject value) {
     pdfRepresentation().put(key, value);
     markChanged();
   }
 }
 
 class _OutlineProcessingItem {
-  final CraftPdfDictionary dictionary;
-  final CraftPdfOutline parent;
+  final PdfDictionary dictionary;
+  final PdfOutline parent;
   _OutlineProcessingItem(this.dictionary, this.parent);
 }

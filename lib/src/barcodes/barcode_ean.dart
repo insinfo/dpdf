@@ -10,7 +10,7 @@ import '../kernel/exceptions/pdf_exception.dart';
 import 'barcode_1d.dart';
 
 /// EAN and UPC retail symbols, including two- and five-digit supplements.
-class CraftBarcodeEAN extends CraftBarcode1D {
+class BarcodeEAN extends Barcode1D {
   /// A type of barcode
   static const int EAN13 = 1;
 
@@ -158,16 +158,16 @@ class CraftBarcodeEAN extends CraftBarcode1D {
   ];
 
   /// Uses the supplied typeface or the document's configured default.
-  factory CraftBarcodeEAN(CraftPdfDocument document, [CraftPdfFont? font]) {
+  factory BarcodeEAN(PdfDocument document, [PdfFont? font]) {
     final resolvedFont = font ?? document.defaultTypeface();
     if (resolvedFont == null) {
-      throw CraftPdfException(
+      throw PdfException(
           'Could not create default font for barcode. Please provide a font explicitly.');
     }
-    return CraftBarcodeEAN._internal(document, resolvedFont);
+    return BarcodeEAN._internal(document, resolvedFont);
   }
 
-  CraftBarcodeEAN._internal(super.document, CraftPdfFont font) {
+  BarcodeEAN._internal(super.document, PdfFont font) {
     x = 0.8;
     this.font = font;
     size = 8;
@@ -315,8 +315,8 @@ class CraftBarcodeEAN extends CraftBarcode1D {
         UPCE => (getBarsUPCE(code), GUARD_UPCE),
         SUPP2 => (getBarsSupplemental2(code), GUARD_EMPTY),
         SUPP5 => (getBarsSupplemental5(code), GUARD_EMPTY),
-        _ => throw CraftPdfException(
-            'Retail symbol type $codeType is not supported'),
+        _ =>
+          throw PdfException('Retail symbol type $codeType is not supported'),
       };
 
   bool get _outsideFirst =>
@@ -326,7 +326,7 @@ class CraftBarcodeEAN extends CraftBarcode1D {
   double get _leftTextWidth => _outsideFirst ? _digitWidth(0) : 0;
 
   @override
-  CraftRectangle getBarcodeSize() {
+  Rectangle getBarcodeSize() {
     final (runs, _) = _pattern();
     final moduleCount = runs.fold<int>(0, (sum, run) => sum + run);
     final textHeight = font == null
@@ -335,13 +335,13 @@ class CraftBarcodeEAN extends CraftBarcode1D {
             ? baseline - getDescender()
             : size - baseline;
     final extraRight = _outsideLast ? _digitWidth(code.length - 1) : 0.0;
-    return CraftRectangle(0, 0, moduleCount * x + _leftTextWidth + extraRight,
+    return Rectangle(0, 0, moduleCount * x + _leftTextWidth + extraRight,
         barHeight + textHeight);
   }
 
   @override
-  Future<CraftRectangle> placeBarcode(CraftPdfCanvas canvas,
-      CraftColor? barColor, CraftColor? textColor) async {
+  Future<Rectangle> placeBarcode(
+      PdfCanvas canvas, Color? barColor, Color? textColor) async {
     final bounds = getBarcodeSize();
     final (runs, guards) = _pattern();
     final textY = font == null

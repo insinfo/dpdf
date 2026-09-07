@@ -10,7 +10,7 @@ import '../io/font/font_program.dart';
 /// Base class for the barcode types that have 1D representation.
 ///
 /// This means all data is encoded in the width of the bars. And the height of the bars is constant.
-abstract class CraftBarcode1D {
+abstract class Barcode1D {
   /// Constant that defines left alignment.
   static const int ALIGN_LEFT = 1;
 
@@ -20,7 +20,7 @@ abstract class CraftBarcode1D {
   /// Constant that defines center alignment.
   static const int ALIGN_CENTER = 3;
 
-  CraftPdfDocument document;
+  PdfDocument document;
 
   /// The minimum bar width.
   double x = 0;
@@ -29,7 +29,7 @@ abstract class CraftBarcode1D {
   double n = 0;
 
   /// The text font. [null] if no text.
-  CraftPdfFont? font;
+  PdfFont? font;
 
   /// The size of the text or the height of the shorter bar in Postnet.
   double size = 0;
@@ -75,7 +75,7 @@ abstract class CraftBarcode1D {
   /// Creates new [Barcode1D] instance.
   ///
   /// [document] - The document
-  CraftBarcode1D(this.document);
+  Barcode1D(this.document);
 
   /// Gets the minimum bar width.
   double getX() => x;
@@ -92,12 +92,12 @@ abstract class CraftBarcode1D {
   /// Gets the text font.
   ///
   /// Returns the text font. [null] if no text.
-  CraftPdfFont? resolveTypeface() => font;
+  PdfFont? resolveTypeface() => font;
 
   /// Sets the text font.
   ///
   /// [font] - the text font. Set to [null] to suppress any text
-  void setFont(CraftPdfFont? font) => this.font = font;
+  void setFont(PdfFont? font) => this.font = font;
 
   /// Gets the size of the text.
   double getSize() => size;
@@ -171,7 +171,7 @@ abstract class CraftBarcode1D {
   /// Gets the maximum area that the barcode and the text, if any, will occupy.
   ///
   /// The lower left corner is always (0, 0).
-  CraftRectangle? getBarcodeSize();
+  Rectangle? getBarcodeSize();
 
   /// Places the barcode in a [PdfCanvas].
   ///
@@ -181,8 +181,8 @@ abstract class CraftBarcode1D {
   /// [barColor] - the color of the bars. It can be [null]
   /// [textColor] - the color of the text. It can be [null]
   /// Returns the dimensions the barcode occupies
-  Future<CraftRectangle?> placeBarcode(
-      CraftPdfCanvas canvas, CraftColor? barColor, CraftColor? textColor);
+  Future<Rectangle?> placeBarcode(
+      PdfCanvas canvas, Color? barColor, Color? textColor);
 
   /// Gets the amount of ink spreading.
   double getInkSpreading() => inkSpreading;
@@ -204,12 +204,11 @@ abstract class CraftBarcode1D {
   /// Creates a [PdfFormXObject] with the barcode.
   ///
   /// Default bar color and text color will be used.
-  Future<CraftPdfFormXObject> createFormXObject(CraftPdfDocument document,
-      [CraftColor? barColor, CraftColor? textColor]) async {
-    CraftPdfFormXObject xObject =
-        CraftPdfFormXObject(CraftRectangle(0, 0, 0, 0));
-    CraftRectangle? rect = await placeBarcode(
-        await CraftPdfCanvas.fromFormXObject(xObject, document),
+  Future<PdfFormXObject> createFormXObject(PdfDocument document,
+      [Color? barColor, Color? textColor]) async {
+    PdfFormXObject xObject = PdfFormXObject(Rectangle(0, 0, 0, 0));
+    Rectangle? rect = await placeBarcode(
+        await PdfCanvas.fromFormXObject(xObject, document),
         barColor,
         textColor);
     if (rect != null) {
@@ -228,8 +227,7 @@ abstract class CraftBarcode1D {
   /// Gets the descender value of the font.
   double getDescender() {
     if (font == null) return 0;
-    double sizeCoefficient =
-        CraftFontProgram.convertTextSpaceToGlyphSpace(size);
+    double sizeCoefficient = FontProgram.convertTextSpaceToGlyphSpace(size);
     return font!.getFontProgram()!.getFontMetrics().getTypoDescender() *
         sizeCoefficient;
   }

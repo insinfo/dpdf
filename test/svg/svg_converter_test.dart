@@ -15,10 +15,10 @@ import 'package:test/test.dart';
 /// Um canvas sem documento é suficiente para tudo que este módulo emite e
 /// deixa o resultado legível: os operadores aparecem exatamente na ordem em
 /// que foram escritos, sem passar por objetos indiretos.
-Future<String> _render(String svg, {CraftRectangle? viewport}) async {
-  final stream = CraftPdfStream();
-  final canvas = CraftPdfCanvas(stream, null, null);
-  await CraftSvgConverter.drawOnCanvas(svg, canvas, viewport: viewport);
+Future<String> _render(String svg, {Rectangle? viewport}) async {
+  final stream = PdfStream();
+  final canvas = PdfCanvas(stream, null, null);
+  await SvgConverter.drawOnCanvas(svg, canvas, viewport: viewport);
   final bytes = await stream.getBytes();
   return String.fromCharCodes(bytes!);
 }
@@ -27,7 +27,7 @@ int _count(String content, String operator) =>
     operator.allMatches(content).length;
 
 void main() {
-  group('CraftSvgConverter no fluxo de conteúdo', () {
+  group('SvgConverter no fluxo de conteúdo', () {
     test('inverte o eixo Y e recorta o viewport antes de desenhar', () async {
       // 100 unidades de usuário = 75 pt, e a origem do SVG passa a ser o
       // canto superior esquerdo do viewport.
@@ -53,7 +53,7 @@ void main() {
     test('posiciona o desenho no viewport informado', () async {
       final content = await _render(
           '<svg width="100" height="100"><rect width="10" height="10"/></svg>',
-          viewport: CraftRectangle(100, 200, 60, 40));
+          viewport: Rectangle(100, 200, 60, 40));
 
       // A inversão leva a origem local ao topo do retângulo pedido; daí em
       // diante o recorte e o desenho já falam em coordenadas locais.
@@ -253,14 +253,13 @@ void main() {
     });
   });
 
-  group('CraftSvgConverter em documento', () {
+  group('SvgConverter em documento', () {
     test('gera uma página do tamanho intrínseco do desenho', () async {
-      final bytes = await CraftSvgConverter.convertToBytes(
+      final bytes = await SvgConverter.convertToBytes(
           '<svg width="100" height="60"><rect x="10" y="20" width="30" '
           'height="40" fill="#ff0000"/></svg>');
 
-      final document =
-          await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
       try {
         expect(document.pageTotal(), 1);
         final page = (await document.pageAt(1))!;
@@ -278,12 +277,11 @@ void main() {
     });
 
     test('fill-opacity vira um estado gráfico estendido', () async {
-      final bytes = await CraftSvgConverter.convertToBytes(
+      final bytes = await SvgConverter.convertToBytes(
           '<svg width="40" height="40"><rect width="10" height="10" '
           'fill="red" fill-opacity="0.5"/></svg>');
 
-      final document =
-          await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
       try {
         final content = String.fromCharCodes(
             await (await document.pageAt(1))!.contentPayload());
@@ -298,16 +296,15 @@ void main() {
 
     test('drawOnPage ancora no canto superior esquerdo da página', () async {
       final output = BytesBuilder(copy: false);
-      final document =
-          CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
-      final page = await document.appendBlankPage(CraftPageSize.A5);
-      await CraftSvgConverter.drawOnPage(
+      final document = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
+      final page = await document.appendBlankPage(PageSize.A5);
+      await SvgConverter.drawOnPage(
           '<svg width="100" height="60"><rect width="10" height="10"/></svg>',
           page);
       await document.close();
 
-      final reopened = await CraftPdfDocument.open(
-          CraftPdfReader.fromBytes(output.takeBytes()));
+      final reopened =
+          await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
       try {
         final content = String.fromCharCodes(
             await (await reopened.pageAt(1))!.contentPayload());
@@ -320,12 +317,11 @@ void main() {
     });
 
     test('ancora o desenho no topo da página quando ela já existe', () async {
-      final bytes = await CraftSvgConverter.convertToBytes(
+      final bytes = await SvgConverter.convertToBytes(
           '<svg width="100" height="100"><rect width="10" height="10"/></svg>',
-          pageSize: CraftPageSize.A4);
+          pageSize: PageSize.A4);
 
-      final document =
-          await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
       try {
         final page = (await document.pageAt(1))!;
         final bounds = await page.mediaBounds();

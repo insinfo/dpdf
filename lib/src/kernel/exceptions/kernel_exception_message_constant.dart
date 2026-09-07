@@ -1,6 +1,6 @@
 /// Diagnostic templates for DPDF. Public identifiers and format slots are stable.
-class CraftKernelExceptionMessageConstant {
-  CraftKernelExceptionMessageConstant._();
+class KernelExceptionMessageConstant {
+  KernelExceptionMessageConstant._();
 
   static const String alreadyClosed = 'The resource has already been closed.';
 

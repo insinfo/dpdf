@@ -14,79 +14,77 @@ import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
-abstract class CraftAbstractRenderer implements CraftRenderer {
-  CraftPropertyContainer? modelElement;
-  List<CraftRenderer> childRenderers = [];
-  CraftRenderer? parent;
+abstract class AbstractRenderer implements Renderer {
+  PropertyContainer? modelElement;
+  List<Renderer> childRenderers = [];
+  Renderer? parent;
   Map<int, dynamic> properties = {};
-  CraftLayoutArea? occupiedArea;
+  LayoutArea? occupiedArea;
 
-  CraftAbstractRenderer(this.modelElement);
+  AbstractRenderer(this.modelElement);
 
   @override
   @override
-  CraftPropertyContainer? getModelElement() {
+  PropertyContainer? getModelElement() {
     return modelElement;
   }
 
   @override
-  void addChild(CraftRenderer renderer) {
+  void addChild(Renderer renderer) {
     childRenderers.add(renderer);
     renderer.setParent(this);
   }
 
   @override
-  List<CraftRenderer> getChildRenderers() {
+  List<Renderer> getChildRenderers() {
     return childRenderers;
   }
 
   @override
-  void setParent(CraftRenderer? parent) {
+  void setParent(Renderer? parent) {
     this.parent = parent;
   }
 
   @override
-  CraftLayoutArea? getOccupiedArea() {
+  LayoutArea? getOccupiedArea() {
     return occupiedArea;
   }
 
   @override
-  CraftRenderer? getNextRenderer() {
+  Renderer? getNextRenderer() {
     return null;
   }
 
-  CraftAbstractRenderer createSplitRenderer(int layoutResult) {
-    CraftAbstractRenderer splitRenderer =
-        getNextRenderer() as CraftAbstractRenderer;
+  AbstractRenderer createSplitRenderer(int layoutResult) {
+    AbstractRenderer splitRenderer = getNextRenderer() as AbstractRenderer;
     splitRenderer.modelElement = modelElement;
     splitRenderer.parent = parent;
     splitRenderer.occupiedArea = occupiedArea;
     return splitRenderer;
   }
 
-  CraftAbstractRenderer createOverflowRenderer(int layoutResult) {
-    CraftAbstractRenderer overflowRenderer =
-        getNextRenderer() as CraftAbstractRenderer;
+  AbstractRenderer createOverflowRenderer(int layoutResult) {
+    AbstractRenderer overflowRenderer = getNextRenderer() as AbstractRenderer;
     overflowRenderer.modelElement = modelElement;
     overflowRenderer.parent = parent;
     return overflowRenderer;
   }
 
   @override
-  Future<void> draw(CraftDrawContext drawContext) async {
+  Future<void> draw(DrawContext drawContext) async {
     drawBackground(drawContext);
     drawBorder(drawContext);
     await drawChildren(drawContext);
   }
 
-  void drawBackground(CraftDrawContext drawContext) {
-    CraftBackground? background = getProperty(CraftProperty.BACKGROUND);
+  void drawBackground(DrawContext drawContext) {
+    Background? background = getProperty(Property.BACKGROUND);
     if (background != null &&
         background.color != null &&
         occupiedArea != null) {
-      CraftRectangle box = applyMargins(occupiedArea!.getBBox(), false);
+      Rectangle box = applyMargins(occupiedArea!.getBBox(), false);
 
-      CraftPdfCanvas canvas = drawContext.getCanvas();
+      PdfCanvas canvas = drawContext.getCanvas();
       canvas.saveState();
       canvas.setFillColor(background.color!);
       canvas.rectangle(box.getX(), box.getY(), box.getWidth(), box.getHeight());
@@ -95,16 +93,16 @@ abstract class CraftAbstractRenderer implements CraftRenderer {
     }
   }
 
-  void drawBorder(CraftDrawContext drawContext) {
+  void drawBorder(DrawContext drawContext) {
     if (occupiedArea == null) return;
-    CraftRectangle box = applyMargins(occupiedArea!.getBBox(), true);
+    Rectangle box = applyMargins(occupiedArea!.getBBox(), true);
 
-    CraftBorder? bt = getProperty(CraftProperty.BORDER_TOP);
-    CraftBorder? bb = getProperty(CraftProperty.BORDER_BOTTOM);
-    CraftBorder? bl = getProperty(CraftProperty.BORDER_LEFT);
-    CraftBorder? br = getProperty(CraftProperty.BORDER_RIGHT);
+    Border? bt = getProperty(Property.BORDER_TOP);
+    Border? bb = getProperty(Property.BORDER_BOTTOM);
+    Border? bl = getProperty(Property.BORDER_LEFT);
+    Border? br = getProperty(Property.BORDER_RIGHT);
 
-    CraftPdfCanvas canvas = drawContext.getCanvas();
+    PdfCanvas canvas = drawContext.getCanvas();
     canvas.saveState();
 
     // Simplified border drawing
@@ -140,19 +138,19 @@ abstract class CraftAbstractRenderer implements CraftRenderer {
     canvas.restoreState();
   }
 
-  CraftRectangle applyMargins(CraftRectangle rect, bool applyBorders) {
+  Rectangle applyMargins(Rectangle rect, bool applyBorders) {
     double parentWidth = rect.getWidth();
 
-    double mt = getResolvedProperty(CraftProperty.MARGIN_TOP, parentWidth);
-    double mb = getResolvedProperty(CraftProperty.MARGIN_BOTTOM, parentWidth);
-    double ml = getResolvedProperty(CraftProperty.MARGIN_LEFT, parentWidth);
-    double mr = getResolvedProperty(CraftProperty.MARGIN_RIGHT, parentWidth);
+    double mt = getResolvedProperty(Property.MARGIN_TOP, parentWidth);
+    double mb = getResolvedProperty(Property.MARGIN_BOTTOM, parentWidth);
+    double ml = getResolvedProperty(Property.MARGIN_LEFT, parentWidth);
+    double mr = getResolvedProperty(Property.MARGIN_RIGHT, parentWidth);
 
-    return CraftRectangle(rect.getX() + ml, rect.getY() + mb,
+    return Rectangle(rect.getX() + ml, rect.getY() + mb,
         rect.getWidth() - ml - mr, rect.getHeight() - mt - mb);
   }
 
-  Future<void> drawChildren(CraftDrawContext drawContext) async {
+  Future<void> drawChildren(DrawContext drawContext) async {
     for (var child in childRenderers) {
       await child.draw(drawContext);
     }
@@ -160,7 +158,7 @@ abstract class CraftAbstractRenderer implements CraftRenderer {
 
   // Define layout as abstract (no body needed in abstract class)
   @override
-  CraftLayoutResult? layout(CraftLayoutContext layoutContext);
+  LayoutResult? layout(LayoutContext layoutContext);
 
   // Property methods
   @override
@@ -226,7 +224,7 @@ abstract class CraftAbstractRenderer implements CraftRenderer {
   double? getPropertyAsFloat(int property) {
     var val = getProperty(property);
     if (val is num) return val.toDouble();
-    if (val is CraftUnitValue && val.isPointValue()) return val.getValue();
+    if (val is UnitValue && val.isPointValue()) return val.getValue();
     return null;
   }
 
@@ -235,7 +233,7 @@ abstract class CraftAbstractRenderer implements CraftRenderer {
       [double defaultValue = 0]) {
     var val = getProperty(property);
     if (val is num) return val.toDouble();
-    if (val is CraftUnitValue) {
+    if (val is UnitValue) {
       if (val.isPointValue()) return val.getValue();
       if (val.isPercentValue()) return val.getValue() * parentWidth / 100.0;
     }
@@ -243,8 +241,8 @@ abstract class CraftAbstractRenderer implements CraftRenderer {
   }
 
   @override
-  CraftMinMaxWidth? getMinMaxWidth() {
-    return CraftMinMaxWidth(0);
+  MinMaxWidth? getMinMaxWidth() {
+    return MinMaxWidth(0);
   }
 
   @override
@@ -257,7 +255,7 @@ abstract class CraftAbstractRenderer implements CraftRenderer {
   double? getFirstYLineRecursively() {
     // Basic implementation for block-like renderers
     for (var child in childRenderers) {
-      if (child is CraftAbstractRenderer) {
+      if (child is AbstractRenderer) {
         double? y = child.getFirstYLineRecursively();
         if (y != null) return y;
       }

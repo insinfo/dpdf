@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 /// Append-only bit sequence, serialized most-significant bit first per byte.
-class CraftBitVector {
+class BitVector {
   int _length = 0;
   Uint8List _storage = Uint8List(32);
 
@@ -44,7 +44,7 @@ class CraftBitVector {
     }
   }
 
-  void appendBitVector(CraftBitVector bits) {
+  void appendBitVector(BitVector bits) {
     final count = bits.size();
     _reserve(_length + count);
     for (var index = 0; index < count; index++) {
@@ -52,7 +52,7 @@ class CraftBitVector {
     }
   }
 
-  void xor(CraftBitVector other) {
+  void xor(BitVector other) {
     if (other.size() != _length) {
       throw ArgumentError('XOR requires equal bit counts');
     }

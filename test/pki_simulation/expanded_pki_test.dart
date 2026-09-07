@@ -67,7 +67,7 @@ class _EncryptedKey {
   _EncryptedKey(this.data, this.salt, this.iv);
 }
 
-class TestExternalSignature implements CraftExternalSignature {
+class TestExternalSignature implements ExternalSignature {
   final RSAPrivateKey key;
   final String digestAlgorithm;
 
@@ -80,7 +80,7 @@ class TestExternalSignature implements CraftExternalSignature {
   String getSignatureAlgorithmName() => 'RSA';
 
   @override
-  CraftSignatureMechanismParams? getSignatureMechanismParameters() => null;
+  SignatureMechanismParams? getSignatureMechanismParameters() => null;
 
   @override
   Future<Uint8List> sign(Uint8List message) async {
@@ -169,8 +169,8 @@ void main() {
 
       // Verify signature 1 is readable
       try {
-        final rtmp = CraftPdfReader.fromBytes(signedPdf1);
-        final dtmp = CraftPdfDocument(reader: rtmp);
+        final rtmp = PdfReader.fromBytes(signedPdf1);
+        final dtmp = PdfDocument(reader: rtmp);
         await dtmp.load();
         expect(dtmp.pageHierarchy().pageTotal(), greaterThan(0));
       } catch (e) {
@@ -189,9 +189,9 @@ void main() {
 
 Future<Uint8List> _createDummyPdf() async {
   final output = BytesBuilder();
-  final writer = CraftPdfWriter(_IOSinkWrapper(output));
-  final pdf = CraftPdfDocument(writer: writer);
-  await pdf.appendBlankPage(CraftPageSize.A4);
+  final writer = PdfWriter(_IOSinkWrapper(output));
+  final pdf = PdfDocument(writer: writer);
+  await pdf.appendBlankPage(PageSize.A4);
   await pdf.close();
   return output.toBytes();
 }
@@ -200,8 +200,8 @@ Future<Uint8List> _signPdf(Uint8List inputPdf, RSAPrivateKey privKey,
     List<Uint8List> chain, String fieldName) async {
   final output = BytesBuilder();
   final sink = _IOSinkWrapper(output);
-  final reader = CraftPdfReader.fromBytes(inputPdf);
-  final signer = CraftPdfSigner(reader, sink);
+  final reader = PdfReader.fromBytes(inputPdf);
+  final signer = PdfSigner(reader, sink);
 
   // Set different field name to avoid collision if append mode works/is used
   signer.setFieldName(fieldName);

@@ -1,23 +1,23 @@
 import 'package:dpdf/src/kernel/colors/color.dart';
 
-abstract class CraftBorder {
+abstract class Border {
   static const int SOLID = 0;
   static const int DASHED = 1;
 
   double width;
-  CraftColor? color;
+  Color? color;
   int type = SOLID;
 
-  CraftBorder(this.width);
+  Border(this.width);
 
   // ignore: non_constant_identifier_names
-  static final CraftBorder NO_BORDER = _NullBorder();
+  static final Border NO_BORDER = _NullBorder();
 }
 
-class CraftSolidBorder extends CraftBorder {
-  CraftSolidBorder(super.width);
+class SolidBorder extends Border {
+  SolidBorder(super.width);
 }
 
-class _NullBorder extends CraftBorder {
+class _NullBorder extends Border {
   _NullBorder() : super(0);
 }

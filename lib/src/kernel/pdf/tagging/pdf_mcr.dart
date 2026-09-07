@@ -5,80 +5,80 @@ import '../pdf_dictionary.dart';
 import '../pdf_name.dart';
 import '../pdf_number.dart';
 
-abstract class CraftPdfMcr extends CraftPdfObjectWrapper<CraftPdfObject>
-    implements CraftStructureNode {
-  CraftPdfStructElem? parent;
+abstract class PdfMcr extends PdfObjectWrapper<PdfObject>
+    implements StructureNode {
+  PdfStructElem? parent;
 
-  CraftPdfMcr(CraftPdfObject pdfObject, this.parent) : super(pdfObject);
+  PdfMcr(PdfObject pdfObject, this.parent) : super(pdfObject);
 
   Future<int> getMcid();
 
-  Future<CraftPdfDictionary?> getPageObject() async {
+  Future<PdfDictionary?> getPageObject() async {
     final ref = await getPageIndirectReference();
     if (ref != null) {
       final obj = await ref.targetObject();
-      if (obj is CraftPdfDictionary) return obj;
+      if (obj is PdfDictionary) return obj;
     }
     return null;
   }
 
-  Future<CraftPdfIndirectReference?> getPageIndirectReference() async {
-    CraftPdfObject? page;
-    if (pdfRepresentation() is CraftPdfDictionary) {
-      page = await (pdfRepresentation() as CraftPdfDictionary)
-          .get(CraftPdfName('Pg'), false);
+  Future<PdfIndirectReference?> getPageIndirectReference() async {
+    PdfObject? page;
+    if (pdfRepresentation() is PdfDictionary) {
+      page = await (pdfRepresentation() as PdfDictionary)
+          .get(PdfName('Pg'), false);
     }
     if (page == null && parent != null) {
-      page = await parent!.pdfRepresentation().get(CraftPdfName('Pg'), false);
+      page = await parent!.pdfRepresentation().get(PdfName('Pg'), false);
     }
 
-    if (page is CraftPdfIndirectReference) {
+    if (page is PdfIndirectReference) {
       return page;
-    } else if (page is CraftPdfDictionary) {
+    } else if (page is PdfDictionary) {
       return page.indirectHandle();
     }
     return null;
   }
 
-  static CraftPdfMcr fromObject(CraftPdfObject obj, CraftPdfStructElem parent) {
-    if (obj is CraftPdfNumber) {
-      return CraftPdfMcrNumber(obj, parent);
-    } else if (obj is CraftPdfDictionary) {
-      return CraftPdfMcrDictionary(obj, parent);
+  static PdfMcr fromObject(PdfObject obj, PdfStructElem parent) {
+    if (obj is PdfNumber) {
+      return PdfMcrNumber(obj, parent);
+    } else if (obj is PdfDictionary) {
+      return PdfMcrDictionary(obj, parent);
     }
     throw ArgumentError('Invalid object type for MCR: ${obj.runtimeType}');
   }
 
-  static Future<CraftPdfMcr?> fromDictionary(
-      CraftPdfDictionary dict, CraftPdfStructElem? parent) async {
-    return CraftPdfMcrDictionary(dict, parent);
+  static Future<PdfMcr?> fromDictionary(
+      PdfDictionary dict, PdfStructElem? parent) async {
+    return PdfMcrDictionary(dict, parent);
   }
 
   @override
-  Future<CraftPdfName?> getRole() async {
+  Future<PdfName?> getRole() async {
     return parent?.getRole();
   }
 }
 
-class CraftPdfMcrNumber extends CraftPdfMcr {
-  CraftPdfMcrNumber(CraftPdfNumber super.pdfObject, super.parent);
+class PdfMcrNumber extends PdfMcr {
+  PdfMcrNumber(PdfNumber super.pdfObject, super.parent);
 
   @override
   Future<int> getMcid() async {
-    return (pdfRepresentation() as CraftPdfNumber).intValue();
+    return (pdfRepresentation() as PdfNumber).intValue();
   }
 
   @override
   bool requiresIndirectStorage() => false;
 }
 
-class CraftPdfMcrDictionary extends CraftPdfMcr {
-  CraftPdfMcrDictionary(CraftPdfDictionary super.pdfObject, super.parent);
+class PdfMcrDictionary extends PdfMcr {
+  PdfMcrDictionary(PdfDictionary super.pdfObject, super.parent);
 
   @override
   Future<int> getMcid() async {
-    final dict = pdfRepresentation() as CraftPdfDictionary;
-    final number = await dict.numberEntry(CraftPdfName('MCID'));
+    final dict = pdfRepresentation() as PdfDictionary;
+    final number = await dict.numberEntry(PdfName('MCID'));
     return number?.intValue() ?? -1;
   }
 
@@ -86,6 +86,6 @@ class CraftPdfMcrDictionary extends CraftPdfMcr {
   bool requiresIndirectStorage() => false;
 }
 
-abstract class CraftStructureNode {
-  Future<CraftPdfName?> getRole();
+abstract class StructureNode {
+  Future<PdfName?> getRole();
 }

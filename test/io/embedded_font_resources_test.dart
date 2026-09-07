@@ -27,11 +27,11 @@ void main() {
       reverse[value] = parts[0];
     }
     for (final entry in forward.entries) {
-      expect(CraftAdobeGlyphList.nameToUnicode(entry.key), entry.value,
+      expect(AdobeGlyphList.nameToUnicode(entry.key), entry.value,
           reason: entry.key);
     }
     for (final entry in reverse.entries) {
-      expect(CraftAdobeGlyphList.unicodeToName(entry.key), entry.value,
+      expect(AdobeGlyphList.unicodeToName(entry.key), entry.value,
           reason: 'U+${entry.key.toRadixString(16)}');
     }
   });
@@ -50,18 +50,18 @@ import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
 import 'package:dpdf/src/layout/document.dart';
 import 'package:dpdf/src/layout/element/paragraph.dart';
 Future<void> main() async {
-  if (CraftAdobeGlyphList.nameToUnicode('A') != 65 ||
-      CraftAdobeGlyphList.nameToUnicode('Delta') != 0x394 ||
-      CraftAdobeGlyphList.nameToUnicode('Omega') != 0x3a9 ||
-      CraftAdobeGlyphList.nameToUnicode('mu') != 0x3bc ||
-      CraftAdobeGlyphList.nameToUnicode('uni20AC') != 0x20ac ||
-      CraftAdobeGlyphList.unicodeToName(65) != 'A') throw StateError('CraftGlyph mapping mismatch');
-  final font=CraftType1Font.createBuiltInFont('Helvetica');
+  if (AdobeGlyphList.nameToUnicode('A') != 65 ||
+      AdobeGlyphList.nameToUnicode('Delta') != 0x394 ||
+      AdobeGlyphList.nameToUnicode('Omega') != 0x3a9 ||
+      AdobeGlyphList.nameToUnicode('mu') != 0x3bc ||
+      AdobeGlyphList.nameToUnicode('uni20AC') != 0x20ac ||
+      AdobeGlyphList.unicodeToName(65) != 'A') throw StateError('Glyph mapping mismatch');
+  final font=Type1Font.createBuiltInFont('Helvetica');
   if(font.getWidth(65)!=667 || font.getWidth(97)!=556 || font.getWidth(32)!=278) throw StateError('Helvetica widths changed');
   if(font.getFontNames().getFontName()!='Helvetica') throw StateError('Font name changed');
-  final pdf=await CraftPdfDocument.create(CraftPdfWriter.toFile('consumer.pdf'));
-  final doc=CraftDocument(pdf);
-  await doc.add(CraftParagraph('Helvetica outside repository'));
+  final pdf=await PdfDocument.create(PdfWriter.toFile('consumer.pdf'));
+  final doc=Document(pdf);
+  await doc.add(Paragraph('Helvetica outside repository'));
   await doc.close(); await pdf.close();
   // Ler bytes, nao texto: um PDF tem dados binarios, e decodifica-lo com
   // systemEncoding so funciona onde essa codificacao aceita qualquer byte.

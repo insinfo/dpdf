@@ -1,6 +1,6 @@
 /// Diagnostic templates for DPDF. Public identifiers and format slots are stable.
-class CraftCommonsLogMessageConstant {
-  CraftCommonsLogMessageConstant._();
+class CommonsLogMessageConstant {
+  CommonsLogMessageConstant._();
 
   static const String base64Exception =
       'Base64 conversion could not be completed.';

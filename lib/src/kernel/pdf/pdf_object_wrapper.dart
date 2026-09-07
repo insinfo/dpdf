@@ -4,10 +4,10 @@ import 'pdf_object.dart';
 import 'pdf_document.dart';
 
 /// Base class for all PDF object wrappers.
-abstract class CraftPdfObjectWrapper<T extends CraftPdfObject> {
+abstract class PdfObjectWrapper<T extends PdfObject> {
   T _pdfObject;
 
-  CraftPdfObjectWrapper(this._pdfObject) {
+  PdfObjectWrapper(this._pdfObject) {
     if (requiresIndirectStorage()) {
       markObjectAsIndirect(_pdfObject);
     }
@@ -17,16 +17,16 @@ abstract class CraftPdfObjectWrapper<T extends CraftPdfObject> {
     return _pdfObject;
   }
 
-  CraftPdfDocument? getDocument() {
+  PdfDocument? getDocument() {
     return _pdfObject.indirectHandle()?.getDocument();
   }
 
-  CraftPdfObjectWrapper<T> attachToDocument(CraftPdfDocument document) {
+  PdfObjectWrapper<T> attachToDocument(PdfDocument document) {
     _pdfObject.attachToDocument(document);
     return this;
   }
 
-  CraftPdfObjectWrapper<T> markChanged() {
+  PdfObjectWrapper<T> markChanged() {
     _pdfObject.markChanged();
     return this;
   }
@@ -48,29 +48,29 @@ abstract class CraftPdfObjectWrapper<T extends CraftPdfObject> {
   }
 
   void setForbidRelease() {
-    _pdfObject.setState(CraftPdfObject.forbidRelease);
+    _pdfObject.setState(PdfObject.forbidRelease);
   }
 
   void unsetForbidRelease() {
-    _pdfObject.clearState(CraftPdfObject.forbidRelease);
+    _pdfObject.clearState(PdfObject.forbidRelease);
   }
 
   void ensureUnderlyingObjectHasIndirectReference() {
     if (_pdfObject.indirectHandle() == null) {
-      throw CraftPdfException(CraftKernelExceptionMessageConstant
+      throw PdfException(KernelExceptionMessageConstant
           .toFlushThisWrapperUnderlyingObjectMustBeAddedToDocument);
     }
   }
 
-  static void markObjectAsIndirect(CraftPdfObject pdfObject) {
+  static void markObjectAsIndirect(PdfObject pdfObject) {
     if (pdfObject.indirectHandle() == null) {
-      pdfObject.setState(CraftPdfObject.mustBeIndirect);
+      pdfObject.setState(PdfObject.mustBeIndirect);
     }
   }
 
-  static void ensureObjectIsAddedToDocument(CraftPdfObject object) {
+  static void ensureObjectIsAddedToDocument(PdfObject object) {
     if (object.indirectHandle() == null) {
-      throw CraftPdfException(CraftKernelExceptionMessageConstant
+      throw PdfException(KernelExceptionMessageConstant
           .objectMustBeIndirectToWorkWithThisWrapper);
     }
   }

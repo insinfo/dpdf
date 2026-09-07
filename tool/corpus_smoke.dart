@@ -11,7 +11,7 @@ import 'dart:io';
 import 'package:dpdf/dpdf.dart';
 
 /// Conta as páginas percorrendo a árvore, o que também a exercita.
-Future<int> _countPages(CraftPdfDocument document) async {
+Future<int> _countPages(PdfDocument document) async {
   var count = 0;
   // Um limite alto impede que uma árvore com ciclo prenda o processo.
   // `pageAt` lança RangeError depois da última página, em vez de devolver
@@ -64,9 +64,9 @@ Future<void> main(List<String> args) async {
     final bytes = file.readAsBytesSync();
 
     // --- abertura e estrutura -----------------------------------------------
-    CraftPdfDocument document;
+    PdfDocument document;
     try {
-      document = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+      document = await PdfDocument.open(PdfReader.fromBytes(bytes));
     } catch (e) {
       openFailed++;
       failures['$name/abrir'] = '${e.runtimeType}: $e';
@@ -125,7 +125,7 @@ Future<void> main(List<String> args) async {
         // O resultado precisa reabrir: um compressor que produz lixo é pior
         // que um que não comprime.
         final reopened =
-            await CraftPdfDocument.open(CraftPdfReader.fromBytes(result.bytes));
+            await PdfDocument.open(PdfReader.fromBytes(result.bytes));
         final reopenedPages = await _countPages(reopened);
         await reopened.close();
         if (reopenedPages != pages) {

@@ -11,38 +11,37 @@ import 'package:dpdf/src/layout/renderer/draw_context.dart';
 import 'package:dpdf/src/layout/layout/layout_context.dart';
 import 'package:dpdf/src/layout/layout/layout_result.dart';
 
-class _Probe extends CraftAbstractRenderer {
+class _Probe extends AbstractRenderer {
   int layouts = 0;
   int draws = 0;
   double? available;
   final int status;
-  _Probe([this.status = CraftLayoutResult.FULL]) : super(null);
+  _Probe([this.status = LayoutResult.FULL]) : super(null);
   @override
-  CraftLayoutResult layout(CraftLayoutContext context) {
+  LayoutResult layout(LayoutContext context) {
     layouts++;
     available = context.getArea().getBBox().getHeight();
     occupiedArea = context.getArea().clone();
     occupiedArea!.getBBox().setHeight(10);
-    return CraftLayoutResult(status, occupiedArea, null, null);
+    return LayoutResult(status, occupiedArea, null, null);
   }
 
   @override
-  Future<void> draw(CraftDrawContext context) async {
+  Future<void> draw(DrawContext context) async {
     draws++;
   }
 }
 
 void main() {
   late Directory temporary;
-  late CraftPdfDocument document;
-  late CraftCanvas canvas;
+  late PdfDocument document;
+  late Canvas canvas;
   setUp(() async {
     temporary = await Directory.systemTemp.createTemp('canvas-placement-');
-    document = CraftPdfDocument.create(
-        CraftPdfWriter(File('${temporary.path}/result.pdf').openWrite()));
+    document = PdfDocument.create(
+        PdfWriter(File('${temporary.path}/result.pdf').openWrite()));
     final page = await document.appendBlankPage();
-    canvas = CraftCanvas(
-        await CraftPdfCanvas.fromPage(page), CraftRectangle(0, 0, 100, 100));
+    canvas = Canvas(await PdfCanvas.fromPage(page), Rectangle(0, 0, 100, 100));
   });
   tearDown(() async {
     await document.close();
@@ -50,7 +49,7 @@ void main() {
   });
   for (final immediate in [true, false]) {
     test('child is laid out and drawn once; immediate=$immediate', () async {
-      final root = CraftCanvasRenderer(canvas, immediate);
+      final root = CanvasRenderer(canvas, immediate);
       final first = _Probe();
       final second = _Probe();
       await root.addChild(first);
@@ -69,8 +68,8 @@ void main() {
     });
   }
   test('overflow is reported before drawing or queuing', () async {
-    final root = CraftCanvasRenderer(canvas);
-    final child = _Probe(CraftLayoutResult.PARTIAL);
+    final root = CanvasRenderer(canvas);
+    final child = _Probe(LayoutResult.PARTIAL);
     await expectLater(root.addChild(child), throwsStateError);
     await root.close();
     expect(child.draws, 0);

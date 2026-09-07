@@ -1,15 +1,15 @@
 import 'dart:math' as math;
 
 /// Class that represent point object with x and y coordinates.
-class CraftPoint {
+class Point {
   double x;
   double y;
 
   /// Instantiates a new Point instance with 0 x and y.
-  CraftPoint([this.x = 0, this.y = 0]);
+  Point([this.x = 0, this.y = 0]);
 
   /// Instantiates a new Point instance based on other Point instance.
-  CraftPoint.fromPoint(CraftPoint other) : this(other.getX(), other.getY());
+  Point.fromPoint(Point other) : this(other.getX(), other.getY());
 
   /// Gets x coordinate of the point.
   double getX() => x;
@@ -18,7 +18,7 @@ class CraftPoint {
   double getY() => y;
 
   /// Gets location of point by creating a new copy.
-  CraftPoint getLocation() => CraftPoint(x, y);
+  Point getLocation() => Point(x, y);
 
   /// Sets x and y double coordinates of the point.
   void setLocation(double x, double y) {
@@ -38,14 +38,14 @@ class CraftPoint {
   }
 
   /// The distance between this point and the second point.
-  double distancePoint(CraftPoint p) {
+  double distancePoint(Point p) {
     return distance(p.getX(), p.getY());
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is CraftPoint) {
+    if (other is Point) {
       return x == other.x && y == other.y;
     }
     return false;
@@ -59,7 +59,7 @@ class CraftPoint {
   @override
   int get hashCode => Object.hash(x, y);
 
-  CraftPoint clone() => CraftPoint(x, y);
+  Point clone() => Point(x, y);
 
   static double _distanceSq(double x1, double y1, double x2, double y2) {
     x2 -= x1;

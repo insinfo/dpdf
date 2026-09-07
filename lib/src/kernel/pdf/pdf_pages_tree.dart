@@ -11,21 +11,21 @@ import '../exceptions/kernel_exception_message_constant.dart';
 
 /// Algorithm for construction of PdfPages tree.
 /// Follows the same logic as  C# PdfPagesTree.
-class CraftPdfPagesTree {
+class PdfPagesTree {
   static const int defaultLeafSize = 10;
 
-  final List<CraftPdfIndirectReference?> _pageRefs = [];
-  final List<CraftPdfPage?> _pages = [];
-  final List<CraftPdfPages> _parents = [];
-  CraftPdfPages? _root;
-  final CraftPdfCatalog _catalog;
-  CraftPdfDocument? _document;
+  final List<PdfIndirectReference?> _pageRefs = [];
+  final List<PdfPage?> _pages = [];
+  final List<PdfPages> _parents = [];
+  PdfPages? _root;
+  final PdfCatalog _catalog;
+  PdfDocument? _document;
   bool _generated = false;
 
-  CraftPdfPagesTree(this._catalog);
+  PdfPagesTree(this._catalog);
 
   /// Sets the document reference
-  void setDocument(CraftPdfDocument doc) {
+  void setDocument(PdfDocument doc) {
     _document = doc;
   }
 
@@ -34,15 +34,15 @@ class CraftPdfPagesTree {
   Future<void> init() async {
     final catalogDict = _catalog.pdfRepresentation();
 
-    if (catalogDict.containsKey(CraftPdfName.pages)) {
-      final pagesDict = await catalogDict.dictionaryEntry(CraftPdfName.pages);
+    if (catalogDict.containsKey(PdfName.pages)) {
+      final pagesDict = await catalogDict.dictionaryEntry(PdfName.pages);
       if (pagesDict == null) {
-        throw CraftPdfException(CraftKernelExceptionMessageConstant
+        throw PdfException(KernelExceptionMessageConstant
             .invalidPageStructurePagesMustBePdfDictionary);
       }
 
       // Create root PdfPages from existing Pages dictionary
-      _root = CraftPdfPages(0, pdfObject: pagesDict);
+      _root = PdfPages(0, pdfObject: pagesDict);
       await _root!.init();
       _parents.add(_root!);
 
@@ -55,7 +55,7 @@ class CraftPdfPagesTree {
     } else {
       // New document without pages
       _root = null;
-      _parents.add(CraftPdfPages(0));
+      _parents.add(PdfPages(0));
       await _parents[0].init();
     }
   }
@@ -65,7 +65,7 @@ class CraftPdfPagesTree {
   }
 
   /// Returns the PdfPage at the specified position (1-based index).
-  Future<CraftPdfPage?> pageAt(int pageNum) async {
+  Future<PdfPage?> pageAt(int pageNum) async {
     if (pageNum < 1 || pageNum > pageTotal()) {
       throw RangeError('Requested page number $pageNum is out of bounds.');
     }
@@ -79,8 +79,8 @@ class CraftPdfPagesTree {
       final pageRef = _pageRefs[index];
       if (pageRef != null) {
         final pageObject = await pageRef.targetObject();
-        if (pageObject is CraftPdfDictionary) {
-          pdfPage = CraftPdfPage(pageObject);
+        if (pageObject is PdfDictionary) {
+          pdfPage = PdfPage(pageObject);
           final parentIndex = _findPageParent(index);
           pdfPage.parentPages = _parents[parentIndex];
         }
@@ -93,8 +93,8 @@ class CraftPdfPagesTree {
 
   /// Loads page references from the pages tree for a given page index.
   Future<void> _loadPage(int pageNum,
-      [Set<CraftPdfIndirectReference>? processedParents]) async {
-    processedParents ??= <CraftPdfIndirectReference>{};
+      [Set<PdfIndirectReference>? processedParents]) async {
+    processedParents ??= <PdfIndirectReference>{};
 
     if (_pageRefs[pageNum] != null) {
       return; // Already loaded
@@ -106,7 +106,7 @@ class CraftPdfPagesTree {
     final parentRef = parent.pdfRepresentation().indirectHandle();
     if (parentRef != null) {
       if (processedParents.contains(parentRef)) {
-        throw CraftPdfException(
+        throw PdfException(
             'Invalid page structure: cyclic reference at page ${pageNum + 1}');
       }
       processedParents.add(parentRef);
@@ -114,7 +114,7 @@ class CraftPdfPagesTree {
 
     final kids = parent.getKids();
     if (kids == null) {
-      throw CraftPdfException(
+      throw PdfException(
           'Invalid page structure: no kids at page ${pageNum + 1}');
     }
 
@@ -124,9 +124,9 @@ class CraftPdfPagesTree {
     // Check if we have PdfPages children
     for (var i = 0; i < kids.size(); i++) {
       final kidObj = await kids.get(i, true);
-      if (kidObj is CraftPdfDictionary) {
-        final pageKids = await kidObj.get(CraftPdfName.kids, false);
-        if (pageKids != null && pageKids is CraftPdfArray) {
+      if (kidObj is PdfDictionary) {
+        final pageKids = await kidObj.get(PdfName.kids, false);
+        if (pageKids != null && pageKids is PdfArray) {
           findPdfPages = true;
           break;
         }
@@ -135,31 +135,31 @@ class CraftPdfPagesTree {
 
     if (findPdfPages) {
       // Handle nested PdfPages structure
-      final newParents = <CraftPdfPages>[];
-      CraftPdfPages? lastPdfPages;
+      final newParents = <PdfPages>[];
+      PdfPages? lastPdfPages;
       var remainingCount = kidsCount;
 
       for (var i = 0; i < kids.size() && remainingCount > 0; i++) {
         final kidRef = await kids.get(i, false);
-        CraftPdfDictionary? pdfPagesObject;
+        PdfDictionary? pdfPagesObject;
 
-        if (kidRef is CraftPdfIndirectReference) {
+        if (kidRef is PdfIndirectReference) {
           final obj = await kidRef.targetObject();
-          if (obj is CraftPdfDictionary) {
+          if (obj is PdfDictionary) {
             pdfPagesObject = obj;
           }
-        } else if (kidRef is CraftPdfDictionary) {
+        } else if (kidRef is PdfDictionary) {
           pdfPagesObject = kidRef;
         }
 
         if (pdfPagesObject == null) continue;
 
-        final childKids = await pdfPagesObject.get(CraftPdfName.kids, false);
+        final childKids = await pdfPagesObject.get(PdfName.kids, false);
 
-        if (childKids == null || childKids is! CraftPdfArray) {
+        if (childKids == null || childKids is! PdfArray) {
           // This is a PdfPage, not PdfPages
           if (lastPdfPages == null) {
-            lastPdfPages = CraftPdfPages(parent.getFrom(), parent: parent);
+            lastPdfPages = PdfPages(parent.getFrom(), parent: parent);
             await lastPdfPages.init();
             newParents.add(lastPdfPages);
           }
@@ -172,7 +172,7 @@ class CraftPdfPagesTree {
               ? parent.getFrom()
               : lastPdfPages.getFrom() + lastPdfPages.getCount();
           lastPdfPages =
-              CraftPdfPages(from, pdfObject: pdfPagesObject, parent: parent);
+              PdfPages(from, pdfObject: pdfPagesObject, parent: parent);
           await lastPdfPages.init();
           newParents.add(lastPdfPages);
           remainingCount -= lastPdfPages.getCount();
@@ -195,9 +195,9 @@ class CraftPdfPagesTree {
 
       for (var i = 0; i < pageCount; i++) {
         final kid = await kids.get(i, false);
-        if (kid is CraftPdfIndirectReference) {
+        if (kid is PdfIndirectReference) {
           _pageRefs[from + i] = kid;
-        } else if (kid is CraftPdfDictionary) {
+        } else if (kid is PdfDictionary) {
           _pageRefs[from + i] = kid.indirectHandle();
         }
       }
@@ -221,9 +221,8 @@ class CraftPdfPagesTree {
     return low;
   }
 
-  Future<void> appendPageObject(
-      CraftPdfPage page, CraftPdfDocument document) async {
-    CraftPdfPages pdfPages;
+  Future<void> appendPageObject(PdfPage page, PdfDocument document) async {
+    PdfPages pdfPages;
 
     if (_root != null) {
       // In this case we save tree structure
@@ -236,14 +235,14 @@ class CraftPdfPagesTree {
     } else {
       // New document - create root if needed
       if (_parents.isEmpty) {
-        pdfPages = CraftPdfPages(0);
+        pdfPages = PdfPages(0);
         await pdfPages.init();
         pdfPages.pdfRepresentation().attachToDocument(document);
         _parents.add(pdfPages);
         _root = pdfPages;
         _catalog
             .pdfRepresentation()
-            .put(CraftPdfName.pages, _root!.pdfRepresentation());
+            .put(PdfName.pages, _root!.pdfRepresentation());
       } else {
         pdfPages = _parents[_parents.length - 1];
 
@@ -253,12 +252,12 @@ class CraftPdfPagesTree {
           _root = pdfPages;
           _catalog
               .pdfRepresentation()
-              .put(CraftPdfName.pages, pdfPages.pdfRepresentation());
+              .put(PdfName.pages, pdfPages.pdfRepresentation());
         }
 
         if (pdfPages.getCount() % defaultLeafSize == 0 &&
             _pageRefs.isNotEmpty) {
-          pdfPages = CraftPdfPages(pdfPages.getFrom() + pdfPages.getCount());
+          pdfPages = PdfPages(pdfPages.getFrom() + pdfPages.getCount());
           await pdfPages.init();
           pdfPages.pdfRepresentation().attachToDocument(document);
           _parents.add(pdfPages);
@@ -274,15 +273,14 @@ class CraftPdfPagesTree {
     _pages.add(page);
   }
 
-  int pageOrdinal(CraftPdfPage page) {
+  int pageOrdinal(PdfPage page) {
     final index = _pages.indexOf(page);
     return index >= 0 ? index + 1 : 0;
   }
 
   /// Gets the page number for a given page dictionary.
   /// Returns 0 if not found.
-  Future<int> getPageNumberByDictionary(
-      CraftPdfDictionary pageDictionary) async {
+  Future<int> getPageNumberByDictionary(PdfDictionary pageDictionary) async {
     final ref = pageDictionary.indirectHandle();
     if (ref != null) {
       final idx = _pageRefs.indexOf(ref);
@@ -305,8 +303,7 @@ class CraftPdfPagesTree {
 
   /// Gets the PdfPage by its PdfDictionary.
   /// Returns null if not found.
-  Future<CraftPdfPage?> findPageObject(
-      CraftPdfDictionary pageDictionary) async {
+  Future<PdfPage?> findPageObject(PdfDictionary pageDictionary) async {
     final pageNum = await getPageNumberByDictionary(pageDictionary);
     if (pageNum > 0) {
       return await pageAt(pageNum);
@@ -319,7 +316,7 @@ class CraftPdfPagesTree {
   /// [index] - The 1-based index where the page should be inserted.
   /// [page] - The PdfPage to insert.
   Future<void> insertPageObject(
-      int index, CraftPdfPage page, CraftPdfDocument document) async {
+      int index, PdfPage page, PdfDocument document) async {
     // Convert to 0-based index
     final zeroBasedIndex = index - 1;
 
@@ -358,7 +355,7 @@ class CraftPdfPagesTree {
 
   /// Removes the page at the specified position (1-based index).
   /// Returns the page that was removed, or null if removal failed.
-  Future<CraftPdfPage?> detachPage(int pageNum) async {
+  Future<PdfPage?> detachPage(int pageNum) async {
     if (pageNum < 1 || pageNum > _pageRefs.length) {
       return null;
     }
@@ -404,20 +401,20 @@ class CraftPdfPagesTree {
   }
 
   /// Generate PdfPages tree - returns root PdfObject.
-  Future<CraftPdfObject> generateTree() async {
+  Future<PdfObject> generateTree() async {
     if (_pageRefs.isEmpty && _document != null) {
       await _document!.appendBlankPage();
     }
 
     if (_generated) {
-      throw CraftPdfException('PDF pages tree could be generated only once.');
+      throw PdfException('PDF pages tree could be generated only once.');
     }
 
     if (_root == null) {
       while (_parents.length != 1) {
-        final nextParents = <CraftPdfPages>[];
+        final nextParents = <PdfPages>[];
         var dynamicLeafSize = defaultLeafSize;
-        CraftPdfPages? current;
+        PdfPages? current;
 
         for (var i = 0; i < _parents.length; i++) {
           final pages = _parents[i];
@@ -427,7 +424,7 @@ class CraftPdfPagesTree {
             if (pageCount <= 1) {
               dynamicLeafSize++;
             } else {
-              current = CraftPdfPages(-1);
+              current = PdfPages(-1);
               await current.init();
               if (_document != null) {
                 current.pdfRepresentation().attachToDocument(_document!);

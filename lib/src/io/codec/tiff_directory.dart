@@ -28,7 +28,7 @@ class TiffDirectory {
     8 // 12 = double
   ];
 
-  TiffDirectory(CraftRandomAccessFileOrArray stream,
+  TiffDirectory(RandomAccessFileOrArray stream,
       {int directory = 0, int? ifdOffset}) {
     int globalSaveOffset = stream.getPosition();
     stream.seek(0);
@@ -79,7 +79,7 @@ class TiffDirectory {
     return endian == 0x4949 || endian == 0x4d4d;
   }
 
-  void initialize(CraftRandomAccessFileOrArray stream) {
+  void initialize(RandomAccessFileOrArray stream) {
     int nextTagOffset = 0;
     int maxOffset = stream.length().toInt();
 
@@ -232,32 +232,32 @@ class TiffDirectory {
   }
 
   // Primitive readers
-  int readShort(CraftRandomAccessFileOrArray stream) {
+  int readShort(RandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readShort();
     return stream.readShortLE();
   }
 
-  int readUnsignedShort(CraftRandomAccessFileOrArray stream) {
+  int readUnsignedShort(RandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readUnsignedShort();
     return stream.readUnsignedShortLE();
   }
 
-  int readInt(CraftRandomAccessFileOrArray stream) {
+  int readInt(RandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readInt();
     return stream.readIntLE();
   }
 
-  int readUnsignedInt(CraftRandomAccessFileOrArray stream) {
+  int readUnsignedInt(RandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readUnsignedInt();
     return stream.readUnsignedIntLE();
   }
 
-  double readFloat(CraftRandomAccessFileOrArray stream) {
+  double readFloat(RandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readFloat();
     return stream.readFloatLE();
   }
 
-  double readDouble(CraftRandomAccessFileOrArray stream) {
+  double readDouble(RandomAccessFileOrArray stream) {
     if (isBigEndian) return stream.readDouble();
     return stream.readDoubleLE();
   }
@@ -286,7 +286,7 @@ class TiffDirectory {
   }
 
   // Static Helper
-  static int getNumDirectories(CraftRandomAccessFileOrArray stream) {
+  static int getNumDirectories(RandomAccessFileOrArray stream) {
     int pointer = stream.getPosition();
     stream.seek(0);
     int endian = stream.readUnsignedShort();

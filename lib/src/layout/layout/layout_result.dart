@@ -2,19 +2,19 @@ import 'package:dpdf/src/layout/layout/layout_area.dart';
 import 'package:dpdf/src/layout/renderer/renderer.dart';
 import 'package:dpdf/src/layout/element/area_break.dart';
 
-class CraftLayoutResult {
+class LayoutResult {
   static const int FULL = 1;
   static const int PARTIAL = 2;
   static const int NOTHING = 3;
 
   int status;
-  CraftLayoutArea? occupiedArea;
-  CraftRenderer? splitRenderer;
-  CraftRenderer? overflowRenderer;
-  CraftAreaBreak? areaBreak;
-  CraftRenderer? causeOfNothing;
+  LayoutArea? occupiedArea;
+  Renderer? splitRenderer;
+  Renderer? overflowRenderer;
+  AreaBreak? areaBreak;
+  Renderer? causeOfNothing;
 
-  CraftLayoutResult(
+  LayoutResult(
       this.status, this.occupiedArea, this.splitRenderer, this.overflowRenderer,
       [this.causeOfNothing]);
 
@@ -26,36 +26,36 @@ class CraftLayoutResult {
     this.status = status;
   }
 
-  CraftLayoutArea? getOccupiedArea() {
+  LayoutArea? getOccupiedArea() {
     return occupiedArea;
   }
 
-  CraftRenderer? getSplitRenderer() {
+  Renderer? getSplitRenderer() {
     return splitRenderer;
   }
 
-  void setSplitRenderer(CraftRenderer splitRenderer) {
+  void setSplitRenderer(Renderer splitRenderer) {
     this.splitRenderer = splitRenderer;
   }
 
-  CraftRenderer? getOverflowRenderer() {
+  Renderer? getOverflowRenderer() {
     return overflowRenderer;
   }
 
-  void setOverflowRenderer(CraftRenderer overflowRenderer) {
+  void setOverflowRenderer(Renderer overflowRenderer) {
     this.overflowRenderer = overflowRenderer;
   }
 
-  CraftAreaBreak? getAreaBreak() {
+  AreaBreak? getAreaBreak() {
     return areaBreak;
   }
 
-  CraftLayoutResult setAreaBreak(CraftAreaBreak areaBreak) {
+  LayoutResult setAreaBreak(AreaBreak areaBreak) {
     this.areaBreak = areaBreak;
     return this;
   }
 
-  CraftRenderer? getCauseOfNothing() {
+  Renderer? getCauseOfNothing() {
     return causeOfNothing;
   }
 

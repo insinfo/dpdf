@@ -2,22 +2,22 @@ import 'svg_constants.dart';
 
 /// Defines a property of markable elements (<path>, <line>, <polyline> or
 /// <polygon>) which is used to determine at which vertices a marker should be drawn.
-class CraftMarkerVertexType {
+class MarkerVertexType {
   /// Draws this marker at the initial vertex.
-  static final CraftMarkerVertexType MARKER_START =
-      CraftMarkerVertexType._(SvgAttributes.MARKER_START);
+  static final MarkerVertexType MARKER_START =
+      MarkerVertexType._(SvgAttributes.MARKER_START);
 
   /// Draws this marker at internal vertices.
-  static final CraftMarkerVertexType MARKER_MID =
-      CraftMarkerVertexType._(SvgAttributes.MARKER_MID);
+  static final MarkerVertexType MARKER_MID =
+      MarkerVertexType._(SvgAttributes.MARKER_MID);
 
   /// Draws this marker at the final vertex.
-  static final CraftMarkerVertexType MARKER_END =
-      CraftMarkerVertexType._(SvgAttributes.MARKER_END);
+  static final MarkerVertexType MARKER_END =
+      MarkerVertexType._(SvgAttributes.MARKER_END);
 
   final String _name;
 
-  CraftMarkerVertexType._(this._name);
+  MarkerVertexType._(this._name);
 
   @override
   String toString() {

@@ -1,14 +1,14 @@
 import 'gf_256.dart';
 
 /// A byte polynomial with coefficients stored from constant to leading term.
-class CraftGF256Poly {
-  final CraftGF256 _field;
+class GF256Poly {
+  final GF256 _field;
   final List<int> _terms;
 
-  CraftGF256Poly(CraftGF256 field, List<int> coefficients)
+  GF256Poly(GF256 field, List<int> coefficients)
       : this._ascending(field, coefficients.reversed.toList());
 
-  CraftGF256Poly._ascending(this._field, List<int> terms)
+  GF256Poly._ascending(this._field, List<int> terms)
       : _terms = _normalize(terms);
 
   static List<int> _normalize(List<int> terms) {
@@ -31,18 +31,18 @@ class CraftGF256Poly {
   int evaluateAt(int value) => _terms.reversed
       .fold(0, (sum, coefficient) => _field.multiply(sum, value) ^ coefficient);
 
-  void _sameField(CraftGF256Poly other) {
+  void _sameField(GF256Poly other) {
     if (!identical(_field, other._field)) {
       throw ArgumentError('Polynomial operands must belong to the same field.');
     }
   }
 
-  CraftGF256Poly addOrSubtract(CraftGF256Poly other) {
+  GF256Poly addOrSubtract(GF256Poly other) {
     _sameField(other);
     final length = _terms.length > other._terms.length
         ? _terms.length
         : other._terms.length;
-    return CraftGF256Poly._ascending(
+    return GF256Poly._ascending(
         _field,
         List.generate(
             length,
@@ -51,12 +51,12 @@ class CraftGF256Poly {
                 (degree < other._terms.length ? other._terms[degree] : 0)));
   }
 
-  CraftGF256Poly multiply(dynamic other) {
+  GF256Poly multiply(dynamic other) {
     if (other is int) {
-      return CraftGF256Poly._ascending(_field,
+      return GF256Poly._ascending(_field,
           _terms.map((value) => _field.multiply(value, other)).toList());
     }
-    if (other is! CraftGF256Poly) {
+    if (other is! GF256Poly) {
       throw ArgumentError('Multiply by a field element or another polynomial.');
     }
     _sameField(other);
@@ -67,18 +67,18 @@ class CraftGF256Poly {
             _field.multiply(_terms[left], other._terms[right]);
       }
     }
-    return CraftGF256Poly._ascending(_field, terms);
+    return GF256Poly._ascending(_field, terms);
   }
 
-  CraftGF256Poly multiplyByMonomial(int degree, int coefficient) {
+  GF256Poly multiplyByMonomial(int degree, int coefficient) {
     RangeError.checkNotNegative(degree, 'degree');
-    return CraftGF256Poly._ascending(_field, [
+    return GF256Poly._ascending(_field, [
       ...List<int>.filled(degree, 0),
       ..._terms.map((value) => _field.multiply(value, coefficient)),
     ]);
   }
 
-  List<CraftGF256Poly> divide(CraftGF256Poly other) {
+  List<GF256Poly> divide(GF256Poly other) {
     _sameField(other);
     if (other.isZero()) throw ArgumentError('The divisor polynomial is zero.');
     if (getDegree() < other.getDegree()) return [_field.getZero(), this];
@@ -95,8 +95,8 @@ class CraftGF256Poly {
       }
     }
     return [
-      CraftGF256Poly._ascending(_field, quotient),
-      CraftGF256Poly._ascending(_field, remainder),
+      GF256Poly._ascending(_field, quotient),
+      GF256Poly._ascending(_field, remainder),
     ];
   }
 

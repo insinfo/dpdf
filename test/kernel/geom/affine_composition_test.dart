@@ -10,10 +10,10 @@ void expectPoint(List<double> actual, List<double> expected) {
 void main() {
   test('Both composition orders agree with sequential point transformations',
       () {
-    final first = CraftAffineTransform.fromValues(2, -3, 5, 7, 11, -13);
-    final second = CraftAffineTransform.fromValues(-17, 19, 23, 29, -31, 37);
-    final before = CraftAffineTransform.copy(first)..concatenate(second);
-    final after = CraftAffineTransform.copy(first)..preConcatenate(second);
+    final first = AffineTransform.fromValues(2, -3, 5, 7, 11, -13);
+    final second = AffineTransform.fromValues(-17, 19, 23, 29, -31, 37);
+    final before = AffineTransform.copy(first)..concatenate(second);
+    final after = AffineTransform.copy(first)..preConcatenate(second);
     for (final point in [
       [0.0, 0.0],
       [1.0, 0.0],
@@ -31,28 +31,26 @@ void main() {
   });
   test('Composition retains precision beyond Float32 with large translations',
       () {
-    final transform = CraftAffineTransform.fromValues(
+    final transform = AffineTransform.fromValues(
         1 + 1e-12, 2e-13, -3e-13, 1 - 2e-12, 1e12 + 0.125, -1e12 - 0.25);
     final expected = transform.matrix;
-    transform.concatenate(CraftAffineTransform());
+    transform.concatenate(AffineTransform());
     expect(transform.matrix, expected);
-    transform.preConcatenate(CraftAffineTransform());
+    transform.preConcatenate(AffineTransform());
     expect(transform.matrix, expected);
   });
   test('Self composition uses a stable operand snapshot', () {
-    final transform =
-        CraftAffineTransform.fromValues(1.5, 0.5, -0.25, 2, 7, -11);
+    final transform = AffineTransform.fromValues(1.5, 0.5, -0.25, 2, 7, -11);
     final first = transform.transformPoint(3, 9);
     final expected = transform.transformPoint(first[0], first[1]);
     transform.concatenate(transform);
     expectPoint(transform.transformPoint(3, 9), expected);
   });
   test('Composition with inverse returns the original coordinates', () {
-    final original =
-        CraftAffineTransform.fromValues(1.25, 0.5, -0.75, 2.5, 4, -6);
+    final original = AffineTransform.fromValues(1.25, 0.5, -0.75, 2.5, 4, -6);
     final inverse = original.createInverse();
-    final before = CraftAffineTransform.copy(original)..concatenate(inverse);
-    final after = CraftAffineTransform.copy(original)..preConcatenate(inverse);
+    final before = AffineTransform.copy(original)..concatenate(inverse);
+    final after = AffineTransform.copy(original)..preConcatenate(inverse);
     expectPoint(before.transformPoint(123, -456), [123, -456]);
     expectPoint(after.transformPoint(123, -456), [123, -456]);
   });

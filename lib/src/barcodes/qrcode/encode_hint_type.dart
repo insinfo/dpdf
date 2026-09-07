@@ -1,5 +1,5 @@
 /// These are a set of hints that you may pass to Writers to specify their behavior.
-enum CraftEncodeHintType {
+enum EncodeHintType {
   /// Specifies what degree of error correction to use, for example in QR Codes (type Integer).
   ERROR_CORRECTION,
 

@@ -105,8 +105,8 @@ void main() {
     for (final width in [1, 3, 8]) {
       test('BMP $bits-bit width $width removes padding and flips stored rows',
           () {
-        final top = CraftImageDataFactory.create(bitmap(bits, true, width));
-        final bottom = CraftImageDataFactory.create(bitmap(bits, false, width));
+        final top = ImageDataFactory.create(bitmap(bits, true, width));
+        final bottom = ImageDataFactory.create(bitmap(bits, false, width));
         expect(bottom.getData(), top.getData());
         if (bits == 24 || bits == 32) {
           expect(top.getData()!.take(3), [1, 2, 3]);
@@ -121,8 +121,8 @@ void main() {
   }
   for (final height in [1, 2, 3, 4, 5, 8, 9, 17]) {
     test('GIF interlace height $height visits each row once', () {
-      final interlaced = CraftImageDataFactory.create(gif(height, true));
-      final plain = CraftImageDataFactory.create(gif(height, false));
+      final interlaced = ImageDataFactory.create(gif(height, true));
+      final plain = ImageDataFactory.create(gif(height, false));
       expect(interlaced.getData(), plain.getData());
       expect(interlaced.getData(),
           [for (var y = 0; y < height; y++) (y % 4) << 6]);

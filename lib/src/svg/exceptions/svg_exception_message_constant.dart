@@ -1,6 +1,6 @@
 /// Diagnostic templates for DPDF. Public identifiers and format slots are stable.
-class CraftSvgExceptionMessageConstant {
-  CraftSvgExceptionMessageConstant._();
+class SvgExceptionMessageConstant {
+  SvgExceptionMessageConstant._();
 
   static const String ARC_TO_EXPECTS_FOLLOWING_PARAMETERS_GOT_0 =
       'Elliptical-arc commands require groups of (rx ry rot largearc sweep x y); received {0}.';

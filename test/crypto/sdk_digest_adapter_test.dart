@@ -41,16 +41,16 @@ void main() {
       'SHAKE256': 512
     };
     for (final entry in expected.entries) {
-      final digest = CraftDigestAlgorithms.getMessageDigest(entry.key);
+      final digest = DigestAlgorithms.getMessageDigest(entry.key);
       expect(digest.getDigestLength() * 8, entry.value);
       expect(digest.digest().length * 8, entry.value);
-      expect(CraftDigestAlgorithms.getOutputBitLength(entry.key), entry.value);
+      expect(DigestAlgorithms.getOutputBitLength(entry.key), entry.value);
     }
-    final hash = CraftDigestAlgorithms.getMessageDigest('SHA3-256').digest();
+    final hash = DigestAlgorithms.getMessageDigest('SHA3-256').digest();
     expect(hash.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
         'a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a');
-    expect(CraftDigestAlgorithms.getOutputBitLength('unknown'), 0);
-    expect(() => CraftDigestAlgorithms.getMessageDigest('GOST3411'),
+    expect(DigestAlgorithms.getOutputBitLength('unknown'), 0);
+    expect(() => DigestAlgorithms.getMessageDigest('GOST3411'),
         throwsArgumentError);
   });
 }

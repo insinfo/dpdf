@@ -26,10 +26,9 @@ void main() {
   for (final entry in garbage.entries) {
     test('malformed PDF: ${entry.key} is a recoverable exception', () async {
       await expectLater(() async {
-        final reader =
-            CraftPdfReader.fromBytes(Uint8List.fromList(entry.value));
+        final reader = PdfReader.fromBytes(Uint8List.fromList(entry.value));
         try {
-          final document = await CraftPdfDocument.open(reader);
+          final document = await PdfDocument.open(reader);
           await document.close();
         } finally {
           reader.close();

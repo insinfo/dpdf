@@ -7,19 +7,19 @@ selecionadas pelo chamador.
 ## Leitura por blocos e reconstrução
 
 ```dart
-final options = CraftReaderProperties()
+final options = ReaderProperties()
   ..readFileInBlocks = true
   ..fileBlockSize = 256 * 1024
   ..fileCacheBlocks = 32
   ..recoveryMode = PdfRecoveryMode.skipStreams;
-final reader = await CraftPdfReader.fromFile('entrada.pdf', options);
-final document = await CraftPdfDocument.open(reader);
+final reader = await PdfReader.fromFile('entrada.pdf', options);
+final document = await PdfDocument.open(reader);
 print(document.wasRepaired);
 await document.close();
 ```
 
 `readFileInBlocks` atua no Dart VM. Na web, use bytes ou uma implementação de
-`PdfByteSource`, passada a `CraftPdfReader.fromSource`. A fonte de arquivo é
+`PdfByteSource`, passada a `PdfReader.fromSource`. A fonte de arquivo é
 selecionada por importação condicional, sem incluir `dart:io` na compilação web.
 `PdfFileSource` expõe `cachedBytes` e `bytesRead` para medir o cache.
 
@@ -78,7 +78,7 @@ que não podem ser reproduzidas. Isso evita descarte silencioso dessas estrutura
 ## Assinatura e gravação após reparo
 
 ```dart
-final signer = CraftPdfSigner.fromBytesBuilder(inputBytes, output,
+final signer = PdfSigner.fromBytesBuilder(inputBytes, output,
   readerProperties: options,
   mode: PdfSigningMode.incremental,
   repairedSaveMode: PdfRepairedSaveMode.fullRewrite,
@@ -93,7 +93,7 @@ Prev inválido. A opção `fullRewrite` escreve uma nova tabela e remove Prev.
 Ela não conserva a validade de assinaturas anteriores.
 
 Para edição, configure a mesma política em
-`CraftStampingProperties()..useAppendMode()..repairedSaveMode = PdfRepairedSaveMode.fullRewrite`.
+`StampingProperties()..useAppendMode()..repairedSaveMode = PdfRepairedSaveMode.fullRewrite`.
 Não existe opção para gravar deliberadamente um Prev sem tabela válida.
 
 ## Evidências

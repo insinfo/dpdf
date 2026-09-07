@@ -27,16 +27,15 @@ class CidUnicodeTable {
   bool get isEmpty => _values.isEmpty;
 
   static Future<CidUnicodeTable> read(
-      String resourceName, CraftCMapLocation location) async {
+      String resourceName, CMapLocation location) async {
     final map = UnicodeCodeMap();
-    await CraftCMapParser.loadCidMappings(resourceName, map, location);
+    await CMapParser.loadCidMappings(resourceName, map, location);
     return CidUnicodeTable._(map);
   }
 
-  static CidUnicodeTable readSync(
-      String resourceName, CraftCMapLocation location) {
+  static CidUnicodeTable readSync(String resourceName, CMapLocation location) {
     final map = UnicodeCodeMap();
-    CraftCMapParser.loadCidMappingsSync(resourceName, map, location);
+    CMapParser.loadCidMappingsSync(resourceName, map, location);
     return CidUnicodeTable._(map);
   }
 }

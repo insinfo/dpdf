@@ -7,52 +7,51 @@ import '../../io/font/pdf_encodings.dart';
 import 'package:dpdf/src/commons/utils/date_time_util.dart';
 
 /// Document information dictionary.
-class CraftPdfDocumentInfo extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+class PdfDocumentInfo extends PdfObjectWrapper<PdfDictionary> {
   /// Creates a [PdfDocumentInfo] wrapper.
-  CraftPdfDocumentInfo(CraftPdfDictionary pdfObject) : super(pdfObject);
+  PdfDocumentInfo(PdfDictionary pdfObject) : super(pdfObject);
 
   /// Creates a new [PdfDocumentInfo].
-  CraftPdfDocumentInfo.create() : super(CraftPdfDictionary());
+  PdfDocumentInfo.create() : super(PdfDictionary());
 
   /// Sets the title of the document.
   void setTitle(String title) {
-    _storeText(CraftPdfName.title, title);
+    _storeText(PdfName.title, title);
   }
 
   /// Sets the author of the document.
   void setAuthor(String author) {
-    _storeText(CraftPdfName.author, author);
+    _storeText(PdfName.author, author);
   }
 
   /// Sets the subject of the document.
   void setSubject(String subject) {
-    _storeText(CraftPdfName.subject, subject);
+    _storeText(PdfName.subject, subject);
   }
 
   /// Sets the keywords of the document.
   void setKeywords(String keywords) {
-    _storeText(CraftPdfName.keywords, keywords);
+    _storeText(PdfName.keywords, keywords);
   }
 
   /// Sets the creator of the document.
   void setCreator(String creator) {
-    _storeText(CraftPdfName.creator, creator);
+    _storeText(PdfName.creator, creator);
   }
 
   /// Sets the producer of the document.
   void setProducer(String producer) {
-    _storeText(CraftPdfName.producer, producer);
+    _storeText(PdfName.producer, producer);
   }
 
   /// Sets the creation date of the document.
   void setCreationDate(DateTime date) {
-    _storeText(
-        CraftPdfName.creationDate, CraftDateTimeUtil.formatPdfDate(date));
+    _storeText(PdfName.creationDate, DateTimeUtil.formatPdfDate(date));
   }
 
   /// Sets the modification date of the document.
   void setModDate(DateTime date) {
-    _storeText(CraftPdfName.modDate, CraftDateTimeUtil.formatPdfDate(date));
+    _storeText(PdfName.modDate, DateTimeUtil.formatPdfDate(date));
   }
 
   /// Adds the current date as validation date.
@@ -65,11 +64,11 @@ class CraftPdfDocumentInfo extends CraftPdfObjectWrapper<CraftPdfDictionary> {
     setModDate(DateTime.now());
   }
 
-  void _storeText(CraftPdfName key, String value) {
+  void _storeText(PdfName key, String value) {
     final encoded = value.codeUnits.every((unit) => unit < 128)
-        ? CraftPdfString(value)
-        : CraftPdfString.fromBytes(CraftPdfEncodings.convertToBytes(
-            value, CraftPdfEncodings.UNICODE_BIG));
+        ? PdfString(value)
+        : PdfString.fromBytes(
+            PdfEncodings.convertToBytes(value, PdfEncodings.UNICODE_BIG));
     pdfRepresentation().put(key, encoded);
     pdfRepresentation().markChanged();
   }

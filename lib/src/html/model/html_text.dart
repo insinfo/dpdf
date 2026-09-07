@@ -1,6 +1,6 @@
 /// Small text primitives shared by DOM normalization and line layout.
-class CraftHtmlText {
-  CraftHtmlText._();
+class HtmlText {
+  HtmlText._();
 
   static String collapseWhitespace(String source) {
     final output = StringBuffer();

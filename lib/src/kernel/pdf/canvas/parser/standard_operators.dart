@@ -9,61 +9,55 @@ import 'content_operator.dart';
 import 'pdf_canvas_processor.dart';
 
 /// 'BT' operator.
-class BeginText implements CraftContentOperator {
+class BeginText implements ContentOperator {
   @override
-  void invoke(CraftPdfCanvasProcessor processor, CraftPdfLiteral operator,
-      List<CraftPdfObject> operands) {
-    processor.setTextMatrix(CraftMatrix());
-    processor.setTextLineMatrix(CraftMatrix());
-    processor
-        .getEventListener()
-        .eventOccurred(null, CraftEventType.beginTextBlock);
+  void invoke(PdfCanvasProcessor processor, PdfLiteral operator,
+      List<PdfObject> operands) {
+    processor.setTextMatrix(Matrix());
+    processor.setTextLineMatrix(Matrix());
+    processor.getEventListener().eventOccurred(null, EventType.beginTextBlock);
   }
 }
 
 /// 'ET' operator.
-class EndText implements CraftContentOperator {
+class EndText implements ContentOperator {
   @override
-  void invoke(CraftPdfCanvasProcessor processor, CraftPdfLiteral operator,
-      List<CraftPdfObject> operands) {
-    processor.setTextMatrix(CraftMatrix());
-    processor.setTextLineMatrix(CraftMatrix());
-    processor
-        .getEventListener()
-        .eventOccurred(null, CraftEventType.endTextBlock);
+  void invoke(PdfCanvasProcessor processor, PdfLiteral operator,
+      List<PdfObject> operands) {
+    processor.setTextMatrix(Matrix());
+    processor.setTextLineMatrix(Matrix());
+    processor.getEventListener().eventOccurred(null, EventType.endTextBlock);
   }
 }
 
 /// 'Tj' operator.
-class ShowText implements CraftContentOperator {
+class ShowText implements ContentOperator {
   @override
-  void invoke(CraftPdfCanvasProcessor processor, CraftPdfLiteral operator,
-      List<CraftPdfObject> operands) {
-    if (operands.isNotEmpty && operands[0] is CraftPdfString) {
-      final text = operands[0] as CraftPdfString;
-      final info = CraftTextRenderInfo(
+  void invoke(PdfCanvasProcessor processor, PdfLiteral operator,
+      List<PdfObject> operands) {
+    if (operands.isNotEmpty && operands[0] is PdfString) {
+      final text = operands[0] as PdfString;
+      final info = TextRenderInfo(
           text, processor.getGraphicsState(), processor.getTextMatrix());
-      processor
-          .getEventListener()
-          .eventOccurred(info, CraftEventType.renderText);
+      processor.getEventListener().eventOccurred(info, EventType.renderText);
     }
   }
 }
 
 /// 'q' operator.
-class SaveState implements CraftContentOperator {
+class SaveState implements ContentOperator {
   @override
-  void invoke(CraftPdfCanvasProcessor processor, CraftPdfLiteral operator,
-      List<CraftPdfObject> operands) {
+  void invoke(PdfCanvasProcessor processor, PdfLiteral operator,
+      List<PdfObject> operands) {
     processor.saveGraphicsState();
   }
 }
 
 /// 'Q' operator.
-class RestoreState implements CraftContentOperator {
+class RestoreState implements ContentOperator {
   @override
-  void invoke(CraftPdfCanvasProcessor processor, CraftPdfLiteral operator,
-      List<CraftPdfObject> operands) {
+  void invoke(PdfCanvasProcessor processor, PdfLiteral operator,
+      List<PdfObject> operands) {
     processor.restoreGraphicsState();
   }
 }

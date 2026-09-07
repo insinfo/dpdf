@@ -10,8 +10,8 @@ import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 ///
 /// Diferente de `<g>`, um contêiner recorta o que desenha e pode reescalar o
 /// sistema de coordenadas através de `viewBox`.
-abstract class CraftAbstractContainerSvgNodeRenderer
-    extends CraftAbstractBranchSvgNodeRenderer {
+abstract class AbstractContainerSvgNodeRenderer
+    extends AbstractBranchSvgNodeRenderer {
   /// Abaixo desta tolerância um `viewBox` é tratado como degenerado; é a
   /// mesma ordem de grandeza usada pelo resto do kernel para comparar pontos.
   static const double _epsilon = 1e-6;
@@ -23,7 +23,7 @@ abstract class CraftAbstractContainerSvgNodeRenderer
   bool canElementFill() => false;
 
   @override
-  Future<void> doDraw(CraftSvgDrawContext context) async {
+  Future<void> doDraw(SvgDrawContext context) async {
     context.addViewPort(calculateViewPort(context));
     // A ordem importa: o recorte vale no sistema de coordenadas do pai, então
     // é emitido antes de o `viewBox` reescalar o espaço para os filhos.
@@ -34,14 +34,13 @@ abstract class CraftAbstractContainerSvgNodeRenderer
   }
 
   /// Calcula o retângulo que este contêiner ocupa no espaço do pai.
-  CraftRectangle calculateViewPort(CraftSvgDrawContext context) {
+  Rectangle calculateViewPort(SvgDrawContext context) {
     final parent = getParent();
-    if (parent is! CraftAbstractSvgNodeRenderer) {
+    if (parent is! AbstractSvgNodeRenderer) {
       // Contêiner de topo (o pai é a raiz sintética): o viewport já foi
       // decidido por quem iniciou a conversão, e recalculá-lo resolveria os
       // percentuais duas vezes.
-      return (context.getCurrentViewPort() ?? CraftRectangle(0, 0, 0, 0))
-          .clone();
+      return (context.getCurrentViewPort() ?? Rectangle(0, 0, 0, 0)).clone();
     }
     final percentBase = parent.getCurrentViewBox(context);
     final x = parseHorizontalLength(
@@ -56,11 +55,11 @@ abstract class CraftAbstractContainerSvgNodeRenderer
         getAttributeOrDefault(
             SvgAttributes.HEIGHT, SvgValues.DEFAULT_WIDTH_AND_HEIGHT_VALUE),
         context);
-    return CraftRectangle(x, y, width <= 0 ? percentBase.getWidth() : width,
+    return Rectangle(x, y, width <= 0 ? percentBase.getWidth() : width,
         height <= 0 ? percentBase.getHeight() : height);
   }
 
-  void _applyViewPortClip(CraftSvgDrawContext context) {
+  void _applyViewPortClip(SvgDrawContext context) {
     final viewPort = context.getCurrentViewPort();
     if (viewPort == null) return;
     context
@@ -73,14 +72,14 @@ abstract class CraftAbstractContainerSvgNodeRenderer
   /// Traduz `viewBox` na transformação que mapeia o sistema de coordenadas do
   /// usuário sobre o viewport, e ajusta o viewport corrente pelo inverso para
   /// que percentuais dos filhos continuem sendo resolvidos no espaço certo.
-  void _applyViewBox(CraftSvgDrawContext context) {
+  void _applyViewBox(SvgDrawContext context) {
     final viewPort = context.getCurrentViewPort();
     if (viewPort == null) return;
-    final values = CraftSvgCssUtils.parseViewBox(this);
+    final values = SvgCssUtils.parseViewBox(this);
     if (values == null || values.length < SvgValues.VIEWBOX_VALUES_NUMBER) {
       return;
     }
-    final viewBox = CraftRectangle(values[0], values[1], values[2], values[3]);
+    final viewBox = Rectangle(values[0], values[1], values[2], values[3]);
     if (viewBox.getWidth().abs() < _epsilon ||
         viewBox.getHeight().abs() < _epsilon) {
       // Largura ou altura zero desliga o elemento, conforme a especificação.
@@ -89,7 +88,7 @@ abstract class CraftAbstractContainerSvgNodeRenderer
     }
 
     final aspectRatio = _retrieveAlignAndMeet();
-    final applied = CraftSvgCoordinateUtils.applyViewBox(
+    final applied = SvgCoordinateUtils.applyViewBox(
         viewBox, viewPort, aspectRatio[0], aspectRatio[1]);
     final scaleX = applied.getWidth() / viewBox.getWidth();
     final scaleY = applied.getHeight() / viewBox.getHeight();
@@ -117,7 +116,7 @@ abstract class CraftAbstractContainerSvgNodeRenderer
     var align = SvgValues.DEFAULT_ASPECT_RATIO;
     var meetOrSlice = SvgValues.MEET;
     if (raw != null) {
-      final parts = CraftSvgCssUtils.splitValueList(raw);
+      final parts = SvgCssUtils.splitValueList(raw);
       // `defer` só faz sentido em <image> e é ignorado silenciosamente.
       final meaningful =
           parts.where((part) => part != SvgValues.DEFER).toList();

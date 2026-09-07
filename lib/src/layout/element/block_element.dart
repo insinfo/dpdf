@@ -4,11 +4,10 @@ import 'package:dpdf/src/layout/element/block_content.dart';
 import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
 import 'package:dpdf/src/layout/tagging/accessible_element.dart';
 
-abstract class CraftBlockElement<T extends CraftElement>
-    extends CraftAbstractElement<T>
-    implements CraftBlockContent, CraftAccessibleElement {
-  CraftBlockElement();
+abstract class BlockElement<T extends Element> extends AbstractElement<T>
+    implements BlockContent, AccessibleElement {
+  BlockElement();
 
   @override
-  CraftAccessibilityProperties getAccessibilityProperties();
+  AccessibilityProperties getAccessibilityProperties();
 }

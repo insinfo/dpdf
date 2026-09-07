@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 /// Helper class for internal usage only.
 
-class CraftEncodingUtil {
-  CraftEncodingUtil._();
+class EncodingUtil {
+  EncodingUtil._();
 
   /// Latin-1 (ISO-8859-1) encoding.
   static const Encoding iso_8859_1 = latin1;

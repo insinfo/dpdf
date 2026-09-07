@@ -21,19 +21,17 @@ void main() {
     });
 
     test('Write and Read PDF with Full Compression', () async {
-      final writerProperties =
-          CraftWriterProperties().setFullCompressionMode(true);
-      final writer =
-          CraftPdfWriter.toFile(outPath, properties: writerProperties);
-      final doc = CraftPdfDocument(writer: writer);
+      final writerProperties = WriterProperties().setFullCompressionMode(true);
+      final writer = PdfWriter.toFile(outPath, properties: writerProperties);
+      final doc = PdfDocument(writer: writer);
 
       await doc.appendBlankPage();
 
       // Add many small objects (indirect) that should go into ObjStm
       // We can just create them and make them indirect.
       for (int i = 0; i < 50; i++) {
-        final dict = CraftPdfDictionary();
-        dict.put(CraftPdfName.intern("Key$i"), CraftPdfString("Value$i"));
+        final dict = PdfDictionary();
+        dict.put(PdfName.intern("Key$i"), PdfString("Value$i"));
         dict.attachToDocument(doc);
         // We need to flush them to force writing?
         // PdfDocument auto flushes? No.
@@ -46,7 +44,7 @@ void main() {
         doc
             .rootCatalog()
             .pdfRepresentation()
-            .put(CraftPdfName.intern("ExtraObject$i"), dict);
+            .put(PdfName.intern("ExtraObject$i"), dict);
       }
 
       await doc.close();
@@ -58,8 +56,8 @@ void main() {
       // final content = await file.readAsString(); // Binary file, cannot read as string safely
 
       // Better: Read with PdfReader and verify objects
-      final reader = await CraftPdfReader.fromFile(outPath);
-      final docRead = await CraftPdfDocument.open(reader);
+      final reader = await PdfReader.fromFile(outPath);
+      final docRead = await PdfDocument.open(reader);
 
       expect(docRead.pageTotal(), equals(1));
 
@@ -67,12 +65,12 @@ void main() {
       final cat = docRead.rootCatalog();
 
       for (int i = 0; i < 50; i++) {
-        final key = CraftPdfName.intern("ExtraObject$i");
+        final key = PdfName.intern("ExtraObject$i");
         final obj = await cat.pdfRepresentation().dictionaryEntry(key);
         expect(obj, isNotNull);
-        expect(obj is CraftPdfDictionary, isTrue);
-        final val = await obj!.get(CraftPdfName.intern("Key$i"));
-        expect((val as CraftPdfString).getValue(), equals("Value$i"));
+        expect(obj is PdfDictionary, isTrue);
+        final val = await obj!.get(PdfName.intern("Key$i"));
+        expect((val as PdfString).getValue(), equals("Value$i"));
       }
 
       // Verify usage of ObjStm
@@ -86,9 +84,8 @@ void main() {
         if (ref != null && !ref.isFree()) {
           final obj = await reader.readObject(i);
           if (obj != null && obj.isStream()) {
-            final type =
-                await (obj as CraftPdfDictionary).nameEntry(CraftPdfName.type);
-            if (type == CraftPdfName.objStm) {
+            final type = await (obj as PdfDictionary).nameEntry(PdfName.type);
+            if (type == PdfName.objStm) {
               foundObjStm = true;
             }
           }

@@ -33,8 +33,8 @@ Future<void> main(List<String> args) async {
 
     PdfRenderedPage rendered;
     try {
-      final document = await CraftPdfDocument.open(
-          CraftPdfReader.fromBytes(pdf.readAsBytesSync()));
+      final document =
+          await PdfDocument.open(PdfReader.fromBytes(pdf.readAsBytesSync()));
       try {
         rendered = await PdfPageRenderer.render((await document.pageAt(1))!,
             options: const PdfRenderOptions(dpi: 72));

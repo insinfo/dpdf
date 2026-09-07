@@ -4,8 +4,8 @@ import 'package:test/test.dart';
 
 void main() {
   for (final item in [
-    (CraftGF256.QR_CODE_FIELD, 0x11d),
-    (CraftGF256.DATA_MATRIX_FIELD, 0x12d)
+    (GF256.QR_CODE_FIELD, 0x11d),
+    (GF256.DATA_MATRIX_FIELD, 0x12d)
   ]) {
     test('all byte products match the multiplicative cycle ${item.$2}', () {
       final powers = <int>[1];
@@ -30,8 +30,8 @@ void main() {
     });
   }
   test('QR codeword has zero syndrome at each generator root', () {
-    final field = CraftGF256.QR_CODE_FIELD;
-    final encoder = CraftReedSolomonEncoder(field);
+    final field = GF256.QR_CODE_FIELD;
+    final encoder = ReedSolomonEncoder(field);
     for (final paritySize in [7, 10, 18, 30]) {
       final payload = List<int>.generate(97, (i) => (i * 73 + 11) % 256);
       final word = [...payload, ...List<int>.filled(paritySize, 199)];
@@ -48,15 +48,12 @@ void main() {
     }
   });
   test('invalid fields and bytes fail before changing the buffer', () {
-    expect(() => CraftGF256.QR_CODE_FIELD.inverse(0), throwsArgumentError);
+    expect(() => GF256.QR_CODE_FIELD.inverse(0), throwsArgumentError);
+    expect(() => GF256.QR_CODE_FIELD.multiply(256, 1), throwsArgumentError);
     expect(
-        () => CraftGF256.QR_CODE_FIELD.multiply(256, 1), throwsArgumentError);
-    expect(() => CraftReedSolomonEncoder(CraftGF256.DATA_MATRIX_FIELD),
-        throwsArgumentError);
+        () => ReedSolomonEncoder(GF256.DATA_MATRIX_FIELD), throwsArgumentError);
     final input = [300, 0, 0];
-    expect(
-        () =>
-            CraftReedSolomonEncoder(CraftGF256.QR_CODE_FIELD).encode(input, 2),
+    expect(() => ReedSolomonEncoder(GF256.QR_CODE_FIELD).encode(input, 2),
         throwsArgumentError);
     expect(input, [300, 0, 0]);
   });

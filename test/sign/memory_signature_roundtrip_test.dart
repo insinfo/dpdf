@@ -11,8 +11,7 @@ void main() {
   test('in-memory incremental signature survives reopen and rejects tampering',
       () async {
     final base = BytesBuilder();
-    final document =
-        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(base));
+    final document = PdfDocument.create(PdfWriter.fromBytesBuilder(base));
     await document.appendBlankPage();
     await document.close();
     final input = base.takeBytes();
@@ -29,15 +28,14 @@ void main() {
       notAfter: DateTime.utc(2027),
     );
     final output = BytesBuilder();
-    final signer = CraftPdfSigner.fromBytesBuilder(input, output);
+    final signer = PdfSigner.fromBytesBuilder(input, output);
     await signer.signDetached(_LocalSignature(privateKey), [certificate]);
 
     final bytes = output.takeBytes();
     Future<bool> verify(Uint8List data) async {
-      final opened =
-          await CraftPdfDocument.open(CraftPdfReader.fromBytes(data));
+      final opened = await PdfDocument.open(PdfReader.fromBytes(data));
       try {
-        final util = CraftSignatureUtil(opened);
+        final util = SignatureUtil(opened);
         final names = await util.getSignatureNames();
         expect(names, hasLength(1));
         return (await util.readSignatureData(names.single))!.verify();
@@ -54,7 +52,7 @@ void main() {
   });
 }
 
-class _LocalSignature implements CraftExternalSignature {
+class _LocalSignature implements ExternalSignature {
   final RSAPrivateKey key;
   _LocalSignature(this.key);
   @override
@@ -62,7 +60,7 @@ class _LocalSignature implements CraftExternalSignature {
   @override
   String getSignatureAlgorithmName() => 'RSA';
   @override
-  CraftSignatureMechanismParams? getSignatureMechanismParameters() => null;
+  SignatureMechanismParams? getSignatureMechanismParameters() => null;
   @override
   Future<Uint8List> sign(Uint8List message) async {
     final signer = Signer('SHA-256/RSA')..init(true, PrivateKeyParameter(key));

@@ -5,55 +5,53 @@ import 'package:dpdf/dpdf.dart';
 Future<Uint8List> source(
     {String? destinations, bool cyclicInheritance = false}) async {
   final data = BytesBuilder();
-  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(data));
+  final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(data));
   final pages = [await doc.appendBlankPage(), await doc.appendBlankPage()];
-  final font = CraftPdfFontFactory.createFont('Helvetica');
+  final font = PdfFontFactory.createFont('Helvetica');
   for (var i = 0; i < pages.length; i++) {
-    final canvas = await CraftPdfCanvas.fromPage(pages[i]);
+    final canvas = await PdfCanvas.fromPage(pages[i]);
     canvas.beginText();
     await canvas.setFontAndSize(font, 12);
     canvas.moveText(25, 35).showText('Source ${i + 1}').endText();
   }
   final first = pages.first.pdfRepresentation();
-  final parent = (await first.dictionaryEntry(CraftPdfName.parent))!;
-  parent.put(CraftPdfName.resources,
-      (await first.dictionaryEntry(CraftPdfName.resources))!);
+  final parent = (await first.dictionaryEntry(PdfName.parent))!;
   parent.put(
-      CraftPdfName.mediaBox, CraftPdfArray.fromDoubles([10, 20, 410, 620]));
-  parent.put(
-      CraftPdfName.cropBox, CraftPdfArray.fromDoubles([20, 30, 400, 610]));
-  parent.put(CraftPdfName.rotate, CraftPdfNumber.fromInt(90));
+      PdfName.resources, (await first.dictionaryEntry(PdfName.resources))!);
+  parent.put(PdfName.mediaBox, PdfArray.fromDoubles([10, 20, 410, 620]));
+  parent.put(PdfName.cropBox, PdfArray.fromDoubles([20, 30, 400, 610]));
+  parent.put(PdfName.rotate, PdfNumber.fromInt(90));
   for (final page in pages) {
     for (final name in ['Resources', 'MediaBox', 'CropBox', 'Rotate']) {
-      page.pdfRepresentation().remove(CraftPdfName(name));
+      page.pdfRepresentation().remove(PdfName(name));
     }
   }
   if (destinations != null) {
     final catalog = doc.rootCatalog().pdfRepresentation();
     if (destinations == 'inline') {
       catalog.put(
-          CraftPdfName('Dests'),
-          CraftPdfDictionary()
+          PdfName('Dests'),
+          PdfDictionary()
             ..put(
-                CraftPdfName('A'),
-                CraftPdfDictionary()
-                  ..put(CraftPdfName('D'),
-                      CraftPdfArray.fromList([first, CraftPdfName('Fit')]))));
+                PdfName('A'),
+                PdfDictionary()
+                  ..put(PdfName('D'),
+                      PdfArray.fromList([first, PdfName('Fit')]))));
     } else {
       catalog.put(
-          CraftPdfName('Names'),
-          CraftPdfDictionary()
+          PdfName('Names'),
+          PdfDictionary()
             ..put(
-                CraftPdfName('Dests'),
-                CraftPdfDictionary()
-                  ..put(CraftPdfName('Names'),
-                      CraftPdfArray.fromList([CraftPdfString('orphan')]))));
+                PdfName('Dests'),
+                PdfDictionary()
+                  ..put(PdfName('Names'),
+                      PdfArray.fromList([PdfString('orphan')]))));
     }
   }
   if (cyclicInheritance) {
-    final loop = CraftPdfDictionary()..attachToDocument(doc);
-    loop.put(CraftPdfName.parent, loop);
-    pages.first.pdfRepresentation().put(CraftPdfName.parent, loop);
+    final loop = PdfDictionary()..attachToDocument(doc);
+    loop.put(PdfName.parent, loop);
+    pages.first.pdfRepresentation().put(PdfName.parent, loop);
   }
   await doc.close();
   return data.takeBytes();
@@ -77,33 +75,31 @@ void main() {
       PdfPageSelection(await source(), pages: [2, 1, 2])
     ]);
     final bytes = BytesBuilder();
-    final doc = CraftPdfDocument(
-        reader: CraftPdfReader.fromBytes(merged),
-        writer: CraftPdfWriter.fromBytesBuilder(bytes));
+    final doc = PdfDocument(
+        reader: PdfReader.fromBytes(merged),
+        writer: PdfWriter.fromBytesBuilder(bytes));
     await doc.load();
     final page = (await doc.pageAt(1))!;
     for (final (name, expected) in [
       ('MediaBox', [10, 20, 410, 620]),
       ('CropBox', [20, 30, 400, 610])
     ]) {
-      final box =
-          (await page.pdfRepresentation().arrayEntry(CraftPdfName(name)))!;
+      final box = (await page.pdfRepresentation().arrayEntry(PdfName(name)))!;
       expect(
           [for (var i = 0; i < 4; i++) (await box.numberEntry(i))!.intValue()],
           expected);
     }
     expect(
-        (await page.pdfRepresentation().numberEntry(CraftPdfName.rotate))!
+        (await page.pdfRepresentation().numberEntry(PdfName.rotate))!
             .intValue(),
         90);
     final overlay = await PdfPageOverlay.create(page);
     overlay.beginText();
-    await overlay.setFontAndSize(
-        CraftPdfFontFactory.createFont('Helvetica'), 12);
+    await overlay.setFontAndSize(PdfFontFactory.createFont('Helvetica'), 12);
     overlay.moveText(40, 50).showText('STAMP').endText();
     await doc.close();
-    final reopened = await CraftPdfDocument.open(
-        CraftPdfReader.fromBytes(bytes.takeBytes()));
+    final reopened =
+        await PdfDocument.open(PdfReader.fromBytes(bytes.takeBytes()));
     try {
       expect(await PdfTextExtraction.fromPage((await reopened.pageAt(1))!),
           contains('STAMP'));

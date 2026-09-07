@@ -4,7 +4,7 @@ import 'dart:math' as math;
 /// transformations such as translation, scaling, rotation, and shearing.
 ///
 /// This is a special case of a 3x3 Matrix.
-class CraftAffineTransform {
+class AffineTransform {
   // Transform type constants
   static const int typeIdentity = 0;
   static const int typeTranslation = 1;
@@ -30,14 +30,14 @@ class CraftAffineTransform {
   int _type = typeIdentity;
 
   /// Creates an identity AffineTransform.
-  CraftAffineTransform() {
+  AffineTransform() {
     _type = typeIdentity;
     m00 = m11 = 1.0;
     m10 = m01 = m02 = m12 = 0.0;
   }
 
   /// Creates a copy of another AffineTransform.
-  CraftAffineTransform.copy(CraftAffineTransform t)
+  AffineTransform.copy(AffineTransform t)
       : _type = t._type,
         m00 = t.m00,
         m10 = t.m10,
@@ -47,12 +47,12 @@ class CraftAffineTransform {
         m12 = t.m12;
 
   /// Creates an AffineTransform with the specified values.
-  CraftAffineTransform.fromValues(
+  AffineTransform.fromValues(
       this.m00, this.m10, this.m01, this.m11, this.m02, this.m12)
       : _type = _typeUnknown;
 
   /// Creates an AffineTransform from a list of values.
-  CraftAffineTransform.fromList(List<double> matrix) : _type = _typeUnknown {
+  AffineTransform.fromList(List<double> matrix) : _type = _typeUnknown {
     m00 = matrix[0];
     m10 = matrix[1];
     m01 = matrix[2];
@@ -133,7 +133,7 @@ class CraftAffineTransform {
   }
 
   /// Copies values from another transform.
-  void setTransformFrom(CraftAffineTransform t) {
+  void setTransformFrom(AffineTransform t) {
     _type = t._type;
     setTransform(t.m00, t.m10, t.m01, t.m11, t.m02, t.m12);
   }
@@ -198,70 +198,70 @@ class CraftAffineTransform {
   }
 
   /// Creates a translation transform.
-  static CraftAffineTransform getTranslateInstance(double mx, double my) {
-    final t = CraftAffineTransform();
+  static AffineTransform getTranslateInstance(double mx, double my) {
+    final t = AffineTransform();
     t.setToTranslation(mx, my);
     return t;
   }
 
   /// Creates a scale transform.
-  static CraftAffineTransform getScaleInstance(double scx, double scy) {
-    final t = CraftAffineTransform();
+  static AffineTransform getScaleInstance(double scx, double scy) {
+    final t = AffineTransform();
     t.setToScale(scx, scy);
     return t;
   }
 
   /// Creates a shear transform.
-  static CraftAffineTransform getShearInstance(double shx, double shy) {
-    final t = CraftAffineTransform();
+  static AffineTransform getShearInstance(double shx, double shy) {
+    final t = AffineTransform();
     t.setToShear(shx, shy);
     return t;
   }
 
   /// Creates a rotation transform.
-  static CraftAffineTransform getRotateInstance(double angle) {
-    final t = CraftAffineTransform();
+  static AffineTransform getRotateInstance(double angle) {
+    final t = AffineTransform();
     t.setToRotation(angle);
     return t;
   }
 
   /// Creates a rotation transform around a point.
-  static CraftAffineTransform getRotateInstanceAround(
+  static AffineTransform getRotateInstanceAround(
       double angle, double x, double y) {
-    final t = CraftAffineTransform();
+    final t = AffineTransform();
     t.setToRotationAround(angle, x, y);
     return t;
   }
 
   /// Applies translation.
   void translate(double mx, double my) {
-    concatenate(CraftAffineTransform.getTranslateInstance(mx, my));
+    concatenate(AffineTransform.getTranslateInstance(mx, my));
   }
 
   /// Applies scaling.
   void scale(double scx, double scy) {
-    concatenate(CraftAffineTransform.getScaleInstance(scx, scy));
+    concatenate(AffineTransform.getScaleInstance(scx, scy));
   }
 
   /// Applies shearing.
   void shear(double shx, double shy) {
-    concatenate(CraftAffineTransform.getShearInstance(shx, shy));
+    concatenate(AffineTransform.getShearInstance(shx, shy));
   }
 
   /// Applies rotation.
   void rotate(double angle) {
-    concatenate(CraftAffineTransform.getRotateInstance(angle));
+    concatenate(AffineTransform.getRotateInstance(angle));
   }
 
   /// Applies rotation around a point.
   void rotateAround(double angle, double px, double py) {
-    concatenate(CraftAffineTransform.getRotateInstanceAround(angle, px, py));
+    concatenate(AffineTransform.getRotateInstanceAround(angle, px, py));
   }
 
   /// Composes column-major affine coefficients without reducing double precision.
   /// The first mapping runs before the second mapping.
-  static CraftAffineTransform _compose(
-      CraftAffineTransform first, CraftAffineTransform second) {
+  static AffineTransform _compose(
+      AffineTransform first, AffineTransform second) {
     // Snapshot both operands so composition also works when they are identical.
     final input = first.matrix;
     final output = second.matrix;
@@ -274,26 +274,26 @@ class CraftAffineTransform {
         coefficients[column * 2 + row] = entry;
       }
     }
-    return CraftAffineTransform.fromList(coefficients);
+    return AffineTransform.fromList(coefficients);
   }
 
   /// Applies [t] before this mapping (column-vector matrix product: this * t).
-  void concatenate(CraftAffineTransform t) {
+  void concatenate(AffineTransform t) {
     setTransformFrom(_compose(t, this));
   }
 
   /// Applies [t] after this mapping (column-vector matrix product: t * this).
-  void preConcatenate(CraftAffineTransform t) {
+  void preConcatenate(AffineTransform t) {
     setTransformFrom(_compose(this, t));
   }
 
   /// Creates the inverse transform.
-  CraftAffineTransform createInverse() {
+  AffineTransform createInverse() {
     double det = determinant;
     if (det.abs() < _zero) {
       throw StateError('Determinant is zero, cannot invert transformation');
     }
-    return CraftAffineTransform.fromValues(
+    return AffineTransform.fromValues(
       m11 / det,
       -m10 / det,
       -m01 / det,
@@ -356,7 +356,7 @@ class CraftAffineTransform {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! CraftAffineTransform) return false;
+    if (other is! AffineTransform) return false;
     return m00 == other.m00 &&
         m10 == other.m10 &&
         m01 == other.m01 &&

@@ -1,7 +1,7 @@
 import 'package:dpdf/src/kernel/colors/color.dart';
 
-class CraftBackground {
-  CraftColor? color;
+class Background {
+  Color? color;
 
-  CraftBackground(this.color);
+  Background(this.color);
 }

@@ -13,17 +13,17 @@ void main() {
   group('Barcode128 Tests', () {
     test('Barcode128 Basic Test', () async {
       final file = File('test/tmp/barcode_128_test.pdf');
-      final writer = CraftPdfWriter(file.openWrite());
-      final pdf = CraftPdfDocument.create(writer);
+      final writer = PdfWriter(file.openWrite());
+      final pdf = PdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
-      final canvas = await CraftPdfCanvas.fromPage(page);
+      final canvas = await PdfCanvas.fromPage(page);
 
-      final barcode = CraftBarcode128(pdf);
+      final barcode = Barcode128(pdf);
       barcode.setCode("123456789");
-      barcode.setCodeType(CraftBarcode128.CODE128); // Standard
+      barcode.setCodeType(Barcode128.CODE128); // Standard
 
-      final rect = await barcode.placeBarcode(
-          canvas, CraftDeviceGray(0), CraftDeviceGray(0));
+      final rect =
+          await barcode.placeBarcode(canvas, DeviceGray(0), DeviceGray(0));
 
       expect(rect.getWidth(), greaterThan(0));
       // Add text label manually just to check position

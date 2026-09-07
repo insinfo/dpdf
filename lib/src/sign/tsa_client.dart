@@ -6,7 +6,7 @@ import 'external_digest.dart';
 ///
 /// Contract through which the signature builder requests
 /// an RFC 3161 token from a timestamp authority.
-abstract class CraftTSAClient {
+abstract class TSAClient {
   /// Get the time stamp estimated token size.
   ///
   /// The estimate must reserve enough space for the

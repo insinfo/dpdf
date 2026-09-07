@@ -8,16 +8,16 @@ import 'font_program.dart';
 import 'otf/glyph.dart';
 import 'pdf_encodings.dart';
 
-class CraftCidFont extends CraftFontProgram {
+class CidFont extends FontProgram {
   final String _fontName;
   int _pdfFontFlags = 0;
   final Set<String>? _compatibleCmaps;
 
-  CraftCidFont(this._fontName, String cmap, [this._compatibleCmaps]) {
-    fontNames = CraftFontNames();
+  CidFont(this._fontName, String cmap, [this._compatibleCmaps]) {
+    fontNames = FontNames();
     _initializeCidFontNameAndStyle(_fontName);
     Map<String, dynamic>? fontDesc =
-        CraftCidFontProperties.getAllFonts()[fontNames.getFontName()];
+        CidFontProperties.getAllFonts()[fontNames.getFontName()];
     if (fontDesc == null) {
       throw Exception("There is no such predefined font: $_fontName");
     }
@@ -25,8 +25,7 @@ class CraftCidFont extends CraftFontProgram {
   }
 
   bool compatibleWith(String cmap) {
-    if (cmap == CraftPdfEncodings.IDENTITY_H ||
-        cmap == CraftPdfEncodings.IDENTITY_V) {
+    if (cmap == PdfEncodings.IDENTITY_H || cmap == PdfEncodings.IDENTITY_V) {
       return true;
     } else {
       return _compatibleCmaps != null && _compatibleCmaps.contains(cmap);
@@ -34,7 +33,7 @@ class CraftCidFont extends CraftFontProgram {
   }
 
   @override
-  int getKerningByGlyph(CraftGlyph glyph1, CraftGlyph glyph2) {
+  int getKerningByGlyph(Glyph glyph1, Glyph glyph2) {
     return 0;
   }
 
@@ -54,7 +53,7 @@ class CraftCidFont extends CraftFontProgram {
   }
 
   void _initializeCidFontNameAndStyle(String fontName) {
-    String? nameBase = CraftFontProgram.trimFontStyle(fontName);
+    String? nameBase = FontProgram.trimFontStyle(fontName);
     if (nameBase != null && nameBase.length < fontName.length) {
       fontNames.setFontName(fontName);
       fontNames.setStyle(fontName.substring(nameBase.length));
@@ -93,16 +92,15 @@ class CraftCidFont extends CraftFontProgram {
     registry = fontDesc["Registry"] as String?;
     String? uniMap = _getCompatibleUniMap(registry ?? "", cmap);
     if (uniMap != null) {
-      CraftIntHashtable? metrics = fontDesc["W"] as CraftIntHashtable?;
-      CraftCMapUniCid uni2cid =
-          CraftCjkResourceLoader.getUni2CidCmapSync(uniMap);
+      IntHashtable? metrics = fontDesc["W"] as IntHashtable?;
+      CMapUniCid uni2cid = CjkResourceLoader.getUni2CidCmapSync(uniMap);
       avgWidth = 0;
       for (int cp in uni2cid.getCodePoints()) {
         int cid = uni2cid.lookup(cp);
         int width = (metrics != null && metrics.containsKey(cid))
             ? metrics.get(cid)
-            : CraftFontProgram.DEFAULT_WIDTH;
-        CraftGlyph glyph = CraftGlyph(cid, width, cp);
+            : FontProgram.DEFAULT_WIDTH;
+        Glyph glyph = Glyph(cid, width, cp);
         avgWidth += glyph.getWidth();
         codeToGlyph[cid] = glyph;
         unicodeToGlyph[cp] = glyph;
@@ -116,7 +114,7 @@ class CraftCidFont extends CraftFontProgram {
 
   static String? _getCompatibleUniMap(String registry, String cmap) {
     Set<String>? compatibleUniMaps =
-        CraftCidFontProperties.getRegistryNames()["${registry}_Uni"];
+        CidFontProperties.getRegistryNames()["${registry}_Uni"];
     if (compatibleUniMaps == null) return null;
     if (compatibleUniMaps.contains(cmap)) {
       return cmap;

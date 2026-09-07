@@ -1,6 +1,6 @@
 import 'package:dpdf/src/layout/renderer/block_renderer.dart';
 import 'package:dpdf/src/layout/element/div.dart';
 
-class CraftDivRenderer extends CraftBlockRenderer {
-  CraftDivRenderer(CraftDiv super.modelElement);
+class DivRenderer extends BlockRenderer {
+  DivRenderer(Div super.modelElement);
 }

@@ -10,34 +10,33 @@ import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 import 'package:dpdf/src/io/font/pdf_encodings.dart';
 import 'package:dpdf/src/layout/properties/image_type.dart';
 
-class CraftGifImageHelper {
+class GifImageHelper {
   static const int _maxStackSize = 4096;
 
   /// Decodes the canvas dimensions and requested frames from GIF bytes.
-  static void processImage(CraftGifImageData image,
-      [int lastFrameNumber = -1]) {
+  static void processImage(GifImageData image, [int lastFrameNumber = -1]) {
     final gif = GifParameters(image);
     try {
       if (image.getData() == null) {
         // Assuming data is loaded or available
         throw IoException("Image data is null");
       }
-      final stream = CraftRandomAccessFileOrArray(image.getData()!);
+      final stream = RandomAccessFileOrArray(image.getData()!);
       _process(stream, gif, lastFrameNumber);
       stream.close();
     } catch (e) {
       if (e is IoException) rethrow;
-      throw IoException(CraftIoExceptionMessageConstant.gifImageException, e);
+      throw IoException(IoExceptionMessageConstant.gifImageException, e);
     }
   }
 
-  static void _process(CraftRandomAccessFileOrArray stream, GifParameters gif,
-      int lastFrameNumber) {
+  static void _process(
+      RandomAccessFileOrArray stream, GifParameters gif, int lastFrameNumber) {
     gif.input = stream;
     _readHeader(gif);
     _readContents(gif, lastFrameNumber);
     if (gif.currentFrame <= lastFrameNumber) {
-      throw IoException(CraftIoExceptionMessageConstant.cannotFindFrame);
+      throw IoException(IoExceptionMessageConstant.cannotFindFrame);
     }
   }
 
@@ -47,7 +46,7 @@ class CraftGifImageHelper {
       id.writeCharCode(gif.input!.read());
     }
     if (!id.toString().startsWith("GIF8")) {
-      throw IoException(CraftIoExceptionMessageConstant.gifSignatureNotFound);
+      throw IoException(IoExceptionMessageConstant.gifSignatureNotFound);
     }
     _readLSD(gif);
     if (gif.gctFlag) {
@@ -199,16 +198,15 @@ class CraftGifImageHelper {
       colorspace[1] = "/DeviceRGB";
       int len = gif.mCurrTable!.length;
       colorspace[2] = (len ~/ 3) - 1;
-      colorspace[3] = CraftPdfEncodings.convertToString(gif.mCurrTable!, null);
+      colorspace[3] = PdfEncodings.convertToString(gif.mCurrTable!, null);
 
       Map<String, Object> ad = {};
       ad["ColorSpace"] = colorspace;
 
-      CraftRawImageData img =
-          CraftRawImageData.fromBytes(gif.mOut!, CraftImageType.GIF);
-      CraftRawImageHelper.updateRawImageParameters(
+      RawImageData img = RawImageData.fromBytes(gif.mOut!, ImageType.GIF);
+      RawImageHelper.updateRawImageParameters(
           img, gif.iw, gif.ih, 1, gif.mBpc, gif.mOut!);
-      CraftRawImageHelper.updateImageAttributes(img, ad);
+      RawImageHelper.updateImageAttributes(img, ad);
       gif.image.addFrame(img);
 
       if (gif.transparency) {
@@ -216,7 +214,7 @@ class CraftGifImageHelper {
       }
     } catch (e) {
       if (e is IoException) rethrow;
-      throw IoException(CraftIoExceptionMessageConstant.gifImageException, e);
+      throw IoException(IoExceptionMessageConstant.gifImageException, e);
     }
   }
 
@@ -332,8 +330,8 @@ class CraftGifImageHelper {
 }
 
 class GifParameters {
-  CraftGifImageData image;
-  CraftRandomAccessFileOrArray? input;
+  GifImageData image;
+  RandomAccessFileOrArray? input;
   bool gctFlag = false;
   int bgIndex = 0;
   int bgColor = 0;

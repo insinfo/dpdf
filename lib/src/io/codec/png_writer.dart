@@ -5,7 +5,7 @@ import 'dart:typed_data';
 ///
 /// Provides methods to create valid PNG files with proper chunk structure,
 /// CRC32 checksums, and optional palette/ICC profile support.
-class CraftPngWriter {
+class PngWriter {
   static final Uint8List _pngSignature =
       Uint8List.fromList([137, 80, 78, 71, 13, 10, 26, 10]);
 
@@ -25,7 +25,7 @@ class CraftPngWriter {
   final BytesBuilder _output = BytesBuilder();
 
   /// Creates a PngWriter with PNG signature.
-  CraftPngWriter() {
+  PngWriter() {
     _output.add(_pngSignature);
   }
 

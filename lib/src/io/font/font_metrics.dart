@@ -1,4 +1,4 @@
-class CraftFontMetrics {
+class FontMetrics {
   static const int UNITS_NORMALIZATION = 1000;
 
   double normalizationCoef = 1.0;

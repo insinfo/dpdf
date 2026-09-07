@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 void main() {
   test('Existing CMap parser integrates with the replacement storage',
       () async {
-    final stream = CraftPdfStream.withBytes(Uint8List.fromList(ascii.encode('''
+    final stream = PdfStream.withBytes(Uint8List.fromList(ascii.encode('''
 begincmap
 1 begincodespacerange <00> <FF> endcodespacerange
 2 beginbfchar <01> <00660069> <02> <D83DDE00> endbfchar
@@ -40,17 +40,16 @@ endcmap
     final map = UnicodeCodeMap();
     map.registerMappedCode(
         String.fromCharCodes([1, 2, 3]),
-        CraftCMapObject(CraftCMapObject.hexString,
+        CMapObject(CMapObject.hexString,
             Uint8List.fromList([0xd8, 0x3d, 0xde, 0x00])));
     expect(map.textForCode(0x010203), '😀');
     expect(map.codeForScalar(0x1f600), 0x010203);
     map.registerMappedCode(
         'B',
-        CraftCMapObject(CraftCMapObject.hexString,
+        CMapObject(CMapObject.hexString,
             Uint8List.fromList([0xfe, 0xff, 0x00, 0xe7])));
     expect(map.textForCode(66), 'ç');
-    map.registerMappedCode(
-        'C', CraftCMapObject(CraftCMapObject.string, '\x00A'));
+    map.registerMappedCode('C', CMapObject(CMapObject.string, '\x00A'));
     expect(map.decodeCodes('BC'.codeUnits), 'çA');
   });
 
@@ -62,13 +61,9 @@ endcmap
     expect(() => map.setScalar(1, 0xd800), throwsRangeError);
     expect(
         () => map.registerMappedCode(
-            'A',
-            CraftCMapObject(
-                CraftCMapObject.hexString, Uint8List.fromList([65]))),
+            'A', CMapObject(CMapObject.hexString, Uint8List.fromList([65]))),
         throwsFormatException);
-    expect(
-        () => map.registerMappedCode(
-            '', CraftCMapObject(CraftCMapObject.number, 65)),
+    expect(() => map.registerMappedCode('', CMapObject(CMapObject.number, 65)),
         throwsFormatException);
   });
 }

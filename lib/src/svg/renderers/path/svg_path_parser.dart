@@ -5,17 +5,17 @@ import 'dart:math' as math;
 /// O `d` do SVG tem vinte formas (absolutas, relativas, taquigrafias, arcos),
 /// mas o PDF só conhece quatro. Reduzir tudo a este conjunto no parser mantém
 /// os renderizadores triviais e torna o resultado inspecionável em testes.
-enum CraftSvgPathOp { moveTo, lineTo, curveTo, close }
+enum SvgPathOp { moveTo, lineTo, curveTo, close }
 
 /// Um trecho de caminho já em coordenadas absolutas e prontas para o canvas.
-class CraftSvgPathSegment {
-  final CraftSvgPathOp op;
+class SvgPathSegment {
+  final SvgPathOp op;
 
-  /// Pares x/y: vazio em [CraftSvgPathOp.close], dois valores em move/line e
+  /// Pares x/y: vazio em [SvgPathOp.close], dois valores em move/line e
   /// seis (dois controles mais o destino) em curve.
   final List<double> coordinates;
 
-  const CraftSvgPathSegment(this.op, this.coordinates);
+  const SvgPathSegment(this.op, this.coordinates);
 
   @override
   String toString() => '${op.name}$coordinates';
@@ -31,8 +31,8 @@ class CraftSvgPathSegment {
 /// A varredura por deslocamento e a conversão de arco elíptico em cúbicas
 /// seguem de perto `dart_ui/lib/src/graphics/svg/svg_path.dart`, do mesmo
 /// autor, adaptadas ao modelo de segmentos usado aqui.
-class CraftSvgPathParser {
-  CraftSvgPathParser._();
+class SvgPathParser {
+  SvgPathParser._();
 
   /// [unitScale] converte unidades de usuário do SVG para pontos do PDF; é
   /// aplicada só na emissão, para o autômato trabalhar sempre no espaço em
@@ -41,10 +41,10 @@ class CraftSvgPathParser {
   /// Um `d` malformado não interrompe a conversão do documento: devolve-se o
   /// prefixo entendido até o erro, que é o comportamento dos agentes de
   /// usuário — um atributo truncado ainda desenha o que dava para desenhar.
-  static List<CraftSvgPathSegment> parse(String? pathData,
+  static List<SvgPathSegment> parse(String? pathData,
       {double unitScale = 1.0}) {
     if (pathData == null || pathData.trim().isEmpty) {
-      return const <CraftSvgPathSegment>[];
+      return const <SvgPathSegment>[];
     }
     return _SvgPathScanner(pathData, unitScale).run();
   }
@@ -63,7 +63,7 @@ class _SvgPathScanner {
 
   final String _data;
   final double _unitScale;
-  final List<CraftSvgPathSegment> _segments = [];
+  final List<SvgPathSegment> _segments = [];
 
   int _offset = 0;
   double _x = 0, _y = 0;
@@ -72,7 +72,7 @@ class _SvgPathScanner {
   double _quadX = 0, _quadY = 0;
   String? _previous;
 
-  List<CraftSvgPathSegment> run() {
+  List<SvgPathSegment> run() {
     try {
       _parse();
     } on _PathTruncated {
@@ -112,13 +112,13 @@ class _SvgPathScanner {
         case 'H':
           _repeat(current, () {
             _x = _coordinate(_readNumber(), _x, relative);
-            _emit(CraftSvgPathOp.lineTo, [_x, _y]);
+            _emit(SvgPathOp.lineTo, [_x, _y]);
           });
           break;
         case 'V':
           _repeat(current, () {
             _y = _coordinate(_readNumber(), _y, relative);
-            _emit(CraftSvgPathOp.lineTo, [_x, _y]);
+            _emit(SvgPathOp.lineTo, [_x, _y]);
           });
           break;
         case 'C':
@@ -137,7 +137,7 @@ class _SvgPathScanner {
           _repeat(current, () => _arc(relative));
           break;
         case 'Z':
-          _emit(CraftSvgPathOp.close, const []);
+          _emit(SvgPathOp.close, const []);
           _x = _startX;
           _y = _startY;
           _previous = current;
@@ -148,8 +148,8 @@ class _SvgPathScanner {
     }
   }
 
-  void _emit(CraftSvgPathOp op, List<double> coordinates) {
-    _segments.add(CraftSvgPathSegment(
+  void _emit(SvgPathOp op, List<double> coordinates) {
+    _segments.add(SvgPathSegment(
         op, coordinates.map((value) => value * _unitScale).toList()));
   }
 
@@ -159,14 +159,14 @@ class _SvgPathScanner {
     _y = _coordinate(_readNumber(), _y, relative);
     _startX = _x;
     _startY = _y;
-    _emit(CraftSvgPathOp.moveTo, [_x, _y]);
+    _emit(SvgPathOp.moveTo, [_x, _y]);
     _previous = relative ? 'm' : 'M';
   }
 
   void _line(bool relative) {
     _x = _coordinate(_readNumber(), _x, relative);
     _y = _coordinate(_readNumber(), _y, relative);
-    _emit(CraftSvgPathOp.lineTo, [_x, _y]);
+    _emit(SvgPathOp.lineTo, [_x, _y]);
   }
 
   void _cubic(bool relative) {
@@ -176,7 +176,7 @@ class _SvgPathScanner {
     final y2 = _coordinate(_readNumber(), _y, relative);
     final x = _coordinate(_readNumber(), _x, relative);
     final y = _coordinate(_readNumber(), _y, relative);
-    _emit(CraftSvgPathOp.curveTo, [x1, y1, x2, y2, x, y]);
+    _emit(SvgPathOp.curveTo, [x1, y1, x2, y2, x, y]);
     _cubicX = x2;
     _cubicY = y2;
     _x = x;
@@ -196,7 +196,7 @@ class _SvgPathScanner {
     final y2 = _coordinate(_readNumber(), _y, relative);
     final x = _coordinate(_readNumber(), _x, relative);
     final y = _coordinate(_readNumber(), _y, relative);
-    _emit(CraftSvgPathOp.curveTo, [x1, y1, x2, y2, x, y]);
+    _emit(SvgPathOp.curveTo, [x1, y1, x2, y2, x, y]);
     _cubicX = x2;
     _cubicY = y2;
     _x = x;
@@ -226,7 +226,7 @@ class _SvgPathScanner {
   /// O PDF não tem curva de grau dois: a quadrática é elevada exatamente a
   /// uma cúbica equivalente, sem perda de precisão.
   void _emitQuadratic(double cx, double cy, double x, double y) {
-    _emit(CraftSvgPathOp.curveTo, [
+    _emit(SvgPathOp.curveTo, [
       _x + 2 / 3 * (cx - _x),
       _y + 2 / 3 * (cy - _y),
       x + 2 / 3 * (cx - x),
@@ -265,7 +265,7 @@ class _SvgPathScanner {
     // casos estão previstos na especificação e não são erro.
     if (x0 == x1 && y0 == y1) return;
     if (rx == 0 || ry == 0) {
-      _emit(CraftSvgPathOp.lineTo, [x1, y1]);
+      _emit(SvgPathOp.lineTo, [x1, y1]);
       return;
     }
 
@@ -324,7 +324,7 @@ class _SvgPathScanner {
           cy + actualRx * sinPhi * a + actualRy * cosPhi * b;
 
       final last = i == count - 1;
-      _emit(CraftSvgPathOp.curveTo, [
+      _emit(SvgPathOp.curveTo, [
         mapX(cos0 - alpha * sin0, sin0 + alpha * cos0),
         mapY(cos0 - alpha * sin0, sin0 + alpha * cos0),
         mapX(cos1 + alpha * sin1, sin1 - alpha * cos1),

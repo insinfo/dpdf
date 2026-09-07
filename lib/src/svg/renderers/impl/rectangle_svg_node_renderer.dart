@@ -8,7 +8,7 @@ import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 
 /// Renderizador de `<rect>`, com ou sem cantos arredondados.
-class CraftRectangleSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
+class RectangleSvgNodeRenderer extends AbstractSvgNodeRenderer {
   /// Constante de aproximação de um quarto de circunferência por uma cúbica.
   static const double _kappa = 0.5522847498307933;
 
@@ -19,7 +19,7 @@ class CraftRectangleSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
   double rx = 0;
   double ry = 0;
 
-  void _setParameters(CraftSvgDrawContext context) {
+  void _setParameters(SvgDrawContext context) {
     x = parseHorizontalLength(
         getAttributeOrDefault(SvgAttributes.X, '0'), context);
     y = parseVerticalLength(
@@ -43,7 +43,7 @@ class CraftRectangleSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
   }
 
   @override
-  Future<void> doDraw(CraftSvgDrawContext context) async {
+  Future<void> doDraw(SvgDrawContext context) async {
     _setParameters(context);
     if (width <= 0 || height <= 0) return;
     final canvas = context.getCurrentCanvas();
@@ -58,7 +58,7 @@ class CraftRectangleSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
   /// fica descrito num único sistema de coordenadas, sem depender da convenção
   /// de ângulos do canvas — que é definida num espaço de Y crescente para
   /// cima, o oposto do espaço do SVG.
-  void _drawRoundedRectangle(CraftPdfCanvas canvas) {
+  void _drawRoundedRectangle(PdfCanvas canvas) {
     final right = x + width;
     final bottom = y + height;
     final dx = rx * _kappa;
@@ -78,14 +78,14 @@ class CraftRectangleSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
   }
 
   @override
-  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context) {
+  Rectangle? getObjectBoundingBox(SvgDrawContext context) {
     _setParameters(context);
-    return CraftRectangle(x, y, width, height);
+    return Rectangle(x, y, width, height);
   }
 
   @override
-  CraftSvgNodeRenderer createDeepCopy() {
-    final copy = CraftRectangleSvgNodeRenderer();
+  SvgNodeRenderer createDeepCopy() {
+    final copy = RectangleSvgNodeRenderer();
     deepCopyAttributesAndStyles(copy);
     return copy;
   }

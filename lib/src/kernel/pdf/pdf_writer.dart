@@ -19,36 +19,35 @@ import 'pdf_document.dart';
 import 'writer_properties.dart';
 
 /// Writes PDF documents to output.
-class CraftPdfWriter {
-  static final Uint8List _obj = CraftByteUtils.getIsoBytes(' obj\n');
-  static final Uint8List _endobj = CraftByteUtils.getIsoBytes('\nendobj\n');
+class PdfWriter {
+  static final Uint8List _obj = ByteUtils.getIsoBytes(' obj\n');
+  static final Uint8List _endobj = ByteUtils.getIsoBytes('\nendobj\n');
 
   final IOSink _output;
   int _currentPos = 0;
   final String _pdfVersion = '1.7';
 
-  CraftPdfDocument? document;
-  final CraftWriterProperties properties;
+  PdfDocument? document;
+  final WriterProperties properties;
   bool _isEncrypting = false;
 
-  CraftPdfObjectStream? _currentObjStream;
+  PdfObjectStream? _currentObjStream;
 
-  CraftPdfObjectStream? get currentObjStream => _currentObjStream;
+  PdfObjectStream? get currentObjStream => _currentObjStream;
 
-  CraftPdfWriter(this._output,
-      {CraftWriterProperties? properties, int initialPosition = 0})
-      : properties = properties ?? CraftWriterProperties(),
+  PdfWriter(this._output,
+      {WriterProperties? properties, int initialPosition = 0})
+      : properties = properties ?? WriterProperties(),
         _currentPos = initialPosition;
 
-  factory CraftPdfWriter.toFile(String path,
-      {CraftWriterProperties? properties}) {
-    return CraftPdfWriter(File(path).openWrite(), properties: properties);
+  factory PdfWriter.toFile(String path, {WriterProperties? properties}) {
+    return PdfWriter(File(path).openWrite(), properties: properties);
   }
 
   /// Creates a PdfWriter that writes to a BytesBuilder.
-  factory CraftPdfWriter.fromBytesBuilder(BytesBuilder builder,
-      {CraftWriterProperties? properties}) {
-    return CraftPdfWriter(_BytesBuilderSink(builder), properties: properties);
+  factory PdfWriter.fromBytesBuilder(BytesBuilder builder,
+      {WriterProperties? properties}) {
+    return PdfWriter(_BytesBuilderSink(builder), properties: properties);
   }
 
   int getPosition() => _currentPos;
@@ -61,7 +60,7 @@ class CraftPdfWriter {
   }
 
   void writeString(String str) {
-    writeBytes(CraftByteUtils.getIsoBytes(str));
+    writeBytes(ByteUtils.getIsoBytes(str));
   }
 
   void writeByte(int byte) {
@@ -85,8 +84,7 @@ class CraftPdfWriter {
     writeBytes(Uint8List.fromList([0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A]));
   }
 
-  Future<void> writeObject(CraftPdfObject obj,
-      {bool canBeInObjStm = true}) async {
+  Future<void> writeObject(PdfObject obj, {bool canBeInObjStm = true}) async {
     final ref = obj.indirectHandle();
     if (ref == null) return;
 
@@ -107,7 +105,7 @@ class CraftPdfWriter {
         if (document == null) {
           throw StateError("Document must be set to use full compression");
         }
-        _currentObjStream = CraftPdfObjectStream(document!);
+        _currentObjStream = PdfObjectStream(document!);
       }
 
       await _currentObjStream!.addObject(obj);
@@ -116,10 +114,9 @@ class CraftPdfWriter {
       // No, we mark it when we flush the ObjStm?
       // Actually, checkState(flushed) is used to prevent re-writing.
       // Here we set it to flushed because it IS written to the ObjStm.
-      ref.setState(CraftPdfObject.flushed);
+      ref.setState(PdfObject.flushed);
 
-      if (_currentObjStream!.getSize() >=
-          CraftPdfObjectStream.maxObjStreamSize) {
+      if (_currentObjStream!.getSize() >= PdfObjectStream.maxObjStreamSize) {
         await _flushObjectStream(_currentObjStream!);
         _currentObjStream = null;
       }
@@ -145,11 +142,11 @@ class CraftPdfWriter {
 
     await _writeValue(obj, forceDirect: true);
     writeBytes(_endobj);
-    ref.setState(CraftPdfObject.flushed);
+    ref.setState(PdfObject.flushed);
     _isEncrypting = false; // Reset
   }
 
-  bool _canBeInObjStm(CraftPdfObject obj) {
+  bool _canBeInObjStm(PdfObject obj) {
     if (document == null) return false;
     // Helper logic: Streams, Encryption Dict, Catalog, etc cannot be in ObjStm sometimes?
     // Streams cannot be in ObjStm.
@@ -164,7 +161,7 @@ class CraftPdfWriter {
     return true;
   }
 
-  Future<void> _flushObjectStream(CraftPdfObjectStream objStm) async {
+  Future<void> _flushObjectStream(PdfObjectStream objStm) async {
     // Prepare stream data: Index + Objects
     // Index is in _indexStream (BytesBuilder)
     // Objects are in outputStream (BytesBuilder) via PdfStream mechanism
@@ -185,11 +182,10 @@ class CraftPdfWriter {
     await writeObject(objStm);
   }
 
-  Future<void> _writeValue(CraftPdfObject obj,
-      {bool forceDirect = false}) async {
+  Future<void> _writeValue(PdfObject obj, {bool forceDirect = false}) async {
     if (!forceDirect &&
         obj.indirectHandle() == null &&
-        (obj.isStream() || obj.checkState(CraftPdfObject.mustBeIndirect))) {
+        (obj.isStream() || obj.checkState(PdfObject.mustBeIndirect))) {
       final owner = document;
       if (owner == null) {
         throw StateError('An indirect value requires an owning document.');
@@ -209,7 +205,7 @@ class CraftPdfWriter {
     // Handle indirect references BEFORE setting offset - we don't want to
     // overwrite the reference's offset when writing it as "N 0 R"
     if (obj.objectKind() == PdfObjectType.indirectReference) {
-      final refObj = obj as CraftPdfIndirectReference;
+      final refObj = obj as PdfIndirectReference;
       writeInt(refObj.objectNumber());
       writeSpace();
       writeInt(refObj.generationNumber());
@@ -225,48 +221,48 @@ class CraftPdfWriter {
         writeString('null');
         break;
       case PdfObjectType.boolean:
-        writeString((obj as CraftPdfBoolean).getValue() ? 'true' : 'false');
+        writeString((obj as PdfBoolean).getValue() ? 'true' : 'false');
         break;
       case PdfObjectType.number:
-        writeString((obj as CraftPdfNumber).toString());
+        writeString((obj as PdfNumber).toString());
         break;
       case PdfObjectType.string:
-        _writeString(obj as CraftPdfString);
+        _writeString(obj as PdfString);
         break;
       case PdfObjectType.name:
-        _writeName(obj as CraftPdfName);
+        _writeName(obj as PdfName);
         break;
       case PdfObjectType.array:
-        await _writeArray(obj as CraftPdfArray);
+        await _writeArray(obj as PdfArray);
         break;
       case PdfObjectType.dictionary:
-        await _writeDictionary(obj as CraftPdfDictionary);
+        await _writeDictionary(obj as PdfDictionary);
         break;
       case PdfObjectType.stream:
-        await _writeStream(obj as CraftPdfStream);
+        await _writeStream(obj as PdfStream);
         break;
       case PdfObjectType.indirectReference:
         // Already handled above, but keep case for completeness
         break;
       case PdfObjectType.literal:
-        _writeLiteral(obj as CraftPdfLiteral);
+        _writeLiteral(obj as PdfLiteral);
         break;
     }
   }
 
-  void _writeLiteral(CraftPdfLiteral literal) {
+  void _writeLiteral(PdfLiteral literal) {
     final bytes = literal.getInternalContent();
     if (bytes != null) {
       writeBytes(bytes);
     }
   }
 
-  void _writeName(CraftPdfName name) {
+  void _writeName(PdfName name) {
     writeString('/');
     writeBytes(name.getInternalContent() ?? Uint8List(0));
   }
 
-  void _writeString(CraftPdfString str) {
+  void _writeString(PdfString str) {
     var bytes = str.getValueBytes() ?? Uint8List(0);
 
     if (_isEncrypting && document?.securityCodec() != null) {
@@ -300,7 +296,7 @@ class CraftPdfWriter {
     }
   }
 
-  Future<void> _writeArray(CraftPdfArray arr) async {
+  Future<void> _writeArray(PdfArray arr) async {
     writeByte(0x5B); // '['
     for (var i = 0; i < arr.size(); i++) {
       if (i > 0) writeSpace();
@@ -314,7 +310,7 @@ class CraftPdfWriter {
     writeByte(0x5D); // ']'
   }
 
-  Future<void> _writeDictionary(CraftPdfDictionary dict) async {
+  Future<void> _writeDictionary(PdfDictionary dict) async {
     writeString('<<');
     for (final key in dict.keySet()) {
       _writeName(key);
@@ -330,7 +326,7 @@ class CraftPdfWriter {
     writeString('>>');
   }
 
-  Future<void> _writeStream(CraftPdfStream stream) async {
+  Future<void> _writeStream(PdfStream stream) async {
     // The serialized filter dictionary describes encoded stream bytes.
     // Decoding here while retaining /Filter corrupts the output PDF.
     var bytes = await stream.getBytes(false) ?? Uint8List(0);
@@ -348,7 +344,7 @@ class CraftPdfWriter {
       }
     }
 
-    stream.put(CraftPdfName.length, CraftPdfNumber.fromInt(bytes.length));
+    stream.put(PdfName.length, PdfNumber.fromInt(bytes.length));
 
     await _writeDictionary(stream);
     writeNewLine();
@@ -358,7 +354,7 @@ class CraftPdfWriter {
     writeString('endstream');
   }
 
-  void writeXrefTable(CraftPdfXrefTable xref) {
+  void writeXrefTable(PdfXrefTable xref) {
     writeString('xref\n');
     writeString('0 ${xref.size()}\n');
     for (var i = 0; i < xref.size(); i++) {
@@ -380,7 +376,7 @@ class CraftPdfWriter {
   /// Writes an incremental xref table with only the modified entries.
   /// Used in append mode for signatures.
   void writeIncrementalXrefTable(
-      CraftPdfXrefTable xref, List<CraftPdfIndirectReference> modifiedRefs) {
+      PdfXrefTable xref, List<PdfIndirectReference> modifiedRefs) {
     writeString('xref\n');
 
     // Group modified refs by contiguous object numbers for efficient xref subsections
@@ -427,7 +423,7 @@ class CraftPdfWriter {
     }
   }
 
-  Future<void> writeTrailer(CraftPdfDictionary trailer, int startxref) async {
+  Future<void> writeTrailer(PdfDictionary trailer, int startxref) async {
     writeString('trailer\n');
     await _writeValue(trailer);
     writeNewLine();
@@ -440,10 +436,10 @@ class CraftPdfWriter {
     writeString('%%EOF\n');
   }
 
-  Future<void> writeXrefStream(CraftPdfXrefTable xref,
-      CraftPdfDictionary trailer, CraftPdfStream xrefStream) async {
-    xrefStream.put(CraftPdfName.type, CraftPdfName.xref);
-    xrefStream.put(CraftPdfName.size, CraftPdfNumber.fromInt(xref.size()));
+  Future<void> writeXrefStream(
+      PdfXrefTable xref, PdfDictionary trailer, PdfStream xrefStream) async {
+    xrefStream.put(PdfName.type, PdfName.xref);
+    xrefStream.put(PdfName.size, PdfNumber.fromInt(xref.size()));
 
     // Copy the trailer's own entries — /Root, /Info, /ID, /Encrypt and any
     // extension the input carried — into the cross-reference stream dictionary,
@@ -525,11 +521,11 @@ class CraftPdfWriter {
     }
 
     xrefStream.put(
-        CraftPdfName.w,
-        CraftPdfArray.fromList([
-          CraftPdfNumber.fromInt(w1),
-          CraftPdfNumber.fromInt(w2),
-          CraftPdfNumber.fromInt(w3)
+        PdfName.w,
+        PdfArray.fromList([
+          PdfNumber.fromInt(w1),
+          PdfNumber.fromInt(w2),
+          PdfNumber.fromInt(w3)
         ]));
 
     // Generate data

@@ -12,37 +12,37 @@ void main() {
       double expectedMarginRight = 90;
       double expectedMarginBottom = 86;
       double expectedMarginLeft = 88;
-      CraftStyle style = CraftStyle();
-      expect(style.getProperty(CraftProperty.MARGIN_TOP), isNull);
-      expect(style.getProperty(CraftProperty.MARGIN_RIGHT), isNull);
-      expect(style.getProperty(CraftProperty.MARGIN_BOTTOM), isNull);
-      expect(style.getProperty(CraftProperty.MARGIN_LEFT), isNull);
+      Style style = Style();
+      expect(style.getProperty(Property.MARGIN_TOP), isNull);
+      expect(style.getProperty(Property.MARGIN_RIGHT), isNull);
+      expect(style.getProperty(Property.MARGIN_BOTTOM), isNull);
+      expect(style.getProperty(Property.MARGIN_LEFT), isNull);
 
       style.setMargins(expectedMarginTop, expectedMarginRight,
           expectedMarginBottom, expectedMarginLeft);
 
-      expect(style.getProperty(CraftProperty.MARGIN_TOP),
-          equals(CraftUnitValue.createPointValue(expectedMarginTop)));
-      expect(style.getProperty(CraftProperty.MARGIN_RIGHT),
-          equals(CraftUnitValue.createPointValue(expectedMarginRight)));
-      expect(style.getProperty(CraftProperty.MARGIN_BOTTOM),
-          equals(CraftUnitValue.createPointValue(expectedMarginBottom)));
-      expect(style.getProperty(CraftProperty.MARGIN_LEFT),
-          equals(CraftUnitValue.createPointValue(expectedMarginLeft)));
+      expect(style.getProperty(Property.MARGIN_TOP),
+          equals(UnitValue.createPointValue(expectedMarginTop)));
+      expect(style.getProperty(Property.MARGIN_RIGHT),
+          equals(UnitValue.createPointValue(expectedMarginRight)));
+      expect(style.getProperty(Property.MARGIN_BOTTOM),
+          equals(UnitValue.createPointValue(expectedMarginBottom)));
+      expect(style.getProperty(Property.MARGIN_LEFT),
+          equals(UnitValue.createPointValue(expectedMarginLeft)));
     });
 
     test('SetMarginTest', () {
       double expectedMargin = 90;
-      CraftStyle style = CraftStyle();
+      Style style = Style();
       style.setMargin(expectedMargin);
-      expect(style.getProperty(CraftProperty.MARGIN_TOP),
-          equals(CraftUnitValue.createPointValue(expectedMargin)));
-      expect(style.getProperty(CraftProperty.MARGIN_RIGHT),
-          equals(CraftUnitValue.createPointValue(expectedMargin)));
-      expect(style.getProperty(CraftProperty.MARGIN_BOTTOM),
-          equals(CraftUnitValue.createPointValue(expectedMargin)));
-      expect(style.getProperty(CraftProperty.MARGIN_LEFT),
-          equals(CraftUnitValue.createPointValue(expectedMargin)));
+      expect(style.getProperty(Property.MARGIN_TOP),
+          equals(UnitValue.createPointValue(expectedMargin)));
+      expect(style.getProperty(Property.MARGIN_RIGHT),
+          equals(UnitValue.createPointValue(expectedMargin)));
+      expect(style.getProperty(Property.MARGIN_BOTTOM),
+          equals(UnitValue.createPointValue(expectedMargin)));
+      expect(style.getProperty(Property.MARGIN_LEFT),
+          equals(UnitValue.createPointValue(expectedMargin)));
     });
 
     test('SetPaddingsTest', () {
@@ -50,72 +50,72 @@ void main() {
       double expPaddingRight = 8;
       double expPaddingBottom = 5;
       double expPaddingLeft = 6;
-      CraftStyle style = CraftStyle();
-      expect(style.getProperty(CraftProperty.PADDING_TOP), isNull);
+      Style style = Style();
+      expect(style.getProperty(Property.PADDING_TOP), isNull);
 
       style.setPaddings(
           expPaddingTop, expPaddingRight, expPaddingBottom, expPaddingLeft);
 
-      expect(style.getProperty(CraftProperty.PADDING_LEFT),
-          equals(CraftUnitValue.createPointValue(expPaddingLeft)));
-      expect(style.getProperty(CraftProperty.PADDING_BOTTOM),
-          equals(CraftUnitValue.createPointValue(expPaddingBottom)));
-      expect(style.getProperty(CraftProperty.PADDING_TOP),
-          equals(CraftUnitValue.createPointValue(expPaddingTop)));
-      expect(style.getProperty(CraftProperty.PADDING_RIGHT),
-          equals(CraftUnitValue.createPointValue(expPaddingRight)));
+      expect(style.getProperty(Property.PADDING_LEFT),
+          equals(UnitValue.createPointValue(expPaddingLeft)));
+      expect(style.getProperty(Property.PADDING_BOTTOM),
+          equals(UnitValue.createPointValue(expPaddingBottom)));
+      expect(style.getProperty(Property.PADDING_TOP),
+          equals(UnitValue.createPointValue(expPaddingTop)));
+      expect(style.getProperty(Property.PADDING_RIGHT),
+          equals(UnitValue.createPointValue(expPaddingRight)));
     });
 
     test('SetVerticalAlignmentMiddleTest', () {
-      CraftVerticalAlignment expectedAlignment = CraftVerticalAlignment.middle;
-      CraftStyle style = CraftStyle();
-      expect(style.getProperty(CraftProperty.VERTICAL_ALIGNMENT), isNull);
+      VerticalAlignment expectedAlignment = VerticalAlignment.middle;
+      Style style = Style();
+      expect(style.getProperty(Property.VERTICAL_ALIGNMENT), isNull);
       style.setVerticalAlignment(expectedAlignment);
-      expect(style.getProperty(CraftProperty.VERTICAL_ALIGNMENT),
+      expect(style.getProperty(Property.VERTICAL_ALIGNMENT),
           equals(expectedAlignment));
     });
 
     test('SetSpacingRatioTest', () {
       double expectedSpacingRatio = 0.5;
-      CraftStyle style = CraftStyle();
-      expect(style.getProperty(CraftProperty.SPACING_RATIO), isNull);
+      Style style = Style();
+      expect(style.getProperty(Property.SPACING_RATIO), isNull);
       style.setSpacingRatio(expectedSpacingRatio);
-      expect(style.getProperty(CraftProperty.SPACING_RATIO),
+      expect(style.getProperty(Property.SPACING_RATIO),
           closeTo(expectedSpacingRatio, 0.0001));
     });
 
     test('SetKeepTogetherTrueTest', () {
-      CraftStyle style = CraftStyle();
-      expect(style.getProperty(CraftProperty.KEEP_TOGETHER), isNull);
+      Style style = Style();
+      expect(style.getProperty(Property.KEEP_TOGETHER), isNull);
       style.setKeepTogether(true);
-      expect(style.getProperty(CraftProperty.KEEP_TOGETHER), isTrue);
+      expect(style.getProperty(Property.KEEP_TOGETHER), isTrue);
     });
 
     test('SetRotationAngleTest', () {
       double expectedRotationAngle = 20.0;
-      CraftStyle style = CraftStyle();
-      expect(style.getProperty(CraftProperty.ROTATION_ANGLE), isNull);
+      Style style = Style();
+      expect(style.getProperty(Property.ROTATION_ANGLE), isNull);
       style.setRotationAngle(expectedRotationAngle);
-      expect(style.getProperty(CraftProperty.ROTATION_ANGLE),
+      expect(style.getProperty(Property.ROTATION_ANGLE),
           closeTo(expectedRotationAngle, 0.0001));
     });
 
     test('SetAndGetWidthTest', () {
       double expectedWidth = 100;
-      CraftStyle style = CraftStyle();
-      expect(style.getProperty(CraftProperty.WIDTH), isNull);
+      Style style = Style();
+      expect(style.getProperty(Property.WIDTH), isNull);
       style.setWidth(expectedWidth);
-      expect(style.getProperty(CraftProperty.WIDTH),
-          equals(CraftUnitValue.createPointValue(expectedWidth)));
+      expect(style.getProperty(Property.WIDTH),
+          equals(UnitValue.createPointValue(expectedWidth)));
     });
 
     test('SetMaxHeightTest', () {
       double expectedMaxHeight = 80;
-      CraftStyle style = CraftStyle();
-      expect(style.getProperty(CraftProperty.MAX_HEIGHT), isNull);
+      Style style = Style();
+      expect(style.getProperty(Property.MAX_HEIGHT), isNull);
       style.setMaxHeight(expectedMaxHeight);
-      expect(style.getProperty(CraftProperty.MAX_HEIGHT),
-          equals(CraftUnitValue.createPointValue(expectedMaxHeight)));
+      expect(style.getProperty(Property.MAX_HEIGHT),
+          equals(UnitValue.createPointValue(expectedMaxHeight)));
     });
   });
 }

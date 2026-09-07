@@ -7,10 +7,10 @@ import 'package:dpdf/dpdf.dart';
 
 Future<Uint8List> fixture(int pages) async {
   final out = BytesBuilder();
-  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(out));
-  final font = CraftPdfFontFactory.createFont('Helvetica');
+  final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(out));
+  final font = PdfFontFactory.createFont('Helvetica');
   for (var number = 0; number < pages; number++) {
-    final canvas = await CraftPdfCanvas.fromPage(await doc.appendBlankPage());
+    final canvas = await PdfCanvas.fromPage(await doc.appendBlankPage());
     canvas.beginText();
     await canvas.setFontAndSize(font, 12);
     canvas.moveText(20, 700).showText('Synthetic page ${number + 1}').endText();
@@ -25,7 +25,7 @@ Future<int> operation(Uint8List source, int pages, String task) async {
           [PdfPageSelection(source), PdfPageSelection(source)])
       : source;
   final expected = task == 'merge' ? pages * 2 : pages;
-  final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+  final doc = await PdfDocument.open(PdfReader.fromBytes(bytes));
   try {
     if (doc.pageTotal() != expected) throw StateError('Unexpected page count');
     if (task == 'extract') {

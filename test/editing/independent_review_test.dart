@@ -17,11 +17,10 @@ void main() {
     final input = await fixture.fixture([content]);
     final result =
         await PdfTextRedaction.remove(input, [const PdfTextRemoval(1, 'B')]);
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(result));
+    final document = await PdfDocument.open(PdfReader.fromBytes(result));
     final page = (await document.pageAt(1))!;
     final bytes =
-        await (await page.contentSegmentAt(0) as CraftPdfStream).getBytes();
+        await (await page.contentSegmentAt(0) as PdfStream).getBytes();
     final output = ascii.decode(bytes!);
     expect(RegExp(r'[0-9][eE][+-]?[0-9]').hasMatch(output), isFalse,
         reason: output);
@@ -41,10 +40,9 @@ void main() {
         throwsFormatException);
   });
   test('Object copier rejects cyclic indirect-reference chains', () async {
-    final output = CraftPdfDocument.create(
-        CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
-    final a = CraftPdfIndirectReference(101),
-        b = CraftPdfIndirectReference(102);
+    final output =
+        PdfDocument.create(PdfWriter.fromBytesBuilder(BytesBuilder()));
+    final a = PdfIndirectReference(101), b = PdfIndirectReference(102);
     a.assignTargetObject(b);
     b.assignTargetObject(a);
     await expectLater(PdfObjectCopier(output).copy(a), throwsFormatException);

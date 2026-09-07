@@ -2,7 +2,7 @@ import 'constants/font_weights.dart';
 import 'constants/font_stretches.dart';
 import 'constants/font_mac_style_flags.dart';
 
-class CraftFontNames {
+class FontNames {
   Map<int, List<List<String>>>? allNames;
 
   List<List<String>>? fullName;
@@ -14,8 +14,8 @@ class CraftFontNames {
   String style = "";
   String? cidFontName;
 
-  int weight = CraftFontWeights.NORMAL;
-  String fontStretch = CraftFontStretches.NORMAL;
+  int weight = FontWeights.NORMAL;
+  String fontStretch = FontStretches.NORMAL;
   int macStyle = 0;
   bool allowEmbedding = false;
 
@@ -42,7 +42,7 @@ class CraftFontNames {
   int getFontWeight() => weight;
 
   void setFontWeight(int weight) {
-    this.weight = CraftFontWeights.normalizeFontWeight(weight);
+    this.weight = FontWeights.normalizeFontWeight(weight);
   }
 
   String getFontStretch() => fontStretch;
@@ -53,19 +53,19 @@ class CraftFontNames {
 
   bool isAllowEmbedding() => allowEmbedding;
 
-  bool isBold() => (macStyle & CraftFontMacStyleFlags.BOLD) != 0;
+  bool isBold() => (macStyle & FontMacStyleFlags.BOLD) != 0;
 
-  bool isItalic() => (macStyle & CraftFontMacStyleFlags.ITALIC) != 0;
+  bool isItalic() => (macStyle & FontMacStyleFlags.ITALIC) != 0;
 
-  bool isUnderline() => (macStyle & CraftFontMacStyleFlags.UNDERLINE) != 0;
+  bool isUnderline() => (macStyle & FontMacStyleFlags.UNDERLINE) != 0;
 
-  bool isOutline() => (macStyle & CraftFontMacStyleFlags.OUTLINE) != 0;
+  bool isOutline() => (macStyle & FontMacStyleFlags.OUTLINE) != 0;
 
-  bool isShadow() => (macStyle & CraftFontMacStyleFlags.SHADOW) != 0;
+  bool isShadow() => (macStyle & FontMacStyleFlags.SHADOW) != 0;
 
-  bool isCondensed() => (macStyle & CraftFontMacStyleFlags.CONDENSED) != 0;
+  bool isCondensed() => (macStyle & FontMacStyleFlags.CONDENSED) != 0;
 
-  bool isExtended() => (macStyle & CraftFontMacStyleFlags.EXTENDED) != 0;
+  bool isExtended() => (macStyle & FontMacStyleFlags.EXTENDED) != 0;
 
   void setAllNames(Map<int, List<List<String>>> allNames) {
     this.allNames = allNames;

@@ -7,16 +7,16 @@ import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 ///
 /// Um grupo não estabelece viewport nem recorta: ele só existe para que
 /// atributos herdáveis e `transform` alcancem a subárvore.
-class CraftGroupSvgNodeRenderer extends CraftAbstractBranchSvgNodeRenderer {
+class GroupSvgNodeRenderer extends AbstractBranchSvgNodeRenderer {
   @override
   bool canElementFill() => false;
 
   @override
-  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context) => null;
+  Rectangle? getObjectBoundingBox(SvgDrawContext context) => null;
 
   @override
-  CraftSvgNodeRenderer createDeepCopy() {
-    final copy = CraftGroupSvgNodeRenderer();
+  SvgNodeRenderer createDeepCopy() {
+    final copy = GroupSvgNodeRenderer();
     deepCopyAttributesAndStyles(copy);
     deepCopyChildren(copy);
     return copy;

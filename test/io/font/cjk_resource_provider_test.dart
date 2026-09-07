@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 List<int> _bytes(String value) => utf8.encode(value);
 
 void main() {
-  tearDown(() => CraftCjkResourceLoader.setResourceProvider(null));
+  tearDown(() => CjkResourceLoader.setResourceProvider(null));
 
   test('loads registry, font metadata and CMaps from consumer bytes', () {
     final source = <String, List<int>>{
@@ -16,18 +16,18 @@ void main() {
       'OwnCJK.properties': _bytes('Registry=Own\nW=7 1000\n'),
       'Own-H': _bytes('1 begincidchar <41> 7 endcidchar'),
     };
-    final provider = CraftCjkMemoryResourceProvider(source);
-    CraftCjkResourceLoader.setResourceProvider(provider);
+    final provider = CjkMemoryResourceProvider(source);
+    CjkResourceLoader.setResourceProvider(provider);
     source['Own-H']![0] = 0;
 
-    expect(CraftCidFontProperties.isCjkFont('OwnCJK'), isTrue);
-    expect(CraftCidFontProperties.isCidFont('OwnCJK', 'Own-H'), isTrue);
-    expect(CraftCjkResourceLoader.getCidToCodepointCmapSync('Own-H').lookup(7),
-        [0x41]);
+    expect(CidFontProperties.isCjkFont('OwnCJK'), isTrue);
+    expect(CidFontProperties.isCidFont('OwnCJK', 'Own-H'), isTrue);
+    expect(
+        CjkResourceLoader.getCidToCodepointCmapSync('Own-H').lookup(7), [0x41]);
   });
 
   test('memory provider is browser-safe and does not expose mutable bytes', () {
-    final provider = CraftCjkMemoryResourceProvider({
+    final provider = CjkMemoryResourceProvider({
       'program': [1, 2]
     });
     final first = provider.readSync('program')!;
@@ -35,7 +35,7 @@ void main() {
     expect(provider.readSync('program'), [1, 2]);
     expect(() => provider.readSync('../program'), throwsArgumentError);
     expect(
-        () => CraftCjkMemoryResourceProvider({
+        () => CjkMemoryResourceProvider({
               'a/b': [1]
             }),
         throwsArgumentError);

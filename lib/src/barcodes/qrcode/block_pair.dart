@@ -1,19 +1,19 @@
 import 'byte_array.dart';
 
 /// Pairs a data block with its Reed-Solomon parity bytes.
-class CraftBlockPair {
-  final CraftByteArray _dataBytes;
-  final CraftByteArray _errorCorrectionBytes;
+class BlockPair {
+  final ByteArray _dataBytes;
+  final ByteArray _errorCorrectionBytes;
 
-  CraftBlockPair(this._dataBytes, this._errorCorrectionBytes);
+  BlockPair(this._dataBytes, this._errorCorrectionBytes);
 
   /// Returns data block of the pair
-  CraftByteArray getDataBytes() {
+  ByteArray getDataBytes() {
     return _dataBytes;
   }
 
   /// Returns error correction block of the pair
-  CraftByteArray getErrorCorrectionBytes() {
+  ByteArray getErrorCorrectionBytes() {
     return _errorCorrectionBytes;
   }
 }

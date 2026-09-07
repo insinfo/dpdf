@@ -6,13 +6,13 @@ import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
 import 'package:dpdf/src/layout/renderer/root_renderer.dart';
 import 'package:dpdf/src/layout/renderer/canvas_renderer.dart';
 
-class CraftCanvas extends CraftRootElement<CraftCanvas> {
-  CraftPdfCanvas? pdfCanvas;
-  CraftRectangle? rootArea;
-  CraftPdfPage? page;
+class Canvas extends RootElement<Canvas> {
+  PdfCanvas? pdfCanvas;
+  Rectangle? rootArea;
+  PdfPage? page;
   bool isCanvasOfPage = false;
 
-  CraftCanvas(CraftPdfCanvas pdfCanvas, CraftRectangle rootArea)
+  Canvas(PdfCanvas pdfCanvas, Rectangle rootArea)
       : super(pdfCanvas.getDocument()!) {
     this.pdfCanvas = pdfCanvas;
     this.rootArea = rootArea;
@@ -22,15 +22,14 @@ class CraftCanvas extends CraftRootElement<CraftCanvas> {
   // TODO: Add other constructors and methods
 
   @override
-  CraftRootRenderer ensureRootRendererNotNull() {
-    rootRenderer ??= CraftCanvasRenderer(this);
+  RootRenderer ensureRootRendererNotNull() {
+    rootRenderer ??= CanvasRenderer(this);
     return rootRenderer!;
   }
 
-  static Future<CraftCanvas> fromPage(
-      CraftPdfPage page, CraftRectangle? rootArea) async {
-    final pdfCanvas = await CraftPdfCanvas.fromPage(page);
-    return CraftCanvas(pdfCanvas, rootArea ?? (await page.mediaBounds()));
+  static Future<Canvas> fromPage(PdfPage page, Rectangle? rootArea) async {
+    final pdfCanvas = await PdfCanvas.fromPage(page);
+    return Canvas(pdfCanvas, rootArea ?? (await page.mediaBounds()));
   }
 
   Future<void> flush() async {
@@ -45,15 +44,15 @@ class CraftCanvas extends CraftRootElement<CraftCanvas> {
     }
   }
 
-  CraftPdfDocument getPdfDocument() {
+  PdfDocument getPdfDocument() {
     return pdfDocument;
   }
 
-  CraftPdfCanvas getPdfCanvas() {
+  PdfCanvas getPdfCanvas() {
     return pdfCanvas!;
   }
 
-  CraftPdfPage? pageAt() {
+  PdfPage? pageAt() {
     return page;
   }
 
@@ -61,7 +60,7 @@ class CraftCanvas extends CraftRootElement<CraftCanvas> {
     return isCanvasOfPage;
   }
 
-  CraftRectangle? getRootArea() {
+  Rectangle? getRootArea() {
     return rootArea;
   }
 }

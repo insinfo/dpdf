@@ -9,31 +9,31 @@ import 'package:dpdf/src/layout/properties/unit_value.dart';
 
 import 'package:dpdf/src/layout/tagging/accessible_element.dart';
 
-class CraftImage extends CraftAbstractElement<CraftImage>
-    implements CraftLeafContent, CraftAccessibleElement {
-  final CraftImageData imageData;
+class Image extends AbstractElement<Image>
+    implements LeafContent, AccessibleElement {
+  final ImageData imageData;
 
-  CraftImage(this.imageData);
+  Image(this.imageData);
 
   @override
-  CraftRenderer makeNewRenderer() {
-    return CraftImageRenderer(this);
+  Renderer makeNewRenderer() {
+    return ImageRenderer(this);
   }
 
   @override
-  CraftAccessibilityProperties getAccessibilityProperties() {
-    return CraftAccessibilityProperties(); // TODO: Implement roles
+  AccessibilityProperties getAccessibilityProperties() {
+    return AccessibilityProperties(); // TODO: Implement roles
   }
 
   @override
-  CraftImage setWidth(double width) {
-    setProperty(CraftProperty.WIDTH, CraftUnitValue.createPointValue(width));
+  Image setWidth(double width) {
+    setProperty(Property.WIDTH, UnitValue.createPointValue(width));
     return this;
   }
 
   @override
-  CraftImage setHeight(double height) {
-    setProperty(CraftProperty.HEIGHT, CraftUnitValue.createPointValue(height));
+  Image setHeight(double height) {
+    setProperty(Property.HEIGHT, UnitValue.createPointValue(height));
     return this;
   }
 }

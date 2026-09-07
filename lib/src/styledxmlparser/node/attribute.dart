@@ -1,4 +1,4 @@
-abstract class CraftAttribute {
+abstract class Attribute {
   String getKey();
   String getValue();
 }

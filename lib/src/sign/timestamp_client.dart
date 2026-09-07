@@ -12,7 +12,7 @@ import 'asn1_utils.dart';
 ///
 /// HTTP transport and validation of the returned timestamp's trust and imprint
 /// are not implemented by this class.
-class TimestampClient implements CraftTSAClient {
+class TimestampClient implements TSAClient {
   /// The URL of the TSA service.
   final String _tsaUrl;
 
@@ -56,7 +56,7 @@ class TimestampClient implements CraftTSAClient {
 
   @override
   SigningDigest getMessageDigest() {
-    return CraftDigestAlgorithms.getMessageDigest(_digestAlgorithm);
+    return DigestAlgorithms.getMessageDigest(_digestAlgorithm);
   }
 
   @override
@@ -107,8 +107,7 @@ class TimestampClient implements CraftTSAClient {
   /// }
   Uint8List buildTimeStampRequest(Uint8List imprint) {
     // Get algorithm OID
-    final algorithmOid =
-        CraftDigestAlgorithms.getAllowedDigest(_digestAlgorithm);
+    final algorithmOid = DigestAlgorithms.getAllowedDigest(_digestAlgorithm);
     if (algorithmOid == null) {
       throw ArgumentError('Unknown digest algorithm: $_digestAlgorithm');
     }

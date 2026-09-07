@@ -1,57 +1,57 @@
 /// Immutable layout plan produced before PDF painting.
-class CraftHtmlLayoutRow<T> {
+class HtmlLayoutRow<T> {
   final List<T> items;
-  const CraftHtmlLayoutRow(this.items);
+  const HtmlLayoutRow(this.items);
 }
 
 /// Stateless algorithms for the supported CSS flex and grid profiles.
 ///
 /// The DOM/CSS layer selects the algorithm and PDF painting consumes the rows;
 /// neither layer needs to know the other's representation.
-class CraftHtmlLayoutPlan {
-  CraftHtmlLayoutPlan._();
+class HtmlLayoutPlan {
+  HtmlLayoutPlan._();
 
-  static List<CraftHtmlLayoutRow<T>> flex<T>(List<T> items,
+  static List<HtmlLayoutRow<T>> flex<T>(List<T> items,
       {String direction = 'row'}) {
     if (direction.toLowerCase().startsWith('column')) {
       return [
-        for (final item in items) CraftHtmlLayoutRow([item])
+        for (final item in items) HtmlLayoutRow([item])
       ];
     }
-    return items.isEmpty ? const [] : [CraftHtmlLayoutRow(items)];
+    return items.isEmpty ? const [] : [HtmlLayoutRow(items)];
   }
 
   /// Groups row-direction flex items without inspecting DOM or CSS objects.
-  static List<CraftHtmlLayoutRow<T>> flexRows<T>(List<T> items,
+  static List<HtmlLayoutRow<T>> flexRows<T>(List<T> items,
       {required double availableWidth,
       required double Function(T item) widthOf,
       required double gap,
       required bool wrap}) {
     if (items.isEmpty) return const [];
-    if (!wrap) return [CraftHtmlLayoutRow(items)];
-    final rows = <CraftHtmlLayoutRow<T>>[];
+    if (!wrap) return [HtmlLayoutRow(items)];
+    final rows = <HtmlLayoutRow<T>>[];
     var row = <T>[];
     var used = 0.0;
     for (final item in items) {
       final itemWidth = widthOf(item).clamp(0.0, availableWidth).toDouble();
       final required = row.isEmpty ? itemWidth : gap + itemWidth;
       if (row.isNotEmpty && used + required > availableWidth) {
-        rows.add(CraftHtmlLayoutRow(List.unmodifiable(row)));
+        rows.add(HtmlLayoutRow(List.unmodifiable(row)));
         row = <T>[];
         used = 0;
       }
       used += row.isEmpty ? itemWidth : gap + itemWidth;
       row.add(item);
     }
-    if (row.isNotEmpty) rows.add(CraftHtmlLayoutRow(List.unmodifiable(row)));
+    if (row.isNotEmpty) rows.add(HtmlLayoutRow(List.unmodifiable(row)));
     return rows;
   }
 
-  static List<CraftHtmlLayoutRow<T>> grid<T>(List<T> items, int columns) {
+  static List<HtmlLayoutRow<T>> grid<T>(List<T> items, int columns) {
     if (columns < 1) throw ArgumentError.value(columns, 'columns');
     return [
       for (var index = 0; index < items.length; index += columns)
-        CraftHtmlLayoutRow(
+        HtmlLayoutRow(
             items.sublist(index, (index + columns).clamp(0, items.length)))
     ];
   }

@@ -20,52 +20,51 @@ import 'package:dpdf/src/io/image/jbig2_image_helper.dart';
 import 'package:dpdf/src/io/image/tiff_image_data.dart';
 import 'package:dpdf/src/io/image/tiff_image_helper.dart';
 
-class CraftImageDataFactory {
-  CraftImageDataFactory._();
+class ImageDataFactory {
+  ImageDataFactory._();
 
-  static CraftImageData create(Uint8List bytes) {
-    CraftImageType type = CraftImageTypeDetector.detectImageType(bytes);
+  static ImageData create(Uint8List bytes) {
+    ImageType type = ImageTypeDetector.detectImageType(bytes);
     switch (type) {
-      case CraftImageType.JPEG:
-        CraftImageData image = CraftJpegImageData.fromBytes(bytes);
-        CraftJpegImageHelper.processImage(image);
+      case ImageType.JPEG:
+        ImageData image = JpegImageData.fromBytes(bytes);
+        JpegImageHelper.processImage(image);
         return image;
-      case CraftImageType.PNG:
-        CraftImageData imagePng = CraftPngImageData.fromBytes(bytes);
-        CraftPngImageHelper.processImage(imagePng);
+      case ImageType.PNG:
+        ImageData imagePng = PngImageData.fromBytes(bytes);
+        PngImageHelper.processImage(imagePng);
         return imagePng;
-      case CraftImageType.BMP:
-        CraftImageData imageBmp = CraftBmpImageData.fromBytes(bytes);
-        CraftBmpImageHelper.processImage(imageBmp);
+      case ImageType.BMP:
+        ImageData imageBmp = BmpImageData.fromBytes(bytes);
+        BmpImageHelper.processImage(imageBmp);
         return imageBmp;
-      case CraftImageType.GIF:
-        CraftGifImageData gifData = CraftGifImageData.fromBytes(bytes);
-        CraftGifImageHelper.processImage(gifData);
+      case ImageType.GIF:
+        GifImageData gifData = GifImageData.fromBytes(bytes);
+        GifImageHelper.processImage(gifData);
         if (gifData.getFrames().isEmpty) {
-          throw IoException(CraftIoExceptionMessageConstant.gifImageException);
+          throw IoException(IoExceptionMessageConstant.gifImageException);
         }
         return gifData.getFrames()[0];
-      case CraftImageType.JBIG2:
-        CraftImageData imageJbig2 = CraftJbig2ImageData.fromBytes(bytes, 1);
-        CraftJbig2ImageHelper.processImage(imageJbig2);
+      case ImageType.JBIG2:
+        ImageData imageJbig2 = Jbig2ImageData.fromBytes(bytes, 1);
+        Jbig2ImageHelper.processImage(imageJbig2);
         return imageJbig2;
-      case CraftImageType.TIFF:
-        CraftImageData imageTiff = CraftTiffImageData.fromBytes(bytes);
-        CraftTiffImageHelper.processImage(imageTiff);
+      case ImageType.TIFF:
+        ImageData imageTiff = TiffImageData.fromBytes(bytes);
+        TiffImageHelper.processImage(imageTiff);
         return imageTiff;
       default:
         throw IoException(
-            CraftIoExceptionMessageConstant.imageFormatCannotBeRecognized);
+            IoExceptionMessageConstant.imageFormatCannotBeRecognized);
     }
   }
 
-  static CraftImageData createRawImage(Uint8List? bytes) {
-    return CraftRawImageData.fromBytes(
-        bytes ?? Uint8List(0), CraftImageType.NONE);
+  static ImageData createRawImage(Uint8List? bytes) {
+    return RawImageData.fromBytes(bytes ?? Uint8List(0), ImageType.NONE);
   }
 
   /// Creates an ImageData from a URL (local file or HTTP/HTTPS).
-  static Future<CraftImageData> createFromUrl(Uri url) async {
+  static Future<ImageData> createFromUrl(Uri url) async {
     Uint8List bytes;
     if (url.scheme == 'file' || url.scheme.isEmpty) {
       final file = File.fromUri(url);

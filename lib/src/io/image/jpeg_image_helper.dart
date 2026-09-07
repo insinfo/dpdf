@@ -4,7 +4,7 @@ import 'package:dpdf/src/layout/properties/image_type.dart';
 import 'package:dpdf/src/io/exceptions/io_exception.dart';
 import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
 
-class CraftJpegImageHelper {
+class JpegImageHelper {
   static const int NOT_A_MARKER = -1;
   static const int VALID_MARKER = 0;
   static const List<int> VALID_MARKERS = [0xC0, 0xC1, 0xC2];
@@ -43,14 +43,14 @@ class CraftJpegImageHelper {
 
   static const List<int> JFIF_ID = [0x4A, 0x46, 0x49, 0x46, 0x00];
 
-  static void processImage(CraftImageData image) {
-    if (image.originalType != CraftImageType.JPEG) {
+  static void processImage(ImageData image) {
+    if (image.originalType != ImageType.JPEG) {
       throw ArgumentError("JPEG image expected");
     }
 
     Uint8List? data = image.getData();
     if (data == null) {
-      throw IoException(CraftIoExceptionMessageConstant.ioException);
+      throw IoException(IoExceptionMessageConstant.ioException);
     }
 
     image.imageSize = data.length;
@@ -58,7 +58,7 @@ class CraftJpegImageHelper {
     _updateAttributes(image);
   }
 
-  static void _updateAttributes(CraftImageData image) {
+  static void _updateAttributes(ImageData image) {
     image.filter = "DCTDecode";
     if (image.colorTransform == 0) {
       image.decodeParms = {"ColorTransform": 0};
@@ -69,7 +69,7 @@ class CraftJpegImageHelper {
     }
   }
 
-  static void _processParameters(Uint8List data, CraftImageData image) {
+  static void _processParameters(Uint8List data, ImageData image) {
     int pos = 0;
 
     int read() {
@@ -89,7 +89,7 @@ class CraftJpegImageHelper {
     }
 
     if (read() != 0xFF || read() != 0xD8) {
-      throw IoException(CraftIoExceptionMessageConstant.isNotAValidJpegFile);
+      throw IoException(IoExceptionMessageConstant.isNotAValidJpegFile);
     }
 
     bool firstPass = true;
@@ -97,14 +97,14 @@ class CraftJpegImageHelper {
       int v = read();
       if (v < 0) {
         throw IoException(
-            CraftIoExceptionMessageConstant.prematureEofWhileReadingJpeg);
+            IoExceptionMessageConstant.prematureEofWhileReadingJpeg);
       }
 
       if (v == 0xFF) {
         int marker = read();
         if (marker == -1) {
           throw IoException(
-              CraftIoExceptionMessageConstant.prematureEofWhileReadingJpeg);
+              IoExceptionMessageConstant.prematureEofWhileReadingJpeg);
         }
 
         if (firstPass && marker == M_APP0) {
@@ -164,7 +164,7 @@ class CraftJpegImageHelper {
           skip(2); // length
           if (read() != 0x08) {
             throw IoException(
-                CraftIoExceptionMessageConstant.mustHave8BitsPerComponent);
+                IoExceptionMessageConstant.mustHave8BitsPerComponent);
           }
           image.height = getShort().toDouble();
           image.width = getShort().toDouble();
@@ -172,8 +172,7 @@ class CraftJpegImageHelper {
           image.bpc = 8;
           break;
         } else if (markertype == UNSUPPORTED_MARKER) {
-          throw IoException(
-              CraftIoExceptionMessageConstant.unsupportedJpegMarker);
+          throw IoException(IoExceptionMessageConstant.unsupportedJpegMarker);
         } else if (markertype != NOPARAM_MARKER) {
           int len = getShort();
           if (len >= 2) skip(len - 2);

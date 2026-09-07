@@ -12,22 +12,22 @@ import '../../kernel/pdf/pdf_page.dart';
 import 'html_pdf_link_annotation.dart';
 
 /// Paints the platform-neutral HTML display list into paginated PDF pages.
-class CraftHtmlPdfPainter {
-  final CraftPdfDocument document;
-  final CraftPageSize pageSize;
+class HtmlPdfPainter {
+  final PdfDocument document;
+  final PageSize pageSize;
   final double margin;
 
-  const CraftHtmlPdfPainter(this.document, this.pageSize, this.margin);
+  const HtmlPdfPainter(this.document, this.pageSize, this.margin);
 
-  Future<void> paint(CraftHtmlDisplayList displayList) async {
+  Future<void> paint(HtmlDisplayList displayList) async {
     final usableHeight = pageSize.height - margin * 2;
-    final canvases = <CraftPdfCanvas>[];
-    final pages = <CraftPdfPage>[];
-    Future<CraftPdfCanvas> canvasAt(int pageIndex) async {
+    final canvases = <PdfCanvas>[];
+    final pages = <PdfPage>[];
+    Future<PdfCanvas> canvasAt(int pageIndex) async {
       while (canvases.length <= pageIndex) {
         final page = await document.appendBlankPage(pageSize);
         pages.add(page);
-        canvases.add(await CraftPdfCanvas.fromPage(page));
+        canvases.add(await PdfCanvas.fromPage(page));
       }
       return canvases[pageIndex];
     }
@@ -88,8 +88,7 @@ class CraftHtmlPdfPainter {
       canvas.beginText();
       canvas.setFillColor(_pdfColor(fragment.style.color));
       await canvas.setFontAndSize(
-          CraftPdfFontFactory.createFont(
-              CraftHtmlStandardFont.resolve(fragment.style)),
+          PdfFontFactory.createFont(HtmlStandardFont.resolve(fragment.style)),
           fragment.style.fontSize);
       canvas
           .moveText(margin + fragment.x, pageSize.height - margin - baseline)
@@ -100,13 +99,12 @@ class CraftHtmlPdfPainter {
           .endText();
       final target = fragment.linkTarget;
       if (target != null && target.isNotEmpty) {
-        final textWidth =
-            CraftHtmlTextMeasure.text(fragment.text, fragment.style)
-                .clamp(1.0, double.infinity)
-                .toDouble();
+        final textWidth = HtmlTextMeasure.text(fragment.text, fragment.style)
+            .clamp(1.0, double.infinity)
+            .toDouble();
         final textBaseline = pageSize.height - margin - baseline;
-        await pages[pageIndex].addAnnotation(CraftHtmlPdfLinkAnnotation(
-          CraftRectangle(
+        await pages[pageIndex].addAnnotation(HtmlPdfLinkAnnotation(
+          Rectangle(
               margin + fragment.x,
               textBaseline - fragment.style.fontSize * .25,
               textWidth,
@@ -117,6 +115,6 @@ class CraftHtmlPdfPainter {
     }
   }
 
-  CraftDeviceRgb _pdfColor(CraftCssColor color) =>
-      CraftDeviceRgb(color.red, color.green, color.blue);
+  DeviceRgb _pdfColor(CssColor color) =>
+      DeviceRgb(color.red, color.green, color.blue);
 }

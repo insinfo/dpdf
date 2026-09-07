@@ -7,13 +7,13 @@ import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 
 /// Renderizador de `<line>`.
-class CraftLineSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
+class LineSvgNodeRenderer extends AbstractSvgNodeRenderer {
   double x1 = 0;
   double y1 = 0;
   double x2 = 0;
   double y2 = 0;
 
-  void _setParameters(CraftSvgDrawContext context) {
+  void _setParameters(SvgDrawContext context) {
     x1 = parseHorizontalLength(
         getAttributeOrDefault(SvgAttributes.X1, '0'), context);
     y1 = parseVerticalLength(
@@ -25,7 +25,7 @@ class CraftLineSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
   }
 
   @override
-  Future<void> doDraw(CraftSvgDrawContext context) async {
+  Future<void> doDraw(SvgDrawContext context) async {
     _setParameters(context);
     context.getCurrentCanvas().moveTo(x1, y1).lineTo(x2, y2);
   }
@@ -35,15 +35,15 @@ class CraftLineSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
   bool canElementFill() => false;
 
   @override
-  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context) {
+  Rectangle? getObjectBoundingBox(SvgDrawContext context) {
     _setParameters(context);
-    return CraftRectangle(
+    return Rectangle(
         math.min(x1, x2), math.min(y1, y2), (x1 - x2).abs(), (y1 - y2).abs());
   }
 
   @override
-  CraftSvgNodeRenderer createDeepCopy() {
-    final copy = CraftLineSvgNodeRenderer();
+  SvgNodeRenderer createDeepCopy() {
+    final copy = LineSvgNodeRenderer();
     deepCopyAttributesAndStyles(copy);
     return copy;
   }

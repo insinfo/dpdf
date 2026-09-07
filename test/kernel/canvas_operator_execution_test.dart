@@ -10,24 +10,23 @@ import 'package:dpdf/src/kernel/pdf/pdf_literal.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
 import 'package:test/test.dart';
 
-class _Listener implements CraftEventListener {
-  final events = <CraftEventType>[];
+class _Listener implements EventListener {
+  final events = <EventType>[];
 
   @override
-  void eventOccurred(CraftEventData? data, CraftEventType type) =>
-      events.add(type);
+  void eventOccurred(EventData? data, EventType type) => events.add(type);
 
   @override
-  Set<CraftEventType> getSupportedEvents() => CraftEventType.values.toSet();
+  Set<EventType> getSupportedEvents() => EventType.values.toSet();
 }
 
-class _CallbackOperator implements CraftContentOperator {
+class _CallbackOperator implements ContentOperator {
   final FutureOr<void> Function() callback;
   _CallbackOperator(this.callback);
 
   @override
-  FutureOr<void> invoke(CraftPdfCanvasProcessor processor,
-          CraftPdfLiteral operator, List<CraftPdfObject> operands) =>
+  FutureOr<void> invoke(PdfCanvasProcessor processor, PdfLiteral operator,
+          List<PdfObject> operands) =>
       callback();
 }
 
@@ -36,23 +35,23 @@ Uint8List _content(String text) => Uint8List.fromList(text.codeUnits);
 void main() {
   test('built-in operators execute before a queued microtask', () async {
     final listener = _Listener();
-    final processor = CraftPdfCanvasProcessor(listener);
+    final processor = PdfCanvasProcessor(listener);
     var microtaskRan = false;
     scheduleMicrotask(() => microtaskRan = true);
     final pending =
         processor.processContent(_content('BT (hello) Tj ET'), null);
     expect(microtaskRan, isFalse);
     expect(listener.events, [
-      CraftEventType.beginTextBlock,
-      CraftEventType.renderText,
-      CraftEventType.endTextBlock,
+      EventType.beginTextBlock,
+      EventType.renderText,
+      EventType.endTextBlock,
     ]);
     await pending;
   });
 
   test('external asynchronous operator completes before the next operator',
       () async {
-    final processor = CraftPdfCanvasProcessor(_Listener());
+    final processor = PdfCanvasProcessor(_Listener());
     final barrier = Completer<void>();
     final order = <String>[];
     processor.registerContentOperator('custom', _CallbackOperator(() async {
@@ -73,7 +72,7 @@ void main() {
   for (final asynchronous in [false, true]) {
     test('propagates operator errors with asynchronous=$asynchronous',
         () async {
-      final processor = CraftPdfCanvasProcessor(_Listener());
+      final processor = PdfCanvasProcessor(_Listener());
       final failure = StateError('operator failed');
       var reachedNext = false;
       processor.registerContentOperator(

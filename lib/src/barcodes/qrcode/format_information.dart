@@ -1,10 +1,10 @@
 import 'error_correction_level.dart';
 
 /// Decoded correction level and mask from the duplicated QR format field.
-class CraftFormatInformation {
-  final CraftErrorCorrectionLevel _errorCorrectionLevel;
+class FormatInformation {
+  final ErrorCorrectionLevel _errorCorrectionLevel;
   final int _dataMask;
-  CraftFormatInformation._(this._errorCorrectionLevel, this._dataMask);
+  FormatInformation._(this._errorCorrectionLevel, this._dataMask);
 
   static int numBitsDiffering(int a, int b) {
     var remaining = (a ^ b).toUnsigned(32);
@@ -24,7 +24,7 @@ class CraftFormatInformation {
     return ((payload << 10) | remainder) ^ 0x5412;
   }
 
-  static CraftFormatInformation? decodeFormatInformation(
+  static FormatInformation? decodeFormatInformation(
       int maskedFormatInfo1, int maskedFormatInfo2) {
     // Prefer ordinary format masking; retain recovery of unmasked legacy fields.
     for (final adjustment in [0, 0x5412]) {
@@ -40,19 +40,19 @@ class CraftFormatInformation {
       candidates.sort(
           (a, b) => a.$1 != b.$1 ? a.$1.compareTo(b.$1) : a.$2.compareTo(b.$2));
       final payload = candidates.first.$2;
-      return CraftFormatInformation._(
-          CraftErrorCorrectionLevel.forBits(payload ~/ 8), payload % 8);
+      return FormatInformation._(
+          ErrorCorrectionLevel.forBits(payload ~/ 8), payload % 8);
     }
     return null;
   }
 
-  CraftErrorCorrectionLevel getErrorCorrectionLevel() => _errorCorrectionLevel;
+  ErrorCorrectionLevel getErrorCorrectionLevel() => _errorCorrectionLevel;
   int getDataMask() => _dataMask;
   @override
   int get hashCode => _errorCorrectionLevel.ordinal * 8 + _dataMask;
   @override
   bool operator ==(Object other) =>
-      other is CraftFormatInformation &&
+      other is FormatInformation &&
       other._errorCorrectionLevel == _errorCorrectionLevel &&
       other._dataMask == _dataMask;
 }

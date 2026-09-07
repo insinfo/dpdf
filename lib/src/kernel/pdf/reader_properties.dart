@@ -15,8 +15,8 @@ enum PdfRecoveryMode { strict, scan, skipStreams }
 /// final properties = ReaderProperties()
 ///   .setPassword(utf8.encode('secretPassword'));
 /// ```
-class CraftReaderProperties {
-  /// Opt-in bounded file cache for CraftPdfReader.fromFile on the VM.
+class ReaderProperties {
+  /// Opt-in bounded file cache for PdfReader.fromFile on the VM.
   bool readFileInBlocks = false;
   int fileBlockSize = 262144;
   int fileCacheBlocks = 32;
@@ -36,10 +36,10 @@ class CraftReaderProperties {
   int? memoryLimit;
 
   /// Creates default reader properties.
-  CraftReaderProperties();
+  ReaderProperties();
 
   /// Creates a copy of another ReaderProperties.
-  CraftReaderProperties.from(CraftReaderProperties other)
+  ReaderProperties.from(ReaderProperties other)
       : readFileInBlocks = other.readFileInBlocks,
         fileBlockSize = other.fileBlockSize,
         fileCacheBlocks = other.fileCacheBlocks,
@@ -55,14 +55,14 @@ class CraftReaderProperties {
   /// This could be either user or owner password.
   ///
   /// [password] - The password to use to open the document.
-  CraftReaderProperties setPassword(Uint8List password) {
+  ReaderProperties setPassword(Uint8List password) {
     _clearEncryptionParams();
     this.password = password;
     return this;
   }
 
   /// Sets the password from a string (using UTF-8 encoding).
-  CraftReaderProperties setPasswordFromString(String password) {
+  ReaderProperties setPasswordFromString(String password) {
     return setPassword(Uint8List.fromList(password.codeUnits));
   }
 
@@ -70,7 +70,7 @@ class CraftReaderProperties {
   ///
   /// This helps prevent out-of-memory errors when processing large PDFs.
   /// Set to null for no limit.
-  CraftReaderProperties setMemoryLimit(int? limit) {
+  ReaderProperties setMemoryLimit(int? limit) {
     memoryLimit = limit;
     return this;
   }
@@ -88,7 +88,7 @@ class CraftReaderProperties {
 ///
 /// This class is used to track memory usage during decompression
 /// and other memory-intensive operations.
-class CraftMemoryLimitsAwareHandler {
+class MemoryLimitsAwareHandler {
   /// Maximum memory to allocate in bytes.
   final int maxMemory;
 
@@ -96,11 +96,11 @@ class CraftMemoryLimitsAwareHandler {
   int _currentMemory = 0;
 
   /// Creates a memory limits handler with the specified max memory.
-  CraftMemoryLimitsAwareHandler(this.maxMemory);
+  MemoryLimitsAwareHandler(this.maxMemory);
 
   /// Creates a new instance (for copy operations).
-  CraftMemoryLimitsAwareHandler createNewInstance() {
-    return CraftMemoryLimitsAwareHandler(maxMemory);
+  MemoryLimitsAwareHandler createNewInstance() {
+    return MemoryLimitsAwareHandler(maxMemory);
   }
 
   /// Checks if allocation is within limits and tracks it.

@@ -24,25 +24,25 @@ import 'package:dpdf/src/svg/renderers/impl/abstract_container_svg_node_renderer
 import 'package:dpdf/src/svg/renderers/impl/clip_path_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/css/impl/svg_node_renderer_inheritance_resolver.dart';
 
-abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
-  static final List<CraftMarkerVertexType> _MARKER_VERTEX_TYPES = [
-    CraftMarkerVertexType.MARKER_START,
-    CraftMarkerVertexType.MARKER_MID,
-    CraftMarkerVertexType.MARKER_END
+abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
+  static final List<MarkerVertexType> _MARKER_VERTEX_TYPES = [
+    MarkerVertexType.MARKER_START,
+    MarkerVertexType.MARKER_MID,
+    MarkerVertexType.MARKER_END
   ];
 
   Map<String, String>? _attributesAndStyles;
   bool doFill = false;
   bool doStroke = false;
-  CraftSvgNodeRenderer? _parent;
+  SvgNodeRenderer? _parent;
 
   @override
-  void setParent(CraftSvgNodeRenderer? parent) {
+  void setParent(SvgNodeRenderer? parent) {
     _parent = parent;
   }
 
   @override
-  CraftSvgNodeRenderer? getParent() => _parent;
+  SvgNodeRenderer? getParent() => _parent;
 
   @override
   void setAttributesAndStyles(Map<String, String> attributesAndStyles) {
@@ -70,7 +70,7 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
   }
 
   @override
-  Future<void> draw(CraftSvgDrawContext context) async {
+  Future<void> draw(SvgDrawContext context) async {
     if (_attributesAndStyles != null) {
       if (isHidden()) {
         return;
@@ -80,8 +80,7 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
         // O `cm` fica sem q/Q próprio: quem empilha o estado é o renderizador
         // do galho, que envolve cada filho, para uma transformação declarada
         // num `<g>` alcançar toda a sua subárvore.
-        final transformation =
-            CraftTransformUtils.parseTransform(transformString);
+        final transformation = TransformUtils.parseTransform(transformString);
         if (!transformation.isIdentity) {
           context.getCurrentCanvas().concatMatrix(
               transformation.m00,
@@ -110,62 +109,61 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
   }
 
   bool isHidden() {
-    return CraftCommonCssConstants.NONE ==
-            getAttribute(CraftCommonCssConstants.DISPLAY) ||
-        CraftCommonCssConstants.HIDDEN ==
-            getAttribute(CraftCommonCssConstants.VISIBILITY);
+    return CommonCssConstants.NONE ==
+            getAttribute(CommonCssConstants.DISPLAY) ||
+        CommonCssConstants.HIDDEN ==
+            getAttribute(CommonCssConstants.VISIBILITY);
   }
 
   bool canElementFill() => true;
 
   bool canConstructViewPort() => false;
 
-  double getCurrentFontSize(CraftSvgDrawContext context) {
+  double getCurrentFontSize(SvgDrawContext context) {
     String? fontSizeAttribute = getAttribute(SvgAttributes.FONT_SIZE);
-    if (CraftCssTypesValidationUtils.isRemValue(fontSizeAttribute)) {
-      return CraftCssDimensionParsingUtils.parseRelativeValue(
+    if (CssTypesValidationUtils.isRemValue(fontSizeAttribute)) {
+      return CssDimensionParsingUtils.parseRelativeValue(
           fontSizeAttribute!, context.getCssContext().getRootFontSize());
     }
     final parent = getParent();
-    if (CraftCssTypesValidationUtils.isEmValue(fontSizeAttribute) &&
-        parent is CraftAbstractSvgNodeRenderer) {
-      return CraftCssDimensionParsingUtils.parseRelativeValue(
+    if (CssTypesValidationUtils.isEmValue(fontSizeAttribute) &&
+        parent is AbstractSvgNodeRenderer) {
+      return CssDimensionParsingUtils.parseRelativeValue(
           fontSizeAttribute!, parent.getCurrentFontSize(context));
     }
-    return CraftCssDimensionParsingUtils.parseAbsoluteFontSize(
-        fontSizeAttribute);
+    return CssDimensionParsingUtils.parseAbsoluteFontSize(fontSizeAttribute);
   }
 
-  void deepCopyAttributesAndStyles(CraftSvgNodeRenderer deepCopy) {
+  void deepCopyAttributesAndStyles(SvgNodeRenderer deepCopy) {
     if (_attributesAndStyles != null) {
       deepCopy.setAttributesAndStyles(
           Map<String, String>.from(_attributesAndStyles!));
     }
   }
 
-  CraftRectangle getCurrentViewBox(CraftSvgDrawContext context) {
-    if (this is CraftAbstractContainerSvgNodeRenderer) {
-      List<double>? viewBoxValues = CraftSvgCssUtils.parseViewBox(this);
+  Rectangle getCurrentViewBox(SvgDrawContext context) {
+    if (this is AbstractContainerSvgNodeRenderer) {
+      List<double>? viewBoxValues = SvgCssUtils.parseViewBox(this);
       if (viewBoxValues == null ||
           viewBoxValues.length < SvgValues.VIEWBOX_VALUES_NUMBER) {
-        CraftRectangle? currentViewPort = context.getCurrentViewPort();
-        if (currentViewPort == null) return CraftRectangle(0, 0, 0, 0);
-        return CraftRectangle(
+        Rectangle? currentViewPort = context.getCurrentViewPort();
+        if (currentViewPort == null) return Rectangle(0, 0, 0, 0);
+        return Rectangle(
             0, 0, currentViewPort.getWidth(), currentViewPort.getHeight());
       }
-      return CraftRectangle(viewBoxValues[0], viewBoxValues[1],
-          viewBoxValues[2], viewBoxValues[3]);
+      return Rectangle(viewBoxValues[0], viewBoxValues[1], viewBoxValues[2],
+          viewBoxValues[3]);
     } else {
       final parent = getParent();
-      if (parent is CraftAbstractSvgNodeRenderer) {
+      if (parent is AbstractSvgNodeRenderer) {
         return parent.getCurrentViewBox(context);
       } else {
-        return context.getCurrentViewPort() ?? CraftRectangle(0, 0, 0, 0);
+        return context.getCurrentViewPort() ?? Rectangle(0, 0, 0, 0);
       }
     }
   }
 
-  Future<void> preDraw(CraftSvgDrawContext context) async {
+  Future<void> preDraw(SvgDrawContext context) async {
     if (_attributesAndStyles != null && getParentClipPath() == null) {
       FillProperties? fillProps = _calculateFillProperties(context);
       StrokeProperties? strokeProps = _calculateStrokeProperties(context);
@@ -173,10 +171,10 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
     }
   }
 
-  Future<void> postDraw(CraftSvgDrawContext context) async {
+  Future<void> postDraw(SvgDrawContext context) async {
     if (_attributesAndStyles != null) {
-      CraftPdfCanvas currentCanvas = context.getCurrentCanvas();
-      if (this is CraftSvgTextNodeRenderer) {
+      PdfCanvas currentCanvas = context.getCurrentCanvas();
+      if (this is SvgTextNodeRenderer) {
         return;
       }
 
@@ -201,17 +199,17 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
         currentCanvas.newPath();
       }
 
-      if (this is CraftMarkerCapable) {
+      if (this is MarkerCapable) {
         for (var markerType in _MARKER_VERTEX_TYPES) {
           if (_attributesAndStyles!.containsKey(markerType.toString())) {
-            (this as CraftMarkerCapable).drawMarker(context, markerType);
+            (this as MarkerCapable).drawMarker(context, markerType);
           }
         }
       }
     }
   }
 
-  void _doStrokeOrFill(String fillRule, CraftPdfCanvas currentCanvas) {
+  void _doStrokeOrFill(String fillRule, PdfCanvas currentCanvas) {
     if (fillRule.toLowerCase() == SvgValues.FILL_RULE_EVEN_ODD) {
       if (doStroke) {
         currentCanvas.eoFillStroke();
@@ -228,13 +226,13 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
   }
 
   Future<void> _applyFillAndStrokeProperties(FillProperties? fillProps,
-      StrokeProperties? strokeProps, CraftSvgDrawContext context) async {
-    CraftPdfExtGState opacityGState = CraftPdfExtGState();
-    CraftPdfCanvas currentCanvas = context.getCurrentCanvas();
+      StrokeProperties? strokeProps, SvgDrawContext context) async {
+    PdfExtGState opacityGState = PdfExtGState();
+    PdfCanvas currentCanvas = context.getCurrentCanvas();
 
     if (fillProps != null) {
       currentCanvas.setFillColor(fillProps.color);
-      if (!CraftCssUtils.compareFloats(fillProps.opacity, 1.0)) {
+      if (!CssUtils.compareFloats(fillProps.opacity, 1.0)) {
         opacityGState.setFillOpacity(fillProps.opacity);
       }
     }
@@ -247,10 +245,9 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
       final dash = strokeProps.lineDashParameters;
       if (dash != null && dash.getDashArray().isNotEmpty) {
         currentCanvas.setDashPattern(
-            CraftPdfArray.fromDoubles(dash.getDashArray()),
-            dash.getDashPhase());
+            PdfArray.fromDoubles(dash.getDashArray()), dash.getDashPhase());
       }
-      if (!CraftCssUtils.compareFloats(strokeProps.opacity, 1.0)) {
+      if (!CssUtils.compareFloats(strokeProps.opacity, 1.0)) {
         opacityGState.setStrokeOpacity(strokeProps.opacity);
       }
     }
@@ -266,7 +263,7 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
     }
   }
 
-  FillProperties? _calculateFillProperties(CraftSvgDrawContext context) {
+  FillProperties? _calculateFillProperties(SvgDrawContext context) {
     double generalOpacity = _getOpacity();
     String fillRaw = getAttributeOrDefault(SvgAttributes.FILL, "black");
     doFill = fillRaw.toLowerCase() != SvgValues.NONE;
@@ -274,8 +271,8 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
     if (doFill && canElementFill()) {
       double fillOpacity =
           _getOpacityByAttribute(SvgAttributes.FILL_OPACITY, generalOpacity);
-      CraftColor fillColor = CraftColorConstants.BLACK;
-      CraftTransparentColor? tc =
+      Color fillColor = ColorConstants.BLACK;
+      TransparentColor? tc =
           _getColorFromAttribute(context, fillRaw, 0, fillOpacity);
       if (tc != null) {
         fillColor = tc.getColor();
@@ -286,7 +283,7 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
     return null;
   }
 
-  StrokeProperties? _calculateStrokeProperties(CraftSvgDrawContext context) {
+  StrokeProperties? _calculateStrokeProperties(SvgDrawContext context) {
     String strokeRaw =
         getAttributeOrDefault(SvgAttributes.STROKE, SvgValues.NONE);
     if (strokeRaw.toLowerCase() != SvgValues.NONE) {
@@ -298,8 +295,8 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
       double generalOpacity = _getOpacity();
       double opacity =
           _getOpacityByAttribute(SvgAttributes.STROKE_OPACITY, generalOpacity);
-      CraftColor? strokeColor;
-      CraftTransparentColor? tc =
+      Color? strokeColor;
+      TransparentColor? tc =
           _getColorFromAttribute(context, strokeRaw, width / 2.0, opacity);
       if (tc != null) {
         strokeColor = tc.getColor();
@@ -327,7 +324,7 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
       result = double.tryParse(val) ?? 1.0;
     }
     final parent = getParent();
-    if (parent is CraftAbstractSvgNodeRenderer) {
+    if (parent is AbstractSvgNodeRenderer) {
       result *= parent._getOpacity();
     }
     return result;
@@ -338,8 +335,8 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
     String? val = getAttribute(attrName);
     if (val != null && val.toLowerCase() != SvgValues.NONE) {
       double valNum;
-      if (CraftCssTypesValidationUtils.isPercentageValue(val)) {
-        valNum = CraftCssDimensionParsingUtils.parseRelativeValue(val, 1.0);
+      if (CssTypesValidationUtils.isPercentageValue(val)) {
+        valNum = CssDimensionParsingUtils.parseRelativeValue(val, 1.0);
       } else {
         valNum = double.tryParse(val) ?? 1.0;
       }
@@ -348,63 +345,61 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
     return opacity;
   }
 
-  CraftTransparentColor? _getColorFromAttribute(CraftSvgDrawContext context,
-      String raw, double margin, double parentOpacity) {
-    if (raw.toLowerCase() == CraftCommonCssConstants.CURRENTCOLOR) {
-      raw = getAttributeOrDefault(CraftCommonCssConstants.COLOR, "black");
+  TransparentColor? _getColorFromAttribute(
+      SvgDrawContext context, String raw, double margin, double parentOpacity) {
+    if (raw.toLowerCase() == CommonCssConstants.CURRENTCOLOR) {
+      raw = getAttributeOrDefault(CommonCssConstants.COLOR, "black");
     }
 
     if (raw.startsWith("url(")) {
       String id = raw.replaceAll("url(#", "").replaceAll(")", "").trim();
-      id = CraftCssUtils.extractUnquotedString(id);
-      CraftSvgNodeRenderer? colorRenderer = context.getNamedObject(id);
-      if (colorRenderer is CraftSvgPaintServer) {
+      id = CssUtils.extractUnquotedString(id);
+      SvgNodeRenderer? colorRenderer = context.getNamedObject(id);
+      if (colorRenderer is SvgPaintServer) {
         if (colorRenderer.getParent() == null) {
           colorRenderer.setParent(this);
         }
-        CraftColor? resolvedColor = colorRenderer.createColor(
+        Color? resolvedColor = colorRenderer.createColor(
             context,
-            getObjectBoundingBox(context) ?? CraftRectangle(0, 0, 0, 0),
+            getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0),
             margin,
             parentOpacity);
         if (resolvedColor != null) {
-          return CraftTransparentColor(resolvedColor, 1.0);
+          return TransparentColor(resolvedColor, 1.0);
         }
       }
-      return CraftTransparentColor(CraftColorConstants.BLACK, 0.0);
+      return TransparentColor(ColorConstants.BLACK, 0.0);
     }
 
     if (raw.toLowerCase() == SvgValues.NONE) return null;
 
     // Um valor incompreensível equivale a preto: a especificação manda tratar
     // a cor inválida como o padrão herdado, nunca abortar o desenho.
-    final parsed = CraftSvgColorUtils.parse(raw);
-    return CraftTransparentColor(
-        parsed ?? CraftColorConstants.BLACK, parentOpacity);
+    final parsed = SvgColorUtils.parse(raw);
+    return TransparentColor(parsed ?? ColorConstants.BLACK, parentOpacity);
   }
 
-  double parseHorizontalLength(String length, CraftSvgDrawContext context) {
-    return CraftSvgCssUtils.parseAbsoluteHorizontalLength(
+  double parseHorizontalLength(String length, SvgDrawContext context) {
+    return SvgCssUtils.parseAbsoluteHorizontalLength(
         this, length, 0.0, context);
   }
 
-  double parseVerticalLength(String length, CraftSvgDrawContext context) {
-    return CraftSvgCssUtils.parseAbsoluteVerticalLength(
-        this, length, 0.0, context);
+  double parseVerticalLength(String length, SvgDrawContext context) {
+    return SvgCssUtils.parseAbsoluteVerticalLength(this, length, 0.0, context);
   }
 
-  Future<bool> _drawInClipPath(CraftSvgDrawContext context) async {
+  Future<bool> _drawInClipPath(SvgDrawContext context) async {
     String? clipPathName = getAttribute(SvgAttributes.CLIP_PATH);
     if (clipPathName != null) {
       String id =
           clipPathName.replaceAll("url(#", "").replaceAll(")", "").trim();
-      CraftSvgNodeRenderer? template = context.getNamedObject(id);
-      if (template is CraftClipPathSvgNodeRenderer) {
-        CraftClipPathSvgNodeRenderer clipPath =
-            template.createDeepCopy() as CraftClipPathSvgNodeRenderer;
+      SvgNodeRenderer? template = context.getNamedObject(id);
+      if (template is ClipPathSvgNodeRenderer) {
+        ClipPathSvgNodeRenderer clipPath =
+            template.createDeepCopy() as ClipPathSvgNodeRenderer;
         if (clipPath.isHidden()) return false;
 
-        CraftSvgNodeRendererInheritanceResolver.applyInheritanceToSubTree(
+        SvgNodeRendererInheritanceResolver.applyInheritanceToSubTree(
             this, clipPath, context.getCssContext());
         clipPath.setClippedRenderer(this);
         await clipPath.draw(context);
@@ -414,34 +409,34 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
     return false;
   }
 
-  CraftClipPathSvgNodeRenderer? getParentClipPath() {
-    if (this is CraftClipPathSvgNodeRenderer) {
-      return this as CraftClipPathSvgNodeRenderer;
+  ClipPathSvgNodeRenderer? getParentClipPath() {
+    if (this is ClipPathSvgNodeRenderer) {
+      return this as ClipPathSvgNodeRenderer;
     }
     final parent = getParent();
-    if (parent is CraftAbstractSvgNodeRenderer) {
+    if (parent is AbstractSvgNodeRenderer) {
       return parent.getParentClipPath();
     }
     return null;
   }
 
-  Future<void> doDraw(CraftSvgDrawContext context);
+  Future<void> doDraw(SvgDrawContext context);
 
   @override
-  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context);
+  Rectangle? getObjectBoundingBox(SvgDrawContext context);
 
   @override
-  CraftSvgNodeRenderer createDeepCopy();
+  SvgNodeRenderer createDeepCopy();
 }
 
 class FillProperties {
   final double opacity;
-  final CraftColor color;
+  final Color color;
   FillProperties(this.opacity, this.color);
 }
 
 class StrokeProperties {
-  final CraftColor? color;
+  final Color? color;
   final double width;
   final double opacity;
   final PdfLineDashParameters? lineDashParameters;

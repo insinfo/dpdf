@@ -5,12 +5,12 @@ import '../pdf_encodings.dart';
 import 'cmap_object.dart';
 
 /// Reads CMap operands with the same state machine for both input modes.
-class CraftCMapContentParser {
+class CMapContentParser {
   static const int commandType = 200;
-  final CraftPdfTokenizer tokenizer;
-  CraftCMapContentParser(this.tokenizer);
+  final PdfTokenizer tokenizer;
+  CMapContentParser(this.tokenizer);
 
-  void parse(List<CraftCMapObject> operands) {
+  void parse(List<CMapObject> operands) {
     operands.clear();
     while (true) {
       final operand = readObject();
@@ -20,9 +20,9 @@ class CraftCMapContentParser {
     }
   }
 
-  void parseSync(List<CraftCMapObject> operands) => parse(operands);
+  void parseSync(List<CMapObject> operands) => parse(operands);
 
-  void _appendOperand(List<CraftCMapObject> operands, CraftCMapObject operand) {
+  void _appendOperand(List<CMapObject> operands, CMapObject operand) {
     if (operand.isToken()) {
       throw FormatException(
           'CMap closing delimiter has no matching container.');
@@ -30,15 +30,14 @@ class CraftCMapContentParser {
     operands.add(operand);
   }
 
-  CraftCMapObject readDictionary() =>
-      _read(_OperandAssembler(dictionary: true))!;
-  CraftCMapObject readDictionarySync() => readDictionary();
-  CraftCMapObject readArray() => _read(_OperandAssembler(dictionary: false))!;
-  CraftCMapObject readArraySync() => readArray();
-  CraftCMapObject? readObject() => _read(_OperandAssembler());
-  CraftCMapObject? readObjectSync() => readObject();
+  CMapObject readDictionary() => _read(_OperandAssembler(dictionary: true))!;
+  CMapObject readDictionarySync() => readDictionary();
+  CMapObject readArray() => _read(_OperandAssembler(dictionary: false))!;
+  CMapObject readArraySync() => readArray();
+  CMapObject? readObject() => _read(_OperandAssembler());
+  CMapObject? readObjectSync() => readObject();
 
-  CraftCMapObject? _read(_OperandAssembler state) {
+  CMapObject? _read(_OperandAssembler state) {
     while (nextValidToken()) {
       final result = state.accept(tokenizer);
       if (result != null) return result;
@@ -69,11 +68,10 @@ class CraftCMapContentParser {
     return "[<${toHex4(high)}${toHex4(low)}>]";
   }
 
-  static String decodeCMapObject(CraftCMapObject cMapObject) {
+  static String decodeCMapObject(CMapObject cMapObject) {
     if (cMapObject.isHexString()) {
-      return CraftPdfEncodings.convertToString(
-          cMapObject.getValue() as Uint8List,
-          CraftPdfEncodings.UNICODE_BIG_UNMARKED);
+      return PdfEncodings.convertToString(cMapObject.getValue() as Uint8List,
+          PdfEncodings.UNICODE_BIG_UNMARKED);
     } else {
       return cMapObject.getValue().toString();
     }
@@ -86,14 +84,14 @@ class _OperandAssembler {
     if (dictionary != null) _containers.add(_OperandContainer(dictionary));
   }
 
-  CraftCMapObject? finish() {
+  CMapObject? finish() {
     if (_containers.isNotEmpty) {
       throw FormatException('CMap input ended inside a container.');
     }
     return null;
   }
 
-  CraftCMapObject? accept(CraftPdfTokenizer input) {
+  CMapObject? accept(PdfTokenizer input) {
     final type = input.getTokenType();
     if (type == TokenType.startArray || type == TokenType.startDic) {
       if (_containers.length >= 256) {
@@ -103,11 +101,11 @@ class _OperandAssembler {
       _containers.add(_OperandContainer(type == TokenType.startDic));
       return null;
     }
-    CraftCMapObject value;
+    CMapObject value;
     if (type == TokenType.endArray || type == TokenType.endDic) {
       final dictionary = type == TokenType.endDic;
       if (_containers.isEmpty) {
-        return CraftCMapObject(CraftCMapObject.token, dictionary ? '>>' : ']');
+        return CMapObject(CMapObject.token, dictionary ? '>>' : ']');
       }
       final frame = _containers.last;
       if (frame.dictionary != dictionary) {
@@ -124,27 +122,25 @@ class _OperandAssembler {
     return null;
   }
 
-  CraftCMapObject _scalar(CraftPdfTokenizer input) {
+  CMapObject _scalar(PdfTokenizer input) {
     switch (input.getTokenType()) {
       case TokenType.name:
-        return CraftCMapObject(CraftCMapObject.name,
-            CraftPdfNameUtil.decodeName(input.getByteContent()));
+        return CMapObject(
+            CMapObject.name, PdfNameUtil.decodeName(input.getByteContent()));
       case TokenType.string:
         final hex = input.isHexString();
-        return CraftCMapObject(
-            hex ? CraftCMapObject.hexString : CraftCMapObject.string,
-            CraftPdfTokenizer.decodeStringContent2(
-                input.getByteContent(), hex));
+        return CMapObject(hex ? CMapObject.hexString : CMapObject.string,
+            PdfTokenizer.decodeStringContent2(input.getByteContent(), hex));
       case TokenType.number:
         final spelling = input.getStringValue();
         final number = num.tryParse(spelling);
         if (number == null || !number.isFinite) {
           throw FormatException('CMap numeric operand is invalid: $spelling');
         }
-        return CraftCMapObject(CraftCMapObject.number,
+        return CMapObject(CMapObject.number,
             number == number.truncateToDouble() ? number.toInt() : number);
       case TokenType.other:
-        return CraftCMapObject(CraftCMapObject.literal, input.getStringValue());
+        return CMapObject(CMapObject.literal, input.getStringValue());
       default:
         throw FormatException('CMap contains an unsupported operand token.');
     }
@@ -153,8 +149,8 @@ class _OperandAssembler {
 
 class _OperandContainer {
   final bool dictionary;
-  final List<CraftCMapObject> items = [];
-  final Map<String, CraftCMapObject> entries = {};
+  final List<CMapObject> items = [];
+  final Map<String, CMapObject> entries = {};
   String? _key;
   _OperandContainer(this.dictionary);
 
@@ -164,7 +160,7 @@ class _OperandContainer {
     }
   }
 
-  void append(CraftCMapObject value) {
+  void append(CMapObject value) {
     if (!dictionary) {
       items.add(value);
     } else if (_key != null) {
@@ -177,12 +173,11 @@ class _OperandContainer {
     }
   }
 
-  CraftCMapObject complete() {
+  CMapObject complete() {
     if (_key != null) {
       throw FormatException('CMap dictionary has a name without its value.');
     }
-    return CraftCMapObject(
-        dictionary ? CraftCMapObject.dictionary : CraftCMapObject.array,
+    return CMapObject(dictionary ? CMapObject.dictionary : CMapObject.array,
         dictionary ? entries : items);
   }
 }

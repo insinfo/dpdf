@@ -5,7 +5,7 @@ import 'package:dpdf/src/io/codec/tiff_writer.dart';
 void main() {
   group('TiffWriter', () {
     test('writes TIFF header correctly', () {
-      final writer = CraftTiffWriter();
+      final writer = TiffWriter();
       writer.addField(FieldShort(256, 100)); // ImageWidth
       writer.addField(FieldShort(257, 80)); // ImageHeight
 
@@ -56,7 +56,7 @@ void main() {
     });
 
     test('getIfdSize calculates correctly', () {
-      final writer = CraftTiffWriter();
+      final writer = TiffWriter();
       writer.addField(FieldShort(256, 100));
       writer.addField(FieldShort(257, 80));
 

@@ -1,7 +1,7 @@
 import 'package:dpdf/src/io/util/text_util.dart';
 
-class CraftSvgTextUtil {
-  CraftSvgTextUtil._();
+class SvgTextUtil {
+  SvgTextUtil._();
 
   /// Removes horizontal whitespace while preserving line boundaries.
   static String trimLeadingWhitespace(String? text) =>
@@ -17,7 +17,7 @@ class CraftSvgTextUtil {
           .reversed);
 
   static bool _horizontalSpace(int unit) =>
-      unit != 10 && unit != 13 && CraftTextUtil.isWhiteSpace(unit);
+      unit != 10 && unit != 13 && TextUtil.isWhiteSpace(unit);
 
   /// Normalizes a reference by removing its fragment or URL wrapper.
   static String filterReferenceValue(String name) {

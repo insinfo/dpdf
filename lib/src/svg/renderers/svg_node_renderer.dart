@@ -3,15 +3,15 @@ import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 
 /// Contract for rendering an SVG node onto a PDF canvas.
 /// passed in SvgDrawContext, applying styling (CSS and attributes).
-abstract class CraftSvgNodeRenderer {
+abstract class SvgNodeRenderer {
   /// Sets the parent of this renderer.
-  void setParent(CraftSvgNodeRenderer? parent);
+  void setParent(SvgNodeRenderer? parent);
 
   /// Gets the parent of this renderer.
-  CraftSvgNodeRenderer? getParent();
+  SvgNodeRenderer? getParent();
 
   /// Renders this node using the drawing context.
-  Future<void> draw(CraftSvgDrawContext context);
+  Future<void> draw(SvgDrawContext context);
 
   /// Sets the map of XML node attributes and CSS style properties.
   void setAttributesAndStyles(Map<String, String> attributesAndStyles);
@@ -26,8 +26,8 @@ abstract class CraftSvgNodeRenderer {
   Map<String, String> getAttributeMapCopy();
 
   /// Creates a deep copy of this renderer.
-  CraftSvgNodeRenderer createDeepCopy();
+  SvgNodeRenderer createDeepCopy();
 
   /// Calculates the current object bounding box.
-  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context);
+  Rectangle? getObjectBoundingBox(SvgDrawContext context);
 }

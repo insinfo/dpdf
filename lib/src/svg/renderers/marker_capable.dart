@@ -2,10 +2,9 @@ import 'package:dpdf/src/svg/marker_vertex_type.dart';
 import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 
 /// Interface implemented by elements that support marker drawing.
-abstract class CraftMarkerCapable {
+abstract class MarkerCapable {
   /// Draws a marker in the specified context.
-  void drawMarker(
-      CraftSvgDrawContext context, CraftMarkerVertexType markerVertexType);
+  void drawMarker(SvgDrawContext context, MarkerVertexType markerVertexType);
 
   /// Calculates marker orientation angle if orient attribute is set to auto
   double getAutoOrientAngle(dynamic marker,

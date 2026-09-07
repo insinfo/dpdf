@@ -10,42 +10,42 @@ import 'package:dpdf/src/kernel/pdf/pdf_output_stream.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 
 /// internal class PdfObjectStream : PdfStream
-class CraftPdfObjectStream extends CraftPdfStream {
+class PdfObjectStream extends PdfStream {
   /// Max number of objects in object stream.
   static const int maxObjStreamSize = 200;
 
   /// Current object stream size (number of objects inside).
-  late CraftPdfNumber _size;
+  late PdfNumber _size;
 
   /// The first object offset in the stream.
-  late CraftPdfNumber _first;
+  late PdfNumber _first;
 
   /// Object-number and offset entries preceding the object stream body.
-  late CraftPdfOutputStream _indexStream;
+  late PdfOutputStream _indexStream;
   late BytesBuilder _indexBuilder;
 
-  CraftPdfObjectStream(CraftPdfDocument doc) : super() {
-    _size = CraftPdfNumber(0);
-    _first = CraftPdfNumber(0);
+  PdfObjectStream(PdfDocument doc) : super() {
+    _size = PdfNumber(0);
+    _first = PdfNumber(0);
     _indexBuilder = BytesBuilder();
-    _indexStream = CraftPdfOutputStream.fromBuilder(_indexBuilder);
+    _indexStream = PdfOutputStream.fromBuilder(_indexBuilder);
     _init(doc);
   }
 
   /// Constructs an object stream with reusable index and output buffers.
-  CraftPdfObjectStream.reuse(CraftPdfObjectStream prev) : super() {
+  PdfObjectStream.reuse(PdfObjectStream prev) : super() {
     final doc = prev.indirectHandle()!.getDocument()!;
-    _size = CraftPdfNumber(0);
-    _first = CraftPdfNumber(0);
+    _size = PdfNumber(0);
+    _first = PdfNumber(0);
 
     _indexBuilder = BytesBuilder();
-    _indexStream = CraftPdfOutputStream.fromBuilder(_indexBuilder);
+    _indexStream = PdfOutputStream.fromBuilder(_indexBuilder);
 
     _init(doc);
     prev.releaseContent();
   }
 
-  void _init(CraftPdfDocument doc) {
+  void _init(PdfDocument doc) {
     // Allocate a fresh handle instead of recycling an earlier reference.
     attachToDocument(doc);
 
@@ -53,22 +53,22 @@ class CraftPdfObjectStream extends CraftPdfStream {
     final os = getOutputStream();
     os.document = doc;
 
-    put(CraftPdfName.type, CraftPdfName.objStm);
-    put(CraftPdfName.n, _size);
-    put(CraftPdfName.first, _first);
+    put(PdfName.type, PdfName.objStm);
+    put(PdfName.n, _size);
+    put(PdfName.first, _first);
   }
 
   /// Adds object to the object stream.
-  Future<void> addObject(CraftPdfObject object) async {
+  Future<void> addObject(PdfObject object) async {
     if (_size.intValue() == maxObjStreamSize) {
-      throw CraftPdfException(
-          CraftKernelExceptionMessageConstant.pdfObjectStreamReachMaxSize);
+      throw PdfException(
+          KernelExceptionMessageConstant.pdfObjectStreamReachMaxSize);
     }
 
     final outputStream = getOutputStream();
     final ref = object.indirectHandle();
     if (ref == null) {
-      throw CraftPdfException(
+      throw PdfException(
           "Object must be indirect to be added to object stream");
     }
 
@@ -91,5 +91,5 @@ class CraftPdfObjectStream extends CraftPdfStream {
   /// Gets object stream size (number of objects inside).
   int getSize() => _size.intValue();
 
-  CraftPdfOutputStream getIndexStream() => _indexStream;
+  PdfOutputStream getIndexStream() => _indexStream;
 }

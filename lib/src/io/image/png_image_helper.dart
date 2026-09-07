@@ -8,7 +8,7 @@ import 'package:dpdf/src/io/exceptions/io_exception.dart';
 import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
 
 class PngParameters {
-  final CraftPngImageData image;
+  final PngImageData image;
   int width = 0;
   int height = 0;
   int bitDepth = 0;
@@ -35,7 +35,7 @@ class PngParameters {
   PngParameters(this.image);
 }
 
-class CraftPngImageHelper {
+class PngImageHelper {
   static const List<int> PNGID = [137, 80, 78, 71, 13, 10, 26, 10];
   static const String IHDR = "IHDR";
   static const String PLTE = "PLTE";
@@ -62,8 +62,8 @@ class CraftPngImageHelper {
     "AbsoluteColorimetric"
   ];
 
-  static void processImage(CraftImageData image) {
-    if (image.getOriginalType() != CraftImageType.PNG) {
+  static void processImage(ImageData image) {
+    if (image.getOriginalType() != ImageType.PNG) {
       throw Exception("PNG image expected");
     }
     try {
@@ -72,10 +72,10 @@ class CraftPngImageHelper {
       }
       Uint8List data = image.getData()!;
       image.imageSize = data.length;
-      PngParameters png = PngParameters(image as CraftPngImageData);
+      PngParameters png = PngParameters(image as PngImageData);
       _processPng(data, png);
     } catch (e) {
-      throw IoException(CraftIoExceptionMessageConstant.pngImageException);
+      throw IoException(IoExceptionMessageConstant.pngImageException);
     }
   }
 
@@ -141,7 +141,7 @@ class CraftPngImageHelper {
     }
 
     if (png.smask != null) {
-      final mask = CraftRawImageData.fromBytes(png.smask!, CraftImageType.RAW)
+      final mask = RawImageData.fromBytes(png.smask!, ImageType.RAW)
         ..width = png.width.toDouble()
         ..height = png.height.toDouble()
         ..bpc = png.palShades ? 8 : 1
@@ -247,8 +247,8 @@ class CraftPngImageHelper {
         offset += len;
       } else if (marker == sRGB) {
         int ri = data[offset];
-        if (ri < CraftPngImageHelper.intents.length) {
-          png.intent = CraftPngImageHelper.intents[ri];
+        if (ri < PngImageHelper.intents.length) {
+          png.intent = PngImageHelper.intents[ri];
         }
         png.image.setGamma(2.2);
         offset += len;
@@ -353,7 +353,7 @@ class CraftPngImageHelper {
           _decodePaethFilter(curr, prior, bytesPerRow, png.bytesPerPixel);
           break;
         default:
-          throw IoException(CraftIoExceptionMessageConstant.unknownPngFilter);
+          throw IoException(IoExceptionMessageConstant.unknownPngFilter);
       }
 
       _processPixels(curr, xOffset, xStep, dstY, passWidth, png);

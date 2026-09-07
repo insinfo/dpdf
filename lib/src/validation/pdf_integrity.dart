@@ -198,12 +198,12 @@ class PdfIntegrityChecker {
     _checkTrailerMarkers(bytes, revisionCount, trailingBytes, findings);
 
     var recoveryUsed = false;
-    CraftPdfDocument? document;
-    CraftPdfReader? reader;
+    PdfDocument? document;
+    PdfReader? reader;
 
     try {
       reader = _open(bytes, password, PdfRecoveryMode.strict);
-      document = await CraftPdfDocument.open(reader);
+      document = await PdfDocument.open(reader);
     } on Object catch (strictError) {
       if (_looksLikeBadPassword(strictError)) {
         return _unreadable(
@@ -229,7 +229,7 @@ class PdfIntegrityChecker {
       ));
       try {
         reader = _open(bytes, password, PdfRecoveryMode.scan);
-        document = await CraftPdfDocument.open(reader);
+        document = await PdfDocument.open(reader);
         recoveryUsed = true;
       } on Object catch (scanError) {
         findings.add(PdfIntegrityFinding(
@@ -305,13 +305,13 @@ class PdfIntegrityChecker {
     }
   }
 
-  static CraftPdfReader _open(
+  static PdfReader _open(
       Uint8List bytes, String? password, PdfRecoveryMode mode) {
-    final properties = CraftReaderProperties()..recoveryMode = mode;
+    final properties = ReaderProperties()..recoveryMode = mode;
     if (password != null) {
       properties.setPassword(Uint8List.fromList(utf8.encode(password)));
     }
-    return CraftPdfReader.fromBytes(bytes, properties);
+    return PdfReader.fromBytes(bytes, properties);
   }
 
   static bool _looksLikeBadPassword(Object error) {
@@ -418,7 +418,7 @@ class PdfIntegrityChecker {
 
   static void _checkStartXref(
     Uint8List bytes,
-    CraftPdfReader reader,
+    PdfReader reader,
     List<PdfIntegrityFinding> findings,
   ) {
     final position = reader.getLastXrefPosition();
@@ -478,11 +478,11 @@ class PdfIntegrityChecker {
   // --- structural checks ----------------------------------------------------
 
   static Future<String?> _checkCatalog(
-    CraftPdfDocument document,
+    PdfDocument document,
     List<PdfIntegrityFinding> findings,
   ) async {
     final trailer = document.fileTrailer();
-    if (!trailer.containsKey(CraftPdfName.root)) {
+    if (!trailer.containsKey(PdfName.root)) {
       findings.add(const PdfIntegrityFinding(
         'missing-root',
         PdfIntegritySeverity.error,
@@ -492,7 +492,7 @@ class PdfIntegrityChecker {
     }
 
     final catalog = document.rootCatalog().pdfRepresentation();
-    final type = await catalog.nameEntry(CraftPdfName.type);
+    final type = await catalog.nameEntry(PdfName.type);
     if (type == null) {
       findings.add(const PdfIntegrityFinding(
         'catalog-untyped',
@@ -508,14 +508,14 @@ class PdfIntegrityChecker {
       ));
     }
 
-    final version = await catalog.nameEntry(CraftPdfName('Version'));
+    final version = await catalog.nameEntry(PdfName('Version'));
     return version?.getValue();
   }
 
   static Future<int> _checkCrossReferences(
     Uint8List bytes,
-    CraftPdfDocument document,
-    CraftPdfReader reader,
+    PdfDocument document,
+    PdfReader reader,
     List<PdfIntegrityFinding> findings, {
     required bool deepScan,
   }) async {
@@ -573,7 +573,7 @@ class PdfIntegrityChecker {
             ));
           }
         } else if (object.objectKind() == PdfObjectType.stream) {
-          await _checkStream(object as CraftPdfStream, objectNumber, findings);
+          await _checkStream(object as PdfStream, objectNumber, findings);
         }
       } on Object catch (error) {
         if (parseErrors++ < _reportLimit) {
@@ -607,13 +607,13 @@ class PdfIntegrityChecker {
   }
 
   static Future<void> _checkStream(
-    CraftPdfStream stream,
+    PdfStream stream,
     int objectNumber,
     List<PdfIntegrityFinding> findings,
   ) async {
     try {
       final raw = await stream.getRawBytes();
-      final declared = await stream.integerEntry(CraftPdfName.length);
+      final declared = await stream.integerEntry(PdfName.length);
       if (raw != null && declared != null && declared != raw.length) {
         findings.add(PdfIntegrityFinding(
           'stream-length-mismatch',
@@ -677,11 +677,11 @@ class PdfIntegrityChecker {
   // --- page tree ------------------------------------------------------------
 
   static Future<_PageWalk> _walkPageTree(
-    CraftPdfDocument document,
+    PdfDocument document,
     List<PdfIntegrityFinding> findings,
   ) async {
     final catalog = document.rootCatalog().pdfRepresentation();
-    final root = await catalog.dictionaryEntry(CraftPdfName.pages);
+    final root = await catalog.dictionaryEntry(PdfName.pages);
     if (root == null) {
       findings.add(const PdfIntegrityFinding(
         'missing-page-tree',
@@ -690,8 +690,8 @@ class PdfIntegrityChecker {
       ));
       return const _PageWalk(null, 0);
     }
-    final declared = await root.integerEntry(CraftPdfName.count);
-    final seen = <CraftPdfDictionary>{};
+    final declared = await root.integerEntry(PdfName.count);
+    final seen = <PdfDictionary>{};
     final reachable = await _countLeaves(root, seen, findings, 0);
     return _PageWalk(declared, reachable);
   }
@@ -699,8 +699,8 @@ class PdfIntegrityChecker {
   static const int _maxPageTreeDepth = 64;
 
   static Future<int> _countLeaves(
-    CraftPdfDictionary node,
-    Set<CraftPdfDictionary> seen,
+    PdfDictionary node,
+    Set<PdfDictionary> seen,
     List<PdfIntegrityFinding> findings,
     int depth,
   ) async {
@@ -722,7 +722,7 @@ class PdfIntegrityChecker {
       return 0;
     }
 
-    final CraftPdfArray? kids = await node.arrayEntry(CraftPdfName.kids);
+    final PdfArray? kids = await node.arrayEntry(PdfName.kids);
     if (kids == null) {
       // A node without /Kids is a leaf. /Type is advisory here because damaged
       // files often drop it, and a reader still renders the page.
@@ -731,7 +731,7 @@ class PdfIntegrityChecker {
 
     var total = 0;
     for (var i = 0; i < kids.size(); i++) {
-      CraftPdfDictionary? kid;
+      PdfDictionary? kid;
       try {
         kid = await kids.dictionaryEntry(i);
       } on Object catch (error) {
@@ -756,7 +756,7 @@ class PdfIntegrityChecker {
   }
 
   static Future<void> _checkPageContents(
-    CraftPdfDocument document,
+    PdfDocument document,
     int pageCount,
     List<PdfIntegrityFinding> findings,
   ) async {

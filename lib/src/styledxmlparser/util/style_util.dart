@@ -3,12 +3,12 @@ import 'package:dpdf/src/styledxmlparser/css/resolve/style_inheritance.dart';
 import 'package:dpdf/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
 import 'package:dpdf/src/styledxmlparser/css/util/css_types_validation_utils.dart';
 
-class CraftStyleUtil {
-  CraftStyleUtil._();
+class StyleUtil {
+  StyleUtil._();
 
   static final List<String> _fontSizeDependentPercentage = [
-    CraftCommonCssConstants.FONT_SIZE,
-    CraftCommonCssConstants.LINE_HEIGHT,
+    CommonCssConstants.FONT_SIZE,
+    CommonCssConstants.LINE_HEIGHT,
   ];
 
   static Map<String, String> mergeParentStyleDeclaration(
@@ -16,20 +16,19 @@ class CraftStyleUtil {
       String styleProperty,
       String parentPropValue,
       String parentFontSizeString,
-      Iterable<CraftStyleInheritance> inheritanceRules) {
+      Iterable<StyleInheritance> inheritanceRules) {
     String? childPropValue = styles[styleProperty];
     if ((childPropValue == null &&
             _checkInheritance(styleProperty, inheritanceRules)) ||
         "inherit" == childPropValue) {
-      if (_valueIsOfMeasurement(parentPropValue, CraftCommonCssConstants.EM) ||
-          _valueIsOfMeasurement(parentPropValue, CraftCommonCssConstants.EX) ||
+      if (_valueIsOfMeasurement(parentPropValue, CommonCssConstants.EM) ||
+          _valueIsOfMeasurement(parentPropValue, CommonCssConstants.EX) ||
           (_valueIsOfMeasurement(
-                  parentPropValue, CraftCommonCssConstants.PERCENTAGE) &&
+                  parentPropValue, CommonCssConstants.PERCENTAGE) &&
               _fontSizeDependentPercentage.contains(styleProperty))) {
         double absoluteParentFontSize =
-            CraftCssDimensionParsingUtils.parseAbsoluteLength(
-                parentFontSizeString);
-        double relativeValue = CraftCssDimensionParsingUtils.parseRelativeValue(
+            CssDimensionParsingUtils.parseAbsoluteLength(parentFontSizeString);
+        double relativeValue = CssDimensionParsingUtils.parseRelativeValue(
             parentPropValue, absoluteParentFontSize);
 
         // Format to prevent differences.
@@ -41,7 +40,7 @@ class CraftStyleUtil {
               .replaceAll(RegExp(r'\.+$'), '');
         }
 
-        styles[styleProperty] = formatted + CraftCommonCssConstants.PT;
+        styles[styleProperty] = formatted + CommonCssConstants.PT;
       } else {
         styles[styleProperty] = parentPropValue;
       }
@@ -50,7 +49,7 @@ class CraftStyleUtil {
   }
 
   static bool _checkInheritance(
-      String styleProperty, Iterable<CraftStyleInheritance> inheritanceRules) {
+      String styleProperty, Iterable<StyleInheritance> inheritanceRules) {
     for (var inheritanceRule in inheritanceRules) {
       if (inheritanceRule.isInheritable(styleProperty)) {
         return true;
@@ -64,7 +63,7 @@ class CraftStyleUtil {
       return false;
     }
     return value.endsWith(measurement) &&
-        CraftCssTypesValidationUtils.isNumber(
+        CssTypesValidationUtils.isNumber(
             value.substring(0, value.length - measurement.length).trim());
   }
 }

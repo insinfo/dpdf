@@ -52,15 +52,15 @@ class PdfTextRedaction {
             'Removal text must be nonempty printable BMP text.');
       }
     }
-    final reader = CraftPdfReader.fromBytes(source);
-    final input = await CraftPdfDocument.open(reader);
+    final reader = PdfReader.fromBytes(source);
+    final input = await PdfDocument.open(reader);
     try {
       if (reader.encrypted) {
         throw UnsupportedError('Encrypted redaction is unsupported.');
       }
       _keys(input.rootCatalog().pdfRepresentation(),
           {'Type', 'Pages', 'Version'}, 'catalog');
-      final info = await input.fileTrailer().dictionaryEntry(CraftPdfName.info);
+      final info = await input.fileTrailer().dictionaryEntry(PdfName.info);
       if (info != null && info.size() != 0) {
         throw UnsupportedError('Document metadata is unsupported.');
       }
@@ -71,8 +71,8 @@ class PdfTextRedaction {
         }
       }
       final plans = <({
-        CraftPdfArray media,
-        CraftPdfArray? crop,
+        PdfArray media,
+        PdfArray? crop,
         int rotate,
         Uint8List content,
         Map<String, ({String encoding, String baseFont})> fonts
@@ -93,11 +93,11 @@ class PdfTextRedaction {
             'page');
         final resources =
             await _inherited(page.pdfRepresentation(), 'Resources');
-        if (resources is! CraftPdfDictionary) {
+        if (resources is! PdfDictionary) {
           throw UnsupportedError('Page resources are required.');
         }
         _keys(resources, {'Font', 'ProcSet'}, 'resources');
-        final fonts = await resources.dictionaryEntry(CraftPdfName.font);
+        final fonts = await resources.dictionaryEntry(PdfName.font);
         if (fonts == null || fonts.size() == 0) {
           throw UnsupportedError('At least one text font is required.');
         }
@@ -106,26 +106,23 @@ class PdfTextRedaction {
           final font = await fonts.dictionaryEntry(resourceName);
           if (font == null) throw FormatException('Invalid font dictionary.');
           _keys(font, {'Type', 'Subtype', 'BaseFont', 'Encoding'}, 'font');
-          final baseFont =
-              (await font.nameEntry(CraftPdfName.baseFont))?.getValue();
-          if ((await font.nameEntry(CraftPdfName.subtype))?.getValue() !=
-                  'Type1' ||
+          final baseFont = (await font.nameEntry(PdfName.baseFont))?.getValue();
+          if ((await font.nameEntry(PdfName.subtype))?.getValue() != 'Type1' ||
               !{'Courier', 'Helvetica'}.contains(baseFont)) {
             throw UnsupportedError(
                 'Only nonembedded Type1 Courier or Helvetica is supported.');
           }
-          final encoding = await font.get(CraftPdfName.encoding, true);
+          final encoding = await font.get(PdfName.encoding, true);
           if (encoding != null &&
-              (encoding is! CraftPdfName ||
+              (encoding is! PdfName ||
                   !{'WinAnsiEncoding', 'StandardEncoding'}
                       .contains(encoding.getValue()))) {
             throw UnsupportedError('Font encoding is unsupported.');
           }
           fontPlans[resourceName.getValue()] = (
             baseFont: baseFont!,
-            encoding: encoding is CraftPdfName
-                ? encoding.getValue()
-                : 'StandardEncoding'
+            encoding:
+                encoding is PdfName ? encoding.getValue() : 'StandardEncoding'
           );
         }
         final machine = _TextMachine((font, codes) {
@@ -137,15 +134,15 @@ class PdfTextRedaction {
         }, allowedFonts: fontPlans.keys.toSet());
         final streamCount = await page.contentSegmentCount();
         final contents =
-            await page.pdfRepresentation().get(CraftPdfName.contents, true);
+            await page.pdfRepresentation().get(PdfName.contents, true);
         if (contents != null &&
-            contents is! CraftPdfStream &&
-            contents is! CraftPdfArray) {
+            contents is! PdfStream &&
+            contents is! PdfArray) {
           throw FormatException('Invalid page contents.');
         }
         for (var s = 0; s < streamCount; s++) {
           final stream = await page.contentSegmentAt(s);
-          if (stream is! CraftPdfStream) {
+          if (stream is! PdfStream) {
             throw FormatException('Invalid content stream.');
           }
           _keys(stream, {'Length', 'Filter'}, 'content stream');
@@ -157,7 +154,7 @@ class PdfTextRedaction {
         final crop = cropObject == null ? null : await _box(cropObject);
         final rotation = await _inherited(page.pdfRepresentation(), 'Rotate');
         if (rotation != null &&
-            (rotation is! CraftPdfNumber || rotation.doubleValue() % 90 != 0)) {
+            (rotation is! PdfNumber || rotation.doubleValue() % 90 != 0)) {
           throw UnsupportedError(
               'Page rotation must be a multiple of 90 degrees.');
         }
@@ -204,7 +201,7 @@ class PdfTextRedaction {
         plans.add((
           media: media,
           crop: crop,
-          rotate: rotation is CraftPdfNumber ? rotation.intValue() : 0,
+          rotate: rotation is PdfNumber ? rotation.intValue() : 0,
           content: result.content,
           fonts: {
             for (final entry in fontPlans.entries)
@@ -214,27 +211,25 @@ class PdfTextRedaction {
       }
       // No output is allocated until all pages and all requests pass validation.
       final result = BytesBuilder();
-      final output =
-          CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(result));
+      final output = PdfDocument.create(PdfWriter.fromBytesBuilder(result));
       for (final plan in plans) {
         final page = await output.appendBlankPage();
         final dictionary = page.pdfRepresentation();
-        dictionary.put(CraftPdfName.mediaBox, plan.media);
-        if (plan.crop != null) dictionary.put(CraftPdfName.cropBox, plan.crop!);
+        dictionary.put(PdfName.mediaBox, plan.media);
+        if (plan.crop != null) dictionary.put(PdfName.cropBox, plan.crop!);
         page.setRotationDegrees(plan.rotate);
-        final fonts = CraftPdfDictionary();
+        final fonts = PdfDictionary();
         for (final entry in plan.fonts.entries) {
-          final font = CraftPdfDictionary()
-            ..put(CraftPdfName.type, CraftPdfName.font)
-            ..put(CraftPdfName.subtype, CraftPdfName('Type1'))
-            ..put(CraftPdfName.baseFont, CraftPdfName(entry.value.baseFont))
-            ..put(CraftPdfName.encoding, CraftPdfName(entry.value.encoding));
-          fonts.put(CraftPdfName(entry.key), font);
+          final font = PdfDictionary()
+            ..put(PdfName.type, PdfName.font)
+            ..put(PdfName.subtype, PdfName('Type1'))
+            ..put(PdfName.baseFont, PdfName(entry.value.baseFont))
+            ..put(PdfName.encoding, PdfName(entry.value.encoding));
+          fonts.put(PdfName(entry.key), font);
         }
-        dictionary.put(CraftPdfName.resources,
-            CraftPdfDictionary()..put(CraftPdfName.font, fonts));
         dictionary.put(
-            CraftPdfName.contents, CraftPdfStream.withBytes(plan.content, 0));
+            PdfName.resources, PdfDictionary()..put(PdfName.font, fonts));
+        dictionary.put(PdfName.contents, PdfStream.withBytes(plan.content, 0));
       }
       (await output.documentDetails()).pdfRepresentation().clear();
       await output.close();
@@ -244,8 +239,7 @@ class PdfTextRedaction {
     }
   }
 
-  static void _keys(
-      CraftPdfDictionary dict, Set<String> accepted, String context) {
+  static void _keys(PdfDictionary dict, Set<String> accepted, String context) {
     for (final name in dict.getMap()!.keys) {
       if (!accepted.contains(name.getValue())) {
         throw UnsupportedError(
@@ -254,27 +248,26 @@ class PdfTextRedaction {
     }
   }
 
-  static Future<Object?> _inherited(
-      CraftPdfDictionary page, String name) async {
-    CraftPdfDictionary? node = page;
-    final visited = <CraftPdfDictionary>{};
+  static Future<Object?> _inherited(PdfDictionary page, String name) async {
+    PdfDictionary? node = page;
+    final visited = <PdfDictionary>{};
     while (node != null) {
       if (!visited.add(node)) throw FormatException('Cyclic page tree.');
-      final value = await node.get(CraftPdfName(name), true);
+      final value = await node.get(PdfName(name), true);
       if (value != null) return value;
-      node = await node.dictionaryEntry(CraftPdfName.parent);
+      node = await node.dictionaryEntry(PdfName.parent);
     }
     return null;
   }
 
-  static Future<CraftPdfArray> _box(Object? object) async {
-    if (object is! CraftPdfArray || object.size() != 4) {
+  static Future<PdfArray> _box(Object? object) async {
+    if (object is! PdfArray || object.size() != 4) {
       throw FormatException('Invalid page box.');
     }
     final values = <double>[];
     for (var i = 0; i < 4; i++) {
       final number = await object.get(i);
-      if (number is! CraftPdfNumber || !number.doubleValue().isFinite) {
+      if (number is! PdfNumber || !number.doubleValue().isFinite) {
         throw FormatException('Invalid page box coordinate.');
       }
       values.add(number.doubleValue());
@@ -282,6 +275,6 @@ class PdfTextRedaction {
     if (values[2] <= values[0] || values[3] <= values[1]) {
       throw FormatException('Empty page box.');
     }
-    return CraftPdfArray.fromDoubles(values);
+    return PdfArray.fromDoubles(values);
   }
 }

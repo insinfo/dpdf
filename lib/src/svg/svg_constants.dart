@@ -6,8 +6,8 @@
 /// os agrupadores eram getters que devolviam um `Type`: cada acesso virava
 /// uma chamada dinâmica que só falhava em tempo de execução. Referencie as
 /// classes diretamente.
-class CraftSvgConstants {
-  CraftSvgConstants._();
+class SvgConstants {
+  SvgConstants._();
 }
 
 /// Names of SVG elements.

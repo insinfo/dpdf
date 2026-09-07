@@ -8,9 +8,8 @@ import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 
 /// Standard security handler using Standard 128 algorithm (RC4).
-class CraftStandardHandlerUsingStandard128
-    extends CraftStandardHandlerUsingStandard40 {
-  CraftStandardHandlerUsingStandard128(
+class StandardHandlerUsingStandard128 extends StandardHandlerUsingStandard40 {
+  StandardHandlerUsingStandard128(
       super.encryptionDictionary,
       super.userPassword,
       super.ownerPassword,
@@ -19,14 +18,14 @@ class CraftStandardHandlerUsingStandard128
       super.embeddedFilesOnly,
       super.documentId);
 
-  CraftStandardHandlerUsingStandard128.read(super.encryptionDictionary,
+  StandardHandlerUsingStandard128.read(super.encryptionDictionary,
       super.password, super.documentId, super.encryptMetadata)
       : super.read();
 
   @override
   void calculatePermissions(int permissions) {
-    permissions |= CraftStandardSecurityHandler.permsMask1ForRevision3OrGreater;
-    permissions &= CraftStandardSecurityHandler.permsMask2;
+    permissions |= StandardSecurityHandler.permsMask1ForRevision3OrGreater;
+    permissions &= StandardSecurityHandler.permsMask2;
     this.permissions = permissions;
   }
 
@@ -73,7 +72,7 @@ class CraftStandardHandlerUsingStandard128
       md5.updateAll(documentId!);
     }
     if (!encryptMetadata) {
-      md5.updateAll(CraftStandardHandlerUsingStandard40.metadataPad);
+      md5.updateAll(StandardHandlerUsingStandard40.metadataPad);
     }
 
     Uint8List digest = Uint8List(mkeyLen);
@@ -91,7 +90,7 @@ class CraftStandardHandlerUsingStandard128
   Uint8List computeUserKey() {
     final userKey = Uint8List(32);
     md5.reset();
-    md5.updateAll(CraftStandardHandlerUsingStandard40.pad);
+    md5.updateAll(StandardHandlerUsingStandard40.pad);
     if (documentId != null) {
       md5.updateAll(documentId!);
     }
@@ -112,33 +111,32 @@ class CraftStandardHandlerUsingStandard128
   }
 
   @override
-  void setSpecificHandlerDicEntries(CraftPdfDictionary encryptionDictionary,
+  void setSpecificHandlerDicEntries(PdfDictionary encryptionDictionary,
       bool encryptMetadata, bool embeddedFilesOnly) {
     if (encryptMetadata) {
-      encryptionDictionary.put(CraftPdfName.r, CraftPdfNumber.fromInt(3));
-      encryptionDictionary.put(CraftPdfName.v, CraftPdfNumber.fromInt(2));
+      encryptionDictionary.put(PdfName.r, PdfNumber.fromInt(3));
+      encryptionDictionary.put(PdfName.v, PdfNumber.fromInt(2));
     } else {
-      encryptionDictionary.put(
-          CraftPdfName.encryptMetadata, CraftPdfBoolean.pdfFalse);
-      encryptionDictionary.put(CraftPdfName.r, CraftPdfNumber.fromInt(4));
-      encryptionDictionary.put(CraftPdfName.v, CraftPdfNumber.fromInt(4));
+      encryptionDictionary.put(PdfName.encryptMetadata, PdfBoolean.pdfFalse);
+      encryptionDictionary.put(PdfName.r, PdfNumber.fromInt(4));
+      encryptionDictionary.put(PdfName.v, PdfNumber.fromInt(4));
 
-      final stdcf = CraftPdfDictionary();
-      stdcf.put(CraftPdfName.length, CraftPdfNumber.fromInt(16));
+      final stdcf = PdfDictionary();
+      stdcf.put(PdfName.length, PdfNumber.fromInt(16));
       if (embeddedFilesOnly) {
-        stdcf.put(CraftPdfName.authEvent, CraftPdfName.efOpen);
-        encryptionDictionary.put(CraftPdfName.eff, CraftPdfName.stdCF);
-        encryptionDictionary.put(CraftPdfName.strF, CraftPdfName.identity);
-        encryptionDictionary.put(CraftPdfName.stmF, CraftPdfName.identity);
+        stdcf.put(PdfName.authEvent, PdfName.efOpen);
+        encryptionDictionary.put(PdfName.eff, PdfName.stdCF);
+        encryptionDictionary.put(PdfName.strF, PdfName.identity);
+        encryptionDictionary.put(PdfName.stmF, PdfName.identity);
       } else {
-        stdcf.put(CraftPdfName.authEvent, CraftPdfName.docOpen);
-        encryptionDictionary.put(CraftPdfName.strF, CraftPdfName.stdCF);
-        encryptionDictionary.put(CraftPdfName.stmF, CraftPdfName.stdCF);
+        stdcf.put(PdfName.authEvent, PdfName.docOpen);
+        encryptionDictionary.put(PdfName.strF, PdfName.stdCF);
+        encryptionDictionary.put(PdfName.stmF, PdfName.stdCF);
       }
-      stdcf.put(CraftPdfName.cfm, CraftPdfName.v2);
-      final cf = CraftPdfDictionary();
-      cf.put(CraftPdfName.stdCF, stdcf);
-      encryptionDictionary.put(CraftPdfName.cf, cf);
+      stdcf.put(PdfName.cfm, PdfName.v2);
+      final cf = PdfDictionary();
+      cf.put(PdfName.stdCF, stdcf);
+      encryptionDictionary.put(PdfName.cf, cf);
     }
   }
 

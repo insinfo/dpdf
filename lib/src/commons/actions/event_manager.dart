@@ -1,15 +1,15 @@
 /// A notification identified by its event type.
-abstract class CraftEvent {
+abstract class Event {
   String get eventType;
 }
 
 /// A synchronous notification recipient.
-abstract class CraftEventHandler {
-  void onEvent(CraftEvent event);
+abstract class EventHandler {
+  void onEvent(Event event);
 }
 
 /// Uses the event's Dart runtime type as its default identifier.
-abstract class AbstractEvent implements CraftEvent {
+abstract class AbstractEvent implements Event {
   @override
   String get eventType => runtimeType.toString();
 }
@@ -19,20 +19,20 @@ abstract class AbstractEvent implements CraftEvent {
 /// Registration changes take effect on the next dispatch. A nested dispatch
 /// takes its own snapshot and therefore sees the latest registrations. Handler
 /// errors propagate to the caller and stop delivery of the current event.
-class CraftEventManager {
-  static final CraftEventManager _shared = CraftEventManager._();
-  final Set<CraftEventHandler> _listeners = <CraftEventHandler>{};
+class EventManager {
+  static final EventManager _shared = EventManager._();
+  final Set<EventHandler> _listeners = <EventHandler>{};
 
-  CraftEventManager._();
-  static CraftEventManager get instance => _shared;
+  EventManager._();
+  static EventManager get instance => _shared;
 
   /// Equal handlers are registered once, in insertion order.
-  void register(CraftEventHandler handler) => _listeners.add(handler);
+  void register(EventHandler handler) => _listeners.add(handler);
 
-  void unregister(CraftEventHandler handler) => _listeners.remove(handler);
+  void unregister(EventHandler handler) => _listeners.remove(handler);
 
-  void onEvent(CraftEvent event) {
-    final recipients = List<CraftEventHandler>.of(_listeners, growable: false);
+  void onEvent(Event event) {
+    final recipients = List<EventHandler>.of(_listeners, growable: false);
     for (var index = 0; index < recipients.length; index++) {
       recipients[index].onEvent(event);
     }
@@ -43,8 +43,8 @@ class CraftEventManager {
 
 /// Compatibility identifiers for callers of the event API.
 /// These strings do not install or advertise third-party product integrations.
-class CraftProductNameConstant {
-  CraftProductNameConstant._();
+class ProductNameConstant {
+  ProductNameConstant._();
 
   static const String Core = 'dpdf Core';
   @Deprecated('Legacy product identifier retained for event compatibility.')
@@ -58,8 +58,8 @@ class CraftProductNameConstant {
 }
 
 /// Legacy event namespaces; values remain stable for existing subscribers.
-class CraftNamespaceConstant {
-  CraftNamespaceConstant._();
+class NamespaceConstant {
+  NamespaceConstant._();
 
   static const String Core = 'com.pdf';
   @Deprecated('Legacy namespace retained for event compatibility.')

@@ -1,6 +1,6 @@
 /// Utilities class for CSS operations.
-class CraftCssUtils {
-  CraftCssUtils._();
+class CssUtils {
+  CssUtils._();
 
   static const double EPSILON = 1e-6;
 

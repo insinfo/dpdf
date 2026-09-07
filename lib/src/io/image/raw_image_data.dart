@@ -6,7 +6,7 @@ import 'image_data.dart';
 ///
 /// This class represents images that are stored in raw format,
 /// including CCITT-encoded fax images.
-class CraftRawImageData extends CraftImageData {
+class RawImageData extends ImageData {
   /// Pure two-dimensional encoding (Group 4)
   static const int ccittg4 = 0x100;
 
@@ -36,11 +36,10 @@ class CraftRawImageData extends CraftImageData {
   int typeCcitt = 0;
 
   /// Creates a RawImageData from a URL.
-  CraftRawImageData.fromUrl(Uri super.url, CraftImageType super.type)
-      : super.fromUrl();
+  RawImageData.fromUrl(Uri super.url, ImageType super.type) : super.fromUrl();
 
   /// Creates a RawImageData from bytes.
-  CraftRawImageData.fromBytes(Uint8List super.data, CraftImageType super.type)
+  RawImageData.fromBytes(Uint8List super.data, ImageType super.type)
       : super.fromBytes();
 
   @override

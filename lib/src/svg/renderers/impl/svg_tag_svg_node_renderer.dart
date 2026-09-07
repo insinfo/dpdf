@@ -4,13 +4,13 @@ import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 
 /// Renderizador do elemento `<svg>`, inclusive quando aninhado.
-class CraftSvgTagSvgNodeRenderer extends CraftAbstractContainerSvgNodeRenderer {
+class SvgTagSvgNodeRenderer extends AbstractContainerSvgNodeRenderer {
   @override
-  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context) => null;
+  Rectangle? getObjectBoundingBox(SvgDrawContext context) => null;
 
   @override
-  CraftSvgNodeRenderer createDeepCopy() {
-    final copy = CraftSvgTagSvgNodeRenderer();
+  SvgNodeRenderer createDeepCopy() {
+    final copy = SvgTagSvgNodeRenderer();
     deepCopyAttributesAndStyles(copy);
     deepCopyChildren(copy);
     return copy;

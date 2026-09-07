@@ -124,9 +124,9 @@ class PdfAreaRedaction {
     }
 
     final output = BytesBuilder();
-    final document = CraftPdfDocument(
-      reader: CraftPdfReader.fromBytes(source),
-      writer: CraftPdfWriter.fromBytesBuilder(output),
+    final document = PdfDocument(
+      reader: PdfReader.fromBytes(source),
+      writer: PdfWriter.fromBytesBuilder(output),
     );
     await document.load();
     try {
@@ -159,16 +159,16 @@ class PdfAreaRedaction {
   }
 
   static Future<void> _redactPage(
-    CraftPdfDocument document,
-    CraftPdfPage page,
+    PdfDocument document,
+    PdfPage page,
     List<PdfRedactionArea> areas,
     PdfAreaRedactionOptions options,
   ) async {
     final dictionary = page.pdfRepresentation();
     final resources =
         await PdfTextRedaction._inherited(dictionary, 'Resources');
-    final fonts = resources is CraftPdfDictionary
-        ? await resources.dictionaryEntry(CraftPdfName.font)
+    final fonts = resources is PdfDictionary
+        ? await resources.dictionaryEntry(PdfName.font)
         : null;
 
     final metrics = await _PageFontMetrics.resolve(fonts);
@@ -190,9 +190,9 @@ class PdfAreaRedaction {
       }
       if (remove.isNotEmpty) {
         final rewritten = machine.read(content, remove: remove);
-        final stream = CraftPdfStream.withBytes(rewritten.content, 0);
+        final stream = PdfStream.withBytes(rewritten.content, 0);
         stream.attachToDocument(document);
-        dictionary.put(CraftPdfName.contents, stream);
+        dictionary.put(PdfName.contents, stream);
         dictionary.markChanged();
       }
     }
@@ -206,23 +206,23 @@ class PdfAreaRedaction {
   }
 
   static Future<void> _removeAnnotations(
-    CraftPdfDictionary dictionary,
+    PdfDictionary dictionary,
     List<PdfRedactionArea> areas,
   ) async {
-    final annotations = await dictionary.arrayEntry(CraftPdfName.annots);
+    final annotations = await dictionary.arrayEntry(PdfName.annots);
     if (annotations == null) return;
 
-    final survivors = CraftPdfArray();
+    final survivors = PdfArray();
     for (var i = 0; i < annotations.size(); i++) {
       final annotation = await annotations.dictionaryEntry(i);
       if (annotation == null) continue;
-      final rect = await annotation.arrayEntry(CraftPdfName.rect);
+      final rect = await annotation.arrayEntry(PdfName.rect);
       var intersects = false;
       if (rect != null && rect.size() == 4) {
         final values = <double>[];
         for (var j = 0; j < 4; j++) {
           final number = await rect.get(j);
-          values.add(number is CraftPdfNumber ? number.doubleValue() : 0);
+          values.add(number is PdfNumber ? number.doubleValue() : 0);
         }
         final left = values[0] < values[2] ? values[0] : values[2];
         final right = values[0] > values[2] ? values[0] : values[2];
@@ -240,16 +240,16 @@ class PdfAreaRedaction {
       }
     }
     if (survivors.size() == 0) {
-      dictionary.remove(CraftPdfName.annots);
+      dictionary.remove(PdfName.annots);
     } else {
-      dictionary.put(CraftPdfName.annots, survivors);
+      dictionary.put(PdfName.annots, survivors);
     }
     dictionary.markChanged();
   }
 
   static Future<void> _paintOverlay(
-    CraftPdfDocument document,
-    CraftPdfPage page,
+    PdfDocument document,
+    PdfPage page,
     List<PdfRedactionArea> areas,
     PdfAreaRedactionOptions options,
   ) async {
@@ -267,23 +267,23 @@ class PdfAreaRedaction {
       ..writeln('f')
       ..writeln('Q');
 
-    final overlay = CraftPdfStream.withBytes(
+    final overlay = PdfStream.withBytes(
         Uint8List.fromList(latin1.encode(buffer.toString())), 0);
     overlay.attachToDocument(document);
 
     final dictionary = page.pdfRepresentation();
-    final existing = await dictionary.get(CraftPdfName.contents, true);
-    if (existing is CraftPdfArray) {
+    final existing = await dictionary.get(PdfName.contents, true);
+    if (existing is PdfArray) {
       existing.add(overlay);
       existing.markChanged();
     } else {
-      final array = CraftPdfArray();
+      final array = PdfArray();
       if (existing != null) {
-        final reference = await dictionary.get(CraftPdfName.contents, false);
+        final reference = await dictionary.get(PdfName.contents, false);
         array.add(reference ?? existing);
       }
       array.add(overlay);
-      dictionary.put(CraftPdfName.contents, array);
+      dictionary.put(PdfName.contents, array);
     }
     dictionary.markChanged();
   }
@@ -302,13 +302,13 @@ class _PageFontMetrics {
 
   bool get hasFonts => _byName.isNotEmpty;
 
-  static Future<_PageFontMetrics> resolve(CraftPdfDictionary? fonts) async {
+  static Future<_PageFontMetrics> resolve(PdfDictionary? fonts) async {
     if (fonts == null) return const _PageFontMetrics({});
     final resolved = <String, _FontMetric>{};
     for (final key in fonts.keySet()) {
       final font = await fonts.dictionaryEntry(key);
       if (font == null) continue;
-      final subtype = (await font.nameEntry(CraftPdfName.subtype))?.getValue();
+      final subtype = (await font.nameEntry(PdfName.subtype))?.getValue();
       if (subtype == 'Type0') {
         throw UnsupportedError(
             'Area redaction does not support the composite font '
@@ -352,16 +352,15 @@ class _FontMetric {
     required this.missingWidth,
   });
 
-  static Future<_FontMetric> resolve(CraftPdfDictionary font) async {
+  static Future<_FontMetric> resolve(PdfDictionary font) async {
     final baseFont =
-        (await font.nameEntry(CraftPdfName.baseFont))?.getValue() ??
-            'Helvetica';
-    final encodingObject = await font.get(CraftPdfName.encoding, true);
+        (await font.nameEntry(PdfName.baseFont))?.getValue() ?? 'Helvetica';
+    final encodingObject = await font.get(PdfName.encoding, true);
     var encoding = 'StandardEncoding';
-    if (encodingObject is CraftPdfName) {
+    if (encodingObject is PdfName) {
       encoding = encodingObject.getValue();
-    } else if (encodingObject is CraftPdfDictionary) {
-      final base = await encodingObject.nameEntry(CraftPdfName.baseEncoding);
+    } else if (encodingObject is PdfDictionary) {
+      final base = await encodingObject.nameEntry(PdfName.baseEncoding);
       encoding = base?.getValue() ?? 'StandardEncoding';
     }
     if (encoding != 'WinAnsiEncoding' && encoding != 'StandardEncoding') {
@@ -370,18 +369,18 @@ class _FontMetric {
       encoding = 'StandardEncoding';
     }
 
-    final firstChar = await font.integerEntry(CraftPdfName.firstChar) ?? 0;
-    final widthArray = await font.arrayEntry(CraftPdfName.widths);
+    final firstChar = await font.integerEntry(PdfName.firstChar) ?? 0;
+    final widthArray = await font.arrayEntry(PdfName.widths);
     final widths = <double>[];
     if (widthArray != null) {
       for (var i = 0; i < widthArray.size(); i++) {
         final number = await widthArray.get(i);
-        widths.add(number is CraftPdfNumber ? number.doubleValue() : 0);
+        widths.add(number is PdfNumber ? number.doubleValue() : 0);
       }
     }
-    final descriptor = await font.dictionaryEntry(CraftPdfName.fontDescriptor);
+    final descriptor = await font.dictionaryEntry(PdfName.fontDescriptor);
     final missing =
-        await descriptor?.decimalEntry(CraftPdfName('MissingWidth')) ?? 0;
+        await descriptor?.decimalEntry(PdfName('MissingWidth')) ?? 0;
 
     return _FontMetric(
       encoding: encoding,

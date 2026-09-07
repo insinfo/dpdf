@@ -1,8 +1,8 @@
 /// Helper class for internal usage only.
 library;
 
-class CraftStringUtil {
-  CraftStringUtil._();
+class StringUtil {
+  StringUtil._();
 
   /// Replaces all occurrences of a pattern in a string.
   static String replaceAll(String srcString, String regex, String replacement) {

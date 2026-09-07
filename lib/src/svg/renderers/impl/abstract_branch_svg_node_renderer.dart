@@ -5,9 +5,9 @@ import 'package:dpdf/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/marker_svg_node_renderer.dart';
 
 /// Base dos elementos que só existem para conter outros (`<g>`, `<svg>`).
-abstract class CraftAbstractBranchSvgNodeRenderer
-    extends CraftAbstractSvgNodeRenderer implements CraftBranchSvgNodeRenderer {
-  final List<CraftSvgNodeRenderer> _children = [];
+abstract class AbstractBranchSvgNodeRenderer extends AbstractSvgNodeRenderer
+    implements BranchSvgNodeRenderer {
+  final List<SvgNodeRenderer> _children = [];
 
   /// Os filhos são desenhados no próprio fluxo de conteúdo, cada um entre
   /// `q`/`Q`.
@@ -19,12 +19,12 @@ abstract class CraftAbstractBranchSvgNodeRenderer
   /// só o `<svg>` estabelece viewport — e esse recorte é emitido
   /// explicitamente com `re W n`.
   @override
-  Future<void> doDraw(CraftSvgDrawContext context) async {
+  Future<void> doDraw(SvgDrawContext context) async {
     final canvas = context.getCurrentCanvas();
     for (final child in _children) {
       // Marcadores não se desenham na posição em que foram declarados; quem os
       // instancia é o elemento marcável, no vértice correspondente.
-      if (child is CraftMarkerSvgNodeRenderer) continue;
+      if (child is MarkerSvgNodeRenderer) continue;
       canvas.saveState();
       await child.draw(context);
       canvas.restoreState();
@@ -32,23 +32,23 @@ abstract class CraftAbstractBranchSvgNodeRenderer
   }
 
   @override
-  void addChild(CraftSvgNodeRenderer child) {
+  void addChild(SvgNodeRenderer child) {
     _children.add(child);
   }
 
   @override
-  List<CraftSvgNodeRenderer> getChildren() {
+  List<SvgNodeRenderer> getChildren() {
     return List.unmodifiable(_children);
   }
 
-  void deepCopyChildren(CraftAbstractBranchSvgNodeRenderer deepCopy) {
+  void deepCopyChildren(AbstractBranchSvgNodeRenderer deepCopy) {
     for (var child in _children) {
-      CraftSvgNodeRenderer newChild = child.createDeepCopy();
+      SvgNodeRenderer newChild = child.createDeepCopy();
       newChild.setParent(deepCopy);
       deepCopy.addChild(newChild);
     }
   }
 
   @override
-  CraftSvgNodeRenderer createDeepCopy();
+  SvgNodeRenderer createDeepCopy();
 }

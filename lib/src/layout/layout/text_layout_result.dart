@@ -1,6 +1,6 @@
 import 'package:dpdf/src/layout/layout/min_max_width_layout_result.dart';
 
-class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
+class TextLayoutResult extends MinMaxWidthLayoutResult {
   bool wordHasBeenSplit = false;
   bool splitForcedByNewline = false;
   bool containsPossibleBreak = false;
@@ -9,7 +9,7 @@ class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
   double leftMinWidth = 0;
   double rightMinWidth = 0;
 
-  CraftTextLayoutResult(super.status, super.occupiedArea, super.splitRenderer,
+  TextLayoutResult(super.status, super.occupiedArea, super.splitRenderer,
       super.overflowRenderer,
       [super.causeOfNothing]);
 
@@ -17,7 +17,7 @@ class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
     return wordHasBeenSplit;
   }
 
-  CraftTextLayoutResult setWordHasBeenSplit(bool wordHasBeenSplit) {
+  TextLayoutResult setWordHasBeenSplit(bool wordHasBeenSplit) {
     this.wordHasBeenSplit = wordHasBeenSplit;
     return this;
   }
@@ -26,7 +26,7 @@ class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
     return splitForcedByNewline;
   }
 
-  CraftTextLayoutResult setSplitForcedByNewline(bool splitForcedByNewline) {
+  TextLayoutResult setSplitForcedByNewline(bool splitForcedByNewline) {
     this.splitForcedByNewline = splitForcedByNewline;
     return this;
   }
@@ -35,12 +35,12 @@ class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
     return containsPossibleBreak;
   }
 
-  CraftTextLayoutResult setContainsPossibleBreak(bool containsPossibleBreak) {
+  TextLayoutResult setContainsPossibleBreak(bool containsPossibleBreak) {
     this.containsPossibleBreak = containsPossibleBreak;
     return this;
   }
 
-  CraftTextLayoutResult setStartsWithSplitCharacterWhiteSpace(
+  TextLayoutResult setStartsWithSplitCharacterWhiteSpace(
       bool startsWithSplitCharacterWhiteSpace) {
     this.startsWithSplitCharacterWhiteSpace =
         startsWithSplitCharacterWhiteSpace;
@@ -51,7 +51,7 @@ class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
     return startsWithSplitCharacterWhiteSpace;
   }
 
-  CraftTextLayoutResult setEndsWithSplitCharacter(bool endsWithSplitCharacter) {
+  TextLayoutResult setEndsWithSplitCharacter(bool endsWithSplitCharacter) {
     this.endsWithSplitCharacter = endsWithSplitCharacter;
     return this;
   }
@@ -60,7 +60,7 @@ class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
     return endsWithSplitCharacter;
   }
 
-  CraftTextLayoutResult setLeftMinWidth(double leftMinWidth) {
+  TextLayoutResult setLeftMinWidth(double leftMinWidth) {
     this.leftMinWidth = leftMinWidth;
     return this;
   }
@@ -69,7 +69,7 @@ class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
     return leftMinWidth;
   }
 
-  CraftTextLayoutResult setRightMinWidth(double rightMinWidth) {
+  TextLayoutResult setRightMinWidth(double rightMinWidth) {
     this.rightMinWidth = rightMinWidth;
     return this;
   }

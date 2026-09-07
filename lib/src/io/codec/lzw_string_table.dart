@@ -6,7 +6,7 @@ import '../../commons/utils/value_utils.dart';
 /// This is a hash-based string table used in LZW compression.
 /// Each entry represents a string made up of a predecessor string (by code)
 /// and a character appended to it.
-class CraftLZWStringTable {
+class LZWStringTable {
   // codesize + Reserved Codes
   static const int _resCodes = 2;
 
@@ -37,7 +37,7 @@ class CraftLZWStringTable {
   int _numStrings = 0;
 
   /// Creates a new LZWStringTable with preallocated memory.
-  CraftLZWStringTable()
+  LZWStringTable()
       : _strChr = Uint8List(_maxstr),
         _strNxt = Int16List(_maxstr),
         _strLen = Int32List(_maxstr),

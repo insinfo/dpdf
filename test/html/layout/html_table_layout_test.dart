@@ -10,10 +10,9 @@ void main() {
       <table><thead><tr><th>HeaderA</th><th>HeaderB</th></tr></thead>
       <tbody><tr><td>CellA</td><td>CellB</td></tr><tr><td>LowerA</td></tr></tbody></table>
     ''');
-    final boxes =
-        CraftHtmlBoxBuilder(CraftHtmlStyleSheet.fromDocument(document), 12)
-            .build(document.body!.nodes);
-    final fragments = CraftHtmlLayoutEngine(300).layout(boxes);
+    final boxes = HtmlBoxBuilder(HtmlStyleSheet.fromDocument(document), 12)
+        .build(document.body!.nodes);
+    final fragments = HtmlLayoutEngine(300).layout(boxes);
     final byText = {for (final fragment in fragments) fragment.text: fragment};
 
     expect(byText['HeaderA']!.style.bold, isTrue);

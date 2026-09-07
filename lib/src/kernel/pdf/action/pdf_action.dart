@@ -5,23 +5,23 @@ import 'pdf_action_uri.dart';
 import 'pdf_action_goto.dart';
 
 /// Represents a PDF Action.
-class CraftPdfAction extends CraftPdfObjectWrapper<CraftPdfDictionary> {
-  CraftPdfAction(CraftPdfDictionary pdfObject) : super(pdfObject);
+class PdfAction extends PdfObjectWrapper<PdfDictionary> {
+  PdfAction(PdfDictionary pdfObject) : super(pdfObject);
 
   @override
   bool requiresIndirectStorage() => true;
 
   /// Sets an additional action to the annotation/field.
   static Future<void> setAdditionalAction(
-      CraftPdfObjectWrapper<CraftPdfDictionary> wrapper,
-      CraftPdfName key,
-      CraftPdfAction action) async {
-    CraftPdfDictionary? aa = await wrapper
+      PdfObjectWrapper<PdfDictionary> wrapper,
+      PdfName key,
+      PdfAction action) async {
+    PdfDictionary? aa = await wrapper
         .pdfRepresentation()
-        .dictionaryEntry(CraftPdfName.aa); // AA = Additional Actions
+        .dictionaryEntry(PdfName.aa); // AA = Additional Actions
     if (aa == null) {
-      aa = CraftPdfDictionary();
-      wrapper.pdfRepresentation().put(CraftPdfName.aa, aa);
+      aa = PdfDictionary();
+      wrapper.pdfRepresentation().put(PdfName.aa, aa);
     }
     aa.put(key, action.pdfRepresentation());
     action.markChanged();
@@ -29,14 +29,13 @@ class CraftPdfAction extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   }
 
   /// Factory method to create a PdfAction from a dictionary.
-  static Future<CraftPdfAction> makeAction(
-      CraftPdfDictionary dictionary) async {
-    final s = await dictionary.nameEntry(CraftPdfName.s);
-    if (CraftPdfName.uri == s) {
+  static Future<PdfAction> makeAction(PdfDictionary dictionary) async {
+    final s = await dictionary.nameEntry(PdfName.s);
+    if (PdfName.uri == s) {
       return PdfActionURI(dictionary);
-    } else if (CraftPdfName.goTo == s) {
+    } else if (PdfName.goTo == s) {
       return PdfActionGoTo(dictionary);
     }
-    return CraftPdfAction(dictionary);
+    return PdfAction(dictionary);
   }
 }

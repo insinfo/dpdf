@@ -15,7 +15,7 @@ import 'exceptions/barcodes_exception_message_constant.dart';
 /// BarCode 128 is a high-density linear barcode symbology defined in ISO/IEC 15417:2007.
 ///
 /// It is used for alphanumeric or numeric-only barcodes. It can encode all 128 characters of ASCII
-class CraftBarcode128 extends CraftBarcode1D {
+class Barcode128 extends Barcode1D {
   /// A type of barcode
   static const int CODE128 = 1;
 
@@ -180,22 +180,22 @@ class CraftBarcode128 extends CraftBarcode1D {
   /// To generate the font the [PdfDocument.getDefaultFont] will be implicitly called.
   /// If you want to use this barcode in PDF/A documents, please consider using
   /// [Barcode128.customFont].
-  factory CraftBarcode128(CraftPdfDocument document, [CraftPdfFont? font]) {
+  factory Barcode128(PdfDocument document, [PdfFont? font]) {
     final resolvedFont = font ?? document.defaultTypeface();
     if (resolvedFont == null) {
-      throw CraftPdfException(
+      throw PdfException(
           'Could not create default font for barcode. Please provide a font explicitly.');
     }
-    return CraftBarcode128._internal(document, resolvedFont);
+    return Barcode128._internal(document, resolvedFont);
   }
 
-  CraftBarcode128._internal(super.document, CraftPdfFont font) {
+  Barcode128._internal(super.document, PdfFont font) {
     x = 0.8;
     this.font = font;
     size = 8;
     baseline = size;
     barHeight = size * 3;
-    textAlignment = CraftBarcode1D.ALIGN_CENTER;
+    textAlignment = Barcode1D.ALIGN_CENTER;
     codeType = CODE128;
     _initializeAis();
   }
@@ -356,7 +356,7 @@ class CraftBarcode128 extends CraftBarcode1D {
     for (int k = 0; k < tLen; ++k) {
       c = text.codeUnitAt(k);
       if (c > 127 && c != FNC1) {
-        throw CraftPdfException(CraftBarcodesExceptionMessageConstant
+        throw PdfException(BarcodesExceptionMessageConstant
             .THERE_ARE_ILLEGAL_CHARACTERS_FOR_BARCODE_128);
       }
     }
@@ -397,7 +397,7 @@ class CraftBarcode128 extends CraftBarcode1D {
     }
     if (codeSet != Barcode128CodeSet.AUTO &&
         currentCode != _getStartSymbol(codeSet)) {
-      throw CraftPdfException(CraftBarcodesExceptionMessageConstant
+      throw PdfException(BarcodesExceptionMessageConstant
           .THERE_ARE_ILLEGAL_CHARACTERS_FOR_BARCODE_128);
     }
     while (index < tLen) {
@@ -485,7 +485,7 @@ class CraftBarcode128 extends CraftBarcode1D {
       }
       if (codeSet != Barcode128CodeSet.AUTO &&
           currentCode != _getStartSymbol(codeSet)) {
-        throw CraftPdfException(CraftBarcodesExceptionMessageConstant
+        throw PdfException(BarcodesExceptionMessageConstant
             .THERE_ARE_ILLEGAL_CHARACTERS_FOR_BARCODE_128);
       }
     }
@@ -530,14 +530,14 @@ class CraftBarcode128 extends CraftBarcode1D {
   }
 
   @override
-  CraftRectangle getBarcodeSize() {
+  Rectangle getBarcodeSize() {
     final (runs, label) = _visualData();
     return measureLinearSymbol(this, runs, label);
   }
 
   @override
-  Future<CraftRectangle> placeBarcode(CraftPdfCanvas canvas,
-      CraftColor? barColor, CraftColor? textColor) async {
+  Future<Rectangle> placeBarcode(
+      PdfCanvas canvas, Color? barColor, Color? textColor) async {
     final (runs, label) = _visualData();
     await drawLinearSymbol(this, canvas, runs, label, barColor, textColor);
     return measureLinearSymbol(this, runs, label);

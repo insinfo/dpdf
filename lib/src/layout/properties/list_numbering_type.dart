@@ -1,4 +1,4 @@
-enum CraftListNumberingType {
+enum ListNumberingType {
   DECIMAL,
   DECIMAL_LEADING_ZERO,
   ROMAN_LOWER,

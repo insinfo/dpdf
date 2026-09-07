@@ -7,50 +7,50 @@ import 'package:dpdf/src/layout/properties/list_symbol_position.dart';
 import 'package:dpdf/src/layout/renderer/renderer.dart';
 import 'package:dpdf/src/layout/renderer/list_item_renderer.dart';
 
-class CraftListItem extends CraftDiv {
-  CraftListItem([dynamic content]) : super() {
+class ListItem extends Div {
+  ListItem([dynamic content]) : super() {
     if (content is String) {
-      add(CraftParagraph(content).setMarginTop(0).setMarginBottom(0));
+      add(Paragraph(content).setMarginTop(0).setMarginBottom(0));
     } else if (content != null) {
       add(content);
     }
   }
 
-  CraftListItem setListSymbolOrdinalValue(int ordinalValue) {
-    setProperty(CraftProperty.LIST_SYMBOL_ORDINAL_VALUE, ordinalValue);
+  ListItem setListSymbolOrdinalValue(int ordinalValue) {
+    setProperty(Property.LIST_SYMBOL_ORDINAL_VALUE, ordinalValue);
     return this;
   }
 
   @override
   T? getDefaultProperty<T>(int property) {
     switch (property) {
-      case CraftProperty.LIST_SYMBOL_POSITION:
-        return CraftListSymbolPosition.DEFAULT as T;
+      case Property.LIST_SYMBOL_POSITION:
+        return ListSymbolPosition.DEFAULT as T;
       default:
         return super.getDefaultProperty<T>(property);
     }
   }
 
-  CraftListItem setListSymbol(dynamic symbol) {
+  ListItem setListSymbol(dynamic symbol) {
     if (symbol is String) {
-      setProperty(CraftProperty.LIST_SYMBOL, CraftText(symbol));
-    } else if (symbol is CraftText || symbol is CraftListNumberingType) {
+      setProperty(Property.LIST_SYMBOL, Text(symbol));
+    } else if (symbol is Text || symbol is ListNumberingType) {
       // TODO: Image support
-      if (symbol is CraftListNumberingType) {
-        if (symbol == CraftListNumberingType.ZAPF_DINGBATS_1 ||
-            symbol == CraftListNumberingType.ZAPF_DINGBATS_2 ||
-            symbol == CraftListNumberingType.ZAPF_DINGBATS_3 ||
-            symbol == CraftListNumberingType.ZAPF_DINGBATS_4) {
-          setProperty(CraftProperty.LIST_SYMBOL_POST_TEXT, " ");
+      if (symbol is ListNumberingType) {
+        if (symbol == ListNumberingType.ZAPF_DINGBATS_1 ||
+            symbol == ListNumberingType.ZAPF_DINGBATS_2 ||
+            symbol == ListNumberingType.ZAPF_DINGBATS_3 ||
+            symbol == ListNumberingType.ZAPF_DINGBATS_4) {
+          setProperty(Property.LIST_SYMBOL_POST_TEXT, " ");
         }
       }
-      setProperty(CraftProperty.LIST_SYMBOL, symbol);
+      setProperty(Property.LIST_SYMBOL, symbol);
     }
     return this;
   }
 
   @override
-  CraftRenderer makeNewRenderer() {
-    return CraftListItemRenderer(this);
+  Renderer makeNewRenderer() {
+    return ListItemRenderer(this);
   }
 }

@@ -11,10 +11,8 @@ void main() {
         'new trailer entries and late streams survive Prev, compressed=$compressed',
         () async {
       final initial = BytesBuilder();
-      final original = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(
-          initial,
-          properties:
-              CraftWriterProperties().setFullCompressionMode(compressed)));
+      final original = PdfDocument.create(PdfWriter.fromBytesBuilder(initial,
+          properties: WriterProperties().setFullCompressionMode(compressed)));
       await _text(await original.appendBlankPage(), 'BASE');
       (await original.documentDetails()).pdfRepresentation().clear();
       await original.close();
@@ -22,18 +20,17 @@ void main() {
       final document = await _open(initial.takeBytes(), bytes, true);
       final overlay = await PdfPageOverlay.create((await document.pageAt(1))!);
       overlay.beginText();
-      await overlay.setFontAndSize(
-          CraftPdfFontFactory.createFont('Helvetica'), 12);
+      await overlay.setFontAndSize(PdfFontFactory.createFont('Helvetica'), 12);
       overlay.moveText(40, 60).showText('ADDED').endText();
       (await document.documentDetails()).setTitle('Created in latest trailer');
       await document.close();
-      final reopened = await CraftPdfDocument.open(
-          CraftPdfReader.fromBytes(bytes.takeBytes()));
+      final reopened =
+          await PdfDocument.open(PdfReader.fromBytes(bytes.takeBytes()));
       try {
         expect(
             (await (await reopened.documentDetails())
                     .pdfRepresentation()
-                    .stringEntry(CraftPdfName.title))
+                    .stringEntry(PdfName.title))
                 ?.decodeMappingText(),
             'Created in latest trailer');
         final text =
@@ -62,8 +59,8 @@ void main() {
       await document.assignMetadataPayload(
           Uint8List.fromList(utf8.encode('<metadata>after</metadata>')));
       await document.close();
-      final reopened = await CraftPdfDocument.open(
-          CraftPdfReader.fromBytes(output.takeBytes()));
+      final reopened =
+          await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
       try {
         expect(utf8.decode((await reopened.metadataPayload())!),
             contains('after'));
@@ -85,8 +82,7 @@ void main() {
       await document.close();
       final resultBytes = bytes.takeBytes();
       if (incremental) expect(resultBytes.sublist(0, source.length), source);
-      final result =
-          await CraftPdfDocument.open(CraftPdfReader.fromBytes(resultBytes));
+      final result = await PdfDocument.open(PdfReader.fromBytes(resultBytes));
       try {
         expect(result.pageTotal(), 3);
         final texts = <String>[];
@@ -112,8 +108,8 @@ void main() {
       info.setKeywords('compatibility');
       info.setCreator('Caller');
       await document.close();
-      final reopened = await CraftPdfDocument.open(
-          CraftPdfReader.fromBytes(bytes.takeBytes()));
+      final reopened =
+          await PdfDocument.open(PdfReader.fromBytes(bytes.takeBytes()));
       try {
         final info = (await reopened.documentDetails()).pdfRepresentation();
         for (final entry in {
@@ -124,8 +120,7 @@ void main() {
           'Creator': 'Caller'
         }.entries) {
           expect(
-              (await info.stringEntry(CraftPdfName(entry.key)))
-                  ?.decodeMappingText(),
+              (await info.stringEntry(PdfName(entry.key)))?.decodeMappingText(),
               entry.value);
         }
       } finally {
@@ -135,27 +130,26 @@ void main() {
   }
 }
 
-Future<CraftPdfDocument> _open(
+Future<PdfDocument> _open(
     Uint8List source, BytesBuilder output, bool incremental) async {
-  final document = CraftPdfDocument(
-      reader: CraftPdfReader.fromBytes(source),
-      writer: CraftPdfWriter.fromBytesBuilder(output),
-      properties:
-          incremental ? CraftStampingProperties().useAppendMode() : null);
+  final document = PdfDocument(
+      reader: PdfReader.fromBytes(source),
+      writer: PdfWriter.fromBytesBuilder(output),
+      properties: incremental ? StampingProperties().useAppendMode() : null);
   await document.load();
   return document;
 }
 
-Future<void> _text(CraftPdfPage page, String text) async {
-  final canvas = await CraftPdfCanvas.fromPage(page);
+Future<void> _text(PdfPage page, String text) async {
+  final canvas = await PdfCanvas.fromPage(page);
   canvas.beginText();
-  await canvas.setFontAndSize(CraftPdfFontFactory.createFont('Helvetica'), 18);
+  await canvas.setFontAndSize(PdfFontFactory.createFont('Helvetica'), 18);
   canvas.moveText(40, 100).showText(text).endText();
 }
 
 Future<Uint8List> _source() async {
   final bytes = BytesBuilder();
-  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+  final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(bytes));
   for (var index = 1; index <= 3; index++) {
     await _text(await doc.appendBlankPage(), 'Page $index');
   }

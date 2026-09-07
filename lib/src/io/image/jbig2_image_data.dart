@@ -7,32 +7,32 @@ import 'package:dpdf/src/io/image/image_data.dart';
 import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 import 'package:dpdf/src/layout/properties/image_type.dart';
 
-class CraftJbig2ImageData extends CraftImageData {
+class Jbig2ImageData extends ImageData {
   int _page = 1;
 
-  CraftJbig2ImageData.fromUrl(Uri url, int page)
-      : super.fromUrl(url, CraftImageType.JBIG2) {
+  Jbig2ImageData.fromUrl(Uri url, int page)
+      : super.fromUrl(url, ImageType.JBIG2) {
     _page = page;
   }
 
-  CraftJbig2ImageData.fromBytes(Uint8List bytes, int page)
-      : super.fromBytes(bytes, CraftImageType.JBIG2) {
+  Jbig2ImageData.fromBytes(Uint8List bytes, int page)
+      : super.fromBytes(bytes, ImageType.JBIG2) {
     _page = page;
   }
 
   int pageAt() => _page;
 
   static int pageTotal(Uint8List bytes) {
-    return getNumberOfPagesFromRaf(CraftRandomAccessFileOrArray(bytes));
+    return getNumberOfPagesFromRaf(RandomAccessFileOrArray(bytes));
   }
 
-  static int getNumberOfPagesFromRaf(CraftRandomAccessFileOrArray raf) {
+  static int getNumberOfPagesFromRaf(RandomAccessFileOrArray raf) {
     try {
-      CraftJbig2SegmentReader sr = CraftJbig2SegmentReader(raf);
+      Jbig2SegmentReader sr = Jbig2SegmentReader(raf);
       sr.read();
       return sr.numberOfPages();
     } catch (e) {
-      throw IoException(CraftIoExceptionMessageConstant.jbig2ImageException, e);
+      throw IoException(IoExceptionMessageConstant.jbig2ImageException, e);
     }
   }
 

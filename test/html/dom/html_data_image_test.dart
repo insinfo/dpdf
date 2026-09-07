@@ -10,28 +10,26 @@ void main() {
       () async {
     final png = await File('test/assets/png_greyscale.png').readAsBytes();
     final jpeg = await File('test/assets/Desert.jpg').readAsBytes();
-    final decodedPng = CraftHtmlDataImage.tryParse(
+    final decodedPng = HtmlDataImage.tryParse(
         'data:image/png;base64,${base64Encode(png)}',
         width: '20',
         height: '10');
-    final decodedJpeg = CraftHtmlDataImage.tryParse(
-        'data:image/jpeg;base64,${base64Encode(jpeg)}');
+    final decodedJpeg =
+        HtmlDataImage.tryParse('data:image/jpeg;base64,${base64Encode(jpeg)}');
 
     expect(decodedPng, isNotNull);
-    expect(decodedPng!.image.getOriginalType(), CraftImageType.PNG);
+    expect(decodedPng!.image.getOriginalType(), ImageType.PNG);
     expect(decodedPng.width, 20);
     expect(decodedPng.height, 10);
     expect(decodedJpeg, isNotNull);
-    expect(decodedJpeg!.image.getOriginalType(), CraftImageType.JPEG);
+    expect(decodedJpeg!.image.getOriginalType(), ImageType.JPEG);
     expect(decodedJpeg.width, greaterThan(0));
     expect(decodedJpeg.height, greaterThan(0));
   });
 
   test('does not fetch external or malformed image sources', () {
-    expect(
-        CraftHtmlDataImage.tryParse('https://example.test/image.png'), isNull);
-    expect(CraftHtmlDataImage.tryParse('data:image/gif;base64,AA=='), isNull);
-    expect(CraftHtmlDataImage.tryParse('data:image/png;base64,not-base64'),
-        isNull);
+    expect(HtmlDataImage.tryParse('https://example.test/image.png'), isNull);
+    expect(HtmlDataImage.tryParse('data:image/gif;base64,AA=='), isNull);
+    expect(HtmlDataImage.tryParse('data:image/png;base64,not-base64'), isNull);
   });
 }

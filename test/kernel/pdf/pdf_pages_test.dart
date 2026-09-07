@@ -10,8 +10,8 @@ void main() {
   group('PdfPages Tests', () {
     test('Create document with multiple pages and verify count', () async {
       final builder = BytesBuilder();
-      final writer = CraftPdfWriter.fromBytesBuilder(builder);
-      final pdfDoc = CraftPdfDocument(writer: writer);
+      final writer = PdfWriter.fromBytesBuilder(builder);
+      final pdfDoc = PdfDocument(writer: writer);
 
       await pdfDoc.appendBlankPage();
       await pdfDoc.appendBlankPage();
@@ -20,16 +20,16 @@ void main() {
       expect(pdfDoc.pageTotal(), 3);
       await pdfDoc.close();
 
-      final reader = CraftPdfReader.fromBytes(builder.toBytes());
-      final readDoc = await CraftPdfDocument.open(reader);
+      final reader = PdfReader.fromBytes(builder.toBytes());
+      final readDoc = await PdfDocument.open(reader);
       expect(readDoc.pageTotal(), 3);
       await readDoc.close();
     });
 
     test('Add and remove pages', () async {
       final builder = BytesBuilder();
-      final writer = CraftPdfWriter.fromBytesBuilder(builder);
-      final pdfDoc = CraftPdfDocument(writer: writer);
+      final writer = PdfWriter.fromBytesBuilder(builder);
+      final pdfDoc = PdfDocument(writer: writer);
 
       await pdfDoc.appendBlankPage();
       final page2 = await pdfDoc.appendBlankPage();
@@ -42,16 +42,16 @@ void main() {
 
       await pdfDoc.close();
 
-      final reader = CraftPdfReader.fromBytes(builder.toBytes());
-      final readDoc = await CraftPdfDocument.open(reader);
+      final reader = PdfReader.fromBytes(builder.toBytes());
+      final readDoc = await PdfDocument.open(reader);
       expect(readDoc.pageTotal(), 2);
       await readDoc.close();
     });
 
     test('Copy pages within same document (Duplication)', () async {
       final builder = BytesBuilder();
-      final writer = CraftPdfWriter.fromBytesBuilder(builder);
-      final pdfDoc = CraftPdfDocument(writer: writer);
+      final writer = PdfWriter.fromBytesBuilder(builder);
+      final pdfDoc = PdfDocument(writer: writer);
 
       await pdfDoc.appendBlankPage(); // Page 1
       await pdfDoc.appendBlankPage(); // Page 2
@@ -65,16 +65,16 @@ void main() {
 
       await pdfDoc.close();
 
-      final reader = CraftPdfReader.fromBytes(builder.toBytes());
-      final readDoc = await CraftPdfDocument.open(reader);
+      final reader = PdfReader.fromBytes(builder.toBytes());
+      final readDoc = await PdfDocument.open(reader);
       expect(readDoc.pageTotal(), 4);
       await readDoc.close();
     });
 
     test('Remove page with outlines', () async {
       final builder = BytesBuilder();
-      final writer = CraftPdfWriter.fromBytesBuilder(builder);
-      final pdfDoc = CraftPdfDocument(writer: writer);
+      final writer = PdfWriter.fromBytesBuilder(builder);
+      final pdfDoc = PdfDocument(writer: writer);
 
       final page1 = await pdfDoc.appendBlankPage();
       final page2 = await pdfDoc.appendBlankPage();
@@ -82,10 +82,10 @@ void main() {
       final outlines = await pdfDoc.rootCatalog().outlineTree(true);
       if (outlines != null) {
         final o1 = await outlines.addOutline('Page 1');
-        o1.addDestination(CraftPdfExplicitDestination.createFit(page1));
+        o1.addDestination(PdfExplicitDestination.createFit(page1));
 
         final o2 = await outlines.addOutline('Page 2');
-        o2.addDestination(CraftPdfExplicitDestination.createFit(page2));
+        o2.addDestination(PdfExplicitDestination.createFit(page2));
       }
 
       expect(pdfDoc.pageTotal(), 2);
@@ -97,8 +97,8 @@ void main() {
 
       await pdfDoc.close();
 
-      final reader = CraftPdfReader.fromBytes(builder.toBytes());
-      final readDoc = await CraftPdfDocument.open(reader);
+      final reader = PdfReader.fromBytes(builder.toBytes());
+      final readDoc = await PdfDocument.open(reader);
       expect(readDoc.pageTotal(), 1);
 
       // Check outlines

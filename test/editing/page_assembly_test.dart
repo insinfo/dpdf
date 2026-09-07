@@ -13,12 +13,12 @@ import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 
 Future<Uint8List> fixture(List<String> texts) async {
   final buffer = BytesBuilder();
-  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
+  final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(buffer));
   for (final text in texts) {
     final page = await doc.appendBlankPage();
     page.pdfRepresentation().put(
-        CraftPdfName.contents,
-        CraftPdfStream.withBytes(
+        PdfName.contents,
+        PdfStream.withBytes(
             Uint8List.fromList(ascii.encode('BT /F1 12 Tf ($text) Tj ET')), 0));
   }
   await doc.close();
@@ -63,7 +63,7 @@ void main() {
       PdfPageSelection(first, pages: [2, 1, 2]),
       PdfPageSelection(second),
     ]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(bytes));
     expect(doc.pageTotal(), 4);
     final texts = <String>[];
     for (var i = 1; i <= 4; i++) {
@@ -83,35 +83,33 @@ void main() {
   });
   test('Compressed streams and shared resources survive assembly', () async {
     final buffer = BytesBuilder();
-    final source =
-        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
-    final resources = CraftPdfDictionary();
-    final fonts = CraftPdfDictionary();
-    final font = CraftPdfDictionary()
-      ..put(CraftPdfName.type, CraftPdfName.font)
-      ..put(CraftPdfName.subtype, CraftPdfName('Type1'))
-      ..put(CraftPdfName.baseFont, CraftPdfName('Helvetica'));
-    fonts.put(CraftPdfName('F1'), font);
-    resources.put(CraftPdfName.font, fonts);
+    final source = PdfDocument.create(PdfWriter.fromBytesBuilder(buffer));
+    final resources = PdfDictionary();
+    final fonts = PdfDictionary();
+    final font = PdfDictionary()
+      ..put(PdfName.type, PdfName.font)
+      ..put(PdfName.subtype, PdfName('Type1'))
+      ..put(PdfName.baseFont, PdfName('Helvetica'));
+    fonts.put(PdfName('F1'), font);
+    resources.put(PdfName.font, fonts);
     resources.attachToDocument(source);
     for (var i = 0; i < 2; i++) {
       final page = await source.appendBlankPage();
-      page.pdfRepresentation().put(CraftPdfName.resources, resources);
-      final stream = CraftPdfStream.withBytes(
+      page.pdfRepresentation().put(PdfName.resources, resources);
+      final stream = PdfStream.withBytes(
           Uint8List.fromList(
               zlib.encode(ascii.encode('BT /F1 10 Tf (shared-$i) Tj ET'))),
           0)
-        ..put(CraftPdfName.filter, CraftPdfName('FlateDecode'));
-      page.pdfRepresentation().put(CraftPdfName.contents, stream);
+        ..put(PdfName.filter, PdfName('FlateDecode'));
+      page.pdfRepresentation().put(PdfName.contents, stream);
     }
     await source.close();
     final assembled =
         await PdfPageAssembly.merge([PdfPageSelection(buffer.takeBytes())]);
-    final doc =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(assembled));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(assembled));
     final encoded = await (await doc.pageAt(1))!
         .pdfRepresentation()
-        .streamEntry(CraftPdfName.contents);
+        .streamEntry(PdfName.contents);
     expect(ascii.decode(zlib.decode((await encoded!.getBytes(false))!)),
         'BT /F1 10 Tf (shared-0) Tj ET');
     expect(
@@ -122,13 +120,12 @@ void main() {
   });
   test('Interactive documents are rejected before returning output', () async {
     final buffer = BytesBuilder();
-    final source =
-        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
+    final source = PdfDocument.create(PdfWriter.fromBytesBuilder(buffer));
     await source.appendBlankPage();
     source
         .rootCatalog()
         .pdfRepresentation()
-        .put(CraftPdfName('AcroForm'), CraftPdfDictionary());
+        .put(PdfName('AcroForm'), PdfDictionary());
     await source.close();
     expect(PdfPageAssembly.merge([PdfPageSelection(buffer.takeBytes())]),
         throwsUnsupportedError);
@@ -136,14 +133,13 @@ void main() {
   test('Corrupt compressed content fails instead of exposing undecoded text',
       () async {
     final buffer = BytesBuilder();
-    final source =
-        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
+    final source = PdfDocument.create(PdfWriter.fromBytesBuilder(buffer));
     final page = await source.appendBlankPage();
     page.pdfRepresentation().put(
-        CraftPdfName.contents,
-        CraftPdfStream.withBytes(
+        PdfName.contents,
+        PdfStream.withBytes(
             Uint8List.fromList(ascii.encode('BT /F1 12 Tf (wrong) Tj ET')), 0)
-          ..put(CraftPdfName.filter, CraftPdfName('FlateDecode')));
+          ..put(PdfName.filter, PdfName('FlateDecode')));
     expect(
         PdfTextExtraction.fromPage(page,
             decoder: (_, codes) => ascii.decode(codes)),

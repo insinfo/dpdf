@@ -7,26 +7,25 @@ import 'package:dpdf/src/kernel/font/pdf_font_factory.dart';
 import 'package:dpdf/src/io/font/constants/standard_fonts.dart';
 import 'package:dpdf/src/layout/properties/property.dart';
 
-class CraftDocument extends CraftRootElement<CraftDocument> {
-  CraftDocument(CraftPdfDocument pdfDocument, [CraftPageSize? pageSize])
-      : super(pdfDocument) {
+class Document extends RootElement<Document> {
+  Document(PdfDocument pdfDocument, [PageSize? pageSize]) : super(pdfDocument) {
     if (pageSize != null) {
       pdfDocument.configureDefaultPageExtent(pageSize);
     }
-    setProperty(CraftProperty.FONT,
-        CraftPdfFontFactory.createFont(CraftStandardFonts.HELVETICA));
+    setProperty(
+        Property.FONT, PdfFontFactory.createFont(StandardFonts.HELVETICA));
   }
 
   @override
-  CraftRootRenderer ensureRootRendererNotNull() {
-    rootRenderer ??= CraftDocumentRenderer(this);
+  RootRenderer ensureRootRendererNotNull() {
+    rootRenderer ??= DocumentRenderer(this);
     return rootRenderer!;
   }
 
   @override
   Future<void> close() async {
     if (rootRenderer != null) {
-      await (rootRenderer as CraftDocumentRenderer).close();
+      await (rootRenderer as DocumentRenderer).close();
     }
   }
 }

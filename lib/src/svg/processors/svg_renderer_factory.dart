@@ -17,34 +17,33 @@ import 'package:dpdf/src/svg/svg_constants.dart';
 /// subárvore. Isso é deliberado: desenhar parcialmente um `<use>` ou um
 /// `<text>` ainda não implementado produziria um PDF errado em silêncio,
 /// enquanto omiti-lo deixa a falta visível.
-class CraftSvgRendererFactory {
-  CraftSvgRendererFactory._();
+class SvgRendererFactory {
+  SvgRendererFactory._();
 
-  static final Map<String, CraftSvgNodeRenderer Function()> _renderers = {
-    SvgTags.SVG: CraftSvgTagSvgNodeRenderer.new,
-    SvgTags.G: CraftGroupSvgNodeRenderer.new,
+  static final Map<String, SvgNodeRenderer Function()> _renderers = {
+    SvgTags.SVG: SvgTagSvgNodeRenderer.new,
+    SvgTags.G: GroupSvgNodeRenderer.new,
     // `<a>` é um contêiner: o hyperlink não é representável no fluxo de
     // conteúdo, mas o que está dentro dele continua sendo desenhado.
-    SvgTags.A: CraftGroupSvgNodeRenderer.new,
-    SvgTags.RECT: CraftRectangleSvgNodeRenderer.new,
-    SvgTags.CIRCLE: CraftCircleSvgNodeRenderer.new,
-    SvgTags.ELLIPSE: CraftEllipseSvgNodeRenderer.new,
-    SvgTags.LINE: CraftLineSvgNodeRenderer.new,
-    SvgTags.POLYLINE: CraftPolylineSvgNodeRenderer.new,
-    SvgTags.POLYGON: CraftPolygonSvgNodeRenderer.new,
-    SvgTags.PATH: CraftPathSvgNodeRenderer.new,
+    SvgTags.A: GroupSvgNodeRenderer.new,
+    SvgTags.RECT: RectangleSvgNodeRenderer.new,
+    SvgTags.CIRCLE: CircleSvgNodeRenderer.new,
+    SvgTags.ELLIPSE: EllipseSvgNodeRenderer.new,
+    SvgTags.LINE: LineSvgNodeRenderer.new,
+    SvgTags.POLYLINE: PolylineSvgNodeRenderer.new,
+    SvgTags.POLYGON: PolygonSvgNodeRenderer.new,
+    SvgTags.PATH: PathSvgNodeRenderer.new,
     // Reconhecidos e explicitamente sem pintura própria.
-    SvgTags.DEFS: CraftNoOpSvgNodeRenderer.new,
-    SvgTags.TITLE: CraftNoOpSvgNodeRenderer.new,
-    SvgTags.DESC: CraftNoOpSvgNodeRenderer.new,
-    SvgTags.METADATA: CraftNoOpSvgNodeRenderer.new,
-    SvgTags.STYLE: CraftNoOpSvgNodeRenderer.new,
+    SvgTags.DEFS: NoOpSvgNodeRenderer.new,
+    SvgTags.TITLE: NoOpSvgNodeRenderer.new,
+    SvgTags.DESC: NoOpSvgNodeRenderer.new,
+    SvgTags.METADATA: NoOpSvgNodeRenderer.new,
+    SvgTags.STYLE: NoOpSvgNodeRenderer.new,
   };
 
   /// Nomes de elementos preservam maiúsculas em SVG (`clipPath`), então a
   /// busca é feita pelo nome exato, sem normalizar caixa.
-  static CraftSvgNodeRenderer? create(String tagName) =>
-      _renderers[tagName]?.call();
+  static SvgNodeRenderer? create(String tagName) => _renderers[tagName]?.call();
 
   /// Se o elemento é conhecido, ainda que não pinte nada.
   static bool supports(String tagName) => _renderers.containsKey(tagName);

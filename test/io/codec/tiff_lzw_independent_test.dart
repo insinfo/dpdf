@@ -16,20 +16,20 @@ Uint8List fixedNineBitCodes(List<int> codes) {
 
 void main() {
   test('literal codes and reset inside a strip', () {
-    final decoder = CraftTIFFLZWDecoder(4, 1, 1);
+    final decoder = TIFFLZWDecoder(4, 1, 1);
     final bytes = fixedNineBitCodes([256, 65, 66, 256, 67, 68, 257]);
     expect(decoder.decode(bytes, Uint8List(4), 1), [65, 66, 67, 68]);
     expect(decoder.decode(bytes, Uint8List(4), 1), [65, 66, 67, 68]);
   });
   test('next dictionary entry may refer to the word being created', () {
     final bytes = fixedNineBitCodes([256, 65, 258, 259, 257]);
-    expect(CraftLZWDecoder.decode(bytes, expectedSize: 6), List.filled(6, 65));
+    expect(LZWDecoder.decode(bytes, expectedSize: 6), List.filled(6, 65));
   });
   test('RGB predictor restarts at each row', () {
     final bytes =
         fixedNineBitCodes([256, 10, 20, 30, 2, 3, 4, 50, 60, 70, 1, 2, 3, 257]);
     expect(
-        CraftLZWDecoder.decode(bytes,
+        LZWDecoder.decode(bytes,
             expectedSize: 12,
             width: 2,
             height: 2,
@@ -39,17 +39,15 @@ void main() {
   });
   test('rejects undefined dictionary references', () {
     expect(
-        () => CraftLZWDecoder.decode(fixedNineBitCodes([256, 65, 300]),
+        () => LZWDecoder.decode(fixedNineBitCodes([256, 65, 300]),
             expectedSize: 20),
         throwsA(isA<IoException>()));
   });
   test('truncated strip retains bounded legacy output behavior', () {
-    expect(
-        CraftLZWDecoder.decode(fixedNineBitCodes([256, 65]), expectedSize: 3),
+    expect(LZWDecoder.decode(fixedNineBitCodes([256, 65]), expectedSize: 3),
         [65, 0, 0]);
     expect(
-        CraftLZWDecoder.decode(fixedNineBitCodes([256, 65, 258]),
-            expectedSize: 2),
+        LZWDecoder.decode(fixedNineBitCodes([256, 65, 258]), expectedSize: 2),
         [65, 65]);
   });
   test('code-width changes and dictionary resets on a large strip', () {
@@ -62,7 +60,6 @@ void main() {
       return state & 255;
     }));
     final compressed = LZWEncoder.compress(input);
-    expect(
-        CraftLZWDecoder.decode(compressed, expectedSize: input.length), input);
+    expect(LZWDecoder.decode(compressed, expectedSize: input.length), input);
   });
 }

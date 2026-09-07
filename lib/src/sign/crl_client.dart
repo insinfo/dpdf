@@ -3,7 +3,7 @@ import 'certificate_details.dart';
 
 /// Supplies revocation-list data for inclusion in
 /// Certificate Revocation Lists (CRL) into your PDF.
-abstract class CraftCrlClient {
+abstract class CrlClient {
   /// Gets an encoded byte array.
   ///
   /// @param checkCert The certificate which a CRL URL can be obtained from (as bytes).

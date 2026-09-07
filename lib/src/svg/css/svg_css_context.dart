@@ -1,6 +1,6 @@
 import 'package:dpdf/src/styledxmlparser/css/resolve/abstract_css_context.dart';
 
-class CraftSvgCssContext extends CraftAbstractCssContext {
+class SvgCssContext extends AbstractCssContext {
   double _rootFontSize = 12.0;
 
   @override

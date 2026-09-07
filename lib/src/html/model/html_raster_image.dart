@@ -1,9 +1,9 @@
 import '../../io/image/image_data.dart';
 
 /// Decoded raster image and its layout dimensions in PDF points.
-class CraftHtmlRasterImage {
-  final CraftImageData image;
+class HtmlRasterImage {
+  final ImageData image;
   final double width;
   final double height;
-  const CraftHtmlRasterImage(this.image, this.width, this.height);
+  const HtmlRasterImage(this.image, this.width, this.height);
 }

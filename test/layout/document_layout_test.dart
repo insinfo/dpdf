@@ -14,16 +14,15 @@ void main() {
   group('Document Layout Test', () {
     test('Layout simple document', () async {
       final file = File('test/tmp/document_layout_test.pdf');
-      final writer = CraftPdfWriter.toFile(file.path);
-      final pdfDoc = CraftPdfDocument.create(writer);
-      final doc = CraftDocument(pdfDoc);
+      final writer = PdfWriter.toFile(file.path);
+      final pdfDoc = PdfDocument.create(writer);
+      final doc = Document(pdfDoc);
 
-      final ttf =
-          CraftTrueTypeFont.fromFile(r"test/assets/ABeeZee-Regular.ttf");
+      final ttf = TrueTypeFont.fromFile(r"test/assets/ABeeZee-Regular.ttf");
 
       // Need to register font or set it property
       // Document sets standard font usually, but let's be explicit
-      final font = CraftPdfTrueTypeFont(ttf);
+      final font = PdfTrueTypeFont(ttf);
 
       // Add a paragraph
       // Paragraph renderer not fully implemented?
@@ -38,17 +37,16 @@ void main() {
       // Checking available elements: Text, Div?
       // I saw Div imported in BlockRenderer snippet in my thought.
 
-      final text = CraftText("Hello Document Layout World!");
-      text.setProperty(CraftProperty.FONT, font);
-      text.setProperty(
-          CraftProperty.FONT_SIZE, CraftUnitValue.createPointValue(12));
+      final text = Text("Hello Document Layout World!");
+      text.setProperty(Property.FONT, font);
+      text.setProperty(Property.FONT_SIZE, UnitValue.createPointValue(12));
 
       // If I add Text directly to Document?
       // Document.add takes IBlockElement. Text is ILeafElement / ILargeElement?
       // Text acts like inline usually.
       // Need a Paragraph wrapper.
 
-      final p = CraftParagraph();
+      final p = Paragraph();
       p.add(text);
 
       // Add directly? Paragraph extends BlockElement?

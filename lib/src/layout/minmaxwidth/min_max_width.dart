@@ -2,15 +2,15 @@ import 'dart:math';
 
 import 'package:dpdf/src/layout/minmaxwidth/min_max_width_utils.dart';
 
-class CraftMinMaxWidth {
+class MinMaxWidth {
   double childrenMinWidth;
   double childrenMaxWidth;
   double additionalWidth;
 
-  CraftMinMaxWidth([double additionalWidth = 0.0])
+  MinMaxWidth([double additionalWidth = 0.0])
       : this.full(0.0, 0.0, additionalWidth);
 
-  CraftMinMaxWidth.full(
+  MinMaxWidth.full(
       this.childrenMinWidth, this.childrenMaxWidth, this.additionalWidth);
 
   double getChildrenMinWidth() {
@@ -38,8 +38,8 @@ class CraftMinMaxWidth {
   }
 
   double getMaxWidth() {
-    return min(childrenMaxWidth + additionalWidth,
-        CraftMinMaxWidthUtils.getInfWidth());
+    return min(
+        childrenMaxWidth + additionalWidth, MinMaxWidthUtils.getInfWidth());
   }
 
   double getMinWidth() {

@@ -23,7 +23,7 @@ abstract interface class SigningDigest {
 }
 
 /// Supplies a signing digest implementation for the requested algorithm.
-abstract class CraftExternalDigest {
+abstract class ExternalDigest {
   /// Obtains a digest calculator for the requested algorithm.
   ///
   /// @param hashAlgorithm String value representing the hashing algorithm

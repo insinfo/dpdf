@@ -1,8 +1,8 @@
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
 
-abstract class CraftPdfDeviceCs extends CraftPdfColorSpace {
-  CraftPdfDeviceCs(CraftPdfName super.pdfObject);
+abstract class PdfDeviceCs extends PdfColorSpace {
+  PdfDeviceCs(PdfName super.pdfObject);
 
   @override
   bool requiresIndirectStorage() {
@@ -10,8 +10,8 @@ abstract class CraftPdfDeviceCs extends CraftPdfColorSpace {
   }
 }
 
-class PdfDeviceCsGray extends CraftPdfDeviceCs {
-  PdfDeviceCsGray() : super(CraftPdfName.deviceGray);
+class PdfDeviceCsGray extends PdfDeviceCs {
+  PdfDeviceCsGray() : super(PdfName.deviceGray);
 
   @override
   int getNumberOfComponents() {
@@ -19,24 +19,24 @@ class PdfDeviceCsGray extends CraftPdfDeviceCs {
   }
 
   @override
-  CraftPdfName getName() {
-    return CraftPdfName.deviceGray;
+  PdfName getName() {
+    return PdfName.deviceGray;
   }
 
   @override
   List<double> toRgb(List<double> components) {
-    return grayToRgb(CraftPdfColorSpace.componentAt(components, 0));
+    return grayToRgb(PdfColorSpace.componentAt(components, 0));
   }
 
   /// Grey is the same value on all three channels.
   static List<double> grayToRgb(double gray) {
-    final g = CraftPdfColorSpace.clampUnit(gray);
+    final g = PdfColorSpace.clampUnit(gray);
     return <double>[g, g, g];
   }
 }
 
-class PdfDeviceCsRgb extends CraftPdfDeviceCs {
-  PdfDeviceCsRgb() : super(CraftPdfName.deviceRgb);
+class PdfDeviceCsRgb extends PdfDeviceCs {
+  PdfDeviceCsRgb() : super(PdfName.deviceRgb);
 
   @override
   int getNumberOfComponents() {
@@ -44,25 +44,22 @@ class PdfDeviceCsRgb extends CraftPdfDeviceCs {
   }
 
   @override
-  CraftPdfName getName() {
-    return CraftPdfName.deviceRgb;
+  PdfName getName() {
+    return PdfName.deviceRgb;
   }
 
   @override
   List<double> toRgb(List<double> components) {
     return <double>[
-      CraftPdfColorSpace.clampUnit(
-          CraftPdfColorSpace.componentAt(components, 0)),
-      CraftPdfColorSpace.clampUnit(
-          CraftPdfColorSpace.componentAt(components, 1)),
-      CraftPdfColorSpace.clampUnit(
-          CraftPdfColorSpace.componentAt(components, 2)),
+      PdfColorSpace.clampUnit(PdfColorSpace.componentAt(components, 0)),
+      PdfColorSpace.clampUnit(PdfColorSpace.componentAt(components, 1)),
+      PdfColorSpace.clampUnit(PdfColorSpace.componentAt(components, 2)),
     ];
   }
 }
 
-class PdfDeviceCsCmyk extends CraftPdfDeviceCs {
-  PdfDeviceCsCmyk() : super(CraftPdfName.deviceCmyk);
+class PdfDeviceCsCmyk extends PdfDeviceCs {
+  PdfDeviceCsCmyk() : super(PdfName.deviceCmyk);
 
   @override
   int getNumberOfComponents() {
@@ -70,17 +67,17 @@ class PdfDeviceCsCmyk extends CraftPdfDeviceCs {
   }
 
   @override
-  CraftPdfName getName() {
-    return CraftPdfName.deviceCmyk;
+  PdfName getName() {
+    return PdfName.deviceCmyk;
   }
 
   @override
   List<double> toRgb(List<double> components) {
     return cmykToRgb(
-        CraftPdfColorSpace.componentAt(components, 0),
-        CraftPdfColorSpace.componentAt(components, 1),
-        CraftPdfColorSpace.componentAt(components, 2),
-        CraftPdfColorSpace.componentAt(components, 3));
+        PdfColorSpace.componentAt(components, 0),
+        PdfColorSpace.componentAt(components, 1),
+        PdfColorSpace.componentAt(components, 2),
+        PdfColorSpace.componentAt(components, 3));
   }
 
   /// The naive `(1 - c) * (1 - k)` conversion.
@@ -88,14 +85,14 @@ class PdfDeviceCsCmyk extends CraftPdfDeviceCs {
   /// This is not a colour-managed conversion: it ignores ink behaviour, dot
   /// gain and the output profile, so saturated inks come out brighter than a
   /// press would print them. It is the single formula this library uses for
-  /// CMYK, shared with [CraftDeviceCmyk.makeLighter] and friends, so that a
+  /// CMYK, shared with [DeviceCmyk.makeLighter] and friends, so that a
   /// rasterized page and a converted colour object never disagree
-  /// (CraftDeviceCmyk delegates here).
+  /// (DeviceCmyk delegates here).
   static List<double> cmykToRgb(double c, double m, double y, double k) {
     return <double>[
-      CraftPdfColorSpace.clampUnit((1.0 - c) * (1.0 - k)),
-      CraftPdfColorSpace.clampUnit((1.0 - m) * (1.0 - k)),
-      CraftPdfColorSpace.clampUnit((1.0 - y) * (1.0 - k)),
+      PdfColorSpace.clampUnit((1.0 - c) * (1.0 - k)),
+      PdfColorSpace.clampUnit((1.0 - m) * (1.0 - k)),
+      PdfColorSpace.clampUnit((1.0 - y) * (1.0 - k)),
     ];
   }
 }

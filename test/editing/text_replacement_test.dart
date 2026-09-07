@@ -11,7 +11,7 @@ void main() {
     final result = await PdfTextRedaction.remove(
         await fixture(['BT /F1 12 Tf (ABC Z) Tj ET']),
         [const PdfTextReplacement(1, 'ABC', 'ignored 漢')]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(result));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(result));
     expect(await PdfTextExtraction.fromPage((await doc.pageAt(1))!), ' Z');
     await doc.close();
   });
@@ -20,7 +20,7 @@ void main() {
     const content = 'BT /F1 10 Tf 1 Tc (A) Tj /F1 20 Tf 3 Tc (BCZ) Tj ET';
     final result = await PdfTextEditing.replace(
         await fixture([content]), [const PdfTextReplacement(1, 'ABC', 'XY')]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(result));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(result));
     final after = positions(await (await doc.pageAt(1))!.contentPayload());
     final before = positions(bytes(content));
     expect(after.map((c) => c.text).join(), 'XYZ');
@@ -37,7 +37,7 @@ void main() {
         'q 0 1 -1 0 200 10 cm BT /F1 12 Tf 1 Tc 2 Tw 80 Tz 3 Ts 1 0 0 1 30 40 Tm (A ) Tj [(SEC) 25 (RET)] TJ ( Z) Tj ET Q';
     final result = await PdfTextEditing.replace(await fixture([content]),
         [const PdfTextReplacement(1, 'SECRET', 'long new value')]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(result));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(result));
     final page = (await doc.pageAt(1))!;
     expect(await PdfTextExtraction.fromPage(page), 'A long new value Z');
     expect(latin1.decode(result), isNot(contains('SECRET')));
@@ -64,7 +64,7 @@ void main() {
         await fixture(['BT /F1 12 Tf (old old) Tj ET'],
             encoding: 'WinAnsiEncoding'),
         [const PdfTextReplacement(1, 'old', 'old ação')]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(result));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(result));
     expect(await PdfTextExtraction.fromPage((await doc.pageAt(1))!),
         'old ação old ação');
     await doc.close();
@@ -76,7 +76,7 @@ void main() {
       const PdfTextReplacement(1, 'one', ''),
       const PdfTextReplacement(1, 'two', 'one')
     ]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(result));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(result));
     expect(
         await PdfTextExtraction.fromPage((await doc.pageAt(1))!), ' one three');
     await doc.close();

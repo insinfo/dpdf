@@ -1,5 +1,5 @@
 /// Roman page labels, with vertical bars denoting multiplication by 1000.
-class CraftRomanNumbering {
+class RomanNumbering {
   /// Retained for source compatibility. Conversion uses decimal places.
   @Deprecated('The conversion methods do not require a digit table.')
   static final List<_RomanDigit> ROMAN_DIGITS = [

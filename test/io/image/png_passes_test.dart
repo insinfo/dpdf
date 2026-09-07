@@ -69,8 +69,8 @@ void main() {
     for (final depth in model == 3 ? [8] : [8, 16]) {
       for (final side in [1, 3, 9]) {
         test('Adam7 model $model depth $depth ${side}x$side', () {
-          final image = CraftImageDataFactory.create(
-              pngFixture(model, depth, side, side));
+          final image =
+              ImageDataFactory.create(pngFixture(model, depth, side, side));
           final colors = model == 2 || model == 6 ? 3 : 1;
           expect(image.getData(), [
             for (var y = 0; y < side; y++)
@@ -96,15 +96,14 @@ void main() {
   }
   test('indexed transparency preserves compressed base image', () {
     final image =
-        CraftImageDataFactory.create(pngFixture(3, 8, 3, 3, interlace: false));
+        ImageDataFactory.create(pngFixture(3, 8, 3, 3, interlace: false));
     expect(image.isDeflated(), isTrue);
     expect(image.imageMask!.getData(),
         [128, 255, 128, 255, 128, 255, 128, 255, 128]);
   });
   test('incomplete Adam7 scanline is rejected', () {
     expect(
-        () => CraftImageDataFactory.create(
-            pngFixture(6, 8, 3, 3, truncate: true)),
+        () => ImageDataFactory.create(pngFixture(6, 8, 3, 3, truncate: true)),
         throwsA(isA<Exception>()));
   });
 }

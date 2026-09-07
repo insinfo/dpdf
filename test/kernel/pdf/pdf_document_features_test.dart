@@ -13,7 +13,7 @@ void main() {
   setUpAll(() => Directory('test/tmp').createSync(recursive: true));
   group('PdfDocument Features Tests', () {
     late String outputPath;
-    late CraftPdfDocument pdfDoc;
+    late PdfDocument pdfDoc;
 
     setUp(() async {
       outputPath = 'test/tmp/pdf_document_features_test.pdf';
@@ -21,8 +21,8 @@ void main() {
       if (await file.exists()) {
         await file.delete();
       }
-      final writer = CraftPdfWriter.toFile(outputPath);
-      pdfDoc = CraftPdfDocument.fromWriter(writer);
+      final writer = PdfWriter.toFile(outputPath);
+      pdfDoc = PdfDocument.fromWriter(writer);
       await pdfDoc.appendBlankPage(); // Add one page
     });
 
@@ -33,26 +33,25 @@ void main() {
     });
 
     test('addFileAttachment adds entry to EmbeddedFiles in Catalog', () async {
-      final fsDict = CraftPdfDictionary();
+      final fsDict = PdfDictionary();
       // Minimal dictionary for FileSpec
-      final fs = CraftPdfFileSpec(fsDict);
+      final fs = PdfFileSpec(fsDict);
       await pdfDoc.registerAttachment('TestAttachment', fs);
 
       final catalog = pdfDoc.rootCatalog();
       final names =
-          await catalog.pdfRepresentation().dictionaryEntry(CraftPdfName.names);
+          await catalog.pdfRepresentation().dictionaryEntry(PdfName.names);
       expect(names, isNotNull);
-      final embeddedFiles =
-          await names!.dictionaryEntry(CraftPdfName.embeddedFiles);
+      final embeddedFiles = await names!.dictionaryEntry(PdfName.embeddedFiles);
       expect(embeddedFiles, isNotNull);
 
       // Verify key presence logic
-      final namesArr = await embeddedFiles!.arrayEntry(CraftPdfName.names);
+      final namesArr = await embeddedFiles!.arrayEntry(PdfName.names);
       expect(namesArr, isNotNull);
       bool found = false;
       for (int i = 0; i < namesArr!.size(); i++) {
         final item = await namesArr.get(i);
-        if (item is CraftPdfString && item.getValue() == 'TestAttachment') {
+        if (item is PdfString && item.getValue() == 'TestAttachment') {
           found = true;
           break;
         }
@@ -61,23 +60,23 @@ void main() {
     });
 
     test('addNamedDestination adds entry to Dests in Catalog', () async {
-      final destValue = CraftPdfArray.fromList([CraftPdfName('Fit')]);
+      final destValue = PdfArray.fromList([PdfName('Fit')]);
       await pdfDoc.registerDestination('MyDest', destValue);
 
       final catalog = pdfDoc.rootCatalog();
       final names =
-          await catalog.pdfRepresentation().dictionaryEntry(CraftPdfName.names);
+          await catalog.pdfRepresentation().dictionaryEntry(PdfName.names);
       expect(names, isNotNull);
-      final dests = await names!.dictionaryEntry(CraftPdfName.dests);
+      final dests = await names!.dictionaryEntry(PdfName.dests);
       expect(dests, isNotNull);
 
       // Verify key presence
-      final namesArr = await dests!.arrayEntry(CraftPdfName.names);
+      final namesArr = await dests!.arrayEntry(PdfName.names);
       expect(namesArr, isNotNull);
       bool found = false;
       for (int i = 0; i < namesArr!.size(); i++) {
         final item = await namesArr.get(i);
-        if (item is CraftPdfString && item.getValue() == 'MyDest') {
+        if (item is PdfString && item.getValue() == 'MyDest') {
           found = true;
           break;
         }

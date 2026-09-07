@@ -6,7 +6,7 @@ import 'cmap/cmap_parser.dart';
 import 'cmap/cmap_location_from_bytes.dart';
 import 'cjk_resource_loader.dart';
 
-class CraftCMapEncoding {
+class CMapEncoding {
   static final List<Uint8List> _identityHVCodeSpaceRanges = [
     Uint8List.fromList([0, 0]),
     Uint8List.fromList([255, 255])
@@ -16,31 +16,31 @@ class CraftCMapEncoding {
   String? uniMap;
   bool _isDirect = false;
 
-  late CraftCMapCidToCodepoint _cid2Code;
-  late CraftCMapCodepointToCid _code2Cid;
+  late CMapCidToCodepoint _cid2Code;
+  late CMapCodepointToCid _code2Cid;
   List<Uint8List> codeSpaceRanges = _identityHVCodeSpaceRanges;
 
-  CraftCMapEncoding(this.cmap) {
+  CMapEncoding(this.cmap) {
     if (cmap == "Identity-H" || cmap == "Identity-V") {
       _isDirect = true;
       codeSpaceRanges = _identityHVCodeSpaceRanges;
     } else {
       _isDirect = false;
-      _cid2Code = CraftCjkResourceLoader.getCidToCodepointCmapSync(cmap);
+      _cid2Code = CjkResourceLoader.getCidToCodepointCmapSync(cmap);
       _code2Cid = getCodeToCidCmapSync(cmap, _cid2Code);
       codeSpaceRanges = _cid2Code.getCodeSpaceRanges();
     }
   }
 
-  CraftCMapEncoding.withUniMap(this.cmap, this.uniMap) {
+  CMapEncoding.withUniMap(this.cmap, this.uniMap) {
     if (cmap == "Identity-H" || cmap == "Identity-V") {
       _isDirect = true;
       codeSpaceRanges = _identityHVCodeSpaceRanges;
     } else {
       _isDirect = false;
-      _cid2Code = CraftCjkResourceLoader.getCidToCodepointCmapSync(cmap);
+      _cid2Code = CjkResourceLoader.getCidToCodepointCmapSync(cmap);
       if (uniMap != null) {
-        _code2Cid = CraftCjkResourceLoader.getCodepointToCidCmapSync(uniMap!);
+        _code2Cid = CjkResourceLoader.getCodepointToCidCmapSync(uniMap!);
       } else {
         _code2Cid = getCodeToCidCmapSync(cmap, _cid2Code);
       }
@@ -48,26 +48,26 @@ class CraftCMapEncoding {
     }
   }
 
-  CraftCMapEncoding.fromBytes(this.cmap, Uint8List cmapBytes) {
-    _cid2Code = CraftCMapCidToCodepoint();
+  CMapEncoding.fromBytes(this.cmap, Uint8List cmapBytes) {
+    _cid2Code = CMapCidToCodepoint();
     _isDirect = false;
-    CraftCMapParser.loadCidMappingsSync(
-        cmap, _cid2Code, CraftCMapLocationFromBytes(cmapBytes));
-    _code2Cid = CraftCMapCodepointToCid.fromReverseMap(_cid2Code);
+    CMapParser.loadCidMappingsSync(
+        cmap, _cid2Code, CMapLocationFromBytes(cmapBytes));
+    _code2Cid = CMapCodepointToCid.fromReverseMap(_cid2Code);
     codeSpaceRanges = _cid2Code.getCodeSpaceRanges();
   }
 
-  static CraftCMapCodepointToCid getCodeToCidCmapSync(
-      String cmap, CraftCMapCidToCodepoint cid2Code) {
+  static CMapCodepointToCid getCodeToCidCmapSync(
+      String cmap, CMapCidToCodepoint cid2Code) {
     // If it's a known CJK CMap, we might have a predefined UniMap for it.
     //  tries to load a predefined map first.
-    CraftCMapUniCid cp2cid = CraftCjkResourceLoader.getUni2CidCmapSync(cmap);
+    CMapUniCid cp2cid = CjkResourceLoader.getUni2CidCmapSync(cmap);
     if (cp2cid.map.isEmpty()) {
       // If not found, fall back to reversing
-      return CraftCMapCodepointToCid.fromReverseMap(cid2Code);
+      return CMapCodepointToCid.fromReverseMap(cid2Code);
     }
     // Need to convert CMapUniCid to CMapCodepointToCid or just use map.
-    CraftCMapCodepointToCid res = CraftCMapCodepointToCid();
+    CMapCodepointToCid res = CMapCodepointToCid();
     res.map.clear();
     res.map = cp2cid.map.clone();
     return res;

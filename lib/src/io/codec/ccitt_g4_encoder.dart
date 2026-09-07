@@ -4,7 +4,7 @@ import 'dart:typed_data';
 ///
 /// This encoder is used for compressing bi-level (black and white) images
 /// using the ITU-T T.6 (CCITT Group 4) facsimile compression.
-class CraftCCITTG4Encoder {
+class CCITTG4Encoder {
   final int _rowpixels;
   final int _rowbytes;
   int _bit = 8;
@@ -24,7 +24,7 @@ class CraftCCITTG4Encoder {
   static const int _g3CodeInvalid = -2;
 
   /// Creates a new encoder.
-  CraftCCITTG4Encoder(int width)
+  CCITTG4Encoder(int width)
       : _rowpixels = width,
         _rowbytes = (width + 7) ~/ 8 {
     _refline = Uint8List(_rowbytes);
@@ -32,7 +32,7 @@ class CraftCCITTG4Encoder {
 
   /// Encodes a full image.
   static Uint8List compress(Uint8List data, int width, int height) {
-    final g4 = CraftCCITTG4Encoder(width);
+    final g4 = CCITTG4Encoder(width);
     g4.fax4Encode(data, 0, g4._rowbytes * height);
     return g4.close();
   }

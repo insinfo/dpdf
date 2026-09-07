@@ -11,375 +11,370 @@ void main() {
   group('PdfPrimitives', () {
     group('PdfNumber', () {
       test('creates integer number', () {
-        final num = CraftPdfNumber.fromInt(42);
+        final num = PdfNumber.fromInt(42);
         expect(num.intValue(), equals(42));
         expect(num.doubleValue(), equals(42.0));
       });
 
       test('creates float number', () {
-        final num = CraftPdfNumber(3.14159);
+        final num = PdfNumber(3.14159);
         expect(num.doubleValue(), closeTo(3.14159, 0.00001));
       });
 
       test('increment modifies value', () {
-        final num = CraftPdfNumber(1.0);
+        final num = PdfNumber(1.0);
         num.increment();
         expect(num.intValue(), equals(2));
       });
 
       test('equal numbers are equal', () {
-        final a = CraftPdfNumber(42.0);
-        final b = CraftPdfNumber(42.0);
+        final a = PdfNumber(42.0);
+        final b = PdfNumber(42.0);
         expect(a, equals(b));
         expect(a.hashCode, equals(b.hashCode));
       });
 
       test('different numbers are not equal', () {
-        final a = CraftPdfNumber(42.0);
-        final b = CraftPdfNumber(43.0);
+        final a = PdfNumber(42.0);
+        final b = PdfNumber(43.0);
         expect(a, isNot(equals(b)));
       });
 
       test('negative numbers are handled', () {
-        final num = CraftPdfNumber(-123.0);
+        final num = PdfNumber(-123.0);
         expect(num.intValue(), equals(-123));
       });
 
       test('large numbers are handled', () {
-        final num = CraftPdfNumber.fromInt(2147483647); // max int32
+        final num = PdfNumber.fromInt(2147483647); // max int32
         expect(num.intValue(), equals(2147483647));
       });
 
       test('getObjectType returns Number', () {
-        final num = CraftPdfNumber(1.0);
+        final num = PdfNumber(1.0);
         expect(num.objectKind(), equals(PdfObjectType.number));
       });
     });
 
     group('PdfString', () {
       test('creates string from value', () {
-        final str = CraftPdfString('Hello World');
+        final str = PdfString('Hello World');
         expect(str.getValue(), equals('Hello World'));
       });
 
       test('creates string from bytes', () {
         final bytes = Uint8List.fromList([72, 101, 108, 108, 111]); // "Hello"
-        final str = CraftPdfString.fromBytes(bytes);
+        final str = PdfString.fromBytes(bytes);
         expect(str.getValue(), equals('Hello'));
       });
 
       test('hex strings are identified', () {
         // Create a hex string with setHexWriting
-        final str = CraftPdfString('Hello').setHexWriting(true);
+        final str = PdfString('Hello').setHexWriting(true);
         expect(str.isHexWriting(), isTrue);
       });
 
       test('equal strings are equal', () {
-        final a = CraftPdfString('abcd');
-        final b = CraftPdfString('abcd');
+        final a = PdfString('abcd');
+        final b = PdfString('abcd');
         expect(a, equals(b));
       });
 
       test('different strings are not equal', () {
-        final a = CraftPdfString('abcd');
-        final b = CraftPdfString('efgh');
+        final a = PdfString('abcd');
+        final b = PdfString('efgh');
         expect(a, isNot(equals(b)));
       });
 
       test('getObjectType returns String', () {
-        final str = CraftPdfString('test');
+        final str = PdfString('test');
         expect(str.objectKind(), equals(PdfObjectType.string));
       });
 
       test('empty string is handled', () {
-        final str = CraftPdfString('');
+        final str = PdfString('');
         expect(str.getValue(), equals(''));
       });
 
       test('string with special characters', () {
-        final str = CraftPdfString('Hello (World)');
+        final str = PdfString('Hello (World)');
         expect(str.getValue(), equals('Hello (World)'));
       });
     });
 
     group('PdfName', () {
       test('creates name', () {
-        final name = CraftPdfName('Type');
+        final name = PdfName('Type');
         expect(name.getValue(), equals('Type'));
       });
 
       test('equal names are equal', () {
-        final a = CraftPdfName('Catalog');
-        final b = CraftPdfName('Catalog');
+        final a = PdfName('Catalog');
+        final b = PdfName('Catalog');
         expect(a, equals(b));
         expect(a.hashCode, equals(b.hashCode));
       });
 
       test('different names are not equal', () {
-        final a = CraftPdfName('Type');
-        final b = CraftPdfName('Subtype');
+        final a = PdfName('Type');
+        final b = PdfName('Subtype');
         expect(a, isNot(equals(b)));
       });
 
       test('predefined names are cached', () {
         // Access same constant twice should return same instance
-        expect(identical(CraftPdfName.type, CraftPdfName.type), isTrue);
-        expect(identical(CraftPdfName.catalog, CraftPdfName.catalog), isTrue);
+        expect(identical(PdfName.type, PdfName.type), isTrue);
+        expect(identical(PdfName.catalog, PdfName.catalog), isTrue);
       });
 
       test('getObjectType returns Name', () {
-        final name = CraftPdfName('Test');
+        final name = PdfName('Test');
         expect(name.objectKind(), equals(PdfObjectType.name));
       });
 
       test('name with numbers', () {
-        final name = CraftPdfName('Font1');
+        final name = PdfName('Font1');
         expect(name.getValue(), equals('Font1'));
       });
 
       test('name with special characters encoded', () {
         // Names can contain hex-encoded characters with #
-        final name = CraftPdfName('Name#20With#20Space');
+        final name = PdfName('Name#20With#20Space');
         expect(name.getValue(), isNotNull);
       });
     });
 
     group('PdfBoolean', () {
       test('creates true', () {
-        final t = CraftPdfBoolean(true);
+        final t = PdfBoolean(true);
         expect(t.getValue(), isTrue);
       });
 
       test('creates false', () {
-        final f = CraftPdfBoolean(false);
+        final f = PdfBoolean(false);
         expect(f.getValue(), isFalse);
       });
 
       test('singletons exist', () {
-        expect(CraftPdfBoolean.pdfTrue.getValue(), isTrue);
-        expect(CraftPdfBoolean.pdfFalse.getValue(), isFalse);
+        expect(PdfBoolean.pdfTrue.getValue(), isTrue);
+        expect(PdfBoolean.pdfFalse.getValue(), isFalse);
       });
 
       test('factory returns singletons', () {
-        expect(
-            identical(CraftPdfBoolean(true), CraftPdfBoolean.pdfTrue), isTrue);
-        expect(identical(CraftPdfBoolean(false), CraftPdfBoolean.pdfFalse),
-            isTrue);
+        expect(identical(PdfBoolean(true), PdfBoolean.pdfTrue), isTrue);
+        expect(identical(PdfBoolean(false), PdfBoolean.pdfFalse), isTrue);
       });
 
       test('equal booleans are equal', () {
-        final a = CraftPdfBoolean(true);
-        final b = CraftPdfBoolean(true);
+        final a = PdfBoolean(true);
+        final b = PdfBoolean(true);
         expect(a, equals(b));
 
-        final c = CraftPdfBoolean(false);
-        final d = CraftPdfBoolean(false);
+        final c = PdfBoolean(false);
+        final d = PdfBoolean(false);
         expect(c, equals(d));
       });
 
       test('different booleans are not equal', () {
-        final t = CraftPdfBoolean(true);
-        final f = CraftPdfBoolean(false);
+        final t = PdfBoolean(true);
+        final f = PdfBoolean(false);
         expect(t, isNot(equals(f)));
       });
 
       test('getObjectType returns Boolean', () {
-        expect(
-            CraftPdfBoolean(true).objectKind(), equals(PdfObjectType.boolean));
+        expect(PdfBoolean(true).objectKind(), equals(PdfObjectType.boolean));
       });
     });
 
     group('PdfNull', () {
       test('singleton exists', () {
-        expect(CraftPdfNull.pdfNull, isNotNull);
+        expect(PdfNull.pdfNull, isNotNull);
       });
 
       test('all nulls are equal', () {
-        final a = CraftPdfNull();
-        final b = CraftPdfNull();
+        final a = PdfNull();
+        final b = PdfNull();
         expect(a, equals(b));
-        expect(a, equals(CraftPdfNull.pdfNull));
+        expect(a, equals(PdfNull.pdfNull));
       });
 
       test('getObjectType returns Null', () {
-        expect(
-            CraftPdfNull.pdfNull.objectKind(), equals(PdfObjectType.nullType));
+        expect(PdfNull.pdfNull.objectKind(), equals(PdfObjectType.nullType));
       });
     });
 
     group('PdfLiteral', () {
       test('creates literal from string', () {
-        final lit = CraftPdfLiteral('obj');
+        final lit = PdfLiteral('obj');
         expect(lit.getInternalContent(), isNotNull);
       });
 
       test('creates literal from bytes', () {
         final bytes = Uint8List.fromList([111, 98, 106]); // "obj"
-        final lit = CraftPdfLiteral.fromBytes(bytes);
+        final lit = PdfLiteral.fromBytes(bytes);
         expect(lit.getInternalContent(), equals(bytes));
       });
 
       test('equal literals are equal', () {
-        final a = CraftPdfLiteral('stream');
-        final b = CraftPdfLiteral('stream');
+        final a = PdfLiteral('stream');
+        final b = PdfLiteral('stream');
         expect(a, equals(b));
       });
 
       test('different literals are not equal', () {
-        final a = CraftPdfLiteral('stream');
-        final b = CraftPdfLiteral('endstream');
+        final a = PdfLiteral('stream');
+        final b = PdfLiteral('endstream');
         expect(a, isNot(equals(b)));
       });
 
       test('getObjectType returns Literal', () {
-        expect(CraftPdfLiteral('test').objectKind(),
-            equals(PdfObjectType.literal));
+        expect(PdfLiteral('test').objectKind(), equals(PdfObjectType.literal));
       });
     });
 
     group('PdfArray', () {
       test('creates empty array', () {
-        final arr = CraftPdfArray();
+        final arr = PdfArray();
         expect(arr.size(), equals(0));
       });
 
       test('adds elements', () async {
-        final arr = CraftPdfArray();
-        arr.add(CraftPdfNumber(1.0));
-        arr.add(CraftPdfNumber(2.0));
-        arr.add(CraftPdfNumber(3.0));
+        final arr = PdfArray();
+        arr.add(PdfNumber(1.0));
+        arr.add(PdfNumber(2.0));
+        arr.add(PdfNumber(3.0));
         expect(arr.size(), equals(3));
       });
 
       test('gets element by index', () async {
-        final arr = CraftPdfArray();
-        arr.add(CraftPdfNumber(42.0));
+        final arr = PdfArray();
+        arr.add(PdfNumber(42.0));
         final elem = await arr.get(0);
-        expect(elem, isA<CraftPdfNumber>());
-        expect((elem as CraftPdfNumber).intValue(), equals(42));
+        expect(elem, isA<PdfNumber>());
+        expect((elem as PdfNumber).intValue(), equals(42));
       });
 
       test('contains element', () async {
-        final arr = CraftPdfArray();
-        final num = CraftPdfNumber(42.0);
+        final arr = PdfArray();
+        final num = PdfNumber(42.0);
         arr.add(num);
         expect(await arr.containsObject(num), isTrue);
       });
 
       test('removes element', () async {
-        final arr = CraftPdfArray();
-        final num = CraftPdfNumber(42.0);
+        final arr = PdfArray();
+        final num = PdfNumber(42.0);
         arr.add(num);
         await arr.remove(num);
         expect(arr.size(), equals(0));
       });
 
       test('getAsNumber works', () async {
-        final arr = CraftPdfArray();
-        arr.add(CraftPdfNumber(123.0));
+        final arr = PdfArray();
+        arr.add(PdfNumber(123.0));
         final num = await arr.numberEntry(0);
         expect(num?.intValue(), equals(123));
       });
 
       test('getAsString works', () async {
-        final arr = CraftPdfArray();
-        arr.add(CraftPdfString('hello'));
+        final arr = PdfArray();
+        arr.add(PdfString('hello'));
         final str = await arr.stringEntry(0);
         expect(str?.getValue(), equals('hello'));
       });
 
       test('getAsDictionary works', () async {
-        final arr = CraftPdfArray();
-        final dict = CraftPdfDictionary();
-        dict.put(CraftPdfName.type, CraftPdfName.page);
+        final arr = PdfArray();
+        final dict = PdfDictionary();
+        dict.put(PdfName.type, PdfName.page);
         arr.add(dict);
         final d = await arr.dictionaryEntry(0);
         expect(d, isNotNull);
       });
 
       test('getObjectType returns Array', () {
-        final arr = CraftPdfArray();
+        final arr = PdfArray();
         expect(arr.objectKind(), equals(PdfObjectType.array));
       });
     });
 
     group('PdfDictionary', () {
       test('creates empty dictionary', () {
-        final dict = CraftPdfDictionary();
+        final dict = PdfDictionary();
         expect(dict.size(), equals(0));
       });
 
       test('puts and gets values', () async {
-        final dict = CraftPdfDictionary();
-        dict.put(CraftPdfName('Key'), CraftPdfNumber(42.0));
-        final value = await dict.get(CraftPdfName('Key'));
-        expect(value, isA<CraftPdfNumber>());
-        expect((value as CraftPdfNumber).intValue(), equals(42));
+        final dict = PdfDictionary();
+        dict.put(PdfName('Key'), PdfNumber(42.0));
+        final value = await dict.get(PdfName('Key'));
+        expect(value, isA<PdfNumber>());
+        expect((value as PdfNumber).intValue(), equals(42));
       });
 
       test('contains key', () {
-        final dict = CraftPdfDictionary();
-        dict.put(CraftPdfName('Key'), CraftPdfNumber(42.0));
-        expect(dict.containsKey(CraftPdfName('Key')), isTrue);
-        expect(dict.containsKey(CraftPdfName('Other')), isFalse);
+        final dict = PdfDictionary();
+        dict.put(PdfName('Key'), PdfNumber(42.0));
+        expect(dict.containsKey(PdfName('Key')), isTrue);
+        expect(dict.containsKey(PdfName('Other')), isFalse);
       });
 
       test('removes key', () {
-        final dict = CraftPdfDictionary();
-        dict.put(CraftPdfName('Key'), CraftPdfNumber(42.0));
-        dict.remove(CraftPdfName('Key'));
-        expect(dict.containsKey(CraftPdfName('Key')), isFalse);
+        final dict = PdfDictionary();
+        dict.put(PdfName('Key'), PdfNumber(42.0));
+        dict.remove(PdfName('Key'));
+        expect(dict.containsKey(PdfName('Key')), isFalse);
       });
 
       test('getAsNumber works', () async {
-        final dict = CraftPdfDictionary();
-        dict.put(CraftPdfName('Count'), CraftPdfNumber(5.0));
-        final num = await dict.numberEntry(CraftPdfName('Count'));
+        final dict = PdfDictionary();
+        dict.put(PdfName('Count'), PdfNumber(5.0));
+        final num = await dict.numberEntry(PdfName('Count'));
         expect(num?.intValue(), equals(5));
       });
 
       test('getAsString works', () async {
-        final dict = CraftPdfDictionary();
-        dict.put(CraftPdfName('Title'), CraftPdfString('Test Document'));
-        final str = await dict.stringEntry(CraftPdfName('Title'));
+        final dict = PdfDictionary();
+        dict.put(PdfName('Title'), PdfString('Test Document'));
+        final str = await dict.stringEntry(PdfName('Title'));
         expect(str?.getValue(), equals('Test Document'));
       });
 
       test('getAsName works', () async {
-        final dict = CraftPdfDictionary();
-        dict.put(CraftPdfName.type, CraftPdfName.catalog);
-        final name = await dict.nameEntry(CraftPdfName.type);
-        expect(name, equals(CraftPdfName.catalog));
+        final dict = PdfDictionary();
+        dict.put(PdfName.type, PdfName.catalog);
+        final name = await dict.nameEntry(PdfName.type);
+        expect(name, equals(PdfName.catalog));
       });
 
       test('getAsDictionary works', () async {
-        final dict = CraftPdfDictionary();
-        final nested = CraftPdfDictionary();
-        nested.put(CraftPdfName('Inner'), CraftPdfNumber(1.0));
-        dict.put(CraftPdfName('Nested'), nested);
-        final d = await dict.dictionaryEntry(CraftPdfName('Nested'));
+        final dict = PdfDictionary();
+        final nested = PdfDictionary();
+        nested.put(PdfName('Inner'), PdfNumber(1.0));
+        dict.put(PdfName('Nested'), nested);
+        final d = await dict.dictionaryEntry(PdfName('Nested'));
         expect(d, isNotNull);
       });
 
       test('getAsArray works', () async {
-        final dict = CraftPdfDictionary();
-        final arr = CraftPdfArray()..add(CraftPdfNumber(1.0));
-        dict.put(CraftPdfName('Kids'), arr);
-        final a = await dict.arrayEntry(CraftPdfName('Kids'));
+        final dict = PdfDictionary();
+        final arr = PdfArray()..add(PdfNumber(1.0));
+        dict.put(PdfName('Kids'), arr);
+        final a = await dict.arrayEntry(PdfName('Kids'));
         expect(a, isNotNull);
         expect(a?.size(), equals(1));
       });
 
       test('keySet returns all keys', () {
-        final dict = CraftPdfDictionary();
-        dict.put(CraftPdfName('A'), CraftPdfNumber(1.0));
-        dict.put(CraftPdfName('B'), CraftPdfNumber(2.0));
+        final dict = PdfDictionary();
+        dict.put(PdfName('A'), PdfNumber(1.0));
+        dict.put(PdfName('B'), PdfNumber(2.0));
         final keys = dict.keySet();
         expect(keys.length, equals(2));
       });
 
       test('getObjectType returns Dictionary', () {
-        final dict = CraftPdfDictionary();
+        final dict = PdfDictionary();
         expect(dict.objectKind(), equals(PdfObjectType.dictionary));
       });
     });

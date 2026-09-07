@@ -9,10 +9,10 @@ import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 
 import 'package:dpdf/src/layout/properties/image_type.dart';
 
-class CraftJbig2ImageHelper {
-  static Uint8List? getGlobalSegment(CraftRandomAccessFileOrArray ra) {
+class Jbig2ImageHelper {
+  static Uint8List? getGlobalSegment(RandomAccessFileOrArray ra) {
     try {
-      CraftJbig2SegmentReader sr = CraftJbig2SegmentReader(ra);
+      Jbig2SegmentReader sr = Jbig2SegmentReader(ra);
       sr.read();
       return sr.getGlobal(true);
     } catch (e) {
@@ -20,11 +20,11 @@ class CraftJbig2ImageHelper {
     }
   }
 
-  static void processImage(CraftImageData jbig2) {
-    if (jbig2.getOriginalType() != CraftImageType.JBIG2) {
+  static void processImage(ImageData jbig2) {
+    if (jbig2.getOriginalType() != ImageType.JBIG2) {
       throw ArgumentError("JBIG2 image expected");
     }
-    CraftJbig2ImageData image = jbig2 as CraftJbig2ImageData;
+    Jbig2ImageData image = jbig2 as Jbig2ImageData;
     try {
       // Load data if needed (ImageData.loadData is usually protected/implicit?
       // In Dart port ImageData usually has bytes set if loaded?)
@@ -36,8 +36,8 @@ class CraftJbig2ImageHelper {
         // ImageData has loadData()?
       }
 
-      final raf = CraftRandomAccessFileOrArray(image.getData()!);
-      CraftJbig2SegmentReader sr = CraftJbig2SegmentReader(raf);
+      final raf = RandomAccessFileOrArray(image.getData()!);
+      Jbig2SegmentReader sr = Jbig2SegmentReader(raf);
       sr.read();
       Jbig2Page? p = sr.pageAt(image.pageAt());
       if (p == null) {
@@ -65,7 +65,7 @@ class CraftJbig2ImageHelper {
       image.setBpc(1);
       image.setData(p.getData(true));
     } catch (e) {
-      throw IoException(CraftIoExceptionMessageConstant.jbig2ImageException, e);
+      throw IoException(IoExceptionMessageConstant.jbig2ImageException, e);
     }
   }
 }

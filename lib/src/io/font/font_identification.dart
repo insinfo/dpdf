@@ -1,4 +1,4 @@
-class CraftFontIdentification {
+class FontIdentification {
   String? ttfVersion;
   String? ttfUniqueId;
   int? type1Xuid;

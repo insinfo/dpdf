@@ -77,8 +77,8 @@ class CmapTable {
   bool fontSpecific = false;
 }
 
-class CraftOpenTypeParser {
-  late CraftRandomAccessFileOrArray raf;
+class OpenTypeParser {
+  late RandomAccessFileOrArray raf;
   String? fileName;
   int ttcIndex = -1;
   int directoryOffset = 0;
@@ -105,14 +105,14 @@ class CraftOpenTypeParser {
 
   Map<String, List<int>> tables = {};
 
-  CraftOpenTypeParser(Uint8List ttf, [this.isLenientMode = false]) {
-    raf = CraftRandomAccessFileOrArray(ttf);
+  OpenTypeParser(Uint8List ttf, [this.isLenientMode = false]) {
+    raf = RandomAccessFileOrArray(ttf);
     initializeSfntTables();
   }
 
-  CraftOpenTypeParser.fromFile(String filename, [this.isLenientMode = false]) {
+  OpenTypeParser.fromFile(String filename, [this.isLenientMode = false]) {
     fileName = filename;
-    raf = CraftRandomAccessFileOrArray.fromFile(File(filename));
+    raf = RandomAccessFileOrArray.fromFile(File(filename));
     initializeSfntTables();
   }
 
@@ -658,8 +658,8 @@ class CraftOpenTypeParser {
     return Uint8List.fromList(raf.getBytes());
   }
 
-  CraftFontNames getFontNames() {
-    CraftFontNames fn = CraftFontNames();
+  FontNames getFontNames() {
+    FontNames fn = FontNames();
     fn.setAllNames(allNameEntries);
     if (allNameEntries[6] != null && allNameEntries[6]!.isNotEmpty) {
       fn.setFontName(allNameEntries[6]![0][3]);
@@ -710,7 +710,7 @@ class CraftOpenTypeParser {
     if (start == locaTable[glyph + 1]) {
       return;
     }
-    CraftRandomAccessFileOrArray tmpRaf = raf.createView();
+    RandomAccessFileOrArray tmpRaf = raf.createView();
     try {
       tmpRaf.seek(glyfOffset + start);
       int numContours = tmpRaf.readShort();
@@ -757,7 +757,7 @@ class CraftOpenTypeParser {
     int start = locaTable[gid];
     int len = locaTable[gid + 1] - start;
     Uint8List data = Uint8List(len);
-    CraftRandomAccessFileOrArray tmpRaf = raf.createView();
+    RandomAccessFileOrArray tmpRaf = raf.createView();
     try {
       tmpRaf.seek(glyfOffset + start);
       tmpRaf.readFully(data);
@@ -773,7 +773,7 @@ class CraftOpenTypeParser {
       throw Exception("Table 'hmtx' does not exist in $fileName");
     }
     int hmtxOffset = tableLocation[0];
-    CraftRandomAccessFileOrArray tmpRaf = raf.createView();
+    RandomAccessFileOrArray tmpRaf = raf.createView();
     try {
       if (gid < hhea.numberOfHMetrics) {
         tmpRaf.seek(hmtxOffset + gid * 4);

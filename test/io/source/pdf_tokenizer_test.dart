@@ -5,9 +5,9 @@ import 'package:test/test.dart';
 import 'package:dpdf/dpdf.dart';
 
 /// Helper to create tokenizer from string
-CraftPdfTokenizer tokenizerFromString(String content) {
+PdfTokenizer tokenizerFromString(String content) {
   final bytes = Uint8List.fromList(utf8.encode(content));
-  return CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
+  return PdfTokenizer(RandomAccessFileOrArray(bytes));
 }
 
 void main() {

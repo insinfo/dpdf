@@ -3,55 +3,51 @@ import 'dart:typed_data';
 import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
 
-typedef Configure = void Function(CraftPdfDocument document,
-    List<CraftPdfPage> pages, List<CraftPdfDictionary> annotations);
+typedef Configure = void Function(
+    PdfDocument document, List<PdfPage> pages, List<PdfDictionary> annotations);
 
 Future<Uint8List> source({Configure? configure}) async {
   final bytes = BytesBuilder();
-  final document =
-      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+  final document = PdfDocument.create(PdfWriter.fromBytesBuilder(bytes));
   final pages = [
     await document.appendBlankPage(),
     await document.appendBlankPage()
   ];
-  CraftPdfDictionary annotation(String subtype, String contents) =>
-      CraftPdfDictionary()
-        ..put(CraftPdfName.type, CraftPdfName('Annot'))
-        ..put(CraftPdfName.subtype, CraftPdfName(subtype))
-        ..put(CraftPdfName.rect, CraftPdfArray.fromInts([10, 20, 80, 90]))
-        ..put(CraftPdfName.contents, CraftPdfString(contents))
-        ..put(CraftPdfName('P'), pages.first.pdfRepresentation())
-        ..attachToDocument(document);
+  PdfDictionary annotation(String subtype, String contents) => PdfDictionary()
+    ..put(PdfName.type, PdfName('Annot'))
+    ..put(PdfName.subtype, PdfName(subtype))
+    ..put(PdfName.rect, PdfArray.fromInts([10, 20, 80, 90]))
+    ..put(PdfName.contents, PdfString(contents))
+    ..put(PdfName('P'), pages.first.pdfRepresentation())
+    ..attachToDocument(document);
   final square = annotation('Square', 'local rectangle');
   final link = annotation('Link', 'external link')
     ..put(
-        CraftPdfName('A'),
-        CraftPdfDictionary()
-          ..put(CraftPdfName('S'), CraftPdfName('URI'))
-          ..put(CraftPdfName('URI'),
-              CraftPdfString('https://example.org/fixture')));
+        PdfName('A'),
+        PdfDictionary()
+          ..put(PdfName('S'), PdfName('URI'))
+          ..put(PdfName('URI'), PdfString('https://example.org/fixture')));
   final note = annotation('Text', 'review note');
   final popup = annotation('Popup', 'popup');
-  note.put(CraftPdfName('Popup'), popup);
-  popup.put(CraftPdfName.parent, note);
-  final appearance = CraftPdfStream.withBytes(
-      Uint8List.fromList(ascii.encode('0 0 20 20 re S')), 0)
-    ..put(CraftPdfName.subtype, CraftPdfName('Form'))
-    ..put(CraftPdfName('BBox'), CraftPdfArray.fromInts([0, 0, 20, 20]));
-  square.put(CraftPdfName('AP'),
-      CraftPdfDictionary()..put(CraftPdfName('N'), appearance));
+  note.put(PdfName('Popup'), popup);
+  popup.put(PdfName.parent, note);
+  final appearance =
+      PdfStream.withBytes(Uint8List.fromList(ascii.encode('0 0 20 20 re S')), 0)
+        ..put(PdfName.subtype, PdfName('Form'))
+        ..put(PdfName('BBox'), PdfArray.fromInts([0, 0, 20, 20]));
+  square.put(PdfName('AP'), PdfDictionary()..put(PdfName('N'), appearance));
   final annotations = [square, link, note, popup];
   pages.first
       .pdfRepresentation()
-      .put(CraftPdfName.annots, CraftPdfArray.fromList(annotations));
+      .put(PdfName.annots, PdfArray.fromList(annotations));
   configure?.call(document, pages, annotations);
   await document.close();
   return bytes.takeBytes();
 }
 
-Future<CraftPdfDocument> merged(Uint8List sourceBytes,
+Future<PdfDocument> merged(Uint8List sourceBytes,
         {List<int> pages = const [1]}) async =>
-    CraftPdfDocument.open(CraftPdfReader.fromBytes(await PdfPageAssembly.merge(
+    PdfDocument.open(PdfReader.fromBytes(await PdfPageAssembly.merge(
         [PdfPageSelection(sourceBytes, pages: pages)],
         includeAnnotations: true)));
 
@@ -66,11 +62,11 @@ void main() {
     addTearDown(result.close);
     final annotations = (await (await result.pageAt(1))!
         .pdfRepresentation()
-        .arrayEntry(CraftPdfName.annots))!;
+        .arrayEntry(PdfName.annots))!;
     expect(annotations.size(), 4);
     expect(
         (await (await annotations.dictionaryEntry(0))!
-                .stringEntry(CraftPdfName.contents))!
+                .stringEntry(PdfName.contents))!
             .getValue(),
         'local rectangle');
   });
@@ -80,34 +76,32 @@ void main() {
     addTearDown(result.close);
     final annotations = (await (await result.pageAt(1))!
         .pdfRepresentation()
-        .arrayEntry(CraftPdfName.annots))!;
+        .arrayEntry(PdfName.annots))!;
     final link = (await annotations.dictionaryEntry(1))!;
-    final action = (await link.dictionaryEntry(CraftPdfName('A')))!;
-    expect((await action.stringEntry(CraftPdfName('URI')))!.getValue(),
+    final action = (await link.dictionaryEntry(PdfName('A')))!;
+    expect((await action.stringEntry(PdfName('URI')))!.getValue(),
         'https://example.org/fixture');
     final square = (await annotations.dictionaryEntry(0))!;
-    final appearances = (await square.dictionaryEntry(CraftPdfName('AP')))!;
-    final appearance = (await appearances.streamEntry(CraftPdfName('N')))!;
+    final appearances = (await square.dictionaryEntry(PdfName('AP')))!;
+    final appearance = (await appearances.streamEntry(PdfName('N')))!;
     expect(ascii.decode((await appearance.getBytes())!), '0 0 20 20 re S');
-    expect((await square.arrayEntry(CraftPdfName.rect))!.size(), 4);
+    expect((await square.arrayEntry(PdfName.rect))!.size(), 4);
   });
   test(
       'Repeated page selections isolate annotation objects and popup relationships',
       () async {
     final result = await merged(await source(), pages: [1, 1]);
     addTearDown(result.close);
-    CraftPdfDictionary? firstNote;
+    PdfDictionary? firstNote;
     for (var index = 1; index <= 2; index++) {
       final page = (await result.pageAt(index))!.pdfRepresentation();
-      final annotations = (await page.arrayEntry(CraftPdfName.annots))!;
+      final annotations = (await page.arrayEntry(PdfName.annots))!;
       final note = (await annotations.dictionaryEntry(2))!;
       final popup = (await annotations.dictionaryEntry(3))!;
-      expect(identical(await note.dictionaryEntry(CraftPdfName('P')), page),
-          isTrue);
-      expect(identical(await popup.dictionaryEntry(CraftPdfName.parent), note),
-          isTrue);
+      expect(identical(await note.dictionaryEntry(PdfName('P')), page), isTrue);
       expect(
-          identical(await note.dictionaryEntry(CraftPdfName('Popup')), popup),
+          identical(await popup.dictionaryEntry(PdfName.parent), note), isTrue);
+      expect(identical(await note.dictionaryEntry(PdfName('Popup')), popup),
           isTrue);
       if (firstNote != null) expect(identical(firstNote, note), isFalse);
       firstNote = note;
@@ -120,44 +114,44 @@ void main() {
     expect(
         (await result.pageAt(1))!
             .pdfRepresentation()
-            .containsKey(CraftPdfName.annots),
+            .containsKey(PdfName.annots),
         isFalse);
   });
   test('Widgets and internal link destinations fail explicitly', () async {
     final widget = await source(
-        configure: (_, __, annotations) => annotations.first
-            .put(CraftPdfName.subtype, CraftPdfName('Widget')));
+        configure: (_, __, annotations) =>
+            annotations.first.put(PdfName.subtype, PdfName('Widget')));
     await expectLater(merged(widget), throwsUnsupportedError);
     final destination = await source(
         configure: (_, pages, annotations) => annotations[1].put(
-            CraftPdfName('Dest'),
-            CraftPdfArray.withObject(pages[1].pdfRepresentation())));
+            PdfName('Dest'),
+            PdfArray.withObject(pages[1].pdfRepresentation())));
     await expectLater(merged(destination), throwsUnsupportedError);
   });
   test('Cross-page owners and popup parents are not silently imported',
       () async {
     final wrongPage = await source(
-        configure: (_, pages, annotations) => annotations.first
-            .put(CraftPdfName('P'), pages[1].pdfRepresentation()));
+        configure: (_, pages, annotations) =>
+            annotations.first.put(PdfName('P'), pages[1].pdfRepresentation()));
     await expectLater(merged(wrongPage), throwsUnsupportedError);
     final wrongParent = await source(
-        configure: (_, pages, annotations) => annotations[3]
-            .put(CraftPdfName.parent, pages[1].pdfRepresentation()));
+        configure: (_, pages, annotations) =>
+            annotations[3].put(PdfName.parent, pages[1].pdfRepresentation()));
     await expectLater(merged(wrongParent), throwsUnsupportedError);
   });
   test('URI action chains and hidden foreign-page references are rejected',
       () async {
     final chain = await source(
         configure: (_, __, annotations) => annotations[1].put(
-            CraftPdfName('A'),
-            CraftPdfDictionary()
-              ..put(CraftPdfName('S'), CraftPdfName('URI'))
-              ..put(CraftPdfName('URI'), CraftPdfString('https://example.org/'))
-              ..put(CraftPdfName('Next'), CraftPdfDictionary())));
+            PdfName('A'),
+            PdfDictionary()
+              ..put(PdfName('S'), PdfName('URI'))
+              ..put(PdfName('URI'), PdfString('https://example.org/'))
+              ..put(PdfName('Next'), PdfDictionary())));
     await expectLater(merged(chain), throwsUnsupportedError);
     final foreign = await source(
         configure: (_, pages, annotations) => annotations.first
-            .put(CraftPdfName('PrivateData'), pages[1].pdfRepresentation()));
+            .put(PdfName('PrivateData'), pages[1].pdfRepresentation()));
     await expectLater(merged(foreign), throwsUnsupportedError);
   });
 }

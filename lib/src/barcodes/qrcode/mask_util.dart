@@ -1,8 +1,8 @@
 import 'byte_matrix.dart';
 
 /// Scores completed QR module grids and evaluates the eight QR mask formulas.
-class CraftMaskUtil {
-  static Iterable<List<int>> _scanLines(CraftByteMatrix grid) sync* {
+class MaskUtil {
+  static Iterable<List<int>> _scanLines(ByteMatrix grid) sync* {
     yield* grid.getArray();
     for (var column = 0; column < grid.getWidth(); column++) {
       yield List.generate(grid.getHeight(), (row) => grid.get(column, row));
@@ -10,7 +10,7 @@ class CraftMaskUtil {
   }
 
   /// A monochrome run of length n >= 5 contributes n - 2.
-  static int repeatedRunPenalty(CraftByteMatrix matrix) {
+  static int repeatedRunPenalty(ByteMatrix matrix) {
     var score = 0;
     for (final line in _scanLines(matrix)) {
       var start = 0;
@@ -28,7 +28,7 @@ class CraftMaskUtil {
   }
 
   /// Every uniform 2-by-2 square contributes three, including overlaps.
-  static int uniformSquarePenalty(CraftByteMatrix matrix) {
+  static int uniformSquarePenalty(ByteMatrix matrix) {
     var squares = 0;
     for (var row = 1; row < matrix.getHeight(); row++) {
       for (var column = 1; column < matrix.getWidth(); column++) {
@@ -46,7 +46,7 @@ class CraftMaskUtil {
 
   /// Finder-like 1011101 cores need four light modules on either side.
   /// A core contributes once even when both sides provide that separation.
-  static int finderPatternPenalty(CraftByteMatrix matrix) {
+  static int finderPatternPenalty(ByteMatrix matrix) {
     var occurrences = 0;
     for (final line in _scanLines(matrix)) {
       var window = 0;
@@ -65,7 +65,7 @@ class CraftMaskUtil {
   }
 
   /// Each complete five percentage points away from half dark costs ten.
-  static int darkBalancePenalty(CraftByteMatrix matrix) {
+  static int darkBalancePenalty(ByteMatrix matrix) {
     final area = matrix.getWidth() * matrix.getHeight();
     if (area == 0) return 0;
     final dark = matrix.getArray().fold<int>(

@@ -2,8 +2,8 @@ import '../pdf_dictionary.dart';
 import '../pdf_document.dart';
 import '../../../commons/actions/event_manager.dart';
 
-/// Event dispatched by the [CraftPdfDocument].
-class CraftPdfDocumentEvent implements CraftEvent {
+/// Event dispatched by the [PdfDocument].
+class PdfDocumentEvent implements Event {
   /// Dispatched before page is created.
   static const String startPage = 'StartPage';
 
@@ -18,14 +18,14 @@ class CraftPdfDocumentEvent implements CraftEvent {
       'EndPage'; // This might be confusing naming from , usually 'EndPage' is per page, not closes doc. Checking C# source.
 
   final String _type;
-  final CraftPdfDictionary? _page;
+  final PdfDictionary? _page;
 
   /// Creates a [PdfDocumentEvent].
-  CraftPdfDocumentEvent(String type, this._page) : _type = type;
+  PdfDocumentEvent(String type, this._page) : _type = type;
 
   @override
   String get eventType => _type;
 
   /// Gets the [PdfDictionary] representation of the page associated with this event.
-  CraftPdfDictionary? pageAt() => _page;
+  PdfDictionary? pageAt() => _page;
 }

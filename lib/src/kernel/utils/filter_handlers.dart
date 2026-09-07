@@ -15,20 +15,19 @@ import '../pdf/pdf_stream.dart';
 ///
 /// This class provides methods to decode data compressed or encoded
 /// using various PDF filter algorithms.
-class CraftFilterHandlers {
-  CraftFilterHandlers._();
+class FilterHandlers {
+  FilterHandlers._();
 
   // Cached PdfName instances to avoid recreation in hot paths.
-  static final CraftPdfName _predictorKey = CraftPdfName('Predictor');
-  static final CraftPdfName _columnsKey = CraftPdfName('Columns');
-  static final CraftPdfName _colorsKey = CraftPdfName('Colors');
-  static final CraftPdfName _bpcKey = CraftPdfName('BitsPerComponent');
-  static final CraftPdfName _earlyChangeKey = CraftPdfName('EarlyChange');
-  static final CraftPdfName _kKey = CraftPdfName('K');
-  static final CraftPdfName _rowsKey = CraftPdfName('Rows');
-  static final CraftPdfName _blackIs1Key = CraftPdfName('BlackIs1');
-  static final CraftPdfName _encodedByteAlignKey =
-      CraftPdfName('EncodedByteAlign');
+  static final PdfName _predictorKey = PdfName('Predictor');
+  static final PdfName _columnsKey = PdfName('Columns');
+  static final PdfName _colorsKey = PdfName('Colors');
+  static final PdfName _bpcKey = PdfName('BitsPerComponent');
+  static final PdfName _earlyChangeKey = PdfName('EarlyChange');
+  static final PdfName _kKey = PdfName('K');
+  static final PdfName _rowsKey = PdfName('Rows');
+  static final PdfName _blackIs1Key = PdfName('BlackIs1');
+  static final PdfName _encodedByteAlignKey = PdfName('EncodedByteAlign');
 
   /// Decodes bytes using the filters specified in the stream dictionary.
   ///
@@ -37,20 +36,20 @@ class CraftFilterHandlers {
   ///
   /// Returns the decoded bytes.
   static Future<Uint8List> decodeBytes(
-      Uint8List bytes, CraftPdfDictionary streamDict) async {
-    final filterObj = await streamDict.get(CraftPdfName.filter, true);
+      Uint8List bytes, PdfDictionary streamDict) async {
+    final filterObj = await streamDict.get(PdfName.filter, true);
     if (filterObj == null) {
       return bytes;
     }
 
-    final decodeParmsObj = await streamDict.get(CraftPdfName.decodeParms, true);
+    final decodeParmsObj = await streamDict.get(PdfName.decodeParms, true);
 
     // Single filter
-    if (filterObj is CraftPdfName) {
-      CraftPdfDictionary? parms;
-      if (decodeParmsObj is CraftPdfDictionary) {
+    if (filterObj is PdfName) {
+      PdfDictionary? parms;
+      if (decodeParmsObj is PdfDictionary) {
         parms = decodeParmsObj;
-      } else if (decodeParmsObj is CraftPdfArray) {
+      } else if (decodeParmsObj is PdfArray) {
         // Some malformed PDFs may provide array even with single filter.
         parms = await decodeParmsObj.dictionaryEntry(0);
       }
@@ -58,12 +57,12 @@ class CraftFilterHandlers {
     }
 
     // Array of filters
-    if (filterObj is CraftPdfArray) {
+    if (filterObj is PdfArray) {
       var result = bytes;
 
       final int n = filterObj.size();
-      CraftPdfArray? decodeParmsArray;
-      if (decodeParmsObj is CraftPdfArray) {
+      PdfArray? decodeParmsArray;
+      if (decodeParmsObj is PdfArray) {
         decodeParmsArray = decodeParmsObj;
       }
 
@@ -71,7 +70,7 @@ class CraftFilterHandlers {
         final filter = await filterObj.nameEntry(i);
         if (filter == null) continue;
 
-        CraftPdfDictionary? parms;
+        PdfDictionary? parms;
         if (decodeParmsArray != null && i < decodeParmsArray.size()) {
           parms = await decodeParmsArray.dictionaryEntry(i);
         }
@@ -86,8 +85,8 @@ class CraftFilterHandlers {
 
   /// Applies a single filter to decode bytes.
   static Future<Uint8List> _applyFilter(
-      Uint8List bytes, CraftPdfName filter, CraftPdfDictionary? parms,
-      [CraftPdfDictionary? streamDict]) async {
+      Uint8List bytes, PdfName filter, PdfDictionary? parms,
+      [PdfDictionary? streamDict]) async {
     final filterName = filter.getValue();
 
     switch (filterName) {
@@ -139,7 +138,7 @@ class CraftFilterHandlers {
 
   /// Decodes FlateDecode (zlib) compressed data.
   static Future<Uint8List> _flateDecode(
-      Uint8List bytes, CraftPdfDictionary? parms) async {
+      Uint8List bytes, PdfDictionary? parms) async {
     try {
       final decompressed = zlib.decode(bytes);
       var result = _toUint8List(decompressed);
@@ -161,7 +160,7 @@ class CraftFilterHandlers {
 
   /// Applies PNG/TIFF predictors for FlateDecode/LZWDecode.
   static Future<Uint8List> _applyPredictor(
-      Uint8List bytes, CraftPdfDictionary parms, int predictor) async {
+      Uint8List bytes, PdfDictionary parms, int predictor) async {
     if (predictor == 1) {
       return bytes;
     }
@@ -362,7 +361,7 @@ class CraftFilterHandlers {
 
   /// Decodes LZWDecode data.
   static Future<Uint8List> _lzwDecode(
-      Uint8List bytes, CraftPdfDictionary? parms) async {
+      Uint8List bytes, PdfDictionary? parms) async {
     final earlyChange = await parms?.integerEntry(_earlyChangeKey) ?? 1;
 
     const clearCode = 256;
@@ -496,13 +495,13 @@ class CraftFilterHandlers {
 
   /// Decodes CCITTFaxDecode data.
   static Future<Uint8List> _ccittFaxDecode(
-      Uint8List bytes, CraftPdfDictionary? parms,
-      [CraftPdfDictionary? streamDict]) async {
+      Uint8List bytes, PdfDictionary? parms,
+      [PdfDictionary? streamDict]) async {
     final k = (await parms?.integerEntry(_kKey)) ?? 0;
     final columns = (await parms?.integerEntry(_columnsKey)) ?? 1728;
     int rows = (await parms?.integerEntry(_rowsKey)) ?? 0;
     if (rows == 0 && streamDict != null) {
-      rows = (await streamDict.integerEntry(CraftPdfName('Height'))) ?? 0;
+      rows = (await streamDict.integerEntry(PdfName('Height'))) ?? 0;
     }
     final blackIs1 = (await parms?.flagEntry(_blackIs1Key)) ?? false;
 
@@ -523,7 +522,7 @@ class CraftFilterHandlers {
     // In lines 521: final blackIs1 = (await parms?.getAsBool(_blackIs1Key)) ?? false;
     // This implies it returns bool.
 
-    final decoder = CraftTIFFFaxDecoder(1, columns, rows);
+    final decoder = TIFFFaxDecoder(1, columns, rows);
 
     // Output buffer
     Uint8List buffer;
@@ -582,11 +581,11 @@ class CraftFilterHandlers {
   /// A stream that will not decode is returned untouched rather than throwing,
   /// so one damaged image does not stop a whole page from loading.
   static Future<Uint8List> _jbig2Decode(
-      Uint8List bytes, CraftPdfDictionary? parms) async {
+      Uint8List bytes, PdfDictionary? parms) async {
     Uint8List? globals;
     if (parms != null) {
-      final globalsObject = await parms.get(CraftPdfName('JBIG2Globals'), true);
-      if (globalsObject is CraftPdfStream) {
+      final globalsObject = await parms.get(PdfName('JBIG2Globals'), true);
+      if (globalsObject is PdfStream) {
         globals = await globalsObject.getBytes(true);
       }
     }

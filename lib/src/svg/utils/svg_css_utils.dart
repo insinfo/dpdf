@@ -6,8 +6,8 @@ import 'package:dpdf/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 
-class CraftSvgCssUtils {
-  CraftSvgCssUtils._();
+class SvgCssUtils {
+  SvgCssUtils._();
 
   static List<String> splitValueList(String? value) {
     if (value == null || value.isEmpty) {
@@ -20,22 +20,22 @@ class CraftSvgCssUtils {
   }
 
   static double parseAbsoluteLength(
-      CraftAbstractSvgNodeRenderer svgNodeRenderer,
+      AbstractSvgNodeRenderer svgNodeRenderer,
       String length,
       double percentBaseValue,
       double defaultValue,
-      CraftSvgDrawContext context) {
+      SvgDrawContext context) {
     double em = svgNodeRenderer.getCurrentFontSize(context);
     double rem = context.getCssContext().getRootFontSize();
-    return CraftCssDimensionParsingUtils.parseLength(
+    return CssDimensionParsingUtils.parseLength(
         length, percentBaseValue, defaultValue, em, rem);
   }
 
   static double parseAbsoluteVerticalLength(
-      CraftAbstractSvgNodeRenderer svgNodeRenderer,
+      AbstractSvgNodeRenderer svgNodeRenderer,
       String length,
       double defaultValue,
-      CraftSvgDrawContext context) {
+      SvgDrawContext context) {
     double percentBaseValue = _calculatePercentBaseValueIfNeeded(
         svgNodeRenderer, context, length, false);
     return parseAbsoluteLength(
@@ -43,17 +43,17 @@ class CraftSvgCssUtils {
   }
 
   static double parseAbsoluteHorizontalLength(
-      CraftAbstractSvgNodeRenderer svgNodeRenderer,
+      AbstractSvgNodeRenderer svgNodeRenderer,
       String length,
       double defaultValue,
-      CraftSvgDrawContext context) {
+      SvgDrawContext context) {
     double percentBaseValue = _calculatePercentBaseValueIfNeeded(
         svgNodeRenderer, context, length, true);
     return parseAbsoluteLength(
         svgNodeRenderer, length, percentBaseValue, defaultValue, context);
   }
 
-  static List<double>? parseViewBox(CraftSvgNodeRenderer svgRenderer) {
+  static List<double>? parseViewBox(SvgNodeRenderer svgRenderer) {
     String? vbString = svgRenderer.getAttribute(SvgAttributes.VIEWBOX);
     vbString ??= svgRenderer.getAttribute(SvgAttributes.VIEWBOX.toLowerCase());
 
@@ -62,7 +62,7 @@ class CraftSvgCssUtils {
     List<String> valueStrings = splitValueList(vbString);
     List<double> doubleValues = [];
     for (String s in valueStrings) {
-      doubleValues.add(CraftCssDimensionParsingUtils.parseAbsoluteLength(s));
+      doubleValues.add(CssDimensionParsingUtils.parseAbsoluteLength(s));
     }
 
     if (doubleValues.length != SvgValues.VIEWBOX_VALUES_NUMBER) {
@@ -78,12 +78,12 @@ class CraftSvgCssUtils {
     return doubleValues;
   }
 
-  static CraftRectangle extractWidthAndHeight(CraftSvgNodeRenderer svgRenderer,
-      double em, CraftSvgDrawContext context) {
+  static Rectangle extractWidthAndHeight(
+      SvgNodeRenderer svgRenderer, double em, SvgDrawContext context) {
     double percentHorizontalBase;
     double percentVerticalBase;
 
-    CraftRectangle? customViewport = context.getCustomViewport();
+    Rectangle? customViewport = context.getCustomViewport();
     if (customViewport == null) {
       List<double>? viewBox = parseViewBox(svgRenderer);
       if (viewBox == null) {
@@ -107,31 +107,31 @@ class CraftSvgCssUtils {
     double finalHeight = _calculateFinalSvgRendererLength(
         heightStr, em, rem, percentVerticalBase);
 
-    return CraftRectangle(0, 0, finalWidth, finalHeight);
+    return Rectangle(0, 0, finalWidth, finalHeight);
   }
 
   static double _calculateFinalSvgRendererLength(
       String? length, double em, double rem, double percentBase) {
     final l = length ?? SvgValues.DEFAULT_WIDTH_AND_HEIGHT_VALUE;
 
-    if (CraftCssTypesValidationUtils.isRemValue(l)) {
-      return CraftCssDimensionParsingUtils.parseRelativeValue(l, rem);
-    } else if (CraftCssTypesValidationUtils.isEmValue(l)) {
-      return CraftCssDimensionParsingUtils.parseRelativeValue(l, em);
-    } else if (CraftCssTypesValidationUtils.isPercentageValue(l)) {
-      return CraftCssDimensionParsingUtils.parseRelativeValue(l, percentBase);
+    if (CssTypesValidationUtils.isRemValue(l)) {
+      return CssDimensionParsingUtils.parseRelativeValue(l, rem);
+    } else if (CssTypesValidationUtils.isEmValue(l)) {
+      return CssDimensionParsingUtils.parseRelativeValue(l, em);
+    } else if (CssTypesValidationUtils.isPercentageValue(l)) {
+      return CssDimensionParsingUtils.parseRelativeValue(l, percentBase);
     } else {
-      return CraftCssDimensionParsingUtils.parseAbsoluteLength(l);
+      return CssDimensionParsingUtils.parseAbsoluteLength(l);
     }
   }
 
   static double _calculatePercentBaseValueIfNeeded(
-      CraftAbstractSvgNodeRenderer svgNodeRenderer,
-      CraftSvgDrawContext context,
+      AbstractSvgNodeRenderer svgNodeRenderer,
+      SvgDrawContext context,
       String length,
       bool isXAxis) {
     double percentBaseValue = 0.0;
-    if (CraftCssTypesValidationUtils.isPercentageValue(length)) {
+    if (CssTypesValidationUtils.isPercentageValue(length)) {
       final viewBox = svgNodeRenderer.getCurrentViewBox(context);
       percentBaseValue = isXAxis ? viewBox.getWidth() : viewBox.getHeight();
     }

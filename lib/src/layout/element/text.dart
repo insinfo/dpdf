@@ -5,11 +5,10 @@ import 'package:dpdf/src/layout/renderer/renderer.dart';
 import 'package:dpdf/src/layout/renderer/text_renderer.dart';
 import 'dart:math' as math;
 
-class CraftText extends CraftAbstractElement<CraftText>
-    implements CraftLeafContent {
+class Text extends AbstractElement<Text> implements LeafContent {
   String text;
 
-  CraftText(this.text);
+  Text(this.text);
 
   String getText() {
     return text;
@@ -20,25 +19,25 @@ class CraftText extends CraftAbstractElement<CraftText>
   }
 
   @override
-  CraftRenderer makeNewRenderer() {
-    return CraftTextRenderer(this, text);
+  Renderer makeNewRenderer() {
+    return TextRenderer(this, text);
   }
 
-  CraftText setTextRise(double textRise) {
-    setProperty(CraftProperty.TEXT_RISE, textRise);
+  Text setTextRise(double textRise) {
+    setProperty(Property.TEXT_RISE, textRise);
     return this;
   }
 
-  CraftText setHorizontalScaling(double scaling) {
-    setProperty(CraftProperty.HORIZONTAL_SCALING, scaling);
+  Text setHorizontalScaling(double scaling) {
+    setProperty(Property.HORIZONTAL_SCALING, scaling);
     return this;
   }
 
-  CraftText setSkew(double alpha, double beta) {
+  Text setSkew(double alpha, double beta) {
     // alpha and beta in degrees
     double alphaRad = math.tan(alpha * math.pi / 180);
     double betaRad = math.tan(beta * math.pi / 180);
-    setProperty(CraftProperty.SKEW, [alphaRad, betaRad]); // Store as list/array
+    setProperty(Property.SKEW, [alphaRad, betaRad]); // Store as list/array
     return this;
   }
 }

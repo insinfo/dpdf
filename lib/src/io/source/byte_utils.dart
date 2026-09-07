@@ -3,8 +3,8 @@ import 'dart:typed_data';
 import 'byte_buffer.dart';
 
 /// Utility class for byte operations, especially for PDF number formatting.
-class CraftByteUtils {
-  CraftByteUtils._();
+class ByteUtils {
+  ByteUtils._();
 
   /// Whether to use high precision for double formatting.
   static bool highPrecision = false;
@@ -52,15 +52,14 @@ class CraftByteUtils {
   }
 
   /// Converts an integer to ISO bytes.
-  static Uint8List getIsoBytesFromInt(int n, [CraftByteBuffer? buffer]) {
+  static Uint8List getIsoBytesFromInt(int n, [ByteBuffer? buffer]) {
     return _deliver(n.toString(), buffer);
   }
 
   /// Writes a decimal PDF token without exponent notation.
   /// Normal precision retains five fractional digits below one and two up to
   /// 32767. Larger magnitudes round to integers, capped at signed 64-bit max.
-  static Uint8List getIsoBytesFromDouble(double value,
-      [CraftByteBuffer? buffer]) {
+  static Uint8List getIsoBytesFromDouble(double value, [ByteBuffer? buffer]) {
     if (value.isNaN) return _deliver('0', buffer);
     final magnitude = value.abs();
     final cutoff = highPrecision ? 0.000001 : 0.000015;
@@ -85,7 +84,7 @@ class CraftByteUtils {
     return _deliver(value.isNegative && text != '0' ? '-$text' : text, buffer);
   }
 
-  static Uint8List _deliver(String text, CraftByteBuffer? destination) {
+  static Uint8List _deliver(String text, ByteBuffer? destination) {
     final bytes = Uint8List.fromList(text.codeUnits);
     if (destination == null) return bytes;
     destination.prependBytes(bytes);

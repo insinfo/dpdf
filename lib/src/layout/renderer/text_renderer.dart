@@ -12,37 +12,36 @@ import 'package:dpdf/src/kernel/font/pdf_font.dart';
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
-class CraftTextRenderer extends CraftAbstractRenderer {
+class TextRenderer extends AbstractRenderer {
   late String text;
-  CraftGlyphLine? line;
+  GlyphLine? line;
 
-  CraftTextRenderer(CraftText textElement, [String text = ""])
-      : super(textElement) {
+  TextRenderer(Text textElement, [String text = ""]) : super(textElement) {
     this.text = text.isEmpty ? textElement.getText() : text;
   }
 
-  CraftTextRenderer.fromTextRenderer(CraftTextRenderer other)
+  TextRenderer.fromTextRenderer(TextRenderer other)
       : super(other.getModelElement()) {
     text = other.text;
     line = other.line;
   }
 
   @override
-  CraftText getModelElement() {
-    return super.getModelElement() as CraftText;
+  Text getModelElement() {
+    return super.getModelElement() as Text;
   }
 
   @override
-  CraftMinMaxWidth? getMinMaxWidth() {
+  MinMaxWidth? getMinMaxWidth() {
     if (line == null) {
-      CraftPdfFont? font = getProperty(CraftProperty.FONT);
+      PdfFont? font = getProperty(Property.FONT);
       if (font != null) {
         line = font.createGlyphLine(text);
       }
     }
-    if (line == null) return CraftMinMaxWidth(0);
+    if (line == null) return MinMaxWidth(0);
 
-    CraftUnitValue? fontSizeVal = getProperty(CraftProperty.FONT_SIZE);
+    UnitValue? fontSizeVal = getProperty(Property.FONT_SIZE);
     double fontSize = fontSizeVal?.getValue() ?? 12.0;
 
     double minW = 0;
@@ -67,25 +66,25 @@ class CraftTextRenderer extends CraftAbstractRenderer {
     }
     if (currentWordW > minW) minW = currentWordW;
 
-    return CraftMinMaxWidth.full(minW, maxW, 0);
+    return MinMaxWidth.full(minW, maxW, 0);
   }
 
   @override
-  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
-    CraftLayoutArea area = layoutContext.getArea();
-    CraftRectangle layoutBox = area.getBBox().clone();
+  LayoutResult? layout(LayoutContext layoutContext) {
+    LayoutArea area = layoutContext.getArea();
+    Rectangle layoutBox = area.getBBox().clone();
 
     // Box model
     double parentWidth = layoutBox.getWidth();
-    double mt = getResolvedProperty(CraftProperty.MARGIN_TOP, parentWidth);
-    double mb = getResolvedProperty(CraftProperty.MARGIN_BOTTOM, parentWidth);
-    double ml = getResolvedProperty(CraftProperty.MARGIN_LEFT, parentWidth);
-    double mr = getResolvedProperty(CraftProperty.MARGIN_RIGHT, parentWidth);
+    double mt = getResolvedProperty(Property.MARGIN_TOP, parentWidth);
+    double mb = getResolvedProperty(Property.MARGIN_BOTTOM, parentWidth);
+    double ml = getResolvedProperty(Property.MARGIN_LEFT, parentWidth);
+    double mr = getResolvedProperty(Property.MARGIN_RIGHT, parentWidth);
 
-    double pt = getResolvedProperty(CraftProperty.PADDING_TOP, parentWidth);
-    double pb = getResolvedProperty(CraftProperty.PADDING_BOTTOM, parentWidth);
-    double pl = getResolvedProperty(CraftProperty.PADDING_LEFT, parentWidth);
-    double pr = getResolvedProperty(CraftProperty.PADDING_RIGHT, parentWidth);
+    double pt = getResolvedProperty(Property.PADDING_TOP, parentWidth);
+    double pb = getResolvedProperty(Property.PADDING_BOTTOM, parentWidth);
+    double pl = getResolvedProperty(Property.PADDING_LEFT, parentWidth);
+    double pr = getResolvedProperty(Property.PADDING_RIGHT, parentWidth);
 
     // Borders simplify (check AbstractRenderer helpers if I added them? no, manual getProperty)
     // For text usually borders are thin.
@@ -97,13 +96,13 @@ class CraftTextRenderer extends CraftAbstractRenderer {
     double topOffset = mt + pt;
     double bottomOffset = mb + pb;
 
-    CraftPdfFont? font = getProperty(CraftProperty.FONT);
-    CraftUnitValue? fontSizeVal = getProperty(CraftProperty.FONT_SIZE);
+    PdfFont? font = getProperty(Property.FONT);
+    UnitValue? fontSizeVal = getProperty(Property.FONT_SIZE);
     double fontSize = fontSizeVal?.getValue() ?? 12.0;
 
     if (font == null) {
-      return CraftTextLayoutResult(
-          CraftLayoutResult.NOTHING, occupiedArea, null, null, this);
+      return TextLayoutResult(
+          LayoutResult.NOTHING, occupiedArea, null, null, this);
     }
 
     line ??= font.createGlyphLine(text);
@@ -134,21 +133,21 @@ class CraftTextRenderer extends CraftAbstractRenderer {
 
     if (splitIndex != -1) {
       if (splitIndex == start) {
-        return CraftTextLayoutResult(
-            CraftLayoutResult.NOTHING, occupiedArea, null, null, this);
+        return TextLayoutResult(
+            LayoutResult.NOTHING, occupiedArea, null, null, this);
       }
 
-      CraftTextRenderer split1 = CraftTextRenderer.fromTextRenderer(this);
-      split1.line = CraftGlyphLine.copySlice(line!, start, splitIndex);
+      TextRenderer split1 = TextRenderer.fromTextRenderer(this);
+      split1.line = GlyphLine.copySlice(line!, start, splitIndex);
       split1.text = split1.line.toString();
 
-      CraftTextRenderer overflow = CraftTextRenderer.fromTextRenderer(this);
-      overflow.line = CraftGlyphLine.copySlice(line!, splitIndex, end);
+      TextRenderer overflow = TextRenderer.fromTextRenderer(this);
+      overflow.line = GlyphLine.copySlice(line!, splitIndex, end);
       overflow.text = overflow.line.toString();
 
-      CraftLayoutArea occupied = CraftLayoutArea(
+      LayoutArea occupied = LayoutArea(
           area.pageOrdinal(),
-          CraftRectangle(
+          Rectangle(
               layoutBox.getX(),
               layoutBox.getY() +
                   layoutBox.getHeight() -
@@ -161,13 +160,12 @@ class CraftTextRenderer extends CraftAbstractRenderer {
       // But draw needs to know where TEXT starts.
       // We start text at x + leftOffset, y - topOffset.
 
-      return CraftTextLayoutResult(
-              CraftLayoutResult.PARTIAL, occupied, split1, overflow)
+      return TextLayoutResult(LayoutResult.PARTIAL, occupied, split1, overflow)
           .setWordHasBeenSplit(wordSplit);
     } else {
-      CraftLayoutArea occupied = CraftLayoutArea(
+      LayoutArea occupied = LayoutArea(
           area.pageOrdinal(),
-          CraftRectangle(
+          Rectangle(
               layoutBox.getX(),
               layoutBox.getY() +
                   layoutBox.getHeight() -
@@ -177,20 +175,19 @@ class CraftTextRenderer extends CraftAbstractRenderer {
               currentLineWidth + leftOffset + rightOffset,
               fontSize + topOffset + bottomOffset));
 
-      return CraftTextLayoutResult(
-          CraftLayoutResult.FULL, occupied, null, null);
+      return TextLayoutResult(LayoutResult.FULL, occupied, null, null);
     }
   }
 
   @override
-  Future<void> draw(CraftDrawContext drawContext) async {
+  Future<void> draw(DrawContext drawContext) async {
     // Draw background/borders first
     await super.draw(drawContext);
 
     if (line == null) return;
 
-    CraftPdfFont? font = getProperty(CraftProperty.FONT);
-    CraftUnitValue? fontSizeVal = getProperty(CraftProperty.FONT_SIZE);
+    PdfFont? font = getProperty(Property.FONT);
+    UnitValue? fontSizeVal = getProperty(Property.FONT_SIZE);
 
     // Calculate content position
     // Occupied area includes margins.
@@ -209,10 +206,10 @@ class CraftTextRenderer extends CraftAbstractRenderer {
       parentWidth = occupiedArea!.getBBox().getWidth();
     }
 
-    double ml = getResolvedProperty(CraftProperty.MARGIN_LEFT, parentWidth);
-    double pl = getResolvedProperty(CraftProperty.PADDING_LEFT, parentWidth);
-    double mb = getResolvedProperty(CraftProperty.MARGIN_BOTTOM, parentWidth);
-    double pb = getResolvedProperty(CraftProperty.PADDING_BOTTOM, parentWidth);
+    double ml = getResolvedProperty(Property.MARGIN_LEFT, parentWidth);
+    double pl = getResolvedProperty(Property.PADDING_LEFT, parentWidth);
+    double mb = getResolvedProperty(Property.MARGIN_BOTTOM, parentWidth);
+    double pb = getResolvedProperty(Property.PADDING_BOTTOM, parentWidth);
 
     double x = (occupiedArea?.getBBox().getX() ?? 0) + ml + pl;
     double y = (occupiedArea?.getBBox().getY() ?? 0) + mb + pb;

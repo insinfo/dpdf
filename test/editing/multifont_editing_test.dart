@@ -14,28 +14,27 @@ import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 Future<Uint8List> source(List<String> contents,
     {String firstBase = 'Courier'}) async {
   final bytes = BytesBuilder();
-  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+  final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(bytes));
   for (var i = 0; i < contents.length; i++) {
     final page = await doc.appendBlankPage();
-    final fonts = CraftPdfDictionary();
+    final fonts = PdfDictionary();
     for (final (name, base, encoding) in [
       ('Body Space', i == 0 ? firstBase : 'Helvetica', 'StandardEncoding'),
       ('Accent', 'Helvetica', 'WinAnsiEncoding'),
     ]) {
       fonts.put(
-          CraftPdfName(name),
-          CraftPdfDictionary()
-            ..put(CraftPdfName.type, CraftPdfName.font)
-            ..put(CraftPdfName.subtype, CraftPdfName('Type1'))
-            ..put(CraftPdfName.baseFont, CraftPdfName(base))
-            ..put(CraftPdfName.encoding, CraftPdfName(encoding)));
+          PdfName(name),
+          PdfDictionary()
+            ..put(PdfName.type, PdfName.font)
+            ..put(PdfName.subtype, PdfName('Type1'))
+            ..put(PdfName.baseFont, PdfName(base))
+            ..put(PdfName.encoding, PdfName(encoding)));
     }
     page.pdfRepresentation()
-      ..put(CraftPdfName.resources,
-          CraftPdfDictionary()..put(CraftPdfName.font, fonts))
+      ..put(PdfName.resources, PdfDictionary()..put(PdfName.font, fonts))
       ..put(
-          CraftPdfName.contents,
-          CraftPdfStream.withBytes(
+          PdfName.contents,
+          PdfStream.withBytes(
               Uint8List.fromList(ascii.encode(contents[i])), 0));
   }
   (await doc.documentDetails()).pdfRepresentation().clear();
@@ -70,7 +69,7 @@ void main() {
               input, [const PdfTextReplacement(1, 'SECRET', 'NEW')])
           : await PdfTextRedaction.remove(
               input, [const PdfTextRemoval(1, 'SECRET')]);
-      final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(output));
+      final doc = await PdfDocument.open(PdfReader.fromBytes(output));
       final page = (await doc.pageAt(1))!;
       expect(
           await PdfTextExtraction.fromPage(page), replace ? 'A NEW Z' : 'A  Z');
@@ -88,10 +87,10 @@ void main() {
       expect(latin1.decode(output), isNot(contains('SECRET')));
       final fonts = await (await page
               .pdfRepresentation()
-              .dictionaryEntry(CraftPdfName.resources))!
-          .dictionaryEntry(CraftPdfName.font);
+              .dictionaryEntry(PdfName.resources))!
+          .dictionaryEntry(PdfName.font);
       expect(fonts!.size(), 2);
-      expect(fonts.containsKey(CraftPdfName('F1')), isTrue);
+      expect(fonts.containsKey(PdfName('F1')), isTrue);
       expect(latin1.decode(output), isNot(contains('Body')));
       await doc.close();
     });
@@ -107,7 +106,7 @@ void main() {
       const PdfTextReplacement(1, 'old', 'ação'),
       const PdfTextReplacement(2, 'old', 'NEW'),
     ]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(output));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(output));
     expect(
         await PdfTextExtraction.fromPage((await doc.pageAt(1))!), 'ação end');
     expect(await PdfTextExtraction.fromPage((await doc.pageAt(2))!), 'NEW Z');
@@ -115,10 +114,10 @@ void main() {
       final page = (await doc.pageAt(n))!;
       final fonts = await (await page
               .pdfRepresentation()
-              .dictionaryEntry(CraftPdfName.resources))!
-          .dictionaryEntry(CraftPdfName.font);
-      final font = (await fonts!.dictionaryEntry(CraftPdfName('F1')))!;
-      expect((await font.nameEntry(CraftPdfName.baseFont))!.getValue(),
+              .dictionaryEntry(PdfName.resources))!
+          .dictionaryEntry(PdfName.font);
+      final font = (await fonts!.dictionaryEntry(PdfName('F1')))!;
+      expect((await font.nameEntry(PdfName.baseFont))!.getValue(),
           n == 1 ? 'Courier' : 'Helvetica');
     }
     await doc.close();
@@ -126,20 +125,19 @@ void main() {
   test('dictionary names round trip escaped delimiters and byte values',
       () async {
     final bytes = BytesBuilder();
-    final document =
-        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+    final document = PdfDocument.create(PdfWriter.fromBytesBuilder(bytes));
     final page = await document.appendBlankPage();
     const key = 'Space #/é';
     const value = 'Value #[]é';
-    page.pdfRepresentation().put(CraftPdfName(key), CraftPdfName(value));
+    page.pdfRepresentation().put(PdfName(key), PdfName(value));
     await document.close();
     final output = bytes.takeBytes();
     expect(latin1.decode(output), contains('/Space#20#23#2F#E9'));
-    final read = await CraftPdfDocument.open(CraftPdfReader.fromBytes(output));
+    final read = await PdfDocument.open(PdfReader.fromBytes(output));
     expect(
         (await (await read.pageAt(1))!
                 .pdfRepresentation()
-                .nameEntry(CraftPdfName(key)))!
+                .nameEntry(PdfName(key)))!
             .getValue(),
         value);
     await read.close();

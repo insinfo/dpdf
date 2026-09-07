@@ -1,11 +1,11 @@
 import 'gf_256.dart';
 
 /// Appends systematic QR error-correction symbols using a feedback register.
-class CraftReedSolomonEncoder {
-  final CraftGF256 _field;
+class ReedSolomonEncoder {
+  final GF256 _field;
 
-  CraftReedSolomonEncoder(this._field) {
-    if (!identical(_field, CraftGF256.QR_CODE_FIELD)) {
+  ReedSolomonEncoder(this._field) {
+    if (!identical(_field, GF256.QR_CODE_FIELD)) {
       throw ArgumentError('QR parity requires the field with modulus 0x11d.');
     }
   }

@@ -24,12 +24,11 @@ void main() {
       4001002: '||iv|i|ii',
     };
     for (final entry in cases.entries) {
-      expect(CraftRomanNumbering.toRomanLowerCase(entry.key), entry.value);
-      expect(CraftRomanNumbering.toRoman(entry.key, true),
-          entry.value.toUpperCase());
+      expect(RomanNumbering.toRomanLowerCase(entry.key), entry.value);
+      expect(
+          RomanNumbering.toRoman(entry.key, true), entry.value.toUpperCase());
       if (entry.key != 0) {
-        expect(CraftRomanNumbering.toRomanLowerCase(-entry.key),
-            '-${entry.value}');
+        expect(RomanNumbering.toRomanLowerCase(-entry.key), '-${entry.value}');
       }
     }
   });
@@ -45,7 +44,7 @@ void main() {
       'm': 1000
     };
     for (var number = 1; number < 4000; number++) {
-      final label = CraftRomanNumbering.toRomanLowerCase(number);
+      final label = RomanNumbering.toRomanLowerCase(number);
       var decoded = 0;
       for (var index = 0; index < label.length; index++) {
         final value = values[label[index]]!;
@@ -59,7 +58,7 @@ void main() {
   test('Roman minimum machine integer avoids signed magnitude overflow', () {
     final minimum = int.tryParse('-9223372036854775808');
     if (minimum != null) {
-      final label = CraftRomanNumbering.toRomanLowerCase(minimum);
+      final label = RomanNumbering.toRomanLowerCase(minimum);
       expect(label, startsWith('-|'));
       expect(label, endsWith('dcccviii'));
       expect(label.substring(1), isNot(contains('-')));
@@ -79,36 +78,29 @@ void main() {
       601: 'ααα'
     };
     for (final entry in cases.entries) {
-      expect(
-          CraftGreekAlphabetNumbering.toGreekAlphabetNumberLowerCase(entry.key),
+      expect(GreekAlphabetNumbering.toGreekAlphabetNumberLowerCase(entry.key),
           entry.value);
-      expect(
-          CraftGreekAlphabetNumbering.toGreekAlphabetNumberUpperCase(entry.key),
+      expect(GreekAlphabetNumbering.toGreekAlphabetNumberUpperCase(entry.key),
           entry.value.toUpperCase());
     }
     const symbol = 'abgdezhqiklmnxoprstufcyw';
     for (var number = 1; number <= 24; number++) {
-      expect(
-          CraftGreekAlphabetNumbering.toGreekAlphabetNumber(
-              number, false, true),
+      expect(GreekAlphabetNumbering.toGreekAlphabetNumber(number, false, true),
           symbol[number - 1]);
-      expect(
-          CraftGreekAlphabetNumbering.toGreekAlphabetNumber(number, true, true),
+      expect(GreekAlphabetNumbering.toGreekAlphabetNumber(number, true, true),
           symbol[number - 1].toUpperCase());
     }
-    expect(CraftGreekAlphabetNumbering.toGreekAlphabetNumber(601, false, true),
-        'aaa');
+    expect(
+        GreekAlphabetNumbering.toGreekAlphabetNumber(601, false, true), 'aaa');
   });
 
   test('Greek rejects zero and negative ordinals', () {
     for (final number in [0, -1, -100]) {
-      expect(
-          () =>
-              CraftGreekAlphabetNumbering.toGreekAlphabetNumber(number, false),
+      expect(() => GreekAlphabetNumbering.toGreekAlphabetNumber(number, false),
           throwsRangeError);
       expect(
-          () => CraftGreekAlphabetNumbering.toGreekAlphabetNumber(
-              number, true, true),
+          () =>
+              GreekAlphabetNumbering.toGreekAlphabetNumber(number, true, true),
           throwsRangeError);
     }
   });

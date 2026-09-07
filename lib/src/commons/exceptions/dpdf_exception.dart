@@ -19,14 +19,14 @@ class DpdfException implements Exception {
 }
 
 /// Several failures reported together while retaining each individual error.
-class CraftAggregatedException extends DpdfException {
+class AggregatedException extends DpdfException {
   final List<Exception> innerExceptions;
 
-  CraftAggregatedException(super.message, this.innerExceptions, [super.cause]);
+  AggregatedException(super.message, this.innerExceptions, [super.cause]);
 
-  factory CraftAggregatedException.fromExceptions(
+  factory AggregatedException.fromExceptions(
           String message, List<Exception> exceptions) =>
-      CraftAggregatedException(message, exceptions);
+      AggregatedException(message, exceptions);
 
   @override
   String toString() {

@@ -13,17 +13,17 @@ void main() {
   group('BarcodeEAN Tests', () {
     test('BarcodeEAN13 Basic Test', () async {
       final file = File('test/tmp/barcode_ean13_test.pdf');
-      final writer = CraftPdfWriter(file.openWrite());
-      final pdf = CraftPdfDocument.create(writer);
+      final writer = PdfWriter(file.openWrite());
+      final pdf = PdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
-      final canvas = await CraftPdfCanvas.fromPage(page);
+      final canvas = await PdfCanvas.fromPage(page);
 
-      final barcode = CraftBarcodeEAN(pdf);
-      barcode.setCodeType(CraftBarcodeEAN.EAN13);
+      final barcode = BarcodeEAN(pdf);
+      barcode.setCodeType(BarcodeEAN.EAN13);
       barcode.setCode("9780201615963"); // Typical EAN13
 
-      final rect = await barcode.placeBarcode(
-          canvas, CraftDeviceGray(0), CraftDeviceGray(0));
+      final rect =
+          await barcode.placeBarcode(canvas, DeviceGray(0), DeviceGray(0));
 
       expect(rect.getWidth(), greaterThan(0));
       // Add text label manually just to check position
@@ -40,17 +40,17 @@ void main() {
 
     test('BarcodeEAN8 Basic Test', () async {
       final file = File('test/tmp/barcode_ean8_test.pdf');
-      final writer = CraftPdfWriter(file.openWrite());
-      final pdf = CraftPdfDocument.create(writer);
+      final writer = PdfWriter(file.openWrite());
+      final pdf = PdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
-      final canvas = await CraftPdfCanvas.fromPage(page);
+      final canvas = await PdfCanvas.fromPage(page);
 
-      final barcode = CraftBarcodeEAN(pdf);
-      barcode.setCodeType(CraftBarcodeEAN.EAN8);
+      final barcode = BarcodeEAN(pdf);
+      barcode.setCodeType(BarcodeEAN.EAN8);
       barcode.setCode("12345670"); // Typical EAN8
 
-      final rect = await barcode.placeBarcode(
-          canvas, CraftDeviceGray(0), CraftDeviceGray(0));
+      final rect =
+          await barcode.placeBarcode(canvas, DeviceGray(0), DeviceGray(0));
 
       expect(rect.getWidth(), greaterThan(0));
       await pdf.close();

@@ -8,7 +8,7 @@ import 'pdf_primitive_object.dart';
 ///
 /// PDF strings can be literal strings (in parentheses) or
 /// hexadecimal strings (in angle brackets).
-class CraftPdfString extends CraftPdfPrimitiveObject {
+class PdfString extends PdfPrimitiveObject {
   /// The raw value bytes.
   Uint8List? _value;
 
@@ -22,13 +22,13 @@ class CraftPdfString extends CraftPdfPrimitiveObject {
   String? _encoding;
 
   /// Creates a PdfString from a String.
-  CraftPdfString(String value) {
+  PdfString(String value) {
     _decodedValue = value;
     _value = latin1.encode(value);
   }
 
   /// Creates a PdfString from bytes.
-  CraftPdfString.fromBytes(Uint8List value, [bool hexWriting = false]) {
+  PdfString.fromBytes(Uint8List value, [bool hexWriting = false]) {
     _value = value;
     _hexWriting = hexWriting;
     setContent(
@@ -36,7 +36,7 @@ class CraftPdfString extends CraftPdfPrimitiveObject {
   }
 
   /// Creates an empty PdfString.
-  CraftPdfString.empty() {
+  PdfString.empty() {
     _value = Uint8List(0);
     setContent(_value);
   }
@@ -45,8 +45,8 @@ class CraftPdfString extends CraftPdfPrimitiveObject {
   int objectKind() => PdfObjectType.string;
 
   @override
-  CraftPdfObject clone() {
-    final cloned = CraftPdfString.fromBytes(
+  PdfObject clone() {
+    final cloned = PdfString.fromBytes(
       Uint8List.fromList(_value ?? []),
       _hexWriting,
     );
@@ -56,8 +56,8 @@ class CraftPdfString extends CraftPdfPrimitiveObject {
   }
 
   @override
-  CraftPdfObject newInstance() {
-    return CraftPdfString.empty();
+  PdfObject newInstance() {
+    return PdfString.empty();
   }
 
   /// Gets the raw value bytes.
@@ -82,7 +82,7 @@ class CraftPdfString extends CraftPdfPrimitiveObject {
   bool isHexWriting() => _hexWriting;
 
   /// Sets hex writing mode.
-  CraftPdfString setHexWriting(bool hexWriting) {
+  PdfString setHexWriting(bool hexWriting) {
     _hexWriting = hexWriting;
     return this;
   }
@@ -185,7 +185,7 @@ class CraftPdfString extends CraftPdfPrimitiveObject {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! CraftPdfString) return false;
+    if (other is! PdfString) return false;
     return getValue() == other.getValue();
   }
 

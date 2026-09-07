@@ -15,8 +15,7 @@ import 'pdf_widget_annotation.dart';
 /// This is a super class for the annotation dictionary wrappers.
 /// Derived classes represent different standard types of annotations.
 /// See ISO-320001 12.5.6, "Annotation Types."
-abstract class CraftPdfAnnotation
-    extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+abstract class PdfAnnotation extends PdfObjectWrapper<PdfDictionary> {
   // Annotation flags
   static const int invisible = 1;
   static const int hidden = 2;
@@ -30,33 +29,32 @@ abstract class CraftPdfAnnotation
   static const int lockedContents = 512;
 
   // Highlight modes
-  static final CraftPdfName highlightNone = CraftPdfName.n;
-  static final CraftPdfName highlightInvert = CraftPdfName.i;
-  static final CraftPdfName highlightOutline = CraftPdfName.o;
-  static final CraftPdfName highlightPush = CraftPdfName.p;
-  static final CraftPdfName highlightToggle = CraftPdfName.t;
+  static final PdfName highlightNone = PdfName.n;
+  static final PdfName highlightInvert = PdfName.i;
+  static final PdfName highlightOutline = PdfName.o;
+  static final PdfName highlightPush = PdfName.p;
+  static final PdfName highlightToggle = PdfName.t;
 
   // Border styles
-  static final CraftPdfName styleSolid = CraftPdfName.s;
-  static final CraftPdfName styleDashed = CraftPdfName.d;
-  static final CraftPdfName styleBeveled = CraftPdfName.b;
-  static final CraftPdfName styleInset = CraftPdfName.i;
-  static final CraftPdfName styleUnderline = CraftPdfName.u;
+  static final PdfName styleSolid = PdfName.s;
+  static final PdfName styleDashed = PdfName.d;
+  static final PdfName styleBeveled = PdfName.b;
+  static final PdfName styleInset = PdfName.i;
+  static final PdfName styleUnderline = PdfName.u;
 
-  CraftPdfPage? _page;
+  PdfPage? _page;
 
-  CraftPdfAnnotation(CraftPdfDictionary pdfObject) : super(pdfObject) {
+  PdfAnnotation(PdfDictionary pdfObject) : super(pdfObject) {
     if (requiresIndirectStorage()) {
-      CraftPdfObjectWrapper.markObjectAsIndirect(pdfRepresentation());
+      PdfObjectWrapper.markObjectAsIndirect(pdfRepresentation());
     }
   }
 
-  CraftPdfAnnotation.fromRect(CraftRectangle rect)
-      : super(CraftPdfDictionary()) {
-    put(CraftPdfName.rect, CraftPdfArray.fromRectangle(rect));
+  PdfAnnotation.fromRect(Rectangle rect) : super(PdfDictionary()) {
+    put(PdfName.rect, PdfArray.fromRectangle(rect));
     // subtype set by subclass
     if (requiresIndirectStorage()) {
-      CraftPdfObjectWrapper.markObjectAsIndirect(pdfRepresentation());
+      PdfObjectWrapper.markObjectAsIndirect(pdfRepresentation());
     }
   }
 
@@ -66,19 +64,18 @@ abstract class CraftPdfAnnotation
   }
 
   /// Factory method that creates the type specific [PdfAnnotation]
-  static Future<CraftPdfAnnotation?> makeAnnotation(
-      CraftPdfObject pdfObject) async {
-    CraftPdfObject? direct = pdfObject;
+  static Future<PdfAnnotation?> makeAnnotation(PdfObject pdfObject) async {
+    PdfObject? direct = pdfObject;
     if (pdfObject.isIndirectReference()) {
-      direct = await (pdfObject as CraftPdfIndirectReference).targetObject();
+      direct = await (pdfObject as PdfIndirectReference).targetObject();
     }
 
     if (direct != null && direct.isDictionary()) {
-      final dictionary = direct as CraftPdfDictionary;
-      final subtype = await dictionary.nameEntry(CraftPdfName.subtype);
+      final dictionary = direct as PdfDictionary;
+      final subtype = await dictionary.nameEntry(PdfName.subtype);
 
-      if (CraftPdfName.widget == subtype) {
-        return CraftPdfWidgetAnnotation(dictionary);
+      if (PdfName.widget == subtype) {
+        return PdfWidgetAnnotation(dictionary);
       }
 
       return PdfUnknownAnnotation(dictionary);
@@ -86,27 +83,26 @@ abstract class CraftPdfAnnotation
     return null;
   }
 
-  CraftPdfName getSubtype();
+  PdfName getSubtype();
 
-  Future<CraftPdfString?> getContents() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName.contents);
+  Future<PdfString?> getContents() async {
+    return await pdfRepresentation().stringEntry(PdfName.contents);
   }
 
-  CraftPdfAnnotation setContents(CraftPdfString contents) {
-    put(CraftPdfName.contents, contents);
+  PdfAnnotation setContents(PdfString contents) {
+    put(PdfName.contents, contents);
     return this;
   }
 
-  CraftPdfAnnotation setContentsString(String contents) {
-    return setContents(CraftPdfString(contents));
+  PdfAnnotation setContentsString(String contents) {
+    return setContents(PdfString(contents));
   }
 
-  Future<CraftPdfDictionary?> getPageObject() async {
-    return await pdfRepresentation()
-        .dictionaryEntry(CraftPdfName.p); // P for Page
+  Future<PdfDictionary?> getPageObject() async {
+    return await pdfRepresentation().dictionaryEntry(PdfName.p); // P for Page
   }
 
-  Future<CraftPdfPage?> pageAt() async {
+  Future<PdfPage?> pageAt() async {
     if (_page == null) {
       final ref = pdfRepresentation().indirectHandle();
       if (ref != null) {
@@ -121,31 +117,31 @@ abstract class CraftPdfAnnotation
     return _page;
   }
 
-  CraftPdfAnnotation setPage(CraftPdfPage page) {
+  PdfAnnotation setPage(PdfPage page) {
     _page = page;
-    put(CraftPdfName.p, page.pdfRepresentation().indirectHandle()!);
+    put(PdfName.p, page.pdfRepresentation().indirectHandle()!);
     return this;
   }
 
-  Future<CraftPdfAnnotation> setFlag(int flag) async {
+  Future<PdfAnnotation> setFlag(int flag) async {
     int flags = await getFlags();
     flags |= flag;
     return setFlags(flags);
   }
 
-  Future<CraftPdfAnnotation> resetFlag(int flag) async {
+  Future<PdfAnnotation> resetFlag(int flag) async {
     int flags = await getFlags();
     flags &= ~flag;
     return setFlags(flags);
   }
 
-  CraftPdfAnnotation setFlags(int flags) {
-    put(CraftPdfName.f, CraftPdfNumber.fromInt(flags));
+  PdfAnnotation setFlags(int flags) {
+    put(PdfName.f, PdfNumber.fromInt(flags));
     return this;
   }
 
   Future<int> getFlags() async {
-    final f = await pdfRepresentation().numberEntry(CraftPdfName.f);
+    final f = await pdfRepresentation().numberEntry(PdfName.f);
     return f?.intValue() ?? 0;
   }
 
@@ -155,40 +151,40 @@ abstract class CraftPdfAnnotation
     return (flags & flag) != 0;
   }
 
-  CraftPdfAnnotation put(CraftPdfName key, CraftPdfObject value) {
+  PdfAnnotation put(PdfName key, PdfObject value) {
     pdfRepresentation().put(key, value);
     return this;
   }
 
-  Future<CraftPdfDictionary?> getAppearanceDictionary() =>
-      pdfRepresentation().dictionaryEntry(CraftPdfName.ap);
+  Future<PdfDictionary?> getAppearanceDictionary() =>
+      pdfRepresentation().dictionaryEntry(PdfName.ap);
 
-  Future<CraftPdfStream?> getNormalAppearanceObject() async {
-    CraftPdfDictionary? ap = await getAppearanceDictionary();
+  Future<PdfStream?> getNormalAppearanceObject() async {
+    PdfDictionary? ap = await getAppearanceDictionary();
     if (ap == null) return null;
 
-    CraftPdfObject? n = await ap.get(CraftPdfName.n);
+    PdfObject? n = await ap.get(PdfName.n);
     if (n == null) return null;
 
     if (n.isStream()) {
-      return n as CraftPdfStream;
+      return n as PdfStream;
     }
 
     if (n.isDictionary()) {
-      CraftPdfName? as = await pdfRepresentation().nameEntry(CraftPdfName.as);
-      as ??= CraftPdfName.intern("Off");
-      CraftPdfStream? stream = await (n as CraftPdfDictionary).streamEntry(as);
+      PdfName? as = await pdfRepresentation().nameEntry(PdfName.as);
+      as ??= PdfName.intern("Off");
+      PdfStream? stream = await (n as PdfDictionary).streamEntry(as);
       return stream;
     }
     return null;
   }
 }
 
-class PdfUnknownAnnotation extends CraftPdfAnnotation {
+class PdfUnknownAnnotation extends PdfAnnotation {
   PdfUnknownAnnotation(super.pdfObject);
 
   @override
-  CraftPdfName getSubtype() {
-    return CraftPdfName.intern("Unknown");
+  PdfName getSubtype() {
+    return PdfName.intern("Unknown");
   }
 }

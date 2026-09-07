@@ -10,24 +10,24 @@ import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 /// local passa a ser o canto superior esquerdo do [viewport] e todo o resto
 /// da árvore trabalha em coordenadas locais — por isso o viewport empilhado
 /// no contexto é ancorado em (0,0), e não na posição de página.
-class CraftPdfRootSvgNodeRenderer implements CraftSvgNodeRenderer {
-  final CraftSvgNodeRenderer subTreeRoot;
+class PdfRootSvgNodeRenderer implements SvgNodeRenderer {
+  final SvgNodeRenderer subTreeRoot;
 
   /// Área da página, em pontos, que o SVG vai ocupar.
-  final CraftRectangle viewport;
+  final Rectangle viewport;
 
-  CraftPdfRootSvgNodeRenderer(this.subTreeRoot, this.viewport) {
+  PdfRootSvgNodeRenderer(this.subTreeRoot, this.viewport) {
     subTreeRoot.setParent(this);
   }
 
   @override
-  Future<void> draw(CraftSvgDrawContext context) async {
+  Future<void> draw(SvgDrawContext context) async {
     final canvas = context.getCurrentCanvas();
     canvas.saveState();
     canvas.concatMatrix(
         1, 0, 0, -1, viewport.getX(), viewport.getY() + viewport.getHeight());
     context.addViewPort(
-        CraftRectangle(0, 0, viewport.getWidth(), viewport.getHeight()));
+        Rectangle(0, 0, viewport.getWidth(), viewport.getHeight()));
     try {
       await subTreeRoot.draw(context);
     } finally {
@@ -37,12 +37,12 @@ class CraftPdfRootSvgNodeRenderer implements CraftSvgNodeRenderer {
   }
 
   @override
-  CraftSvgNodeRenderer? getParent() => null;
+  SvgNodeRenderer? getParent() => null;
 
   /// A raiz não tem pai; a chamada é ignorada em vez de lançar, porque a
   /// interface é usada uniformemente por quem monta a árvore.
   @override
-  void setParent(CraftSvgNodeRenderer? parent) {}
+  void setParent(SvgNodeRenderer? parent) {}
 
   @override
   String? getAttribute(String key) => null;
@@ -57,9 +57,9 @@ class CraftPdfRootSvgNodeRenderer implements CraftSvgNodeRenderer {
   Map<String, String> getAttributeMapCopy() => <String, String>{};
 
   @override
-  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context) => null;
+  Rectangle? getObjectBoundingBox(SvgDrawContext context) => null;
 
   @override
-  CraftSvgNodeRenderer createDeepCopy() =>
-      CraftPdfRootSvgNodeRenderer(subTreeRoot.createDeepCopy(), viewport);
+  SvgNodeRenderer createDeepCopy() =>
+      PdfRootSvgNodeRenderer(subTreeRoot.createDeepCopy(), viewport);
 }

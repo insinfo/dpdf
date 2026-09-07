@@ -25,23 +25,23 @@ const program = '''begincmap
 1 beginbfrange <0003> <0004> <4E00> endbfrange
 endcmap''';
 
-class Sources implements CraftCMapLocation {
+class Sources implements CMapLocation {
   final Map<String, String> programs;
   int reads = 0;
   Completer<void>? gate;
   Sources(this.programs);
   @override
-  Future<CraftPdfTokenizer> getLocation(String location) async {
+  Future<PdfTokenizer> getLocation(String location) async {
     await gate?.future;
     return getLocationSync(location);
   }
 
   @override
-  CraftPdfTokenizer getLocationSync(String location) {
+  PdfTokenizer getLocationSync(String location) {
     reads++;
     final value = programs[location];
     if (value == null) throw StateError('Missing fixture $location');
-    return CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes(value)));
+    return PdfTokenizer(RandomAccessFileOrArray(bytes(value)));
   }
 }
 
@@ -134,43 +134,42 @@ void main() {
   });
   test('Composite font resolves indirect encoding and Unicode streams',
       () async {
-    final document = CraftPdfDocument.create(
-        CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
-    final encoding = CraftPdfStream.withBytes(
+    final document =
+        PdfDocument.create(PdfWriter.fromBytesBuilder(BytesBuilder()));
+    final encoding = PdfStream.withBytes(
         bytes(
             '1 begincodespacerange <00> <FF> endcodespacerange 1 begincidchar <01> 9 endcidchar'),
         0)
       ..attachToDocument(document);
-    final unicode = CraftPdfStream.withBytes(
-        bytes('1 beginbfchar <01> <0041> endbfchar'), 0)
-      ..attachToDocument(document);
-    final dictionary = CraftPdfDictionary()
-      ..put(CraftPdfName.encoding, encoding.indirectHandle()!)
-      ..put(CraftPdfName.toUnicode, unicode.indirectHandle()!);
-    final font = CraftPdfType0Font.fromDictionary(dictionary);
+    final unicode =
+        PdfStream.withBytes(bytes('1 beginbfchar <01> <0041> endbfchar'), 0)
+          ..attachToDocument(document);
+    final dictionary = PdfDictionary()
+      ..put(PdfName.encoding, encoding.indirectHandle()!)
+      ..put(PdfName.toUnicode, unicode.indirectHandle()!);
+    final font = PdfType0Font.fromDictionary(dictionary);
     await font.initFromDictionary(dictionary);
-    expect(font.decode(CraftPdfString.fromBytes(Uint8List.fromList([1]))), 'A');
+    expect(font.decode(PdfString.fromBytes(Uint8List.fromList([1]))), 'A');
   });
   test('Composite font uses original character bytes for ToUnicode', () {
-    final font = CraftPdfType0Font.fromDictionary(CraftPdfDictionary())
-      ..cmapEncoding = CraftCMapEncoding.fromBytes('fixture', bytes('''
+    final font = PdfType0Font.fromDictionary(PdfDictionary())
+      ..cmapEncoding = CMapEncoding.fromBytes('fixture', bytes('''
 1 begincodespacerange <00> <FF> endcodespacerange
 1 begincidchar <01> 9 endcidchar'''))
       ..toUnicode = (UnicodeCodeMap()
         ..setMapping(1, 'source')
         ..setMapping(9, 'wrong'));
-    expect(font.decode(CraftPdfString.fromBytes(Uint8List.fromList([1]))),
-        'source');
+    expect(font.decode(PdfString.fromBytes(Uint8List.fromList([1]))), 'source');
   });
   test(
       'Composite font keeps CID replacement sequences and rejects truncated codes',
       () {
-    final font = CraftPdfType0Font.fromDictionary(CraftPdfDictionary())
-      ..cmapEncoding = CraftCMapEncoding('Identity-H')
+    final font = PdfType0Font.fromDictionary(PdfDictionary())
+      ..cmapEncoding = CMapEncoding('Identity-H')
       ..cid2unicode = CidUnicodeTable.fromMappings({1: '😀fi'});
-    expect(font.decode(CraftPdfString.fromBytes(Uint8List.fromList([0, 1]))),
-        '😀fi');
-    expect(() => font.decode(CraftPdfString.fromBytes(Uint8List.fromList([0]))),
+    expect(
+        font.decode(PdfString.fromBytes(Uint8List.fromList([0, 1]))), '😀fi');
+    expect(() => font.decode(PdfString.fromBytes(Uint8List.fromList([0]))),
         throwsFormatException);
   });
 }

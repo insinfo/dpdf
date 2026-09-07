@@ -5,36 +5,36 @@ import 'pdf_stream.dart';
 import 'pdf_object_wrapper.dart';
 
 /// Represents a PDF Output Intent.
-class CraftPdfOutputIntent extends CraftPdfObjectWrapper<CraftPdfDictionary> {
-  CraftPdfOutputIntent(CraftPdfDictionary pdfObject) : super(pdfObject);
+class PdfOutputIntent extends PdfObjectWrapper<PdfDictionary> {
+  PdfOutputIntent(PdfDictionary pdfObject) : super(pdfObject);
 
-  factory CraftPdfOutputIntent.create(
+  factory PdfOutputIntent.create(
     String outputConditionIdentifier,
     String? outputCondition,
     String? registryName,
     String? info,
-    CraftPdfStream? destOutputProfile,
+    PdfStream? destOutputProfile,
   ) {
-    final dict = CraftPdfDictionary();
-    dict.put(CraftPdfName.type, CraftPdfName.outputIntent);
-    dict.put(CraftPdfName.s, CraftPdfName.gts_pdfa1);
-    dict.put(CraftPdfName.outputConditionIdentifier,
-        CraftPdfString(outputConditionIdentifier));
+    final dict = PdfDictionary();
+    dict.put(PdfName.type, PdfName.outputIntent);
+    dict.put(PdfName.s, PdfName.gts_pdfa1);
+    dict.put(PdfName.outputConditionIdentifier,
+        PdfString(outputConditionIdentifier));
 
     if (outputCondition != null) {
-      dict.put(CraftPdfName.outputCondition, CraftPdfString(outputCondition));
+      dict.put(PdfName.outputCondition, PdfString(outputCondition));
     }
     if (registryName != null) {
-      dict.put(CraftPdfName.registryName, CraftPdfString(registryName));
+      dict.put(PdfName.registryName, PdfString(registryName));
     }
     if (info != null) {
-      dict.put(CraftPdfName.intern('Info'), CraftPdfString(info));
+      dict.put(PdfName.intern('Info'), PdfString(info));
     }
     if (destOutputProfile != null) {
-      dict.put(CraftPdfName.destOutputProfile, destOutputProfile);
+      dict.put(PdfName.destOutputProfile, destOutputProfile);
     }
 
-    return CraftPdfOutputIntent(dict);
+    return PdfOutputIntent(dict);
   }
 
   @override

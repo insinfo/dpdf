@@ -23,25 +23,25 @@ import 'package:dpdf/src/layout/renderer/line_renderer.dart';
 import 'package:dpdf/src/layout/renderer/list_item_renderer.dart';
 import 'package:dpdf/src/layout/renderer/text_renderer.dart';
 
-class CraftListRenderer extends CraftBlockRenderer {
-  CraftListRenderer(elements.CraftList super.modelElement);
+class ListRenderer extends BlockRenderer {
+  ListRenderer(elements.PdfList super.modelElement);
 
   @override
-  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
-    CraftLayoutResult? errorResult = _initializeListSymbols(layoutContext);
+  LayoutResult? layout(LayoutContext layoutContext) {
+    LayoutResult? errorResult = _initializeListSymbols(layoutContext);
     if (errorResult != null) {
       return errorResult;
     }
-    CraftLayoutResult? result = super.layout(layoutContext);
+    LayoutResult? result = super.layout(layoutContext);
     if (result == null) return null;
 
     // cannot place even the first ListItemRenderer
-    if (true == getPropertyAsBoolean(CraftProperty.FORCED_PLACEMENT) &&
+    if (true == getPropertyAsBoolean(Property.FORCED_PLACEMENT) &&
         result.getCauseOfNothing() != null) {
-      if (CraftLayoutResult.FULL == result.getStatus()) {
+      if (LayoutResult.FULL == result.getStatus()) {
         result = _correctListSplitting(
             this, null, result.getCauseOfNothing()!, result.getOccupiedArea()!);
-      } else if (CraftLayoutResult.PARTIAL == result.getStatus()) {
+      } else if (LayoutResult.PARTIAL == result.getStatus()) {
         result = _correctListSplitting(
             result.getSplitRenderer()!,
             result.getOverflowRenderer(),
@@ -53,160 +53,153 @@ class CraftListRenderer extends CraftBlockRenderer {
   }
 
   @override
-  CraftRenderer getNextRenderer() {
-    return CraftListRenderer(modelElement as elements.CraftList);
+  Renderer getNextRenderer() {
+    return ListRenderer(modelElement as elements.PdfList);
   }
 
   @override
-  CraftAbstractRenderer createSplitRenderer(int layoutResult) {
-    CraftAbstractRenderer splitRenderer =
-        super.createSplitRenderer(layoutResult);
+  AbstractRenderer createSplitRenderer(int layoutResult) {
+    AbstractRenderer splitRenderer = super.createSplitRenderer(layoutResult);
     splitRenderer.addAllProperties(getOwnProperties());
-    splitRenderer.setProperty(CraftProperty.LIST_SYMBOLS_INITIALIZED, true);
+    splitRenderer.setProperty(Property.LIST_SYMBOLS_INITIALIZED, true);
     return splitRenderer;
   }
 
   @override
-  CraftAbstractRenderer createOverflowRenderer(int layoutResult) {
-    CraftAbstractRenderer overflowRenderer =
+  AbstractRenderer createOverflowRenderer(int layoutResult) {
+    AbstractRenderer overflowRenderer =
         super.createOverflowRenderer(layoutResult);
     overflowRenderer.addAllProperties(getOwnProperties());
-    overflowRenderer.setProperty(CraftProperty.LIST_SYMBOLS_INITIALIZED, true);
+    overflowRenderer.setProperty(Property.LIST_SYMBOLS_INITIALIZED, true);
     return overflowRenderer;
   }
 
-  CraftRenderer? makeListSymbolRenderer(int index, CraftRenderer renderer) {
-    CraftRenderer? symbolRenderer = _createListSymbolRenderer(index, renderer);
+  Renderer? makeListSymbolRenderer(int index, Renderer renderer) {
+    Renderer? symbolRenderer = _createListSymbolRenderer(index, renderer);
     if (symbolRenderer != null) {
-      symbolRenderer.setProperty(CraftProperty.UNDERLINE, false);
+      symbolRenderer.setProperty(Property.UNDERLINE, false);
     }
     return symbolRenderer;
   }
 
   static Object? getListItemOrListProperty(
-      CraftRenderer listItem, CraftRenderer list, int propertyId) {
+      Renderer listItem, Renderer list, int propertyId) {
     return listItem.hasProperty(propertyId)
         ? listItem.getProperty<Object>(propertyId)
         : list.getProperty<Object>(propertyId);
   }
 
-  CraftRenderer? _createListSymbolRenderer(int index, CraftRenderer renderer) {
+  Renderer? _createListSymbolRenderer(int index, Renderer renderer) {
     Object? defaultListSymbol =
-        getListItemOrListProperty(renderer, this, CraftProperty.LIST_SYMBOL);
-    if (defaultListSymbol is CraftText) {
-      return _surroundTextBullet(CraftTextRenderer(defaultListSymbol));
-    } else if (defaultListSymbol is CraftListNumberingType) {
-      CraftListNumberingType numberingType = defaultListSymbol;
+        getListItemOrListProperty(renderer, this, Property.LIST_SYMBOL);
+    if (defaultListSymbol is Text) {
+      return _surroundTextBullet(TextRenderer(defaultListSymbol));
+    } else if (defaultListSymbol is ListNumberingType) {
+      ListNumberingType numberingType = defaultListSymbol;
       String numberText;
       switch (numberingType) {
-        case CraftListNumberingType.DECIMAL:
+        case ListNumberingType.DECIMAL:
           numberText = index.toString();
           break;
-        case CraftListNumberingType.DECIMAL_LEADING_ZERO:
+        case ListNumberingType.DECIMAL_LEADING_ZERO:
           numberText = (index < 10 ? "0" : "") + index.toString();
           break;
-        case CraftListNumberingType.ROMAN_LOWER:
-          numberText = CraftRomanNumbering.toRomanLowerCase(index);
+        case ListNumberingType.ROMAN_LOWER:
+          numberText = RomanNumbering.toRomanLowerCase(index);
           break;
-        case CraftListNumberingType.ROMAN_UPPER:
-          numberText = CraftRomanNumbering.toRomanUpperCase(index);
+        case ListNumberingType.ROMAN_UPPER:
+          numberText = RomanNumbering.toRomanUpperCase(index);
           break;
-        case CraftListNumberingType.ENGLISH_LOWER:
+        case ListNumberingType.ENGLISH_LOWER:
           numberText =
-              CraftEnglishAlphabetNumbering.toLatinAlphabetNumberLowerCase(
-                  index);
+              EnglishAlphabetNumbering.toLatinAlphabetNumberLowerCase(index);
           break;
-        case CraftListNumberingType.ENGLISH_UPPER:
+        case ListNumberingType.ENGLISH_UPPER:
           numberText =
-              CraftEnglishAlphabetNumbering.toLatinAlphabetNumberUpperCase(
-                  index);
+              EnglishAlphabetNumbering.toLatinAlphabetNumberUpperCase(index);
           break;
-        case CraftListNumberingType.GREEK_LOWER:
-          numberText = CraftGreekAlphabetNumbering.toGreekAlphabetNumber(
-              index, false, true);
+        case ListNumberingType.GREEK_LOWER:
+          numberText =
+              GreekAlphabetNumbering.toGreekAlphabetNumber(index, false, true);
           break;
-        case CraftListNumberingType.GREEK_UPPER:
-          numberText = CraftGreekAlphabetNumbering.toGreekAlphabetNumber(
-              index, true, true);
+        case ListNumberingType.GREEK_UPPER:
+          numberText =
+              GreekAlphabetNumbering.toGreekAlphabetNumber(index, true, true);
           break;
-        case CraftListNumberingType.ZAPF_DINGBATS_1:
+        case ListNumberingType.ZAPF_DINGBATS_1:
           numberText = String.fromCharCode(index + 171);
           break;
-        case CraftListNumberingType.ZAPF_DINGBATS_2:
+        case ListNumberingType.ZAPF_DINGBATS_2:
           numberText = String.fromCharCode(index + 181);
           break;
-        case CraftListNumberingType.ZAPF_DINGBATS_3:
+        case ListNumberingType.ZAPF_DINGBATS_3:
           numberText = String.fromCharCode(index + 191);
           break;
-        case CraftListNumberingType.ZAPF_DINGBATS_4:
+        case ListNumberingType.ZAPF_DINGBATS_4:
           numberText = String.fromCharCode(index + 201);
           break;
       }
 
-      CraftText textElement = CraftText((getListItemOrListProperty(
-                      renderer, this, CraftProperty.LIST_SYMBOL_PRE_TEXT)
-                  as String? ??
+      Text textElement = Text((getListItemOrListProperty(
+                  renderer, this, Property.LIST_SYMBOL_PRE_TEXT) as String? ??
               "") +
           numberText +
           (getListItemOrListProperty(
-                      renderer, this, CraftProperty.LIST_SYMBOL_POST_TEXT)
-                  as String? ??
+                  renderer, this, Property.LIST_SYMBOL_POST_TEXT) as String? ??
               ""));
 
       const symbolFonts = {
-        CraftListNumberingType.GREEK_LOWER: CraftStandardFonts.SYMBOL,
-        CraftListNumberingType.GREEK_UPPER: CraftStandardFonts.SYMBOL,
-        CraftListNumberingType.ZAPF_DINGBATS_1: CraftStandardFonts.ZAPFDINGBATS,
-        CraftListNumberingType.ZAPF_DINGBATS_2: CraftStandardFonts.ZAPFDINGBATS,
-        CraftListNumberingType.ZAPF_DINGBATS_3: CraftStandardFonts.ZAPFDINGBATS,
-        CraftListNumberingType.ZAPF_DINGBATS_4: CraftStandardFonts.ZAPFDINGBATS,
+        ListNumberingType.GREEK_LOWER: StandardFonts.SYMBOL,
+        ListNumberingType.GREEK_UPPER: StandardFonts.SYMBOL,
+        ListNumberingType.ZAPF_DINGBATS_1: StandardFonts.ZAPFDINGBATS,
+        ListNumberingType.ZAPF_DINGBATS_2: StandardFonts.ZAPFDINGBATS,
+        ListNumberingType.ZAPF_DINGBATS_3: StandardFonts.ZAPFDINGBATS,
+        ListNumberingType.ZAPF_DINGBATS_4: StandardFonts.ZAPFDINGBATS,
       };
       final family = symbolFonts[numberingType];
-      final CraftRenderer textRenderer = family == null
-          ? CraftTextRenderer(textElement)
+      final Renderer textRenderer = family == null
+          ? TextRenderer(textElement)
           : _ConstantFontTextRenderer(textElement, family);
       if (family != null) {
         // The renderer also retains the requested family for deferred creation.
         // Metric resources can be supplied separately by applications.
         try {
           textRenderer.setProperty(
-              CraftProperty.FONT, CraftPdfFontFactory.createFont(family));
+              Property.FONT, PdfFontFactory.createFont(family));
         } catch (_) {
           // Preserve deferred font resolution when a core-font resource is absent.
         }
       }
       return _surroundTextBullet(textRenderer);
-    } else if (defaultListSymbol is CraftImage) {
+    } else if (defaultListSymbol is Image) {
       return defaultListSymbol.createRendererSubTree();
     }
     return null;
   }
 
-  CraftLineRenderer _surroundTextBullet(CraftRenderer bulletRenderer) {
-    CraftLineRenderer lineRenderer = CraftLineRenderer();
-    CraftText zeroWidthJoiner = CraftText("\u200D");
+  LineRenderer _surroundTextBullet(Renderer bulletRenderer) {
+    LineRenderer lineRenderer = LineRenderer();
+    Text zeroWidthJoiner = Text("\u200D");
     // zeroWidthJoiner.getAccessibilityProperties().setRole(StandardRoles.ARTIFACT);
-    lineRenderer.addChild(CraftTextRenderer(zeroWidthJoiner));
+    lineRenderer.addChild(TextRenderer(zeroWidthJoiner));
     lineRenderer.addChild(bulletRenderer);
-    lineRenderer.addChild(CraftTextRenderer(zeroWidthJoiner));
+    lineRenderer.addChild(TextRenderer(zeroWidthJoiner));
     return lineRenderer;
   }
 
-  CraftLayoutResult _correctListSplitting(
-      CraftRenderer splitRenderer,
-      CraftRenderer? overflowRenderer,
-      CraftRenderer causeOfNothing,
-      CraftLayoutArea occupiedArea) {
+  LayoutResult _correctListSplitting(
+      Renderer splitRenderer,
+      Renderer? overflowRenderer,
+      Renderer causeOfNothing,
+      LayoutArea occupiedArea) {
     // the first not rendered child
     int firstNotRendered = splitRenderer
         .getChildRenderers()[0]
         .getChildRenderers()
         .indexOf(causeOfNothing);
     if (-1 == firstNotRendered) {
-      return CraftLayoutResult(
-          overflowRenderer == null
-              ? CraftLayoutResult.FULL
-              : CraftLayoutResult.PARTIAL,
+      return LayoutResult(
+          overflowRenderer == null ? LayoutResult.FULL : LayoutResult.PARTIAL,
           occupiedArea,
           splitRenderer,
           overflowRenderer,
@@ -214,20 +207,20 @@ class CraftListRenderer extends CraftBlockRenderer {
     }
 
     // Notice that placed item is a son of the first ListItemRenderer (otherwise there would be now FORCED_PLACEMENT applied)
-    CraftRenderer firstListItemRenderer = splitRenderer.getChildRenderers()[0];
-    CraftListRenderer newOverflowRenderer =
-        createOverflowRenderer(CraftLayoutResult.PARTIAL) as CraftListRenderer;
-    newOverflowRenderer.deleteOwnProperty(CraftProperty.FORCED_PLACEMENT);
+    Renderer firstListItemRenderer = splitRenderer.getChildRenderers()[0];
+    ListRenderer newOverflowRenderer =
+        createOverflowRenderer(LayoutResult.PARTIAL) as ListRenderer;
+    newOverflowRenderer.deleteOwnProperty(Property.FORCED_PLACEMENT);
 
     // ListItemRenderer for not rendered children of firstListItemRenderer
     newOverflowRenderer.childRenderers.add(
-        (firstListItemRenderer as CraftListItemRenderer)
-            .createOverflowRenderer(CraftLayoutResult.PARTIAL));
+        (firstListItemRenderer as ListItemRenderer)
+            .createOverflowRenderer(LayoutResult.PARTIAL));
     newOverflowRenderer.childRenderers
         .addAll(splitRenderer.getChildRenderers().sublist(1));
 
-    List<CraftRenderer> childrenStillRemainingToRender =
-        List<CraftRenderer>.from(firstListItemRenderer
+    List<Renderer> childrenStillRemainingToRender = List<Renderer>.from(
+        firstListItemRenderer
             .getChildRenderers()
             .sublist(firstNotRendered + 1));
 
@@ -245,10 +238,10 @@ class CraftListRenderer extends CraftBlockRenderer {
           firstNotRendered + 1,
           splitRenderer.getChildRenderers()[0].getChildRenderers().length);
       newOverflowRenderer.getChildRenderers()[0].setProperty(
-          CraftProperty.MARGIN_LEFT,
+          Property.MARGIN_LEFT,
           splitRenderer
               .getChildRenderers()[0]
-              .getProperty<CraftUnitValue>(CraftProperty.MARGIN_LEFT));
+              .getProperty<UnitValue>(Property.MARGIN_LEFT));
     } else {
       newOverflowRenderer.childRenderers.removeAt(0);
     }
@@ -259,32 +252,31 @@ class CraftListRenderer extends CraftBlockRenderer {
     }
 
     if (newOverflowRenderer.childRenderers.isNotEmpty) {
-      return CraftLayoutResult(CraftLayoutResult.PARTIAL, occupiedArea,
-          splitRenderer, newOverflowRenderer, this);
+      return LayoutResult(LayoutResult.PARTIAL, occupiedArea, splitRenderer,
+          newOverflowRenderer, this);
     } else {
-      return CraftLayoutResult(
-          CraftLayoutResult.FULL, occupiedArea, null, null, this);
+      return LayoutResult(LayoutResult.FULL, occupiedArea, null, null, this);
     }
   }
 
-  CraftLayoutResult? _initializeListSymbols(CraftLayoutContext layoutContext) {
-    if (!hasOwnProperty(CraftProperty.LIST_SYMBOLS_INITIALIZED)) {
-      List<CraftRenderer?> symbolRenderers = <CraftRenderer?>[];
-      int listItemNum = getProperty<int>(CraftProperty.LIST_START) ?? 1;
+  LayoutResult? _initializeListSymbols(LayoutContext layoutContext) {
+    if (!hasOwnProperty(Property.LIST_SYMBOLS_INITIALIZED)) {
+      List<Renderer?> symbolRenderers = <Renderer?>[];
+      int listItemNum = getProperty<int>(Property.LIST_START) ?? 1;
 
-      for (CraftRenderer renderer in childRenderers) {
+      for (Renderer renderer in childRenderers) {
         renderer.setParent(this);
         var ordinal =
-            renderer.getProperty<int?>(CraftProperty.LIST_SYMBOL_ORDINAL_VALUE);
+            renderer.getProperty<int?>(Property.LIST_SYMBOL_ORDINAL_VALUE);
         if (ordinal != null) {
           listItemNum = ordinal;
         }
 
-        CraftRenderer? currentSymbolRenderer =
+        Renderer? currentSymbolRenderer =
             makeListSymbolRenderer(listItemNum, renderer);
         // RTL check omitted for now
 
-        CraftLayoutResult? listSymbolLayoutResult;
+        LayoutResult? listSymbolLayoutResult;
         if (currentSymbolRenderer != null) {
           listItemNum++;
           currentSymbolRenderer.setParent(renderer);
@@ -293,9 +285,9 @@ class CraftListRenderer extends CraftBlockRenderer {
         }
 
         bool isForcedPlacement =
-            true == getPropertyAsBoolean(CraftProperty.FORCED_PLACEMENT);
+            true == getPropertyAsBoolean(Property.FORCED_PLACEMENT);
         bool listSymbolNotFit = listSymbolLayoutResult != null &&
-            listSymbolLayoutResult.getStatus() != CraftLayoutResult.FULL;
+            listSymbolLayoutResult.getStatus() != LayoutResult.FULL;
 
         if (listSymbolNotFit && isForcedPlacement) {
           currentSymbolRenderer = null;
@@ -304,66 +296,64 @@ class CraftListRenderer extends CraftBlockRenderer {
         symbolRenderers.add(currentSymbolRenderer);
 
         if (listSymbolNotFit && !isForcedPlacement) {
-          return CraftLayoutResult(CraftLayoutResult.NOTHING, null, null, this,
+          return LayoutResult(LayoutResult.NOTHING, null, null, this,
               listSymbolLayoutResult.getCauseOfNothing() ?? this);
         }
       }
 
       double maxSymbolWidth = 0;
       for (int i = 0; i < childRenderers.length; i++) {
-        CraftRenderer? symbolRenderer = symbolRenderers[i];
+        Renderer? symbolRenderer = symbolRenderers[i];
         if (symbolRenderer != null) {
-          CraftRenderer listItemRenderer = childRenderers[i];
+          Renderer listItemRenderer = childRenderers[i];
           if (getListItemOrListProperty(
-                  listItemRenderer, this, CraftProperty.LIST_SYMBOL_POSITION) !=
-              CraftListSymbolPosition.INSIDE) {
+                  listItemRenderer, this, Property.LIST_SYMBOL_POSITION) !=
+              ListSymbolPosition.INSIDE) {
             maxSymbolWidth = math.max(maxSymbolWidth,
                 symbolRenderer.getOccupiedArea()?.getBBox().getWidth() ?? 0);
           }
         }
       }
 
-      double? symbolIndent =
-          getProperty<double?>(CraftProperty.LIST_SYMBOL_INDENT);
+      double? symbolIndent = getProperty<double?>(Property.LIST_SYMBOL_INDENT);
       int index = 0;
-      for (CraftRenderer childRenderer in childRenderers) {
+      for (Renderer childRenderer in childRenderers) {
         // RTL margins logic omitted for simplicity
-        int marginToSet = CraftProperty.MARGIN_LEFT;
+        int marginToSet = Property.MARGIN_LEFT;
         childRenderer.deleteOwnProperty(marginToSet);
-        CraftUnitValue marginToSetUV =
-            childRenderer.getProperty<CraftUnitValue>(marginToSet) ??
-                CraftUnitValue.createPointValue(0.0);
+        UnitValue marginToSetUV =
+            childRenderer.getProperty<UnitValue>(marginToSet) ??
+                UnitValue.createPointValue(0.0);
 
         double calculatedMargin = marginToSetUV.getValue();
         if (getListItemOrListProperty(
-                childRenderer, this, CraftProperty.LIST_SYMBOL_POSITION) ==
-            CraftListSymbolPosition.DEFAULT) {
+                childRenderer, this, Property.LIST_SYMBOL_POSITION) ==
+            ListSymbolPosition.DEFAULT) {
           calculatedMargin += maxSymbolWidth + (symbolIndent ?? 0.0);
         }
 
         childRenderer.setProperty(
-            marginToSet, CraftUnitValue.createPointValue(calculatedMargin));
-        CraftRenderer? symbolRenderer = symbolRenderers[index++];
-        if (childRenderer is CraftListItemRenderer) {
+            marginToSet, UnitValue.createPointValue(calculatedMargin));
+        Renderer? symbolRenderer = symbolRenderers[index++];
+        if (childRenderer is ListItemRenderer) {
           childRenderer.addSymbolRenderer(symbolRenderer, maxSymbolWidth);
         }
       }
-      setProperty(CraftProperty.LIST_SYMBOLS_INITIALIZED, true);
+      setProperty(Property.LIST_SYMBOLS_INITIALIZED, true);
     }
     return null;
   }
 }
 
-class _ConstantFontTextRenderer extends CraftTextRenderer {
+class _ConstantFontTextRenderer extends TextRenderer {
   final String constantFontName;
 
   _ConstantFontTextRenderer(super.textElement, this.constantFontName);
 
   @override
-  Future<void> draw(CraftDrawContext drawContext) async {
+  Future<void> draw(DrawContext drawContext) async {
     try {
-      setProperty(
-          CraftProperty.FONT, CraftPdfFontFactory.createFont(constantFontName));
+      setProperty(Property.FONT, PdfFontFactory.createFont(constantFontName));
     } catch (e) {
       // Ignore
     }

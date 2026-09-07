@@ -20,14 +20,14 @@ import 'package:dpdf/src/svg/processors/impl/svg_processor_context.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 
 /// Default implementation of SVG's styles and attribute resolver.
-class CraftSvgStyleResolver implements CraftCssResolver {
-  static final Set<CraftStyleInheritance> INHERITANCE_RULES = {
-    CraftCssInheritance(),
-    CraftSvgAttributeInheritance(),
+class SvgStyleResolver implements CssResolver {
+  static final Set<StyleInheritance> INHERITANCE_RULES = {
+    CssInheritance(),
+    SvgAttributeInheritance(),
   };
 
   static final double DEFAULT_FONT_SIZE =
-      CraftCssDimensionParsingUtils.parseAbsoluteFontSize(
+      CssDimensionParsingUtils.parseAbsoluteFontSize(
           "12pt"); // Default value for SVG font-size
 
   static const List<String> ELEMENTS_INHERITING_PARENT_STYLES = [
@@ -36,41 +36,40 @@ class CraftSvgStyleResolver implements CraftCssResolver {
     SvgTags.PATTERN,
   ];
 
-  late CraftCssStyleSheet css;
+  late CssStyleSheet css;
   bool isFirstSvgElement = true;
-  late CraftMediaDeviceDescription deviceDescription;
-  final List<CraftCssFontFaceRule> fonts = [];
-  late CraftResourceResolver resourceResolver;
+  late MediaDeviceDescription deviceDescription;
+  final List<CssFontFaceRule> fonts = [];
+  late ResourceResolver resourceResolver;
 
-  CraftSvgStyleResolver(CraftSvgProcessorContext context) {
-    css = CraftCssStyleSheet(); // In full version this would load default CSS
+  SvgStyleResolver(SvgProcessorContext context) {
+    css = CssStyleSheet(); // In full version this would load default CSS
     resourceResolver = context.getResourceResolver();
     css.appendCssStyleSheet(context.getCssStyleSheet());
     deviceDescription = context.getDeviceDescription();
   }
 
-  CraftSvgStyleResolver.fromRoot(
-      CraftMarkupNode rootNode, CraftSvgProcessorContext context) {
+  SvgStyleResolver.fromRoot(MarkupNode rootNode, SvgProcessorContext context) {
     deviceDescription = context.getDeviceDescription();
     resourceResolver = context.getResourceResolver();
-    css = CraftCssStyleSheet();
+    css = CssStyleSheet();
     css.appendCssStyleSheet(context.getCssStyleSheet());
     collectCssDeclarations(rootNode, resourceResolver);
     collectFonts();
   }
 
   static void resolveFontSizeStyle(Map<String, String> styles,
-      CraftSvgCssContext? cssContext, String? parentFontSizeStr) {
+      SvgCssContext? cssContext, String? parentFontSizeStr) {
     String? elementFontSize = styles[SvgAttributes.FONT_SIZE];
     String resolvedFontSize;
-    if (CraftCssTypesValidationUtils.isNegativeValue(elementFontSize)) {
+    if (CssTypesValidationUtils.isNegativeValue(elementFontSize)) {
       elementFontSize = parentFontSizeStr;
     }
-    if (CraftCssTypesValidationUtils.isRelativeValue(elementFontSize) ||
-        CraftCommonCssConstants.LARGER == elementFontSize ||
-        CraftCommonCssConstants.SMALLER == elementFontSize) {
+    if (CssTypesValidationUtils.isRelativeValue(elementFontSize) ||
+        CommonCssConstants.LARGER == elementFontSize ||
+        CommonCssConstants.SMALLER == elementFontSize) {
       double baseFontSize;
-      if (CraftCssTypesValidationUtils.isRemValue(elementFontSize)) {
+      if (CssTypesValidationUtils.isRemValue(elementFontSize)) {
         baseFontSize = cssContext == null
             ? DEFAULT_FONT_SIZE
             : cssContext.getRootFontSize();
@@ -78,20 +77,19 @@ class CraftSvgStyleResolver implements CraftCssResolver {
         if (parentFontSizeStr == null) {
           baseFontSize = DEFAULT_FONT_SIZE;
         } else {
-          baseFontSize = CraftCssDimensionParsingUtils.parseAbsoluteLength(
-              parentFontSizeStr);
+          baseFontSize =
+              CssDimensionParsingUtils.parseAbsoluteLength(parentFontSizeStr);
         }
       }
-      double absoluteFontSize =
-          CraftCssDimensionParsingUtils.parseRelativeFontSize(
-              elementFontSize!, baseFontSize);
+      double absoluteFontSize = CssDimensionParsingUtils.parseRelativeFontSize(
+          elementFontSize!, baseFontSize);
       resolvedFontSize = absoluteFontSize.toStringAsFixed(4);
     } else {
       if (elementFontSize == null) {
         resolvedFontSize = DEFAULT_FONT_SIZE.toStringAsFixed(4);
       } else {
         resolvedFontSize =
-            CraftCssDimensionParsingUtils.parseAbsoluteFontSize(elementFontSize)
+            CssDimensionParsingUtils.parseAbsoluteFontSize(elementFontSize)
                 .toStringAsFixed(4);
       }
     }
@@ -101,16 +99,15 @@ class CraftSvgStyleResolver implements CraftCssResolver {
           .replaceAll(RegExp(r'0+$'), '')
           .replaceAll(RegExp(r'\.+$'), '');
     }
-    styles[SvgAttributes.FONT_SIZE] =
-        resolvedFontSize + CraftCommonCssConstants.PT;
+    styles[SvgAttributes.FONT_SIZE] = resolvedFontSize + CommonCssConstants.PT;
   }
 
   static bool isElementNested(
-      CraftElementNode element, String parentElementNameForSearch) {
-    if (element.parentNode is! CraftElementNode) {
+      ElementNode element, String parentElementNameForSearch) {
+    if (element.parentNode is! ElementNode) {
       return false;
     }
-    CraftElementNode parentElement = element.parentNode as CraftElementNode;
+    ElementNode parentElement = element.parentNode as ElementNode;
     if (parentElement.name == parentElementNameForSearch) {
       return true;
     }
@@ -119,20 +116,19 @@ class CraftSvgStyleResolver implements CraftCssResolver {
 
   @override
   Map<String, String> resolveStyles(
-      CraftMarkupNode element, CraftAbstractCssContext context) {
-    if (context is CraftSvgCssContext) {
+      MarkupNode element, AbstractCssContext context) {
+    if (context is SvgCssContext) {
       return _resolveStyles(element, context);
     }
-    throw CraftSvgProcessingException(
-        "Custom AbstractCssContext not supported");
+    throw SvgProcessingException("Custom AbstractCssContext not supported");
   }
 
   Map<String, String> resolveNativeStyles(
-      CraftMarkupNode node, CraftAbstractCssContext cssContext) {
+      MarkupNode node, AbstractCssContext cssContext) {
     Map<String, String> styles = {};
-    CraftAttribute? styleAttr;
-    if (node is CraftElementNode) {
-      for (CraftAttribute attr in node.getAttributes()) {
+    Attribute? styleAttr;
+    if (node is ElementNode) {
+      for (Attribute attr in node.getAttributes()) {
         if (SvgAttributes.STYLE == attr.getKey()) {
           styleAttr = attr;
         } else {
@@ -141,9 +137,9 @@ class CraftSvgStyleResolver implements CraftCssResolver {
       }
     }
     // Load in from collected style sheets
-    List<CraftCssDeclaration> styleSheetDeclarations = css.getCssDeclarations(
-        node, CraftMediaDeviceDescription.createDefault());
-    for (CraftCssDeclaration ssd in styleSheetDeclarations) {
+    List<CssDeclaration> styleSheetDeclarations =
+        css.getCssDeclarations(node, MediaDeviceDescription.createDefault());
+    for (CssDeclaration ssd in styleSheetDeclarations) {
       styles[ssd.getProperty()] = ssd.getExpression();
     }
     // Inline CSS from style attribute overrides
@@ -153,7 +149,7 @@ class CraftSvgStyleResolver implements CraftCssResolver {
     return styles;
   }
 
-  static bool _onlyNativeStylesShouldBeResolved(CraftElementNode element) {
+  static bool _onlyNativeStylesShouldBeResolved(ElementNode element) {
     for (String elementInheritingParentStyles
         in ELEMENTS_INHERITING_PARENT_STYLES) {
       if (elementInheritingParentStyles == element.name ||
@@ -177,17 +173,15 @@ class CraftSvgStyleResolver implements CraftCssResolver {
   }
 
   Map<String, String> _resolveStyles(
-      CraftMarkupNode element, CraftSvgCssContext context) {
+      MarkupNode element, SvgCssContext context) {
     Map<String, String> styles = resolveNativeStyles(element, context);
     Map<String, String>? parentStyles;
-    if (element.parentNode is CraftStylesContainer) {
-      CraftStylesContainer parentNode =
-          element.parentNode as CraftStylesContainer;
+    if (element.parentNode is StylesContainer) {
+      StylesContainer parentNode = element.parentNode as StylesContainer;
       parentStyles = parentNode.getStyles();
     }
 
-    if (element is CraftElementNode &&
-        _onlyNativeStylesShouldBeResolved(element)) {
+    if (element is ElementNode && _onlyNativeStylesShouldBeResolved(element)) {
       _putMissingVariables(styles, parentStyles);
       CssVariableUtil.resolveCssVariables(styles);
       return styles;
@@ -197,7 +191,7 @@ class CraftSvgStyleResolver implements CraftCssResolver {
     if (parentStyles != null) {
       parentFontSizeStr = parentStyles[SvgAttributes.FONT_SIZE];
       parentStyles.forEach((key, value) {
-        styles = CraftStyleUtil.mergeParentStyleDeclaration(
+        styles = StyleUtil.mergeParentStyleDeclaration(
             styles, key, value, parentFontSizeStr ?? "", INHERITANCE_RULES);
       });
     }
@@ -205,32 +199,30 @@ class CraftSvgStyleResolver implements CraftCssResolver {
     resolveFontSizeStyle(styles, context, parentFontSizeStr);
 
     // Process FONT_FAMILY (simplified)
-    String? fontFamily = styles[CraftCommonCssConstants.FONT_FAMILY];
+    String? fontFamily = styles[CommonCssConstants.FONT_FAMILY];
     if (fontFamily != null) {
       // Simplified: take first font family if split logic not yet implemented
-      styles[CraftCommonCssConstants.FONT_FAMILY] =
-          fontFamily.split(',')[0].trim();
+      styles[CommonCssConstants.FONT_FAMILY] = fontFamily.split(',')[0].trim();
     }
 
     CssVariableUtil.resolveCssVariables(styles);
 
-    bool isSvgElement =
-        element is CraftElementNode && SvgTags.SVG == element.name;
+    bool isSvgElement = element is ElementNode && SvgTags.SVG == element.name;
     if (isFirstSvgElement && isSvgElement) {
       isFirstSvgElement = false;
       String? rootFontSize = styles[SvgAttributes.FONT_SIZE];
       if (rootFontSize != null) {
         context.setRootFontSize(
-            CraftCssDimensionParsingUtils.parseAbsoluteLength(rootFontSize));
+            CssDimensionParsingUtils.parseAbsoluteLength(rootFontSize));
       }
     }
     return styles;
   }
 
-  void _processXLink(CraftAttribute attr, Map<String, String> attributesMap) {
+  void _processXLink(Attribute attr, Map<String, String> attributesMap) {
     String xlinkValue = attr.getValue();
     if (!xlinkValue.startsWith('#') &&
-        !CraftResourceResolver.isDataSrc(xlinkValue)) {
+        !ResourceResolver.isDataSrc(xlinkValue)) {
       xlinkValue = resourceResolver
           .resolveAgainstBaseUri(attr.getValue())
           .toExternalForm();
@@ -239,15 +231,15 @@ class CraftSvgStyleResolver implements CraftCssResolver {
   }
 
   void collectCssDeclarations(
-      CraftMarkupNode rootNode, CraftResourceResolver resourceResolver) {
-    List<CraftMarkupNode> q = [];
+      MarkupNode rootNode, ResourceResolver resourceResolver) {
+    List<MarkupNode> q = [];
     q.add(rootNode);
     while (q.isNotEmpty) {
-      CraftMarkupNode currentNode = q.removeAt(0);
-      if (currentNode is CraftElementNode) {
+      MarkupNode currentNode = q.removeAt(0);
+      if (currentNode is ElementNode) {
         if (SvgTags.STYLE == currentNode.name) {
-          for (CraftMarkupNode node in currentNode.childNodes) {
-            if (node is CraftDataNode || node is CraftNode) {
+          for (MarkupNode node in currentNode.childNodes) {
+            if (node is DataNode || node is Node) {
               // Simplified: stylesheet parsing not yet fully implemented
             }
           }
@@ -264,25 +256,24 @@ class CraftSvgStyleResolver implements CraftCssResolver {
   }
 
   void collectFonts() {
-    for (CraftCssStatement cssStatement in css.getStatements()) {
+    for (CssStatement cssStatement in css.getStatements()) {
       _collectFontsRecursive(cssStatement);
     }
   }
 
-  void _collectFontsRecursive(CraftCssStatement cssStatement) {
-    if (cssStatement is CraftCssFontFaceRule) {
+  void _collectFontsRecursive(CssStatement cssStatement) {
+    if (cssStatement is CssFontFaceRule) {
       fonts.add(cssStatement);
-    } else if (cssStatement is CraftCssMediaRule) {
+    } else if (cssStatement is CssMediaRule) {
       if (cssStatement.matchMediaDevice(deviceDescription)) {
-        for (CraftCssStatement cssSubStatement
-            in cssStatement.getStatements()) {
+        for (CssStatement cssSubStatement in cssStatement.getStatements()) {
           _collectFontsRecursive(cssSubStatement);
         }
       }
     }
   }
 
-  void _processAttribute(CraftAttribute attr, Map<String, String> styles) {
+  void _processAttribute(Attribute attr, Map<String, String> styles) {
     switch (attr.getKey()) {
       case SvgAttributes.STYLE:
         // Simplified: parse styles from style attribute

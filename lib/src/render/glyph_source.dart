@@ -208,43 +208,40 @@ class PdfGlyphSource {
 
   /// Resolves the `/Font` entry named [name] in [resources].
   static Future<PdfGlyphSource?> resolve(
-    CraftPdfDictionary? resources,
+    PdfDictionary? resources,
     String name, {
     PdfFontFallback? fallback,
   }) async {
-    final fonts = await resources?.dictionaryEntry(CraftPdfName('Font'));
-    final font = await fonts?.dictionaryEntry(CraftPdfName(name));
+    final fonts = await resources?.dictionaryEntry(PdfName('Font'));
+    final font = await fonts?.dictionaryEntry(PdfName(name));
     if (font == null) return null;
 
-    final subtype = (await font.nameEntry(CraftPdfName.subtype))?.getValue();
+    final subtype = (await font.nameEntry(PdfName.subtype))?.getValue();
     if (subtype == 'Type0') return _resolveComposite(font, fallback);
     return _resolveSimple(font, fallback);
   }
 
   static Future<PdfGlyphSource> _resolveSimple(
-    CraftPdfDictionary font,
+    PdfDictionary font,
     PdfFontFallback? fallback,
   ) async {
     final widths = <int, double>{};
     final first =
-        (await font.numberEntry(CraftPdfName('FirstChar')))?.intValue() ?? 0;
-    final array = await font.arrayEntry(CraftPdfName('Widths'));
+        (await font.numberEntry(PdfName('FirstChar')))?.intValue() ?? 0;
+    final array = await font.arrayEntry(PdfName('Widths'));
     if (array != null) {
       for (var i = 0; i < array.size(); i++) {
         final value = await array.get(i);
-        if (value is CraftPdfNumber) widths[first + i] = value.doubleValue();
+        if (value is PdfNumber) widths[first + i] = value.doubleValue();
       }
     }
 
-    final descriptor =
-        await font.dictionaryEntry(CraftPdfName('FontDescriptor'));
-    final missing =
-        (await descriptor?.numberEntry(CraftPdfName('MissingWidth')))
-                ?.doubleValue() ??
-            0;
+    final descriptor = await font.dictionaryEntry(PdfName('FontDescriptor'));
+    final missing = (await descriptor?.numberEntry(PdfName('MissingWidth')))
+            ?.doubleValue() ??
+        0;
 
-    final baseFont =
-        (await font.nameEntry(CraftPdfName.baseFont))?.getValue() ?? '';
+    final baseFont = (await font.nameEntry(PdfName.baseFont))?.getValue() ?? '';
     final codeToUnicode = await _simpleEncoding(font, descriptor);
 
     // Uma das catorze fontes padrão pode legitimamente omitir `/Widths`: o
@@ -273,18 +270,17 @@ class PdfGlyphSource {
   }
 
   static Future<PdfGlyphSource> _resolveComposite(
-      CraftPdfDictionary font, PdfFontFallback? fallback) async {
+      PdfDictionary font, PdfFontFallback? fallback) async {
     // `/Encoding` diz como os bytes da cadeia viram CIDs. As Identity são a
     // identidade em dois bytes; um stream é um programa CMap que traz os
     // próprios intervalos, e é parseado. Uma CMap predefinida que não seja
     // Identity — as CJK — exige tabelas que este pacote não embute, e é
     // recusada em vez de adivinhada: posicionar glifos em códigos errados
     // seria pior do que relatar a fonte como não suportada.
-    final encoding =
-        (await font.nameEntry(CraftPdfName('Encoding')))?.getValue();
+    final encoding = (await font.nameEntry(PdfName('Encoding')))?.getValue();
     _EmbeddedCMap? embedded;
     if (encoding == null) {
-      final stream = await font.streamEntry(CraftPdfName('Encoding'));
+      final stream = await font.streamEntry(PdfName('Encoding'));
       final bytes = await stream?.getBytes();
       if (bytes != null && bytes.isNotEmpty) {
         embedded = _EmbeddedCMap.parse(bytes);
@@ -304,7 +300,7 @@ class PdfGlyphSource {
       );
     }
 
-    final descendants = await font.arrayEntry(CraftPdfName('DescendantFonts'));
+    final descendants = await font.arrayEntry(PdfName('DescendantFonts'));
     final descendant = descendants == null || descendants.isEmptyArray
         ? null
         : await descendants.dictionaryEntry(0);
@@ -321,17 +317,15 @@ class PdfGlyphSource {
     }
 
     final defaultWidth =
-        (await descendant.numberEntry(CraftPdfName('DW')))?.doubleValue() ??
-            1000;
+        (await descendant.numberEntry(PdfName('DW')))?.doubleValue() ?? 1000;
     final widths = await _cidWidths(descendant);
 
     final descriptor =
-        await descendant.dictionaryEntry(CraftPdfName('FontDescriptor'));
+        await descendant.dictionaryEntry(PdfName('FontDescriptor'));
     final program = await _embeddedProgram(descriptor);
     final cidToGid = await _cidToGidMap(descendant);
 
-    final baseFont =
-        (await font.nameEntry(CraftPdfName.baseFont))?.getValue() ?? '';
+    final baseFont = (await font.nameEntry(PdfName.baseFont))?.getValue() ?? '';
     final resolved = await _applyFallback(program, fallback, baseFont,
         descriptor: descriptor, composite: true);
 
@@ -348,28 +342,27 @@ class PdfGlyphSource {
   }
 
   /// Reads the `/W` array, whose two forms are `c [w w w]` and `cFirst cLast w`.
-  static Future<Map<int, double>> _cidWidths(
-      CraftPdfDictionary descendant) async {
+  static Future<Map<int, double>> _cidWidths(PdfDictionary descendant) async {
     final widths = <int, double>{};
-    final w = await descendant.arrayEntry(CraftPdfName('W'));
+    final w = await descendant.arrayEntry(PdfName('W'));
     if (w == null) return widths;
 
     var i = 0;
     while (i < w.size()) {
       final start = await w.get(i);
-      if (start is! CraftPdfNumber) break;
+      if (start is! PdfNumber) break;
       final next = i + 1 < w.size() ? await w.get(i + 1) : null;
 
-      if (next is CraftPdfArray) {
+      if (next is PdfArray) {
         final base = start.intValue();
         for (var k = 0; k < next.size(); k++) {
           final value = await next.get(k);
-          if (value is CraftPdfNumber) widths[base + k] = value.doubleValue();
+          if (value is PdfNumber) widths[base + k] = value.doubleValue();
         }
         i += 2;
-      } else if (next is CraftPdfNumber && i + 2 < w.size()) {
+      } else if (next is PdfNumber && i + 2 < w.size()) {
         final value = await w.get(i + 2);
-        if (value is! CraftPdfNumber) break;
+        if (value is! PdfNumber) break;
         final from = start.intValue();
         final to = next.intValue();
         // A hostile file can declare a huge range; cap what is materialised.
@@ -385,11 +378,11 @@ class PdfGlyphSource {
     return widths;
   }
 
-  static Future<Uint16List?> _cidToGidMap(CraftPdfDictionary font) async {
-    final name = await font.nameEntry(CraftPdfName('CIDToGIDMap'));
+  static Future<Uint16List?> _cidToGidMap(PdfDictionary font) async {
+    final name = await font.nameEntry(PdfName('CIDToGIDMap'));
     if (name != null) return null; // `/Identity`, or anything else we treat so.
 
-    final stream = await font.streamEntry(CraftPdfName('CIDToGIDMap'));
+    final stream = await font.streamEntry(PdfName('CIDToGIDMap'));
     if (stream == null) return null;
 
     final bytes = await stream.getBytes();
@@ -403,27 +396,27 @@ class PdfGlyphSource {
 
   /// Builds the character-code to Unicode table from `/Encoding`.
   static Future<Map<int, int>> _simpleEncoding(
-    CraftPdfDictionary font,
-    CraftPdfDictionary? descriptor,
+    PdfDictionary font,
+    PdfDictionary? descriptor,
   ) async {
     final flags =
-        (await descriptor?.numberEntry(CraftPdfName('Flags')))?.intValue() ?? 0;
+        (await descriptor?.numberEntry(PdfName('Flags')))?.intValue() ?? 0;
     final symbolic = (flags & 4) != 0 && (flags & 32) == 0;
 
     var base = symbolic ? null : 'StandardEncoding';
     Map<int, String>? differences;
 
-    final name = await font.nameEntry(CraftPdfName('Encoding'));
+    final name = await font.nameEntry(PdfName('Encoding'));
     if (name != null) {
       base = name.getValue();
     } else {
-      final dictionary = await font.dictionaryEntry(CraftPdfName('Encoding'));
+      final dictionary = await font.dictionaryEntry(PdfName('Encoding'));
       if (dictionary != null) {
-        base = (await dictionary.nameEntry(CraftPdfName('BaseEncoding')))
-                ?.getValue() ??
-            base;
-        differences = await _differences(
-            dictionary.arrayEntry(CraftPdfName('Differences')));
+        base =
+            (await dictionary.nameEntry(PdfName('BaseEncoding')))?.getValue() ??
+                base;
+        differences =
+            await _differences(dictionary.arrayEntry(PdfName('Differences')));
       }
     }
 
@@ -451,7 +444,7 @@ class PdfGlyphSource {
 
     if (differences != null) {
       for (final entry in differences.entries) {
-        final scalar = CraftAdobeGlyphList.nameToUnicode(entry.value);
+        final scalar = AdobeGlyphList.nameToUnicode(entry.value);
         if (scalar >= 0) table[entry.key] = scalar;
       }
     }
@@ -461,7 +454,7 @@ class PdfGlyphSource {
   /// `/Differences` is a flat array where a number resets the running code and
   /// each following name assigns the next one.
   static Future<Map<int, String>?> _differences(
-      Future<CraftPdfArray?> pending) async {
+      Future<PdfArray?> pending) async {
     final array = await pending;
     if (array == null) return null;
 
@@ -469,15 +462,14 @@ class PdfGlyphSource {
     var code = 0;
     for (var i = 0; i < array.size(); i++) {
       final item = await array.get(i);
-      if (item is CraftPdfNumber) {
+      if (item is PdfNumber) {
         code = item.intValue();
-      } else if (item is CraftPdfName) {
+      } else if (item is PdfName) {
         out[code++] = item.getValue();
       }
     }
     return out;
   }
-
 
   /// True quando [face] não mapeia ponto de código nenhum.
   ///
@@ -551,7 +543,7 @@ class PdfGlyphSource {
     ({BLFontFace? face, PdfGlyphFailure? failure}) program,
     PdfFontFallback? fallback,
     String baseFont, {
-    required CraftPdfDictionary? descriptor,
+    required PdfDictionary? descriptor,
     required bool composite,
   }) async {
     if (program.face != null || fallback == null) return program;
@@ -560,7 +552,7 @@ class PdfGlyphSource {
     if (program.failure != PdfGlyphFailure.notEmbedded) return program;
 
     final flags =
-        (await descriptor?.numberEntry(CraftPdfName('Flags')))?.intValue() ?? 0;
+        (await descriptor?.numberEntry(PdfName('Flags')))?.intValue() ?? 0;
     final Uint8List? bytes;
     try {
       bytes = await fallback(PdfFontRequest(
@@ -579,7 +571,7 @@ class PdfGlyphSource {
   }
 
   static Future<({BLFontFace? face, PdfGlyphFailure? failure})>
-      _embeddedProgram(CraftPdfDictionary? descriptor) async {
+      _embeddedProgram(PdfDictionary? descriptor) async {
     if (descriptor == null) {
       return (face: null, failure: PdfGlyphFailure.notEmbedded);
     }
@@ -587,7 +579,7 @@ class PdfGlyphSource {
     // `/FontFile2` is TrueType and `/FontFile3` is CFF or OpenType; both are
     // sfnt-shaped or bare CFF. `/FontFile` is Type1, which this cannot parse.
     for (final key in const ['FontFile2', 'FontFile3']) {
-      final stream = await descriptor.streamEntry(CraftPdfName(key));
+      final stream = await descriptor.streamEntry(PdfName(key));
       if (stream == null) continue;
       final bytes = await stream.getBytes();
       if (bytes == null || bytes.isEmpty) continue;
@@ -598,7 +590,7 @@ class PdfGlyphSource {
       }
     }
 
-    final type1 = await descriptor.streamEntry(CraftPdfName('FontFile'));
+    final type1 = await descriptor.streamEntry(PdfName('FontFile'));
     if (type1 != null) {
       return (face: null, failure: PdfGlyphFailure.unreadableProgram);
     }
@@ -625,10 +617,10 @@ class _EmbeddedCMap {
 
   /// Parseia [bytes], ou devolve null se o programa não for legível.
   static _EmbeddedCMap? parse(Uint8List bytes) {
-    final collector = CraftCMapCidToCodepoint();
+    final collector = CMapCidToCodepoint();
     try {
-      CraftCMapParser.loadCidMappingsSync(
-          'embedded', collector, CraftCMapLocationFromBytes(bytes));
+      CMapParser.loadCidMappingsSync(
+          'embedded', collector, CMapLocationFromBytes(bytes));
     } catch (_) {
       // Um programa malformado não pode derrubar a página; a fonte volta a
       // ser relatada como não suportada.

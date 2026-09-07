@@ -158,7 +158,7 @@ class PdfImageCompressionReport {
 abstract final class PdfImageCompressor {
   /// Re-encodes every image among [objects] that the options cover.
   static Future<PdfImageCompressionReport> run(
-    List<CraftPdfObject> objects,
+    List<PdfObject> objects,
     PdfImageCompressionOptions options,
   ) async {
     if (options.bilevel == PdfBilevelCodec.keep &&
@@ -171,9 +171,8 @@ abstract final class PdfImageCompressor {
     var saved = 0;
 
     for (final object in objects) {
-      if (object is! CraftPdfStream) continue;
-      if ((await object.nameEntry(CraftPdfName.subtype))?.getValue() !=
-          'Image') {
+      if (object is! PdfStream) continue;
+      if ((await object.nameEntry(PdfName.subtype))?.getValue() != 'Image') {
         continue;
       }
 
@@ -199,17 +198,17 @@ abstract final class PdfImageCompressor {
   /// Returns the bytes saved, 0 when the image was examined and left alone,
   /// or null when it is not an image this pass handles.
   static Future<int?> _recompress(
-    CraftPdfStream image,
+    PdfStream image,
     PdfImageCompressionOptions options,
   ) async {
-    final width = await image.integerEntry(CraftPdfName.width);
-    final height = await image.integerEntry(CraftPdfName.height);
+    final width = await image.integerEntry(PdfName.width);
+    final height = await image.integerEntry(PdfName.height);
     if (width == null || height == null || width <= 0 || height <= 0) {
       return null;
     }
 
-    final isMask = await image.flagEntry(CraftPdfName('ImageMask')) ?? false;
-    final bits = await image.integerEntry(CraftPdfName('BitsPerComponent'));
+    final isMask = await image.flagEntry(PdfName('ImageMask')) ?? false;
+    final bits = await image.integerEntry(PdfName('BitsPerComponent'));
     if (!isMask && bits != 1) {
       if (bits == 8 && options.colour != PdfColourCodec.keep) {
         return _recompressContinuousTone(image, options, width, height);
@@ -220,8 +219,8 @@ abstract final class PdfImageCompressor {
 
     // A soft-masked or explicitly re-mapped image keeps its own conventions;
     // re-encoding it would need those carried across, so leave it alone.
-    if (image.containsKey(CraftPdfName('SMask')) ||
-        image.containsKey(CraftPdfName('Decode'))) {
+    if (image.containsKey(PdfName('SMask')) ||
+        image.containsKey(PdfName('Decode'))) {
       return 0;
     }
 
@@ -244,7 +243,7 @@ abstract final class PdfImageCompressor {
         options.bilevel == PdfBilevelCodec.auto;
 
     Uint8List? candidate;
-    CraftPdfName? filter;
+    PdfName? filter;
 
     if (wantJbig2) {
       try {
@@ -256,7 +255,7 @@ abstract final class PdfImageCompressor {
           // PDF stores a 1 bit as white; JBIG2 stores it as black.
           oneIsBlack: false,
         );
-        filter = CraftPdfName('JBIG2Decode');
+        filter = PdfName('JBIG2Decode');
       } on Object {
         candidate = null;
       }
@@ -266,7 +265,7 @@ abstract final class PdfImageCompressor {
           Uint8List.fromList(ZLibEncoder(level: 9).convert(samples));
       if (candidate == null || deflated.length < candidate.length) {
         candidate = deflated;
-        filter = CraftPdfName('FlateDecode');
+        filter = PdfName('FlateDecode');
       }
     }
 
@@ -274,8 +273,8 @@ abstract final class PdfImageCompressor {
     if (candidate.length >= current.length) return 0;
 
     image.setData(candidate);
-    image.put(CraftPdfName.filter, filter);
-    image.remove(CraftPdfName('DecodeParms'));
+    image.put(PdfName.filter, filter);
+    image.remove(PdfName('DecodeParms'));
     image.markChanged();
     return current.length - candidate.length;
   }
@@ -286,14 +285,14 @@ abstract final class PdfImageCompressor {
   /// Returns the bytes saved, 0 when the image was examined and left alone, or
   /// null when it is not one this path handles.
   static Future<int?> _recompressContinuousTone(
-    CraftPdfStream image,
+    PdfStream image,
     PdfImageCompressionOptions options,
     int width,
     int height,
   ) async {
     // An explicit /Decode array, a palette or a separation space all give the
     // samples a meaning JPEG cannot carry across.
-    if (image.containsKey(CraftPdfName('Decode'))) return 0;
+    if (image.containsKey(PdfName('Decode'))) return 0;
 
     final channels = await _colourChannels(image);
     if (channels == null) return null;
@@ -352,35 +351,35 @@ abstract final class PdfImageCompressor {
 
     image
       ..setData(candidate)
-      ..put(CraftPdfName.filter, CraftPdfName('DCTDecode'))
-      ..put(CraftPdfName.width, CraftPdfNumber.fromInt(targetWidth))
-      ..put(CraftPdfName.height, CraftPdfNumber.fromInt(targetHeight))
-      ..put(CraftPdfName('BitsPerComponent'), CraftPdfNumber.fromInt(8))
-      ..put(CraftPdfName('ColorSpace'),
-          CraftPdfName(samples.channels == 1 ? 'DeviceGray' : 'DeviceRGB'))
-      ..remove(CraftPdfName('DecodeParms'))
+      ..put(PdfName.filter, PdfName('DCTDecode'))
+      ..put(PdfName.width, PdfNumber.fromInt(targetWidth))
+      ..put(PdfName.height, PdfNumber.fromInt(targetHeight))
+      ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+      ..put(PdfName('ColorSpace'),
+          PdfName(samples.channels == 1 ? 'DeviceGray' : 'DeviceRGB'))
+      ..remove(PdfName('DecodeParms'))
       ..markChanged();
     return current.length - candidate.length;
   }
 
   /// Channels implied by the image's colour space, or null when it is one this
   /// path does not re-encode.
-  static Future<int?> _colourChannels(CraftPdfStream image) async {
-    final space = await image.get(CraftPdfName('ColorSpace'), true);
+  static Future<int?> _colourChannels(PdfStream image) async {
+    final space = await image.get(PdfName('ColorSpace'), true);
     if (space == null) return null;
     if (space.objectKind() == PdfObjectType.name) {
-      return switch ((space as CraftPdfName).getValue()) {
+      return switch ((space as PdfName).getValue()) {
         'DeviceGray' || 'G' || 'CalGray' => 1,
         'DeviceRGB' || 'RGB' || 'CalRGB' => 3,
         _ => null,
       };
     }
     if (space.objectKind() == PdfObjectType.array) {
-      final array = space as CraftPdfArray;
+      final array = space as PdfArray;
       final family = (await array.nameEntry(0))?.getValue();
       if (family == 'ICCBased') {
         final profile = await array.streamEntry(1);
-        final n = await profile?.integerEntry(CraftPdfName('N'));
+        final n = await profile?.integerEntry(PdfName('N'));
         // Only the two ICC spaces a baseline JPEG can stand in for.
         return n == 1 || n == 3 ? n : null;
       }
@@ -393,7 +392,7 @@ abstract final class PdfImageCompressor {
 
   /// Decodes the image's samples to interleaved 8-bit values.
   static Future<_Samples?> _samplesOf(
-    CraftPdfStream image,
+    PdfStream image,
     int width,
     int height,
     int channels,
@@ -426,14 +425,14 @@ abstract final class PdfImageCompressor {
     return _Samples(plain, width, height, channels);
   }
 
-  static Future<Set<String>> _filterNames(CraftPdfStream stream) async {
-    final filter = await stream.get(CraftPdfName.filter);
+  static Future<Set<String>> _filterNames(PdfStream stream) async {
+    final filter = await stream.get(PdfName.filter);
     if (filter == null) return const {};
     if (filter.objectKind() == PdfObjectType.name) {
-      return {(filter as CraftPdfName).getValue()};
+      return {(filter as PdfName).getValue()};
     }
     if (filter.objectKind() == PdfObjectType.array) {
-      final array = filter as CraftPdfArray;
+      final array = filter as PdfArray;
       final names = <String>{};
       for (var i = 0; i < array.size(); i++) {
         final name = await array.nameEntry(i);
@@ -445,14 +444,14 @@ abstract final class PdfImageCompressor {
   }
 
   /// True when [stream] is an image whose filter is a JBIG2 codestream.
-  static Future<bool> usesJbig2(CraftPdfStream stream) async {
-    final filter = await stream.get(CraftPdfName.filter);
+  static Future<bool> usesJbig2(PdfStream stream) async {
+    final filter = await stream.get(PdfName.filter);
     if (filter == null) return false;
     if (filter.objectKind() == PdfObjectType.name) {
-      return (filter as CraftPdfName).getValue() == 'JBIG2Decode';
+      return (filter as PdfName).getValue() == 'JBIG2Decode';
     }
     if (filter.objectKind() == PdfObjectType.array) {
-      final array = filter as CraftPdfArray;
+      final array = filter as PdfArray;
       for (var i = 0; i < array.size(); i++) {
         if ((await array.nameEntry(i))?.getValue() == 'JBIG2Decode') {
           return true;
@@ -476,24 +475,24 @@ class _Samples {
 ///
 /// Useful when embedding a scanned page: the dimensions and colour space are
 /// the parts a caller usually gets wrong.
-CraftPdfStream buildBilevelImage({
+PdfStream buildBilevelImage({
   required int width,
   required int height,
   required Uint8List packedRows,
-  CraftPdfName? filter,
+  PdfName? filter,
   bool imageMask = false,
 }) {
-  final stream = CraftPdfStream.withBytes(packedRows, 0)
-    ..put(CraftPdfName.type, CraftPdfName('XObject'))
-    ..put(CraftPdfName.subtype, CraftPdfName('Image'))
-    ..put(CraftPdfName.width, CraftPdfNumber.fromInt(width))
-    ..put(CraftPdfName.height, CraftPdfNumber.fromInt(height))
-    ..put(CraftPdfName('BitsPerComponent'), CraftPdfNumber.fromInt(1));
+  final stream = PdfStream.withBytes(packedRows, 0)
+    ..put(PdfName.type, PdfName('XObject'))
+    ..put(PdfName.subtype, PdfName('Image'))
+    ..put(PdfName.width, PdfNumber.fromInt(width))
+    ..put(PdfName.height, PdfNumber.fromInt(height))
+    ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(1));
   if (imageMask) {
-    stream.put(CraftPdfName('ImageMask'), CraftPdfBoolean(true));
+    stream.put(PdfName('ImageMask'), PdfBoolean(true));
   } else {
-    stream.put(CraftPdfName('ColorSpace'), CraftPdfName('DeviceGray'));
+    stream.put(PdfName('ColorSpace'), PdfName('DeviceGray'));
   }
-  if (filter != null) stream.put(CraftPdfName.filter, filter);
+  if (filter != null) stream.put(PdfName.filter, filter);
   return stream;
 }

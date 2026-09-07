@@ -4,7 +4,7 @@ import 'dart:math' as math;
 ///
 /// For many PDF related operations, the z coordinate is specified as 1.
 /// This is to support the coordinate transformation calculations.
-class CraftVector {
+class Vector {
   /// Index of the X coordinate.
   static const int i1 = 0;
 
@@ -18,7 +18,7 @@ class CraftVector {
   final List<double> _vals;
 
   /// Creates a new Vector.
-  CraftVector(double x, double y, double z) : _vals = [x, y, z];
+  Vector(double x, double y, double z) : _vals = [x, y, z];
 
   /// Gets the value from a coordinate of the vector.
   double get(int index) => _vals[index];
@@ -34,19 +34,19 @@ class CraftVector {
 
   /// Computes the cross product of this vector and a 3x3 matrix.
   /// Matrix is represented as a list of 9 values in row-major order.
-  CraftVector crossMatrix(List<double> matrix) {
+  Vector crossMatrix(List<double> matrix) {
     double newX =
         _vals[i1] * matrix[0] + _vals[i2] * matrix[3] + _vals[i3] * matrix[6];
     double newY =
         _vals[i1] * matrix[1] + _vals[i2] * matrix[4] + _vals[i3] * matrix[7];
     double newZ =
         _vals[i1] * matrix[2] + _vals[i2] * matrix[5] + _vals[i3] * matrix[8];
-    return CraftVector(newX, newY, newZ);
+    return Vector(newX, newY, newZ);
   }
 
   /// Computes the difference between this vector and the specified vector.
-  CraftVector subtract(CraftVector v) {
-    return CraftVector(
+  Vector subtract(Vector v) {
+    return Vector(
       _vals[i1] - v._vals[i1],
       _vals[i2] - v._vals[i2],
       _vals[i3] - v._vals[i3],
@@ -54,8 +54,8 @@ class CraftVector {
   }
 
   /// Computes the sum of this vector and the specified vector.
-  CraftVector add(CraftVector v) {
-    return CraftVector(
+  Vector add(Vector v) {
+    return Vector(
       _vals[i1] + v._vals[i1],
       _vals[i2] + v._vals[i2],
       _vals[i3] + v._vals[i3],
@@ -63,27 +63,27 @@ class CraftVector {
   }
 
   /// Computes the cross product of this vector and the specified vector.
-  CraftVector cross(CraftVector other) {
+  Vector cross(Vector other) {
     double newX = _vals[i2] * other._vals[i3] - _vals[i3] * other._vals[i2];
     double newY = _vals[i3] * other._vals[i1] - _vals[i1] * other._vals[i3];
     double newZ = _vals[i1] * other._vals[i2] - _vals[i2] * other._vals[i1];
-    return CraftVector(newX, newY, newZ);
+    return Vector(newX, newY, newZ);
   }
 
   /// Normalizes the vector (returns the unit vector).
-  CraftVector normalize() {
+  Vector normalize() {
     double l = length();
-    if (l == 0) return CraftVector(0, 0, 0);
-    return CraftVector(_vals[i1] / l, _vals[i2] / l, _vals[i3] / l);
+    if (l == 0) return Vector(0, 0, 0);
+    return Vector(_vals[i1] / l, _vals[i2] / l, _vals[i3] / l);
   }
 
   /// Multiplies the vector by a scalar.
-  CraftVector multiply(double by) {
-    return CraftVector(_vals[i1] * by, _vals[i2] * by, _vals[i3] * by);
+  Vector multiply(double by) {
+    return Vector(_vals[i1] * by, _vals[i2] * by, _vals[i3] * by);
   }
 
   /// Computes the dot product of this vector with the specified vector.
-  double dot(CraftVector other) {
+  double dot(Vector other) {
     return _vals[i1] * other._vals[i1] +
         _vals[i2] * other._vals[i2] +
         _vals[i3] * other._vals[i3];
@@ -114,7 +114,7 @@ class CraftVector {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! CraftVector) return false;
+    if (other is! Vector) return false;
     return _vals[i1] == other._vals[i1] &&
         _vals[i2] == other._vals[i2] &&
         _vals[i3] == other._vals[i3];

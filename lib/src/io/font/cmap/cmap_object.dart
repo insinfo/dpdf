@@ -1,4 +1,4 @@
-class CraftCMapObject {
+class CMapObject {
   static const int string = 1;
   static const int hexString = 2;
   static const int name = 3;
@@ -11,7 +11,7 @@ class CraftCMapObject {
   final int type;
   Object? value;
 
-  CraftCMapObject(this.type, this.value);
+  CMapObject(this.type, this.value);
 
   Object? getValue() => value;
 

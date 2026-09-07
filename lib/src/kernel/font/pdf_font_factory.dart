@@ -13,39 +13,38 @@ import '../../io/font/cid_font.dart';
 import '../../io/font/cid_font_properties.dart';
 import 'pdf_type3_font.dart';
 
-class CraftPdfFontFactory {
-  static CraftPdfFont createFont(String fontName,
+class PdfFontFactory {
+  static PdfFont createFont(String fontName,
       [String? encoding, bool embedded = false]) {
-    CraftFontProgram fontProgram = CraftFontProgramFactory.createFont(fontName);
-    if (fontProgram is CraftTrueTypeFont) {
+    FontProgram fontProgram = FontProgramFactory.createFont(fontName);
+    if (fontProgram is TrueTypeFont) {
       if (encoding == null ||
           encoding == "Identity-H" ||
           encoding == "Identity-V") {
-        return CraftPdfType0Font(fontProgram, encoding ?? "Identity-H");
+        return PdfType0Font(fontProgram, encoding ?? "Identity-H");
       }
-      return CraftPdfTrueTypeFont(fontProgram, encoding, embedded);
-    } else if (fontProgram is CraftType1Font) {
-      return CraftPdfType1Font(fontProgram, encoding, embedded);
-    } else if (fontProgram is CraftCidFont) {
-      return CraftPdfType0Font(fontProgram, encoding ?? "Identity-H");
+      return PdfTrueTypeFont(fontProgram, encoding, embedded);
+    } else if (fontProgram is Type1Font) {
+      return PdfType1Font(fontProgram, encoding, embedded);
+    } else if (fontProgram is CidFont) {
+      return PdfType0Font(fontProgram, encoding ?? "Identity-H");
     }
     throw Exception(
         "Unsupported font program type: ${fontProgram.runtimeType}");
   }
 
-  static Future<CraftPdfFont?> createFontFromDictionary(
-      CraftPdfDictionary fontDictionary) async {
-    CraftPdfName? subtype =
-        await fontDictionary.nameEntry(CraftPdfName.subtype);
-    CraftPdfFont? font;
-    if (CraftPdfName.type1 == subtype) {
-      font = CraftPdfType1Font.fromDictionary(fontDictionary);
-    } else if (CraftPdfName.trueType == subtype) {
-      font = CraftPdfTrueTypeFont.fromDictionary(fontDictionary);
-    } else if (CraftPdfName.type0 == subtype) {
-      font = CraftPdfType0Font.fromDictionary(fontDictionary);
-    } else if (CraftPdfName.type3 == subtype) {
-      font = CraftPdfType3Font.fromDictionary(fontDictionary);
+  static Future<PdfFont?> createFontFromDictionary(
+      PdfDictionary fontDictionary) async {
+    PdfName? subtype = await fontDictionary.nameEntry(PdfName.subtype);
+    PdfFont? font;
+    if (PdfName.type1 == subtype) {
+      font = PdfType1Font.fromDictionary(fontDictionary);
+    } else if (PdfName.trueType == subtype) {
+      font = PdfTrueTypeFont.fromDictionary(fontDictionary);
+    } else if (PdfName.type0 == subtype) {
+      font = PdfType0Font.fromDictionary(fontDictionary);
+    } else if (PdfName.type3 == subtype) {
+      font = PdfType3Font.fromDictionary(fontDictionary);
     }
 
     if (font != null) {
@@ -55,12 +54,12 @@ class CraftPdfFontFactory {
     return font;
   }
 
-  static CraftPdfFont createCjkFont(String fontName, String cmap) {
-    CraftCidFont cidFont = CraftCidFont(fontName, cmap);
-    return CraftPdfType0Font(cidFont, cmap);
+  static PdfFont createCjkFont(String fontName, String cmap) {
+    CidFont cidFont = CidFont(fontName, cmap);
+    return PdfType0Font(cidFont, cmap);
   }
 
   static bool isCjkFont(String fontName) {
-    return CraftCidFontProperties.isCjkFont(fontName);
+    return CidFontProperties.isCjkFont(fontName);
   }
 }

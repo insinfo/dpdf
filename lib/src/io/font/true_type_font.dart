@@ -8,22 +8,22 @@ import 'package:dpdf/src/commons/utils/tuple2.dart';
 import 'package:dpdf/src/io/exceptions/io_exception.dart';
 import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
 
-class CraftTrueTypeFont extends CraftFontProgram {
-  late CraftOpenTypeParser fontParser;
+class TrueTypeFont extends FontProgram {
+  late OpenTypeParser fontParser;
   List<List<int>>? bBoxes;
   bool isVertical = false;
   Map<int, int> kerning = {}; // (first << 16) + second -> value
   Uint8List? fontStreamBytes;
 
   // Constructors
-  CraftTrueTypeFont.fromBytes(Uint8List ttf) {
-    fontParser = CraftOpenTypeParser(ttf);
+  TrueTypeFont.fromBytes(Uint8List ttf) {
+    fontParser = OpenTypeParser(ttf);
     fontParser.loadTables(true);
     refreshParsedMetrics();
   }
 
-  CraftTrueTypeFont.fromFile(String path) {
-    fontParser = CraftOpenTypeParser.fromFile(path);
+  TrueTypeFont.fromFile(String path) {
+    fontParser = OpenTypeParser.fromFile(path);
     fontParser.loadTables(true);
     refreshParsedMetrics();
   }
@@ -47,14 +47,14 @@ class CraftTrueTypeFont extends CraftFontProgram {
     fillFontGlyphs();
   }
 
-  CraftFontMetrics _normalizedMetrics() {
+  FontMetrics _normalizedMetrics() {
     final design = fontParser.head;
     final line = fontParser.hhea;
     final windows = fontParser.os_2;
     final decoration = fontParser.post;
-    final factor = CraftFontMetrics.UNITS_NORMALIZATION / design.unitsPerEm;
+    final factor = FontMetrics.UNITS_NORMALIZATION / design.unitsPerEm;
     int scale(int value) => (value * factor).toInt();
-    final result = CraftFontMetrics()
+    final result = FontMetrics()
       ..unitsPerEm = design.unitsPerEm
       ..normalizationCoef = factor
       ..numOfGlyphs = fontParser.readNumGlyphs()
@@ -99,7 +99,7 @@ class CraftTrueTypeFont extends CraftFontProgram {
       cmap.forEach((unicode, entry) {
         int glyphIndex = entry[0];
         int width = entry[1];
-        CraftGlyph glyph = CraftGlyph(glyphIndex, width, unicode);
+        Glyph glyph = Glyph(glyphIndex, width, unicode);
         unicodeToGlyph[unicode] = glyph;
         codeToGlyph[unicode] =
             glyph; // For TrueType, usually same unless distinct encoding
@@ -117,8 +117,8 @@ class CraftTrueTypeFont extends CraftFontProgram {
 
   @override
   int getKerning(int first, int second) {
-    CraftGlyph? g1 = getGlyph(first);
-    CraftGlyph? g2 = getGlyph(second);
+    Glyph? g1 = getGlyph(first);
+    Glyph? g2 = getGlyph(second);
     if (g1 != null && g2 != null) {
       return getKerningByGlyph(g1, g2);
     }
@@ -126,7 +126,7 @@ class CraftTrueTypeFont extends CraftFontProgram {
   }
 
   @override
-  int getKerningByGlyph(CraftGlyph first, CraftGlyph second) {
+  int getKerningByGlyph(Glyph first, Glyph second) {
     int key = (first.getCode() << 16) + second.getCode();
     return kerning[key] ?? 0;
   }
@@ -140,7 +140,7 @@ class CraftTrueTypeFont extends CraftFontProgram {
     try {
       fontStreamBytes = fontParser.getFullFont();
     } catch (e) {
-      throw IoException(CraftIoExceptionMessageConstant.ioException);
+      throw IoException(IoExceptionMessageConstant.ioException);
     }
     return fontStreamBytes;
   }
@@ -171,7 +171,7 @@ class CraftTrueTypeFont extends CraftFontProgram {
     if (subsetRanges != null) {
       for (var range in subsetRanges) {
         for (int k = range[0]; k <= range[1]; k++) {
-          CraftGlyph? g = getGlyph(k);
+          Glyph? g = getGlyph(k);
           if (g != null) glyphs.add(g.getCode());
         }
       }

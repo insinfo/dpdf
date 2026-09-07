@@ -17,7 +17,7 @@ import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
 
 import 'package:dpdf/src/kernel/geom/page_size.dart';
 
-class SimpleExternalSignature implements CraftExternalSignature {
+class SimpleExternalSignature implements ExternalSignature {
   final RSAPrivateKey key;
   final String digestAlgorithm;
 
@@ -30,7 +30,7 @@ class SimpleExternalSignature implements CraftExternalSignature {
   String getSignatureAlgorithmName() => 'RSA';
 
   @override
-  CraftSignatureMechanismParams? getSignatureMechanismParameters() =>
+  SignatureMechanismParams? getSignatureMechanismParameters() =>
       null; // Fix method name
 
   @override
@@ -123,9 +123,9 @@ void main() {
           _IOSinkWrapper(output); // Needed wrapper? IOSink implementation
 
       // Load into PdfReader
-      final reader = CraftPdfReader.fromBytes(pdfBytes);
+      final reader = PdfReader.fromBytes(pdfBytes);
 
-      final signer = CraftPdfSigner(reader, sink);
+      final signer = PdfSigner(reader, sink);
 
       final chain = [userCert, interCert, rootCert];
 
@@ -147,9 +147,9 @@ void main() {
 
 Future<Uint8List> _createDummyPdf() async {
   final output = BytesBuilder();
-  final writer = CraftPdfWriter(_IOSinkWrapper(output));
-  final pdf = CraftPdfDocument(writer: writer);
-  await pdf.appendBlankPage(CraftPageSize.A4);
+  final writer = PdfWriter(_IOSinkWrapper(output));
+  final pdf = PdfDocument(writer: writer);
+  await pdf.appendBlankPage(PageSize.A4);
   await pdf.close();
   return output.toBytes();
 }

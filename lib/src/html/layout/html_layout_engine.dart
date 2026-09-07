@@ -9,63 +9,63 @@ import 'html_text_measure.dart';
 ///
 /// The engine returns a display list rather than writing PDF operators, which
 /// keeps pagination and painting independent from layout decisions.
-class CraftHtmlLayoutEngine {
+class HtmlLayoutEngine {
   final double availableWidth;
-  final List<CraftHtmlTextFragment> _fragments = [];
-  final List<CraftHtmlBoxDecoration> _decorations = [];
-  final List<CraftHtmlImageFragment> _images = [];
+  final List<HtmlTextFragment> _fragments = [];
+  final List<HtmlBoxDecoration> _decorations = [];
+  final List<HtmlImageFragment> _images = [];
   double _cursor = 0;
 
-  CraftHtmlLayoutEngine(this.availableWidth) : assert(availableWidth > 0);
+  HtmlLayoutEngine(this.availableWidth) : assert(availableWidth > 0);
 
-  List<CraftHtmlTextFragment> layout(List<CraftHtmlBox> boxes) {
+  List<HtmlTextFragment> layout(List<HtmlBox> boxes) {
     return layoutDisplayList(boxes).textFragments;
   }
 
-  CraftHtmlDisplayList layoutDisplayList(List<CraftHtmlBox> boxes) {
+  HtmlDisplayList layoutDisplayList(List<HtmlBox> boxes) {
     for (final box in boxes) {
       _layout(box, 0, availableWidth);
     }
-    return CraftHtmlDisplayList(List.unmodifiable(_fragments),
+    return HtmlDisplayList(List.unmodifiable(_fragments),
         List.unmodifiable(_decorations), List.unmodifiable(_images));
   }
 
-  double _layout(CraftHtmlBox box, double x, double width) {
-    if (box.role == CraftHtmlBoxRole.table) return _table(box, x, width);
+  double _layout(HtmlBox box, double x, double width) {
+    if (box.role == HtmlBoxRole.table) return _table(box, x, width);
     if (box.isImage) return _image(box, x, width);
     if (box.isText) {
       return _paragraph(box.text!, box.style.text, x, width,
           linkTarget: box.linkTarget);
     }
     switch (box.style.display) {
-      case CraftHtmlDisplay.none:
+      case HtmlDisplay.none:
         return 0;
-      case CraftHtmlDisplay.flex:
+      case HtmlDisplay.flex:
         return _flex(box, x, width);
-      case CraftHtmlDisplay.grid:
+      case HtmlDisplay.grid:
         return _grid(box, x, width);
-      case CraftHtmlDisplay.inline:
-      case CraftHtmlDisplay.block:
+      case HtmlDisplay.inline:
+      case HtmlDisplay.block:
         return _flow(box, x, width);
     }
   }
 
-  double _image(CraftHtmlBox box, double x, double width) {
+  double _image(HtmlBox box, double x, double width) {
     final source = box.image!;
     final resolvedWidth = source.width.clamp(1.0, width).toDouble();
     final resolvedHeight = source.height * resolvedWidth / source.width;
     final top = _cursor;
-    _images.add(
-        CraftHtmlImageFragment(source, x, top, resolvedWidth, resolvedHeight));
+    _images
+        .add(HtmlImageFragment(source, x, top, resolvedWidth, resolvedHeight));
     _cursor += resolvedHeight;
     return resolvedHeight;
   }
 
-  double _flow(CraftHtmlBox box, double x, double width) {
-    final geometry = CraftHtmlBoxGeometry.resolve(box.style, x, width);
+  double _flow(HtmlBox box, double x, double width) {
+    final geometry = HtmlBoxGeometry.resolve(box.style, x, width);
     final start = _cursor;
     _cursor += geometry.marginTop + geometry.paddingTop;
-    final inline = <CraftHtmlBox>[];
+    final inline = <HtmlBox>[];
     void flushInline() {
       if (inline.isEmpty) return;
       _inlineFlow(
@@ -86,7 +86,7 @@ class CraftHtmlLayoutEngine {
       }
     }
     flushInline();
-    if (box.style.display == CraftHtmlDisplay.block && _cursor > start) {
+    if (box.style.display == HtmlDisplay.block && _cursor > start) {
       _cursor += box.style.text.fontSize * .35;
     }
     _cursor += geometry.paddingBottom;
@@ -95,11 +95,11 @@ class CraftHtmlLayoutEngine {
     return _cursor - start;
   }
 
-  List<CraftHtmlBox>? _inlineLeaves(CraftHtmlBox box) {
+  List<HtmlBox>? _inlineLeaves(HtmlBox box) {
     if (box.isText) return [box];
     if (box.isImage) return null;
-    if (box.style.display != CraftHtmlDisplay.inline) return null;
-    final result = <CraftHtmlBox>[];
+    if (box.style.display != HtmlDisplay.inline) return null;
+    final result = <HtmlBox>[];
     for (final child in box.children) {
       final leaves = _inlineLeaves(child);
       if (leaves == null) return null;
@@ -108,8 +108,8 @@ class CraftHtmlLayoutEngine {
     return result;
   }
 
-  void _inlineFlow(List<CraftHtmlBox> leaves, double x, double width,
-      CraftHtmlTextAlign textAlign) {
+  void _inlineFlow(
+      List<HtmlBox> leaves, double x, double width, HtmlTextAlign textAlign) {
     final line = <_InlineWord>[];
     var used = 0.0;
     var lineHeight = 0.0;
@@ -118,12 +118,12 @@ class CraftHtmlLayoutEngine {
       if (line.isEmpty) return;
       _cursor += lineHeight;
       final alignmentOffset = switch (textAlign) {
-        CraftHtmlTextAlign.center => (width - used) / 2,
-        CraftHtmlTextAlign.end => width - used,
+        HtmlTextAlign.center => (width - used) / 2,
+        HtmlTextAlign.end => width - used,
         _ => 0.0,
       };
       for (final word in line) {
-        _fragments.add(CraftHtmlTextFragment(
+        _fragments.add(HtmlTextFragment(
             word.text, word.style, x + alignmentOffset + word.offset, _cursor,
             linkTarget: word.linkTarget));
       }
@@ -136,10 +136,10 @@ class CraftHtmlLayoutEngine {
       final style = leaf.style.text;
       final forcedLines = leaf.text!.split('\n');
       for (var index = 0; index < forcedLines.length; index++) {
-        for (final word in CraftHtmlText.words(forcedLines[index])) {
+        for (final word in HtmlText.words(forcedLines[index])) {
           if (word.isEmpty) continue;
-          final glyphWidth = CraftHtmlTextMeasure.text(word, style);
-          final space = line.isEmpty ? 0.0 : CraftHtmlTextMeasure.space(style);
+          final glyphWidth = HtmlTextMeasure.text(word, style);
+          final space = line.isEmpty ? 0.0 : HtmlTextMeasure.space(style);
           if (line.isNotEmpty && used + space + glyphWidth > width) flush();
           final offset = used + space;
           line.add(_InlineWord(word, style, offset, leaf.linkTarget));
@@ -153,12 +153,12 @@ class CraftHtmlLayoutEngine {
     flush();
   }
 
-  double _flex(CraftHtmlBox box, double x, double width) {
+  double _flex(HtmlBox box, double x, double width) {
     if (box.children.isEmpty) return 0;
     if (box.style.flexDirection.toLowerCase().startsWith('column')) {
       return _flow(box, x, width);
     }
-    final geometry = CraftHtmlBoxGeometry.resolve(box.style, x, width);
+    final geometry = HtmlBoxGeometry.resolve(box.style, x, width);
     final start = _cursor;
     _cursor += geometry.marginTop + geometry.paddingTop;
     if (!box.style.hasJustifyContent && !box.style.flexWrap) {
@@ -177,7 +177,7 @@ class CraftHtmlLayoutEngine {
       _cursor += geometry.marginBottom;
       return _cursor - start;
     }
-    final rows = CraftHtmlLayoutPlan.flexRows(box.children,
+    final rows = HtmlLayoutPlan.flexRows(box.children,
         availableWidth: geometry.contentWidth,
         widthOf: (child) => _intrinsicWidth(child, geometry.contentWidth),
         gap: box.style.gap,
@@ -192,16 +192,15 @@ class CraftHtmlLayoutEngine {
       final remaining = (geometry.contentWidth - contentWidth)
           .clamp(0.0, double.infinity)
           .toDouble();
-      final initial = box.style.justifyContent == CraftHtmlJustifyContent.center
+      final initial = box.style.justifyContent == HtmlJustifyContent.center
           ? remaining / 2
-          : box.style.justifyContent == CraftHtmlJustifyContent.end
+          : box.style.justifyContent == HtmlJustifyContent.end
               ? remaining
               : 0.0;
-      final gap =
-          box.style.justifyContent == CraftHtmlJustifyContent.spaceBetween &&
-                  row.items.length > 1
-              ? box.style.gap + remaining / (row.items.length - 1)
-              : box.style.gap;
+      final gap = box.style.justifyContent == HtmlJustifyContent.spaceBetween &&
+              row.items.length > 1
+          ? box.style.gap + remaining / (row.items.length - 1)
+          : box.style.gap;
       final rowStart = _cursor;
       var bottom = rowStart;
       var offset = initial;
@@ -219,12 +218,12 @@ class CraftHtmlLayoutEngine {
     return _cursor - start;
   }
 
-  double _intrinsicWidth(CraftHtmlBox box, double maximum) {
+  double _intrinsicWidth(HtmlBox box, double maximum) {
     if (!box.style.width.isAuto) {
       return box.style.width.resolve(maximum).clamp(1.0, maximum).toDouble();
     }
     if (box.isText) {
-      return CraftHtmlTextMeasure.text(box.text!, box.style.text)
+      return HtmlTextMeasure.text(box.text!, box.style.text)
           .clamp(1.0, maximum)
           .toDouble();
     }
@@ -232,26 +231,26 @@ class CraftHtmlLayoutEngine {
     var intrinsic = 0.0;
     for (final child in box.children) {
       final childWidth = _intrinsicWidth(child, maximum);
-      if (box.style.display == CraftHtmlDisplay.flex &&
+      if (box.style.display == HtmlDisplay.flex &&
           !box.style.flexDirection.toLowerCase().startsWith('column')) {
         intrinsic += childWidth;
       } else if (childWidth > intrinsic) {
         intrinsic = childWidth;
       }
     }
-    if (box.style.display == CraftHtmlDisplay.flex && box.children.length > 1) {
+    if (box.style.display == HtmlDisplay.flex && box.children.length > 1) {
       intrinsic += box.style.gap * (box.children.length - 1);
     }
     return intrinsic.clamp(1.0, maximum).toDouble();
   }
 
-  double _grid(CraftHtmlBox box, double x, double width) {
-    final geometry = CraftHtmlBoxGeometry.resolve(box.style, x, width);
-    final widths = CraftHtmlLayoutPlan.gridTrackWidths(
+  double _grid(HtmlBox box, double x, double width) {
+    final geometry = HtmlBoxGeometry.resolve(box.style, x, width);
+    final widths = HtmlLayoutPlan.gridTrackWidths(
         box.style.gridTemplateColumns, geometry.contentWidth,
         gap: box.style.gap);
     final columns = widths.length;
-    final rows = CraftHtmlLayoutPlan.grid(box.children, columns);
+    final rows = HtmlLayoutPlan.grid(box.children, columns);
     final start = _cursor;
     _cursor += geometry.marginTop + geometry.paddingTop;
     for (final row in rows) {
@@ -276,9 +275,9 @@ class CraftHtmlLayoutEngine {
   /// Cell content still passes through the ordinary flow routine, preserving
   /// its own wrapping and inherited text style while every cell in a row
   /// shares the same starting baseline.
-  double _table(CraftHtmlBox box, double x, double width) {
+  double _table(HtmlBox box, double x, double width) {
     final rows = box.children
-        .where((child) => child.role == CraftHtmlBoxRole.tableRow)
+        .where((child) => child.role == HtmlBoxRole.tableRow)
         .toList(growable: false);
     if (rows.isEmpty) return 0;
     var columns = 0;
@@ -286,7 +285,7 @@ class CraftHtmlLayoutEngine {
       if (row.children.length > columns) columns = row.children.length;
     }
     if (columns == 0) return 0;
-    final geometry = CraftHtmlBoxGeometry.resolve(box.style, x, width);
+    final geometry = HtmlBoxGeometry.resolve(box.style, x, width);
     final columnWidth =
         (geometry.contentWidth - box.style.gap * (columns - 1)) / columns;
     final start = _cursor;
@@ -309,12 +308,12 @@ class CraftHtmlLayoutEngine {
     return _cursor - start;
   }
 
-  void _addDecoration(CraftHtmlBox box, CraftHtmlBoxGeometry geometry,
-      double top, double bottom) {
+  void _addDecoration(
+      HtmlBox box, HtmlBoxGeometry geometry, double top, double bottom) {
     if (box.style.backgroundColor == null && box.style.border == null) return;
     final height = bottom - top;
     if (height <= 0 || geometry.paintWidth <= 0) return;
-    _decorations.add(CraftHtmlBoxDecoration(
+    _decorations.add(HtmlBoxDecoration(
       x: geometry.paintX,
       top: top,
       width: geometry.paintWidth,
@@ -324,15 +323,14 @@ class CraftHtmlLayoutEngine {
     ));
   }
 
-  double _paragraph(
-      String value, CraftHtmlTextStyle style, double x, double width,
+  double _paragraph(String value, HtmlTextStyle style, double x, double width,
       {String? linkTarget}) {
     final lineHeight = style.fontSize * 1.35;
-    final limit = CraftHtmlTextMeasure.charactersPerLine(style, width);
+    final limit = HtmlTextMeasure.charactersPerLine(style, width);
     for (final line in _wrap(value, limit)) {
       _cursor += lineHeight;
-      _fragments.add(CraftHtmlTextFragment(line, style, x, _cursor,
-          linkTarget: linkTarget));
+      _fragments.add(
+          HtmlTextFragment(line, style, x, _cursor, linkTarget: linkTarget));
     }
     return lineHeight;
   }
@@ -340,7 +338,7 @@ class CraftHtmlLayoutEngine {
   Iterable<String> _wrap(String value, int limit) sync* {
     for (final forcedLine in value.split('\n')) {
       var line = '';
-      for (final word in CraftHtmlText.words(forcedLine)) {
+      for (final word in HtmlText.words(forcedLine)) {
         if (word.isEmpty) continue;
         final candidate = line.isEmpty ? word : '$line $word';
         if (candidate.length > limit && line.isNotEmpty) {
@@ -357,7 +355,7 @@ class CraftHtmlLayoutEngine {
 
 class _InlineWord {
   final String text;
-  final CraftHtmlTextStyle style;
+  final HtmlTextStyle style;
   final double offset;
   final String? linkTarget;
   const _InlineWord(this.text, this.style, this.offset, this.linkTarget);

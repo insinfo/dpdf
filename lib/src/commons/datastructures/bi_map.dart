@@ -1,12 +1,12 @@
 /// A simple bi-directional map.
 ///
 /// Allows lookup by both key and value in O(1) time.
-class CraftBiMap<K, V> {
+class BiMap<K, V> {
   final Map<K, V> _map = {};
   final Map<V, K> _inverseMap = {};
 
   /// Creates a new BiMap instance.
-  CraftBiMap();
+  BiMap();
 
   /// Puts the entry into the map.
   ///

@@ -10,25 +10,24 @@ import 'package:dpdf/src/kernel/pdf/function/pdf_function_stitching.dart';
 
 /// Dictionary keys used by PDF function objects (ISO 32000-1, clause 7.10).
 ///
-/// They are interned here instead of in [CraftPdfName] so that the function
+/// They are interned here instead of in [PdfName] so that the function
 /// package stays self contained.
-class CraftPdfFunctionName {
-  CraftPdfFunctionName._();
+class PdfFunctionName {
+  PdfFunctionName._();
 
-  static final CraftPdfName functionType = CraftPdfName.intern('FunctionType');
-  static final CraftPdfName domain = CraftPdfName.intern('Domain');
-  static final CraftPdfName range = CraftPdfName.intern('Range');
-  static final CraftPdfName size = CraftPdfName.intern('Size');
-  static final CraftPdfName bitsPerSample =
-      CraftPdfName.intern('BitsPerSample');
-  static final CraftPdfName encode = CraftPdfName.intern('Encode');
-  static final CraftPdfName decode = CraftPdfName.intern('Decode');
-  static final CraftPdfName order = CraftPdfName.intern('Order');
-  static final CraftPdfName c0 = CraftPdfName.intern('C0');
-  static final CraftPdfName c1 = CraftPdfName.intern('C1');
-  static final CraftPdfName n = CraftPdfName.intern('N');
-  static final CraftPdfName functions = CraftPdfName.intern('Functions');
-  static final CraftPdfName bounds = CraftPdfName.intern('Bounds');
+  static final PdfName functionType = PdfName.intern('FunctionType');
+  static final PdfName domain = PdfName.intern('Domain');
+  static final PdfName range = PdfName.intern('Range');
+  static final PdfName size = PdfName.intern('Size');
+  static final PdfName bitsPerSample = PdfName.intern('BitsPerSample');
+  static final PdfName encode = PdfName.intern('Encode');
+  static final PdfName decode = PdfName.intern('Decode');
+  static final PdfName order = PdfName.intern('Order');
+  static final PdfName c0 = PdfName.intern('C0');
+  static final PdfName c1 = PdfName.intern('C1');
+  static final PdfName n = PdfName.intern('N');
+  static final PdfName functions = PdfName.intern('Functions');
+  static final PdfName bounds = PdfName.intern('Bounds');
 }
 
 /// A PDF function object as defined by ISO 32000-1, clause 7.10.
@@ -38,7 +37,7 @@ class CraftPdfFunctionName {
 /// stream payloads asynchronously; once a function has been parsed every value
 /// it needs is held in memory, so [evaluate] is synchronous and can be called
 /// from the inner loop of a rasterizer.
-abstract class CraftPdfFunction {
+abstract class PdfFunction {
   /// The `/Domain` entry: `2 * inputCount` numbers, pairs of `[min, max]`.
   final List<double> domain;
 
@@ -47,7 +46,7 @@ abstract class CraftPdfFunction {
   /// Required for sampled and PostScript functions, optional for the others.
   final List<double>? range;
 
-  CraftPdfFunction(this.domain, this.range);
+  PdfFunction(this.domain, this.range);
 
   /// Number of input values [evaluate] expects.
   int get inputCount => domain.length ~/ 2;
@@ -109,56 +108,52 @@ abstract class CraftPdfFunction {
   /// or an array of 1-in-1-out functions standing in for a single 1-in-n-out
   /// function (the form shadings use). Returns null when the object is not a
   /// function this implementation understands.
-  static Future<CraftPdfFunction?> parse(CraftPdfObject? object) async {
+  static Future<PdfFunction?> parse(PdfObject? object) async {
     var resolved = object;
-    if (resolved is CraftPdfIndirectReference) {
+    if (resolved is PdfIndirectReference) {
       resolved = await resolved.targetObject();
     }
     if (resolved == null) return null;
 
-    if (resolved is CraftPdfArray) {
+    if (resolved is PdfArray) {
       return await _parseFunctionArray(resolved);
     }
-    if (resolved is! CraftPdfDictionary) return null;
+    if (resolved is! PdfDictionary) return null;
 
     final dict = resolved;
-    final type = await dict.integerEntry(CraftPdfFunctionName.functionType);
+    final type = await dict.integerEntry(PdfFunctionName.functionType);
     if (type == null) return null;
 
-    final domain = await _numbers(dict, CraftPdfFunctionName.domain);
+    final domain = await _numbers(dict, PdfFunctionName.domain);
     if (domain == null || domain.length < 2) return null;
-    final range = await _numbers(dict, CraftPdfFunctionName.range);
+    final range = await _numbers(dict, PdfFunctionName.range);
 
     switch (type) {
       case 0:
-        if (dict is! CraftPdfStream) return null;
-        return await CraftPdfFunctionSampled.parseStream(dict, domain, range);
+        if (dict is! PdfStream) return null;
+        return await PdfFunctionSampled.parseStream(dict, domain, range);
       case 2:
-        return await CraftPdfFunctionExponential.parseDictionary(
+        return await PdfFunctionExponential.parseDictionary(
             dict, domain, range);
       case 3:
-        return await CraftPdfFunctionStitching.parseDictionary(
-            dict, domain, range);
+        return await PdfFunctionStitching.parseDictionary(dict, domain, range);
       case 4:
-        if (dict is! CraftPdfStream || range == null) return null;
-        return await CraftPdfFunctionPostScript.parseStream(
-            dict, domain, range);
+        if (dict is! PdfStream || range == null) return null;
+        return await PdfFunctionPostScript.parseStream(dict, domain, range);
       default:
         return null;
     }
   }
 
   /// Reads a numeric array entry, returning null when it is absent.
-  static Future<List<double>?> _numbers(
-      CraftPdfDictionary dict, CraftPdfName key) async {
+  static Future<List<double>?> _numbers(PdfDictionary dict, PdfName key) async {
     final array = await dict.arrayEntry(key);
     if (array == null) return null;
     return await array.toDoubleArray();
   }
 
-  static Future<CraftPdfFunction?> _parseFunctionArray(
-      CraftPdfArray array) async {
-    final parts = <CraftPdfFunction>[];
+  static Future<PdfFunction?> _parseFunctionArray(PdfArray array) async {
+    final parts = <PdfFunction>[];
     for (var i = 0; i < array.size(); i++) {
       final part = await parse(await array.get(i));
       // Every member has to be a usable 1-in-1-out function; otherwise the
@@ -169,16 +164,16 @@ abstract class CraftPdfFunction {
       parts.add(part);
     }
     if (parts.isEmpty) return null;
-    return CraftPdfFunctionArray(parts);
+    return PdfFunctionArray(parts);
   }
 }
 
 /// An array of n 1-in-1-out functions used where one 1-in-n-out function is
 /// expected (ISO 32000-1, clause 8.7.4.5.2 allows this form for shadings).
-class CraftPdfFunctionArray extends CraftPdfFunction {
-  final List<CraftPdfFunction> functions;
+class PdfFunctionArray extends PdfFunction {
+  final List<PdfFunction> functions;
 
-  CraftPdfFunctionArray(this.functions)
+  PdfFunctionArray(this.functions)
       : super(List<double>.from(functions.first.domain), null);
 
   @override

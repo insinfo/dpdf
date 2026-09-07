@@ -3,28 +3,26 @@ import '../../source/random_access_file_or_array.dart';
 import 'cmap_location.dart';
 import '../../../platform/io.dart';
 
-class CraftCMapLocationResource implements CraftCMapLocation {
+class CMapLocationResource implements CMapLocation {
   static const String _defaultCMapPath = "lib/src/io/font/resources/cmap/";
   final String _basePath;
 
-  CraftCMapLocationResource([this._basePath = _defaultCMapPath]);
+  CMapLocationResource([this._basePath = _defaultCMapPath]);
 
   @override
-  Future<CraftPdfTokenizer> getLocation(String location) async {
+  Future<PdfTokenizer> getLocation(String location) async {
     final file = File(_basePath + location);
     if (await file.exists()) {
-      return CraftPdfTokenizer(
-          CraftRandomAccessFileOrArray(await file.readAsBytes()));
+      return PdfTokenizer(RandomAccessFileOrArray(await file.readAsBytes()));
     }
     throw FileSystemException("CMap resource not found", location);
   }
 
   @override
-  CraftPdfTokenizer getLocationSync(String location) {
+  PdfTokenizer getLocationSync(String location) {
     final file = File(_basePath + location);
     if (file.existsSync()) {
-      return CraftPdfTokenizer(
-          CraftRandomAccessFileOrArray(file.readAsBytesSync()));
+      return PdfTokenizer(RandomAccessFileOrArray(file.readAsBytesSync()));
     }
     throw FileSystemException("CMap resource not found", location);
   }

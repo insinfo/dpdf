@@ -20,12 +20,12 @@ Uint8List rle(int depth, List<int> commands) {
 
 void main() {
   test('BMP RLE8 encoded, literal, delta and skipped cells', () {
-    final image = CraftImageDataFactory.create(
+    final image = ImageDataFactory.create(
         rle(8, [3, 1, 0, 0, 0, 3, 2, 3, 4, 0, 0, 0, 0, 2, 1, 0, 2, 5, 0, 1]));
     expect(image.getData(), [0, 5, 5, 2, 3, 4, 1, 1, 1]);
   });
   test('BMP RLE4 alternating nibbles and absolute packed samples', () {
-    final image = CraftImageDataFactory.create(
+    final image = ImageDataFactory.create(
         rle(4, [3, 0x12, 0, 0, 0, 3, 0x34, 0x50, 0, 0, 3, 0x67, 0, 1]));
     expect(image.getData(), [0x67, 0x60, 0x34, 0x50, 0x12, 0x10]);
   });
@@ -34,20 +34,20 @@ void main() {
       [4, 1],
       [0, 3, 1]
     ]) {
-      expect(() => CraftImageDataFactory.create(rle(8, commands)),
+      expect(() => ImageDataFactory.create(rle(8, commands)),
           throwsA(isA<Exception>()));
     }
   });
   test('TIFF horizontal predictor accumulates each channel and resets rows',
       () {
-    final image = CraftImageDataFactory.create(base64.decode(
+    final image = ImageDataFactory.create(base64.decode(
         'SUkqAB4AAAB4nOMSkZMT4ZIT4UoJsIEwABNyAh0ACwAAAQMAAQAAAAMAAAABAQMAAQAAAAIAAAACAQMAAwAAAKgAAAADAQMAAQAAAAgAAAAGAQMAAQAAAAIAAAARAQQAAQAAAAgAAAAVAQMAAQAAAAMAAAAWAQMAAQAAAAIAAAAXAQQAAQAAABUAAAAcAQMAAQAAAAEAAAA9AQMAAQAAAAIAAAAAAAAACAAIAAgA'));
     expect(zlib.decode(image.getData()!), [
       for (var x = 0; x < 6; x++) ...[10 + x * 30, 20 + x * 20, 30 + x * 10]
     ]);
   });
   test('TIFF RGBA separates color and opacity without changing samples', () {
-    final image = CraftImageDataFactory.create(base64.decode(
+    final image = ImageDataFactory.create(base64.decode(
         'SUkqAAgAAAALAAABBAABAAAAAgAAAAEBBAABAAAAAgAAAAIBAwAEAAAAkgAAAAMBAwABAAAAAQAAAAYBAwABAAAAAgAAABEBBAABAAAAmgAAABUBAwABAAAABAAAABYBBAABAAAAAgAAABcBBAABAAAAEAAAABwBAwABAAAAAQAAAFIBAwABAAAAAgAAAAAAAAAIAAgACAAIAAECAwQFBgcICQoLDA0ODxA='));
     expect(zlib.decode(image.getData()!),
         [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15]);

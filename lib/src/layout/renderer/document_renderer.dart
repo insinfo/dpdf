@@ -10,11 +10,11 @@ import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 import 'package:dpdf/src/layout/renderer/draw_context.dart';
 import 'package:dpdf/src/kernel/geom/page_size.dart';
 
-class CraftDocumentRenderer extends CraftRootRenderer {
-  final CraftDocument document;
+class DocumentRenderer extends RootRenderer {
+  final Document document;
   int currentPageNumber = 0;
 
-  CraftDocumentRenderer(this.document) : super(document);
+  DocumentRenderer(this.document) : super(document);
 
   @override
   Future<void> close() async {
@@ -23,21 +23,21 @@ class CraftDocumentRenderer extends CraftRootRenderer {
   }
 
   @override
-  Future<void> addChild(CraftRenderer renderer) async {
+  Future<void> addChild(Renderer renderer) async {
     renderer.setParent(this);
 
     // While we have content to place
-    CraftRenderer? currentRenderer = renderer;
+    Renderer? currentRenderer = renderer;
     while (currentRenderer != null) {
       if (currentArea == null) {
         await updateCurrentArea(null);
       }
 
-      CraftLayoutResult? result =
-          currentRenderer.layout(CraftLayoutContext(currentArea!));
+      LayoutResult? result =
+          currentRenderer.layout(LayoutContext(currentArea!));
 
       if (result != null) {
-        if (result.getStatus() == CraftLayoutResult.FULL) {
+        if (result.getStatus() == LayoutResult.FULL) {
           if (result.getOccupiedArea() != null) {
             await _draw(currentRenderer, result.getOccupiedArea()!.getBBox());
             if (currentArea != null && result.getOccupiedArea() != null) {
@@ -47,7 +47,7 @@ class CraftDocumentRenderer extends CraftRootRenderer {
             }
           }
           currentRenderer = null; // Done
-        } else if (result.getStatus() == CraftLayoutResult.PARTIAL) {
+        } else if (result.getStatus() == LayoutResult.PARTIAL) {
           if (result.getSplitRenderer() != null &&
               result.getOccupiedArea() != null) {
             await _draw(result.getSplitRenderer()!,
@@ -74,40 +74,37 @@ class CraftDocumentRenderer extends CraftRootRenderer {
   }
 
   @override
-  Future<CraftLayoutArea?> updateCurrentArea(
-      CraftLayoutResult? overflowResult) async {
-    CraftPdfPage page =
-        await document.pdfDocument.appendBlankPage(CraftPageSize.A4);
+  Future<LayoutArea?> updateCurrentArea(LayoutResult? overflowResult) async {
+    PdfPage page = await document.pdfDocument.appendBlankPage(PageSize.A4);
     currentPageNumber++;
-    CraftRectangle pageSize = await page.mediaBounds();
+    Rectangle pageSize = await page.mediaBounds();
     // simplified margins
-    CraftRectangle usable = CraftRectangle(
-        36, 36, pageSize.getWidth() - 72, pageSize.getHeight() - 72);
-    currentArea = CraftLayoutArea(currentPageNumber, usable);
+    Rectangle usable =
+        Rectangle(36, 36, pageSize.getWidth() - 72, pageSize.getHeight() - 72);
+    currentArea = LayoutArea(currentPageNumber, usable);
     return currentArea;
   }
 
   @override
-  Future<void> flushSingleRenderer(CraftRenderer resultRenderer) async {
+  Future<void> flushSingleRenderer(Renderer resultRenderer) async {
     if (resultRenderer.getOccupiedArea() != null) {
       await _draw(resultRenderer, resultRenderer.getOccupiedArea()!.getBBox(),
           resultRenderer.getOccupiedArea()!.pageOrdinal());
     }
   }
 
-  Future<void> _draw(CraftRenderer renderer, CraftRectangle areaBox,
+  Future<void> _draw(Renderer renderer, Rectangle areaBox,
       [int? pageNumber]) async {
     int pNum = pageNumber ?? currentPageNumber;
-    CraftPdfPage? page = await document.pdfDocument.pageAt(pNum);
+    PdfPage? page = await document.pdfDocument.pageAt(pNum);
     if (page != null) {
-      CraftPdfCanvas canvas = await CraftPdfCanvas.fromPage(page);
-      await renderer.draw(CraftDrawContext(document.pdfDocument, canvas));
+      PdfCanvas canvas = await PdfCanvas.fromPage(page);
+      await renderer.draw(DrawContext(document.pdfDocument, canvas));
     }
   }
 
   @override
-  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
-    return CraftLayoutResult(
-        CraftLayoutResult.FULL, layoutContext.getArea(), null, null);
+  LayoutResult? layout(LayoutContext layoutContext) {
+    return LayoutResult(LayoutResult.FULL, layoutContext.getArea(), null, null);
   }
 }

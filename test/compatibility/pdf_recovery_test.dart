@@ -9,9 +9,8 @@ String source({String suffix = '', String extras = '', int generation = 0}) =>
     '%PDF-1.7\n1 $generation obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'
     '2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n$extras'
     'trailer\n<< /Root 1 $generation R /Size 3 >>\n$suffix';
-CraftPdfReader reader(String text, PdfRecoveryMode mode) =>
-    CraftPdfReader.fromBytes(
-        bytes(text), CraftReaderProperties()..recoveryMode = mode);
+PdfReader reader(String text, PdfRecoveryMode mode) =>
+    PdfReader.fromBytes(bytes(text), ReaderProperties()..recoveryMode = mode);
 
 void main() {
   for (final mode in [PdfRecoveryMode.scan, PdfRecoveryMode.skipStreams]) {
@@ -22,7 +21,7 @@ void main() {
     ]) {
       test('$mode rebuilds missing or broken startxref: $suffix', () async {
         final input = reader(source(suffix: suffix), mode);
-        final doc = await CraftPdfDocument.open(input);
+        final doc = await PdfDocument.open(input);
         expect(input.rebuiltXref, isTrue);
         expect(doc.pageTotal(), 0);
         await doc.close();
@@ -45,7 +44,7 @@ void main() {
       await input.read();
       expect(input.xref.get(1)!.generationNumber(), 1);
       expect(
-          (await (await input.rootCatalog())!.nameEntry(CraftPdfName.version))!
+          (await (await input.rootCatalog())!.nameEntry(PdfName.version))!
               .getValue(),
           'Latest');
       input.close();
@@ -61,8 +60,7 @@ void main() {
             mode);
         await input.read();
         expect(input.xref.get(1)!.generationNumber(), 0);
-        expect(
-            await (await input.rootCatalog())!.nameEntry(CraftPdfName.version),
+        expect(await (await input.rootCatalog())!.nameEntry(PdfName.version),
             isNull);
         input.close();
       });
@@ -92,23 +90,22 @@ void main() {
           .replaceFirst('/Kids [] /Count 0', '/Kids [3 0 R] /Count 1');
       final input = reader(text, PdfRecoveryMode.skipStreams);
       await input.read();
-      final content = await input.readObject(4) as CraftPdfStream;
+      final content = await input.readObject(4) as PdfStream;
       expect(
           latin1.decode((await content.getBytes())!), 'q 1 0 0 1 0 0 cm Q\n');
       input.close();
       final output = BytesBuilder();
-      final document = CraftPdfDocument(
+      final document = PdfDocument(
           reader: reader(text, PdfRecoveryMode.skipStreams),
-          writer: CraftPdfWriter.fromBytesBuilder(output));
+          writer: PdfWriter.fromBytesBuilder(output));
       await document.load();
       await document.close();
-      final reopened = await CraftPdfDocument.open(
-          CraftPdfReader.fromBytes(output.takeBytes()));
+      final reopened =
+          await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
       expect(reopened.pageTotal(), 1);
       final page = (await reopened.pageAt(1))!;
-      final stream = await page
-          .pdfRepresentation()
-          .get(CraftPdfName.contents, true) as CraftPdfStream;
+      final stream = await page.pdfRepresentation().get(PdfName.contents, true)
+          as PdfStream;
       expect(latin1.decode((await stream.getBytes())!), 'q 1 0 0 1 0 0 cm Q\n');
       await reopened.close();
     });
@@ -117,14 +114,12 @@ void main() {
     test('$mode recovers generated object streams, text and full rewrite',
         () async {
       final buffer = BytesBuilder();
-      final original = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(
-          buffer,
-          properties: CraftWriterProperties().setFullCompressionMode(true)));
+      final original = PdfDocument.create(PdfWriter.fromBytesBuilder(buffer,
+          properties: WriterProperties().setFullCompressionMode(true)));
       final page = await original.appendBlankPage();
       final overlay = await PdfPageOverlay.create(page);
       overlay.beginText();
-      await overlay.setFontAndSize(
-          CraftPdfFontFactory.createFont('Helvetica'), 12);
+      await overlay.setFontAndSize(PdfFontFactory.createFont('Helvetica'), 12);
       overlay.moveText(20, 30).showText('RECOVERED OBJECT STREAM').endText();
       await original.close();
       final encoded = latin1.decode(buffer.takeBytes());
@@ -132,20 +127,20 @@ void main() {
       final damaged =
           encoded.replaceFirst(RegExp(r'startxref\s+\d+'), 'startxref\n1');
       final input = reader(damaged, mode);
-      final document = await CraftPdfDocument.open(input);
+      final document = await PdfDocument.open(input);
       expect(input.rebuiltXref, isTrue);
       expect(document.pageTotal(), 1);
       expect(await PdfTextExtraction.fromPage((await document.pageAt(1))!),
           contains('RECOVERED OBJECT STREAM'));
       await document.close();
       final output = BytesBuilder();
-      final rewrite = CraftPdfDocument(
+      final rewrite = PdfDocument(
           reader: reader(damaged, mode),
-          writer: CraftPdfWriter.fromBytesBuilder(output));
+          writer: PdfWriter.fromBytesBuilder(output));
       await rewrite.load();
       await rewrite.close();
-      final reopened = await CraftPdfDocument.open(
-          CraftPdfReader.fromBytes(output.takeBytes()));
+      final reopened =
+          await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
       expect(await PdfTextExtraction.fromPage((await reopened.pageAt(1))!),
           contains('RECOVERED OBJECT STREAM'));
       await reopened.close();
@@ -172,18 +167,17 @@ void main() {
     input.close();
   });
   test('Strict remains the default and rejects a missing xref', () async {
-    expect(CraftReaderProperties().recoveryMode, PdfRecoveryMode.strict);
-    await expectLater(
-        CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes(source()))),
+    expect(ReaderProperties().recoveryMode, PdfRecoveryMode.strict);
+    await expectLater(PdfDocument.open(PdfReader.fromBytes(bytes(source()))),
         throwsException);
   });
   test('Recovery enforces input and object limits', () async {
     for (final properties in [
-      CraftReaderProperties()..recoveryScanLimit = 10,
-      CraftReaderProperties()..recoveryObjectLimit = 1
+      ReaderProperties()..recoveryScanLimit = 10,
+      ReaderProperties()..recoveryObjectLimit = 1
     ]) {
       properties.recoveryMode = PdfRecoveryMode.scan;
-      final input = CraftPdfReader.fromBytes(bytes(source()), properties);
+      final input = PdfReader.fromBytes(bytes(source()), properties);
       await expectLater(input.read(), throwsFormatException);
       expect(input.rebuiltXref, isFalse);
       input.close();

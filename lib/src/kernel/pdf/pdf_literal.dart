@@ -8,29 +8,29 @@ import 'pdf_primitive_object.dart';
 ///
 /// A literal is a sequence of bytes that is passed through unchanged.
 /// This is used for raw PDF content that should not be interpreted.
-class CraftPdfLiteral extends CraftPdfPrimitiveObject {
+class PdfLiteral extends PdfPrimitiveObject {
   /// Position in the file where this literal was found.
   int _position = 0;
 
   /// Creates a PdfLiteral with the given byte content.
-  CraftPdfLiteral.fromBytes(Uint8List content) : super.directOnly(true) {
+  PdfLiteral.fromBytes(Uint8List content) : super.directOnly(true) {
     setContent(content);
   }
 
   /// Creates a PdfLiteral with a fixed size filled with spaces.
-  CraftPdfLiteral.withSize(int size) : super.directOnly(true) {
+  PdfLiteral.withSize(int size) : super.directOnly(true) {
     final content = Uint8List(size);
     content.fillRange(0, size, 0x20); // Fill with spaces
     setContent(content);
   }
 
   /// Creates a PdfLiteral from a string.
-  CraftPdfLiteral(String content) : super.directOnly(true) {
+  PdfLiteral(String content) : super.directOnly(true) {
     setContent(Uint8List.fromList(latin1.encode(content)));
   }
 
   /// Private constructor for cloning.
-  CraftPdfLiteral._empty() : super.directOnly(true);
+  PdfLiteral._empty() : super.directOnly(true);
 
   @override
   int objectKind() => PdfObjectType.literal;
@@ -41,8 +41,8 @@ class CraftPdfLiteral extends CraftPdfPrimitiveObject {
   }
 
   @override
-  CraftPdfObject clone() {
-    final cloned = CraftPdfLiteral._empty();
+  PdfObject clone() {
+    final cloned = PdfLiteral._empty();
     final content = getInternalContent();
     if (content != null) {
       cloned.setContent(Uint8List.fromList(content));
@@ -52,8 +52,8 @@ class CraftPdfLiteral extends CraftPdfPrimitiveObject {
   }
 
   @override
-  CraftPdfObject newInstance() {
-    return CraftPdfLiteral._empty();
+  PdfObject newInstance() {
+    return PdfLiteral._empty();
   }
 
   /// Gets the position in the file where this literal was found.
@@ -82,7 +82,7 @@ class CraftPdfLiteral extends CraftPdfPrimitiveObject {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! CraftPdfLiteral) return false;
+    if (other is! PdfLiteral) return false;
 
     final myContent = getInternalContent();
     final otherContent = other.getInternalContent();

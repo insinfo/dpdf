@@ -6,7 +6,7 @@ import 'lzw_string_table.dart';
 
 /// Modified from original LZWCompressor to accept a buffer of data
 /// to be compressed rather than a stream.
-class CraftLZWCompressor {
+class LZWCompressor {
   /// Base underlying code size of data being compressed (8 for TIFF, 1-8 for GIF)
   final int _codeSize;
 
@@ -26,10 +26,10 @@ class CraftLZWCompressor {
   int _prefix;
 
   /// Output destination for bit codes
-  final CraftBitFile _bf;
+  final BitFile _bf;
 
   /// General purpose LZW string table
-  final CraftLZWStringTable _lzss;
+  final LZWStringTable _lzss;
 
   /// Modify the limits of code values due to TIFF bug/feature
   final bool _tiffFudge;
@@ -39,7 +39,7 @@ class CraftLZWCompressor {
   /// [output] - Destination BytesBuilder for compressed data
   /// [codeSize] - Initial code size for LZW compressor
   /// [tiff] - Flag indicating TIFF LZW fudge needs to be applied
-  CraftLZWCompressor(BytesBuilder output, int codeSize, bool tiff)
+  LZWCompressor(BytesBuilder output, int codeSize, bool tiff)
       : _codeSize = codeSize,
         _tiffFudge = tiff,
         _clearCode = 1 << codeSize,
@@ -47,8 +47,8 @@ class CraftLZWCompressor {
         _numBits = codeSize + 1,
         _limit = (1 << (codeSize + 1)) - 1 - (tiff ? 1 : 0),
         _prefix = -1,
-        _lzss = CraftLZWStringTable(),
-        _bf = CraftBitFile(output, !tiff) {
+        _lzss = LZWStringTable(),
+        _bf = BitFile(output, !tiff) {
     _lzss.clearTable(codeSize);
     _bf.writeBits(_clearCode, _numBits);
   }
@@ -113,7 +113,7 @@ class LZWEncoder {
   static Uint8List compress(Uint8List data,
       {int codeSize = 8, bool tiff = true}) {
     final output = BytesBuilder();
-    final compressor = CraftLZWCompressor(output, codeSize, tiff);
+    final compressor = LZWCompressor(output, codeSize, tiff);
     compressor.compress(data, 0, data.length);
     compressor.flush();
     return output.toBytes();

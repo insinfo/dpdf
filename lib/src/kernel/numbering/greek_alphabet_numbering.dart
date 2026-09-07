@@ -1,5 +1,5 @@
 /// Bijective base-24 labels using the modern Greek alphabet.
-class CraftGreekAlphabetNumbering {
+class GreekAlphabetNumbering {
   static const int ALPHABET_LENGTH = 24;
   static final List<String> ALPHABET_LOWERCASE =
       'αβγδεζηθικλμνξοπρστυφχψω'.split('');

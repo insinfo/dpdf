@@ -43,7 +43,7 @@ Future<Uint8List> _converterHtml() async {
     </body></html>
   ''';
 
-  final bytes = await CraftHtmlConverter.convertToBytes(html);
+  final bytes = await HtmlConverter.convertToBytes(html);
   print('HTML convertido: ${bytes.length} bytes');
   return bytes;
 }
@@ -84,12 +84,11 @@ Future<void> _verificarConformidade(Uint8List bytes) async {
 /// retângulo e cobre a região com uma tarja opaca.
 Future<Uint8List> _redigirPorArea() async {
   final output = BytesBuilder(copy: false);
-  final document =
-      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final document = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await document.appendBlankPage();
-  final canvas = await CraftPdfCanvas.fromPage(page);
+  final canvas = await PdfCanvas.fromPage(page);
   canvas.beginText();
-  await canvas.setFontAndSize(CraftPdfFontFactory.createFont('Helvetica'), 12);
+  await canvas.setFontAndSize(PdfFontFactory.createFont('Helvetica'), 12);
   canvas
       .moveText(72, 700)
       .showText('Cliente: Maria Souza')
@@ -106,8 +105,8 @@ Future<Uint8List> _redigirPorArea() async {
     PdfRedactionArea(1, left: 70, bottom: 675, right: 300, top: 693),
   ]);
 
-  final reader = CraftPdfReader.fromBytes(redigido);
-  final reaberto = await CraftPdfDocument.open(reader);
+  final reader = PdfReader.fromBytes(redigido);
+  final reaberto = await PdfDocument.open(reader);
   try {
     final texto = await PdfTextExtraction.fromPage((await reaberto.pageAt(1))!);
     print('\nRedação');

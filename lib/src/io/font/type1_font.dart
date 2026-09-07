@@ -7,23 +7,23 @@ import 'package:dpdf/src/io/font/font_program.dart';
 import 'package:dpdf/src/io/font/otf/glyph.dart';
 import 'package:dpdf/src/io/font/type1_parser.dart';
 
-class CraftType1Font extends CraftFontProgram {
+class Type1Font extends FontProgram {
   static final List<int> PFB_TYPES = [1, 2, 1];
 
-  CraftType1Parser? fontParser;
+  Type1Parser? fontParser;
   String? characterSet;
   Map<(int, int), int> kernPairs = {};
   Uint8List? fontStreamBytes;
   List<int>? fontStreamLengths;
 
-  CraftType1Font(
+  Type1Font(
       String metricsPath, String binaryPath, Uint8List? afm, Uint8List? pfb) {
-    fontParser = CraftType1Parser(metricsPath, binaryPath, afm, pfb);
+    fontParser = Type1Parser(metricsPath, binaryPath, afm, pfb);
     loadAfmMetrics();
   }
 
-  static CraftType1Font createBuiltInFont(String fontName) {
-    return CraftType1Font(fontName, "", null, null);
+  static Type1Font createBuiltInFont(String fontName) {
+    return Type1Font(fontName, "", null, null);
   }
 
   @override
@@ -51,7 +51,7 @@ class CraftType1Font extends CraftFontProgram {
   bool hasKernPairs() => kernPairs.isNotEmpty;
 
   @override
-  int getKerningByGlyph(CraftGlyph first, CraftGlyph second) {
+  int getKerningByGlyph(Glyph first, Glyph second) {
     if (first.hasValidUnicode() && second.hasValidUnicode()) {
       final record = (first.getUnicode(), second.getUnicode());
       if (kernPairs.containsKey(record)) {
@@ -73,8 +73,8 @@ class CraftType1Font extends CraftFontProgram {
     var consumed = 0;
     var widthTotal = 0;
     var glyphCount = 0;
-    final byCode = <int, CraftGlyph>{};
-    final byUnicode = <int, CraftGlyph>{};
+    final byCode = <int, Glyph>{};
+    final byUnicode = <int, Glyph>{};
     final pairs = <(int, int), int>{};
     final header = <String, void Function(String)>{
       'FontName': fontNames.setFontName,
@@ -83,7 +83,7 @@ class CraftType1Font extends CraftFontProgram {
       'CharacterSet': (text) => characterSet = text,
       'EncodingScheme': (text) => encodingScheme = text,
       'Weight': (text) =>
-          fontNames.setFontWeight(CraftFontWeights.fromType1FontWeight(text)),
+          fontNames.setFontWeight(FontWeights.fromType1FontWeight(text)),
       'ItalicAngle': (text) => fontMetrics.setItalicAngle(double.parse(text)),
       'IsFixedPitch': (text) {
         if (text != 'true' && text != 'false') {
@@ -145,8 +145,8 @@ class CraftType1Font extends CraftFontProgram {
               throw FormatException(
                   'AFM horizontal kerning needs two names and an adjustment.');
             }
-            final first = CraftAdobeGlyphList.nameToUnicode(values[0]);
-            final second = CraftAdobeGlyphList.nameToUnicode(values[1]);
+            final first = AdobeGlyphList.nameToUnicode(values[0]);
+            final second = AdobeGlyphList.nameToUnicode(values[1]);
             final adjustment = _afmNumbers(values[2], 1).single;
             if (first >= 0 && second >= 0) pairs[(first, second)] = adjustment;
           }
@@ -191,10 +191,8 @@ class CraftType1Font extends CraftFontProgram {
     }
     final space = byUnicode[32];
     if (space != null) {
-      byUnicode.putIfAbsent(
-          160,
-          () => CraftGlyph(
-              space.getCode(), space.getWidth(), 160, space.getBbox()));
+      byUnicode.putIfAbsent(160,
+          () => Glyph(space.getCode(), space.getWidth(), 160, space.getBbox()));
     }
     codeToGlyph
       ..clear()
@@ -229,7 +227,7 @@ class CraftType1Font extends CraftFontProgram {
     }).toList();
   }
 
-  static CraftGlyph _afmGlyph(String row) {
+  static Glyph _afmGlyph(String row) {
     final fields = <String, String>{};
     for (final part in row.split(';')) {
       final record = _afmRecord(part);
@@ -252,8 +250,8 @@ class CraftType1Font extends CraftFontProgram {
             : 250;
     final bounds =
         fields.containsKey('B') ? _afmNumbers(fields['B']!, 4) : null;
-    final unicode = CraftAdobeGlyphList.nameToUnicode(fields['N'] ?? '');
-    return CraftGlyph(code, width, unicode, bounds);
+    final unicode = AdobeGlyphList.nameToUnicode(fields['N'] ?? '');
+    return Glyph(code, width, unicode, bounds);
   }
 
   Uint8List? getFontStreamBytes() {

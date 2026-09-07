@@ -1,24 +1,24 @@
 import 'pdf_name.dart';
 
 /// This class represents all official PDF versions.
-class CraftPdfVersion implements Comparable<CraftPdfVersion> {
-  static final List<CraftPdfVersion> _values = [];
+class PdfVersion implements Comparable<PdfVersion> {
+  static final List<PdfVersion> _values = [];
 
-  static final CraftPdfVersion PDF_1_0 = _createPdfVersion(1, 0);
-  static final CraftPdfVersion PDF_1_1 = _createPdfVersion(1, 1);
-  static final CraftPdfVersion PDF_1_2 = _createPdfVersion(1, 2);
-  static final CraftPdfVersion PDF_1_3 = _createPdfVersion(1, 3);
-  static final CraftPdfVersion PDF_1_4 = _createPdfVersion(1, 4);
-  static final CraftPdfVersion PDF_1_5 = _createPdfVersion(1, 5);
-  static final CraftPdfVersion PDF_1_6 = _createPdfVersion(1, 6);
-  static final CraftPdfVersion PDF_1_7 = _createPdfVersion(1, 7);
-  static final CraftPdfVersion PDF_2_0 = _createPdfVersion(2, 0);
+  static final PdfVersion PDF_1_0 = _createPdfVersion(1, 0);
+  static final PdfVersion PDF_1_1 = _createPdfVersion(1, 1);
+  static final PdfVersion PDF_1_2 = _createPdfVersion(1, 2);
+  static final PdfVersion PDF_1_3 = _createPdfVersion(1, 3);
+  static final PdfVersion PDF_1_4 = _createPdfVersion(1, 4);
+  static final PdfVersion PDF_1_5 = _createPdfVersion(1, 5);
+  static final PdfVersion PDF_1_6 = _createPdfVersion(1, 6);
+  static final PdfVersion PDF_1_7 = _createPdfVersion(1, 7);
+  static final PdfVersion PDF_2_0 = _createPdfVersion(2, 0);
 
   final int _major;
   final int _minor;
 
   /// Creates a PdfVersion class.
-  CraftPdfVersion(this._major, this._minor);
+  PdfVersion(this._major, this._minor);
 
   @override
   String toString() {
@@ -26,13 +26,13 @@ class CraftPdfVersion implements Comparable<CraftPdfVersion> {
   }
 
   /// Gets the PDF version in "X.Y" format.
-  CraftPdfName toPdfName() {
-    return CraftPdfName('$_major.$_minor');
+  PdfName toPdfName() {
+    return PdfName('$_major.$_minor');
   }
 
   /// Parses a version string when the requested version
   /// can be found.
-  static CraftPdfVersion fromString(String value) {
+  static PdfVersion fromString(String value) {
     if (value == '1.7' || value == 'PDF-1.7') return PDF_1_7;
     if (value == '1.6' || value == 'PDF-1.6') return PDF_1_6;
     if (value == '1.5' || value == 'PDF-1.5') return PDF_1_5;
@@ -48,7 +48,7 @@ class CraftPdfVersion implements Comparable<CraftPdfVersion> {
 
   /// Creates a PdfVersion class from a [PdfName] object if the specified version
   /// can be found.
-  static CraftPdfVersion fromPdfName(CraftPdfName name) {
+  static PdfVersion fromPdfName(PdfName name) {
     for (final version in _values) {
       if (version.toPdfName() == name) {
         return version;
@@ -58,7 +58,7 @@ class CraftPdfVersion implements Comparable<CraftPdfVersion> {
   }
 
   @override
-  int compareTo(CraftPdfVersion other) {
+  int compareTo(PdfVersion other) {
     if (_major != other._major) {
       return _major.compareTo(other._major);
     }
@@ -68,14 +68,14 @@ class CraftPdfVersion implements Comparable<CraftPdfVersion> {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is CraftPdfVersion && compareTo(other) == 0;
+    return other is PdfVersion && compareTo(other) == 0;
   }
 
   @override
   int get hashCode => _major.hashCode ^ _minor.hashCode;
 
-  static CraftPdfVersion _createPdfVersion(int major, int minor) {
-    final pdfVersion = CraftPdfVersion(major, minor);
+  static PdfVersion _createPdfVersion(int major, int minor) {
+    final pdfVersion = PdfVersion(major, minor);
     _values.add(pdfVersion);
     return pdfVersion;
   }

@@ -15,7 +15,7 @@ void main() async {
 
   print('Reading file: ${file.lengthSync()} bytes');
   final bytes = await file.readAsBytes();
-  final reader = CraftPdfReader.fromBytes(bytes);
+  final reader = PdfReader.fromBytes(bytes);
   // Do not call PdfDocument.open(reader) as it crashes
 
   print('Reader created. Reading document structure...');
@@ -25,7 +25,7 @@ void main() async {
   final trailer = reader.fileTrailer();
   print('Trailer: $trailer');
 
-  final rootRef = await trailer?.get(CraftPdfName.root);
+  final rootRef = await trailer?.get(PdfName.root);
   print('Root ref: $rootRef');
 
   if (rootRef == null) {
@@ -33,19 +33,19 @@ void main() async {
     return;
   }
 
-  final rootObj = await reader
-      .readObject((rootRef as CraftPdfIndirectReference).objectNumber());
+  final rootObj =
+      await reader.readObject((rootRef as PdfIndirectReference).objectNumber());
   print('Root object: $rootObj');
 
-  if (rootObj is! CraftPdfDictionary) {
+  if (rootObj is! PdfDictionary) {
     print('Root is not a dictionary!');
     return;
   }
 
-  final pagesRef = await rootObj.get(CraftPdfName.pages);
+  final pagesRef = await rootObj.get(PdfName.pages);
   print('Pages ref: $pagesRef');
 
-  if (pagesRef is CraftPdfIndirectReference) {
+  if (pagesRef is PdfIndirectReference) {
     final pagesObj = await reader.readObject(pagesRef.objectNumber());
     print('Pages object (read via ref): $pagesObj');
     print('Type: ${pagesObj?.objectKind()}');

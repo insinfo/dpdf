@@ -7,7 +7,7 @@ import 'certificate_details.dart';
 import 'package:dpdf/src/commons/dpdf_log_manager.dart';
 
 /// An implementation of [ICrlClient] that fetches the CRL bytes from a URL.
-class CraftCrlClientOnline implements CraftCrlClient {
+class CrlClientOnline implements CrlClient {
   static final _logger = LogManager.getLoggerByName('CrlClientOnline');
   final List<Uri> _urls = [];
   int _connectionTimeout = 10000; // 10 seconds default
@@ -15,7 +15,7 @@ class CraftCrlClientOnline implements CraftCrlClient {
   /// Creates a CrlClientOnline instance.
   ///
   /// If [urls] or [chain] is provided, they are added to the list of URLs.
-  CraftCrlClientOnline({
+  CrlClientOnline({
     List<String>? urls,
     List<Uri>? uris,
     List<CertificateDetails>? chain,
@@ -33,7 +33,7 @@ class CraftCrlClientOnline implements CraftCrlClient {
     if (chain != null) {
       for (final cert in chain) {
         _logger.logInfo("Checking certificate: ${cert.getSubjectDN()}");
-        final certUrls = CraftCertificateUtil.getCRLURLs(cert);
+        final certUrls = CertificateUtil.getCRLURLs(cert);
         for (final url in certUrls) {
           addUrlString(url);
         }
@@ -75,7 +75,7 @@ class CraftCrlClientOnline implements CraftCrlClient {
       if (url != null) {
         urlsToCheck.add(Uri.parse(url));
       } else {
-        final certUrls = CraftCertificateUtil.getCRLURLs(checkCert);
+        final certUrls = CertificateUtil.getCRLURLs(checkCert);
         for (final u in certUrls) {
           try {
             final uri = Uri.parse(u);

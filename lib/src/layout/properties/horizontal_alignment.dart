@@ -1,5 +1,5 @@
 /// A specialized enum containing potential property values for horizontal alignment.
-enum CraftHorizontalAlignment {
+enum HorizontalAlignment {
   /// Align to the left.
   left,
 

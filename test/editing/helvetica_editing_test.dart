@@ -13,23 +13,22 @@ import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 
 Future<Uint8List> source(String content, String encoding) async {
   final data = BytesBuilder();
-  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(data));
+  final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(data));
   final page = await doc.appendBlankPage();
-  final font = CraftPdfDictionary()
-    ..put(CraftPdfName.type, CraftPdfName.font)
-    ..put(CraftPdfName.subtype, CraftPdfName('Type1'))
-    ..put(CraftPdfName.baseFont, CraftPdfName('Helvetica'));
+  final font = PdfDictionary()
+    ..put(PdfName.type, PdfName.font)
+    ..put(PdfName.subtype, PdfName('Type1'))
+    ..put(PdfName.baseFont, PdfName('Helvetica'));
   if (encoding == 'WinAnsiEncoding') {
-    font.put(CraftPdfName.encoding, CraftPdfName(encoding));
+    font.put(PdfName.encoding, PdfName(encoding));
   }
   page.pdfRepresentation()
     ..put(
-        CraftPdfName.resources,
-        CraftPdfDictionary()
-          ..put(CraftPdfName.font,
-              CraftPdfDictionary()..put(CraftPdfName('F1'), font)))
-    ..put(CraftPdfName.contents,
-        CraftPdfStream.withBytes(Uint8List.fromList(ascii.encode(content)), 0));
+        PdfName.resources,
+        PdfDictionary()
+          ..put(PdfName.font, PdfDictionary()..put(PdfName('F1'), font)))
+    ..put(PdfName.contents,
+        PdfStream.withBytes(Uint8List.fromList(ascii.encode(content)), 0));
   (await doc.documentDetails()).pdfRepresentation().clear();
   await doc.close();
   return data.takeBytes();
@@ -111,8 +110,7 @@ void main() {
                 input, [const PdfTextReplacement(1, 'SECRET', 'iiiWWW')])
             : await PdfTextRedaction.remove(
                 input, [const PdfTextRemoval(1, 'SECRET')]);
-        final doc =
-            await CraftPdfDocument.open(CraftPdfReader.fromBytes(output));
+        final doc = await PdfDocument.open(PdfReader.fromBytes(output));
         final page = (await doc.pageAt(1))!;
         final after = positions(await page.contentPayload());
         final before = positions(Uint8List.fromList(ascii.encode(content)));
@@ -131,11 +129,11 @@ void main() {
         }
         final fonts = await (await page
                 .pdfRepresentation()
-                .dictionaryEntry(CraftPdfName.resources))!
-            .dictionaryEntry(CraftPdfName.font);
+                .dictionaryEntry(PdfName.resources))!
+            .dictionaryEntry(PdfName.font);
         expect(
-            (await (await fonts!.dictionaryEntry(CraftPdfName('F1')))!
-                    .nameEntry(CraftPdfName.baseFont))!
+            (await (await fonts!.dictionaryEntry(PdfName('F1')))!
+                    .nameEntry(PdfName.baseFont))!
                 .getValue(),
             'Helvetica');
         expect(latin1.decode(output), isNot(contains('SECRET')));
@@ -147,7 +145,7 @@ void main() {
     final output = await PdfTextEditing.replace(
         await source('BT /F1 12 Tf (old Z) Tj ET', 'WinAnsiEncoding'),
         [const PdfTextReplacement(1, 'old', 'ação')]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(output));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(output));
     expect(await PdfTextExtraction.fromPage((await doc.pageAt(1))!), 'ação Z');
     await doc.close();
   });

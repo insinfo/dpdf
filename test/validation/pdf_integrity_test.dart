@@ -8,8 +8,7 @@ import 'package:test/test.dart';
 /// below start from a file the checker calls clean.
 Future<Uint8List> _healthyDocument({int pages = 2}) async {
   final output = BytesBuilder(copy: false);
-  final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   for (var i = 0; i < pages; i++) {
     await document.appendBlankPage();
   }

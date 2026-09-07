@@ -6,98 +6,98 @@ import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 
 /// Represents a PDF Extended Graphics State.
-class CraftPdfExtGState extends CraftPdfObjectWrapper<CraftPdfDictionary> {
-  CraftPdfExtGState([CraftPdfDictionary? pdfObject])
-      : super(pdfObject ?? CraftPdfDictionary());
+class PdfExtGState extends PdfObjectWrapper<PdfDictionary> {
+  PdfExtGState([PdfDictionary? pdfObject])
+      : super(pdfObject ?? PdfDictionary());
 
   @override
   bool requiresIndirectStorage() => true;
 
   Future<double?> getLineWidth() async =>
-      await pdfRepresentation().decimalEntry(CraftPdfName.lw);
+      await pdfRepresentation().decimalEntry(PdfName.lw);
 
   Future<int?> getLineCapStyle() async =>
-      await pdfRepresentation().integerEntry(CraftPdfName.lc);
+      await pdfRepresentation().integerEntry(PdfName.lc);
 
   Future<int?> getLineJoinStyle() async =>
-      await pdfRepresentation().integerEntry(CraftPdfName.lj);
+      await pdfRepresentation().integerEntry(PdfName.lj);
 
   Future<double?> getMiterLimit() async =>
-      await pdfRepresentation().decimalEntry(CraftPdfName.ml);
+      await pdfRepresentation().decimalEntry(PdfName.ml);
 
-  Future<CraftPdfArray?> getDashPattern() async =>
-      await pdfRepresentation().arrayEntry(CraftPdfName.d);
+  Future<PdfArray?> getDashPattern() async =>
+      await pdfRepresentation().arrayEntry(PdfName.d);
 
-  Future<CraftPdfName?> getRenderingIntent() async =>
-      await pdfRepresentation().nameEntry(CraftPdfName.ri);
+  Future<PdfName?> getRenderingIntent() async =>
+      await pdfRepresentation().nameEntry(PdfName.ri);
 
   Future<bool?> getStrokeOverprintFlag() async =>
-      await pdfRepresentation().flagEntry(CraftPdfName.op);
+      await pdfRepresentation().flagEntry(PdfName.op);
 
   Future<bool?> getFillOverprintFlag() async =>
-      await pdfRepresentation().flagEntry(CraftPdfName.opUppercase);
+      await pdfRepresentation().flagEntry(PdfName.opUppercase);
 
   Future<int?> getOverprintMode() async =>
-      await pdfRepresentation().integerEntry(CraftPdfName.opm);
+      await pdfRepresentation().integerEntry(PdfName.opm);
 
-  Future<CraftPdfArray?> resolveTypeface() async =>
-      await pdfRepresentation().arrayEntry(CraftPdfName.fontG);
+  Future<PdfArray?> resolveTypeface() async =>
+      await pdfRepresentation().arrayEntry(PdfName.fontG);
 
-  Future<CraftPdfObject?> getBlackGenerationFunction() async =>
-      await pdfRepresentation().get(CraftPdfName.bg, true);
+  Future<PdfObject?> getBlackGenerationFunction() async =>
+      await pdfRepresentation().get(PdfName.bg, true);
 
-  Future<CraftPdfObject?> getBlackGenerationFunction2() async =>
-      await pdfRepresentation().get(CraftPdfName.bg2, true);
+  Future<PdfObject?> getBlackGenerationFunction2() async =>
+      await pdfRepresentation().get(PdfName.bg2, true);
 
-  Future<CraftPdfObject?> getUndercolorRemovalFunction() async =>
-      await pdfRepresentation().get(CraftPdfName.ucr, true);
+  Future<PdfObject?> getUndercolorRemovalFunction() async =>
+      await pdfRepresentation().get(PdfName.ucr, true);
 
-  Future<CraftPdfObject?> getUndercolorRemovalFunction2() async =>
-      await pdfRepresentation().get(CraftPdfName.ucr2, true);
+  Future<PdfObject?> getUndercolorRemovalFunction2() async =>
+      await pdfRepresentation().get(PdfName.ucr2, true);
 
-  Future<CraftPdfObject?> getTransferFunction() async =>
-      await pdfRepresentation().get(CraftPdfName.tr, true);
+  Future<PdfObject?> getTransferFunction() async =>
+      await pdfRepresentation().get(PdfName.tr, true);
 
-  Future<CraftPdfObject?> getTransferFunction2() async =>
-      await pdfRepresentation().get(CraftPdfName.tr2, true);
+  Future<PdfObject?> getTransferFunction2() async =>
+      await pdfRepresentation().get(PdfName.tr2, true);
 
-  Future<CraftPdfObject?> getHalftone() async =>
-      await pdfRepresentation().get(CraftPdfName.ht, true);
+  Future<PdfObject?> getHalftone() async =>
+      await pdfRepresentation().get(PdfName.ht, true);
 
   Future<double?> getFlatnessTolerance() async =>
-      await pdfRepresentation().decimalEntry(CraftPdfName.fl);
+      await pdfRepresentation().decimalEntry(PdfName.fl);
 
   Future<double?> getSmoothnessTolerance() async =>
-      await pdfRepresentation().decimalEntry(CraftPdfName.sm);
+      await pdfRepresentation().decimalEntry(PdfName.sm);
 
   Future<bool?> getAutomaticStrokeAdjustmentFlag() async =>
-      await pdfRepresentation().flagEntry(CraftPdfName.sa);
+      await pdfRepresentation().flagEntry(PdfName.sa);
 
-  Future<CraftPdfObject?> getBlendMode() async =>
-      await pdfRepresentation().get(CraftPdfName.bm, true);
+  Future<PdfObject?> getBlendMode() async =>
+      await pdfRepresentation().get(PdfName.bm, true);
 
-  Future<CraftPdfObject?> getSoftMask() async =>
-      await pdfRepresentation().get(CraftPdfName.smaskG, true);
+  Future<PdfObject?> getSoftMask() async =>
+      await pdfRepresentation().get(PdfName.smaskG, true);
 
   Future<double?> getStrokeOpacity() async =>
-      await pdfRepresentation().decimalEntry(CraftPdfName.caUppercase);
+      await pdfRepresentation().decimalEntry(PdfName.caUppercase);
 
   Future<double?> getFillOpacity() async =>
-      await pdfRepresentation().decimalEntry(CraftPdfName.ca);
+      await pdfRepresentation().decimalEntry(PdfName.ca);
 
   Future<bool?> getAlphaSourceFlag() async =>
-      await pdfRepresentation().flagEntry(CraftPdfName.ais);
+      await pdfRepresentation().flagEntry(PdfName.ais);
 
   Future<bool?> getTextKnockoutFlag() async =>
-      await pdfRepresentation().flagEntry(CraftPdfName.tk);
+      await pdfRepresentation().flagEntry(PdfName.tk);
 
-  CraftPdfExtGState setFillOpacity(double opacity) {
-    pdfRepresentation().put(CraftPdfName.ca, CraftPdfNumber(opacity));
+  PdfExtGState setFillOpacity(double opacity) {
+    pdfRepresentation().put(PdfName.ca, PdfNumber(opacity));
     return this;
   }
 
-  CraftPdfExtGState setStrokeOpacity(double opacity) {
-    pdfRepresentation().put(CraftPdfName.caUppercase, CraftPdfNumber(opacity));
+  PdfExtGState setStrokeOpacity(double opacity) {
+    pdfRepresentation().put(PdfName.caUppercase, PdfNumber(opacity));
     return this;
   }
 }

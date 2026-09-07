@@ -7,38 +7,38 @@ import '../../io/source/byte_utils.dart';
 /// Represents a PDF numeric object.
 ///
 /// PDF numbers can be integers or real (floating point) numbers.
-class CraftPdfNumber extends CraftPdfPrimitiveObject {
+class PdfNumber extends PdfPrimitiveObject {
   /// The numeric value.
   double _value;
 
   /// Creates a PdfNumber from a double.
-  CraftPdfNumber(double value) : _value = value;
+  PdfNumber(double value) : _value = value;
 
   /// Creates a PdfNumber from an int.
-  CraftPdfNumber.fromInt(int value) : _value = value.toDouble();
+  PdfNumber.fromInt(int value) : _value = value.toDouble();
 
   /// Creates a PdfNumber from bytes.
-  factory CraftPdfNumber.fromBytes(Uint8List content) {
+  factory PdfNumber.fromBytes(Uint8List content) {
     final str = String.fromCharCodes(content);
-    return CraftPdfNumber(double.parse(str));
+    return PdfNumber(double.parse(str));
   }
 
   /// Creates a PdfNumber from a string.
-  factory CraftPdfNumber.fromString(String value) {
-    return CraftPdfNumber(double.parse(value));
+  factory PdfNumber.fromString(String value) {
+    return PdfNumber(double.parse(value));
   }
 
   @override
   int objectKind() => PdfObjectType.number;
 
   @override
-  CraftPdfObject clone() {
-    return CraftPdfNumber(_value);
+  PdfObject clone() {
+    return PdfNumber(_value);
   }
 
   @override
-  CraftPdfObject newInstance() {
-    return CraftPdfNumber(0);
+  PdfObject newInstance() {
+    return PdfNumber(0);
   }
 
   /// Gets the value as double.
@@ -82,9 +82,9 @@ class CraftPdfNumber extends CraftPdfPrimitiveObject {
   @override
   void generateContent() {
     if (!hasDecimalPart()) {
-      setContent(CraftByteUtils.getIsoBytesFromInt(intValue()));
+      setContent(ByteUtils.getIsoBytesFromInt(intValue()));
     } else {
-      setContent(CraftByteUtils.getIsoBytesFromDouble(_value));
+      setContent(ByteUtils.getIsoBytesFromDouble(_value));
     }
   }
 
@@ -99,7 +99,7 @@ class CraftPdfNumber extends CraftPdfPrimitiveObject {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! CraftPdfNumber) return false;
+    if (other is! PdfNumber) return false;
     return _value == other._value;
   }
 

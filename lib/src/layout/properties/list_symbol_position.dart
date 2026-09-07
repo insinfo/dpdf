@@ -1,1 +1,1 @@
-enum CraftListSymbolPosition { DEFAULT, INSIDE, OUTSIDE }
+enum ListSymbolPosition { DEFAULT, INSIDE, OUTSIDE }

@@ -9,27 +9,27 @@ import 'signer_properties.dart';
 /// Helper class to generate a simple visual appearance for signatures.
 ///  TODO This replaces the heavy dependency on the full Layout module for now.
 class SimpleSignatureAppearance {
-  final CraftSignerProperties properties;
+  final SignerProperties properties;
 
   SimpleSignatureAppearance(this.properties);
 
-  Future<CraftPdfFormXObject> generate(CraftPdfDocument doc) async {
+  Future<PdfFormXObject> generate(PdfDocument doc) async {
     final rect = properties.getPageRect();
     // Use the rect dimension for the BBox, but start at 0,0 for the Local Coordinate System
     final width = rect.getWidth();
     final height = rect.getHeight();
-    final xObj = CraftPdfFormXObject(CraftRectangle(0, 0, width, height));
+    final xObj = PdfFormXObject(Rectangle(0, 0, width, height));
 
     // Make the XObject indirect so it can be properly referenced
     xObj.pdfRepresentation().attachToDocument(doc);
 
     // Create canvas
-    final canvas = await CraftPdfCanvas.fromFormXObject(xObj, doc);
+    final canvas = await PdfCanvas.fromFormXObject(xObj, doc);
 
     // Draw Background (Light Gray)
     canvas
         .saveState()
-        .setFillColor(CraftDeviceGray(0.9))
+        .setFillColor(DeviceGray(0.9))
         .rectangle(0, 0, width, height)
         .fill()
         .restoreState();
@@ -37,14 +37,14 @@ class SimpleSignatureAppearance {
     // Draw Border (Dark Gray)
     canvas
         .saveState()
-        .setStrokeColor(CraftDeviceGray(0.5))
+        .setStrokeColor(DeviceGray(0.5))
         .setLineWidth(1)
         .rectangle(0.5, 0.5, width - 1, height - 1)
         .stroke()
         .restoreState();
 
     // Prepare Text
-    final font = CraftPdfFontFactory.createFont('Helvetica');
+    final font = PdfFontFactory.createFont('Helvetica');
     // if (font != null) { // Removed check
     double fontSize = 10;
     double leading = 12;

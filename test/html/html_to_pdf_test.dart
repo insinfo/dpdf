@@ -3,8 +3,7 @@ import 'dart:convert';
 import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
 
-Future<List<PdfPositionedCharacter>> _positions(
-    CraftPdfDocument document) async {
+Future<List<PdfPositionedCharacter>> _positions(PdfDocument document) async {
   final page = (await document.pageAt(1))!;
   return PdfTextPositions.fromContent(await page.contentPayload(),
       decoder: (_, codes) => latin1.decode(codes), width: (_, __) => 600);
@@ -17,13 +16,12 @@ PdfPositionedCharacter _firstCharacter(
 
 void main() {
   test('converts text-flow HTML to an extractable PDF', () async {
-    final bytes = await CraftHtmlConverter.convertToBytes('''
+    final bytes = await HtmlConverter.convertToBytes('''
       <h1>Relatório</h1><p>Olá <strong>mundo</strong>!</p>
       <ul><li>primeiro item</li><li>segundo item</li></ul>
       <table><tr><th>Chave</th><th>Valor</th></tr><tr><td>A</td><td>1</td></tr></table>
     ''');
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
     try {
       expect(document.pageTotal(), 1);
       final page = await document.pageAt(1);
@@ -40,10 +38,9 @@ void main() {
 
   test('paginates long content and ignores executable markup', () async {
     final lines = List.filled(200, '<p>linha segura de teste</p>').join();
-    final bytes = await CraftHtmlConverter.convertToBytes(
+    final bytes = await HtmlConverter.convertToBytes(
         '<script>throw new Error()</script>$lines');
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
     try {
       expect(document.pageTotal(), greaterThan(1));
     } finally {
@@ -53,7 +50,7 @@ void main() {
 
   test('resolves tag, class and id rules for flex and grid containers',
       () async {
-    final bytes = await CraftHtmlConverter.convertToBytes('''
+    final bytes = await HtmlConverter.convertToBytes('''
       <style>
         section { display: flex; flex-direction: row; }
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); }
@@ -63,8 +60,7 @@ void main() {
       <section><div>Flex A</div><div>Flex B</div></section>
       <div class="grid"><div>Grid 1</div><div>Grid 2</div><div>Grid 3</div></div>
     ''');
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
     try {
       final text =
           await PdfTextExtraction.fromPage((await document.pageAt(1))!);
@@ -80,12 +76,11 @@ void main() {
   });
 
   test('writes text for an HTML box with CSS paint properties', () async {
-    final bytes = await CraftHtmlConverter.convertToBytes('''
+    final bytes = await HtmlConverter.convertToBytes('''
       <style>.paint { color:#f00; background-color:#00ff00; border:1pt solid #0000ff; }</style>
       <div class="paint">conteúdo colorido</div>
     ''');
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
     try {
       final text =
           await PdfTextExtraction.fromPage((await document.pageAt(1))!);
@@ -97,12 +92,11 @@ void main() {
 
   test('writes ordered list markers including start reversed and li value',
       () async {
-    final bytes = await CraftHtmlConverter.convertToBytes('''
+    final bytes = await HtmlConverter.convertToBytes('''
       <ol start="3"><li>três</li><li value="9">nove</li><li>dez</li></ol>
       <ol reversed><li>fim</li><li value="7">sete</li><li>seis</li></ol>
     ''');
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
     try {
       final text =
           await PdfTextExtraction.fromPage((await document.pageAt(1))!);
@@ -118,12 +112,11 @@ void main() {
   });
 
   test('places flex row children at separate physical X coordinates', () async {
-    final bytes = await CraftHtmlConverter.convertToBytes('''
+    final bytes = await HtmlConverter.convertToBytes('''
       <style>.row { display: flex; gap: 12pt; }</style>
       <div class="row"><div>north</div><div>east</div></div>
     ''');
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
     try {
       final positions = await _positions(document);
       final north = _firstCharacter(positions, 'n');
@@ -138,12 +131,11 @@ void main() {
   });
 
   test('places grid cells by column and subsequent rows by baseline', () async {
-    final bytes = await CraftHtmlConverter.convertToBytes('''
+    final bytes = await HtmlConverter.convertToBytes('''
       <style>.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8pt; }</style>
       <div class="grid"><div>one</div><div>two</div><div>three</div></div>
     ''');
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
     try {
       final positions = await _positions(document);
       final one = _firstCharacter(positions, 'o');
@@ -160,24 +152,22 @@ void main() {
   });
 
   test('turns anchor text into an invisible URI link annotation', () async {
-    final bytes = await CraftHtmlConverter.convertToBytes(
+    final bytes = await HtmlConverter.convertToBytes(
         '<p>Leia <a href="https://example.test/manual"><strong>manual</strong></a>.</p>');
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
     try {
       final page = (await document.pageAt(1))!;
       final annotations =
-          await page.pdfRepresentation().arrayEntry(CraftPdfName.annots);
+          await page.pdfRepresentation().arrayEntry(PdfName.annots);
       expect(annotations, isNotNull);
       expect(annotations!.size(), 1);
       final annotation = (await annotations.dictionaryEntry(0))!;
-      expect((await annotation.nameEntry(CraftPdfName.subtype))!.getValue(),
-          'Link');
-      final action = (await annotation.dictionaryEntry(CraftPdfName.a))!;
-      expect((await action.nameEntry(CraftPdfName.s))!.getValue(), 'URI');
-      expect((await action.stringEntry(CraftPdfName.uri))!.getValue(),
+      expect((await annotation.nameEntry(PdfName.subtype))!.getValue(), 'Link');
+      final action = (await annotation.dictionaryEntry(PdfName.a))!;
+      expect((await action.nameEntry(PdfName.s))!.getValue(), 'URI');
+      expect((await action.stringEntry(PdfName.uri))!.getValue(),
           'https://example.test/manual');
-      expect(await annotation.arrayEntry(CraftPdfName.rect), isNotNull);
+      expect(await annotation.arrayEntry(PdfName.rect), isNotNull);
     } finally {
       await document.close();
     }
@@ -186,10 +176,9 @@ void main() {
   test('embeds a PNG data URI as a PDF image XObject', () async {
     const pixel =
         'iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAAAAACEICPDAAAAXElEQVR4nO3QwQmAABDEQBWT/hsWLCKPBfEKGLJ3Xke7mwr4F9wfeCIVcF5ABZwXUAHnBVTAeQEVcF5ABZwXUAHnBVTAeQEVcF5ABZwXUAHnBVTAeQEVqBPOJwIv4oUCsFqUwOcAAAAASUVORK5CYII=';
-    final bytes = await CraftHtmlConverter.convertToBytes(
+    final bytes = await HtmlConverter.convertToBytes(
         '<img src="data:image/png;base64,$pixel" width="20" height="10" alt="ignored">');
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
     try {
       final content = await (await document.pageAt(1))!.contentPayload();
       expect(String.fromCharCodes(content), contains(' Do'));
@@ -200,12 +189,11 @@ void main() {
   });
 
   test('places structured table cells in PDF columns and rows', () async {
-    final bytes = await CraftHtmlConverter.convertToBytes('''
+    final bytes = await HtmlConverter.convertToBytes('''
       <table><thead><tr><th>NorthCell</th><th>EastCell</th></tr></thead>
       <tbody><tr><td>LowerCell</td><td>TailCell</td></tr></tbody></table>
     ''');
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
     try {
       final positions = await _positions(document);
       final north = _firstCharacter(positions, 'N');

@@ -4,16 +4,14 @@ import '../kernel/pdf/pdf_object_wrapper.dart';
 import 'pdf_signature_app.dart';
 
 /// Dictionary that stores signature build properties.
-class CraftPdfSignatureBuildProperties
-    extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+class PdfSignatureBuildProperties extends PdfObjectWrapper<PdfDictionary> {
   /// Creates new PdfSignatureBuildProperties.
-  CraftPdfSignatureBuildProperties() : super(CraftPdfDictionary());
+  PdfSignatureBuildProperties() : super(PdfDictionary());
 
   /// Creates new PdfSignatureBuildProperties with preset values.
   ///
   /// @param dict PdfDictionary containing preset values
-  CraftPdfSignatureBuildProperties.fromDictionary(CraftPdfDictionary dict)
-      : super(dict);
+  PdfSignatureBuildProperties.fromDictionary(PdfDictionary dict) : super(dict);
 
   /// Sets the signatureCreator property in the underlying PdfSignatureApp dictionary.
   ///
@@ -27,15 +25,15 @@ class CraftPdfSignatureBuildProperties
   /// If it does not exist, it adds a new PdfSignatureApp and returns this instance.
   ///
   /// @return PdfSignatureApp
-  CraftPdfSignatureApp getPdfSignatureAppProperty() {
+  PdfSignatureApp getPdfSignatureAppProperty() {
     final map = pdfRepresentation().getMap();
-    final obj = map?[CraftPdfName.app];
-    if (obj == null || obj is! CraftPdfDictionary) {
-      final newDict = CraftPdfDictionary();
-      pdfRepresentation().put(CraftPdfName.app, newDict);
-      return CraftPdfSignatureApp.fromDictionary(newDict);
+    final obj = map?[PdfName.app];
+    if (obj == null || obj is! PdfDictionary) {
+      final newDict = PdfDictionary();
+      pdfRepresentation().put(PdfName.app, newDict);
+      return PdfSignatureApp.fromDictionary(newDict);
     }
-    return CraftPdfSignatureApp.fromDictionary(obj);
+    return PdfSignatureApp.fromDictionary(obj);
   }
 
   @override

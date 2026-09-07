@@ -12,7 +12,7 @@ import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_object_wrapper.dart';
 
 /// Class responsible for PDF encryption.
-class CraftPdfEncryption extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
   static const int standardEncryption40 = 2;
   static const int standardEncryption128 = 3;
   static const int aes128 = 4;
@@ -20,20 +20,20 @@ class CraftPdfEncryption extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   static const int aesGcm = 6;
   static const int defaultKeyLength = 40;
 
-  static int _seq = CraftSystemUtil.getTimeBasedSeed();
+  static int _seq = SystemUtil.getTimeBasedSeed();
 
   final int _cryptoMode = 0;
   int? _permissions;
   final bool _encryptMetadata = true;
   final bool _embeddedFilesOnly = false;
   Uint8List? _documentId;
-  CraftSecurityHandler? _securityHandler;
+  SecurityHandler? _securityHandler;
 
-  CraftPdfEncryption() : super(CraftPdfDictionary());
+  PdfEncryption() : super(PdfDictionary());
 
   /// Creates a PdfEncryption instance based on already existing standard encryption dictionary.
-  CraftPdfEncryption.fromDictionary(
-      CraftPdfDictionary pdfDict, Uint8List password, Uint8List documentId)
+  PdfEncryption.fromDictionary(
+      PdfDictionary pdfDict, Uint8List password, Uint8List documentId)
       : super(pdfDict) {
     setForbidRelease();
     _documentId = documentId;
@@ -41,21 +41,19 @@ class CraftPdfEncryption extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   }
 
   /// Async factory to create and initialize PdfEncryption.
-  static Future<CraftPdfEncryption> createFromDictionary(
-      CraftPdfDictionary pdfDict,
-      Uint8List password,
-      Uint8List documentId) async {
+  static Future<PdfEncryption> createFromDictionary(
+      PdfDictionary pdfDict, Uint8List password, Uint8List documentId) async {
     final encryption =
-        CraftPdfEncryption.fromDictionary(pdfDict, password, documentId);
+        PdfEncryption.fromDictionary(pdfDict, password, documentId);
     final handler = encryption.getSecurityHandler();
-    if (handler is CraftStandardHandlerUsingStandard40) {
+    if (handler is StandardHandlerUsingStandard40) {
       await handler.initForReading(pdfDict, password, documentId);
     }
     return encryption;
   }
 
   void _readAndSetCryptoModeForStdHandler(
-      CraftPdfDictionary pdfDict, Uint8List password, Uint8List documentId) {
+      PdfDictionary pdfDict, Uint8List password, Uint8List documentId) {
     // This is a simplified version. For full implementation we need to check /V and /R
     // and potentially create different handlers (Standard, PublicKey, etc.)
     // For now, defaulting to StandardHandlerUsingStandard40 if we can't determine better,
@@ -66,24 +64,23 @@ class CraftPdfEncryption extends CraftPdfObjectWrapper<CraftPdfDictionary> {
     // which effectively acts as a "try to decrypt with standard 40"
     // TODO: Handle V=4 (AES), V=5 (AES-256) and pub key handlers
 
-    _securityHandler = CraftStandardHandlerUsingStandard40.read(
+    _securityHandler = StandardHandlerUsingStandard40.read(
         pdfDict, password, documentId, _encryptMetadata);
   }
 
   static Uint8List generateNewDocumentId() {
-    final sha512 = CraftDigestAlgorithms.getMessageDigest("SHA-512");
-    final time = CraftSystemUtil.getTimeBasedSeed();
-    final mem = CraftSystemUtil.getFreeMemory();
+    final sha512 = DigestAlgorithms.getMessageDigest("SHA-512");
+    final time = SystemUtil.getTimeBasedSeed();
+    final mem = SystemUtil.getFreeMemory();
     final s = "$time+$mem+${_seq++}";
-    return sha512
-        .digestWithInput(CraftEncodingUtil.convertToBytes(s, "ISO-8859-1"));
+    return sha512.digestWithInput(EncodingUtil.convertToBytes(s, "ISO-8859-1"));
   }
 
   @override
   bool requiresIndirectStorage() => true;
 
   int getEncryptionAlgorithm() {
-    return _cryptoMode & CraftEncryptionConstants.encryptionMask;
+    return _cryptoMode & EncryptionConstants.encryptionMask;
   }
 
   bool isMetadataEncrypted() => _encryptMetadata;
@@ -94,11 +91,11 @@ class CraftPdfEncryption extends CraftPdfObjectWrapper<CraftPdfDictionary> {
 
   int? getPermissions() => _permissions;
 
-  void setSecurityHandler(CraftSecurityHandler securityHandler) {
+  void setSecurityHandler(SecurityHandler securityHandler) {
     _securityHandler = securityHandler;
   }
 
-  CraftSecurityHandler? getSecurityHandler() {
+  SecurityHandler? getSecurityHandler() {
     return _securityHandler;
   }
 
@@ -106,7 +103,7 @@ class CraftPdfEncryption extends CraftPdfObjectWrapper<CraftPdfDictionary> {
     _securityHandler?.setHashKeyForNextObject(objNumber, objGeneration);
   }
 
-  CraftOutputStreamEncryption? getEncryptionStream(dynamic os) {
+  OutputStreamEncryption? getEncryptionStream(dynamic os) {
     return _securityHandler?.getEncryptionStream(os);
   }
 

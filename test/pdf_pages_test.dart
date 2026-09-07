@@ -16,10 +16,10 @@ void main() {
       // Create a simple PDF with 1 page
       final outputBuffer = BytesBuilder();
       final tempSink = _BytesBuilderSink(outputBuffer);
-      final doc = CraftPdfDocument(writer: CraftPdfWriter(tempSink));
+      final doc = PdfDocument(writer: PdfWriter(tempSink));
 
       // Add one page
-      await doc.appendBlankPage(CraftPageSize.A4);
+      await doc.appendBlankPage(PageSize.A4);
       expect(doc.pageHierarchy().pageTotal(), equals(1));
 
       // Close and get bytes
@@ -28,8 +28,8 @@ void main() {
       expect(pdfBytes.length, greaterThan(0));
 
       // Re-read and verify
-      final reader = CraftPdfReader.fromBytes(pdfBytes);
-      final doc2 = CraftPdfDocument(reader: reader);
+      final reader = PdfReader.fromBytes(pdfBytes);
+      final doc2 = PdfDocument(reader: reader);
       await doc2.load();
 
       expect(doc2.pageHierarchy().pageTotal(), equals(1));
@@ -39,11 +39,11 @@ void main() {
       // Create a PDF with 5 pages
       final outputBuffer = BytesBuilder();
       final tempSink = _BytesBuilderSink(outputBuffer);
-      final doc = CraftPdfDocument(writer: CraftPdfWriter(tempSink));
+      final doc = PdfDocument(writer: PdfWriter(tempSink));
 
       // Add 5 pages
       for (var i = 0; i < 5; i++) {
-        await doc.appendBlankPage(CraftPageSize.A4);
+        await doc.appendBlankPage(PageSize.A4);
       }
       expect(doc.pageHierarchy().pageTotal(), equals(5));
 
@@ -52,8 +52,8 @@ void main() {
       final pdfBytes = outputBuffer.toBytes();
 
       // Re-read and verify
-      final reader = CraftPdfReader.fromBytes(pdfBytes);
-      final doc2 = CraftPdfDocument(reader: reader);
+      final reader = PdfReader.fromBytes(pdfBytes);
+      final doc2 = PdfDocument(reader: reader);
       await doc2.load();
 
       expect(doc2.pageHierarchy().pageTotal(), equals(5));
@@ -69,9 +69,9 @@ void main() {
       // Create a simple PDF
       final outputBuffer = BytesBuilder();
       final tempSink = _BytesBuilderSink(outputBuffer);
-      final doc = CraftPdfDocument(writer: CraftPdfWriter(tempSink));
-      await doc.appendBlankPage(CraftPageSize.A4);
-      await doc.appendBlankPage(CraftPageSize.A4);
+      final doc = PdfDocument(writer: PdfWriter(tempSink));
+      await doc.appendBlankPage(PageSize.A4);
+      await doc.appendBlankPage(PageSize.A4);
       await doc.close();
 
       final pdfBytes = outputBuffer.toBytes();

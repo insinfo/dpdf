@@ -1,5 +1,5 @@
-class CraftResourceResolver {
-  CraftResourceResolver(String? baseUri, [dynamic resourceResolver]);
+class ResourceResolver {
+  ResourceResolver(String? baseUri, [dynamic resourceResolver]);
 
   String? getBaseUri() => null;
 

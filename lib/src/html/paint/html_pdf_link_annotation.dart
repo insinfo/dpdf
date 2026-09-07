@@ -5,21 +5,20 @@ import '../../kernel/pdf/pdf_name.dart';
 import '../../kernel/pdf/pdf_number.dart';
 
 /// Invisible URI link annotation created for visible HTML anchor text.
-class CraftHtmlPdfLinkAnnotation extends CraftPdfAnnotation {
-  CraftHtmlPdfLinkAnnotation(super.rectangle, String target)
-      : super.fromRect() {
-    put(CraftPdfName.subtype, CraftPdfName.link);
-    put(CraftPdfName.a, PdfActionURI.createURI(target).pdfRepresentation());
+class HtmlPdfLinkAnnotation extends PdfAnnotation {
+  HtmlPdfLinkAnnotation(super.rectangle, String target) : super.fromRect() {
+    put(PdfName.subtype, PdfName.link);
+    put(PdfName.a, PdfActionURI.createURI(target).pdfRepresentation());
     // A zero-width border keeps the text presentation controlled by CSS.
     put(
-        CraftPdfName.border,
-        CraftPdfArray.fromList([
-          CraftPdfNumber.fromInt(0),
-          CraftPdfNumber.fromInt(0),
-          CraftPdfNumber.fromInt(0),
+        PdfName.border,
+        PdfArray.fromList([
+          PdfNumber.fromInt(0),
+          PdfNumber.fromInt(0),
+          PdfNumber.fromInt(0),
         ]));
   }
 
   @override
-  CraftPdfName getSubtype() => CraftPdfName.link;
+  PdfName getSubtype() => PdfName.link;
 }

@@ -122,19 +122,17 @@ void main() {
     }
   });
   test('metadata edit and serialization roundtrip', () {
-    final xmp = CraftXMPMeta.create();
-    xmp.setProperty(CraftXMPConst.NS_PDF, 'Producer', 'A & B <C>');
-    final parsed = CraftXMPMetaFactory.parseFromBuffer(
-        CraftXMPMetaFactory.serializeToBuffer(xmp));
-    expect(parsed.getPropertyString(CraftXMPConst.NS_PDF, 'Producer'),
-        'A & B <C>');
-    parsed.setProperty(CraftXMPConst.NS_PDF, 'Producer', 'Updated');
-    expect(
-        parsed.getPropertyString(CraftXMPConst.NS_PDF, 'Producer'), 'Updated');
+    final xmp = XMPMeta.create();
+    xmp.setProperty(XMPConst.NS_PDF, 'Producer', 'A & B <C>');
+    final parsed =
+        XMPMetaFactory.parseFromBuffer(XMPMetaFactory.serializeToBuffer(xmp));
+    expect(parsed.getPropertyString(XMPConst.NS_PDF, 'Producer'), 'A & B <C>');
+    parsed.setProperty(XMPConst.NS_PDF, 'Producer', 'Updated');
+    expect(parsed.getPropertyString(XMPConst.NS_PDF, 'Producer'), 'Updated');
   });
   test('metadata supports alternate RDF prefixes', () {
-    final xmp = CraftXMPMetaFactory.parseFromString(
+    final xmp = XMPMetaFactory.parseFromString(
         '<m xmlns:z="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><z:RDF><z:Description xmlns:p="http://ns.adobe.com/pdf/1.3/"><p:Producer>Original</p:Producer></z:Description></z:RDF></m>');
-    expect(xmp.getPropertyString(CraftXMPConst.NS_PDF, 'Producer'), 'Original');
+    expect(xmp.getPropertyString(XMPConst.NS_PDF, 'Producer'), 'Original');
   });
 }

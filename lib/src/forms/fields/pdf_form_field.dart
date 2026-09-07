@@ -15,36 +15,36 @@ import 'pdf_button_form_field.dart';
 import 'pdf_choice_form_field.dart';
 import 'pdf_signature_form_field.dart';
 
-class CraftPdfFormField extends CraftAbstractPdfFormField {
+class PdfFormField extends AbstractPdfFormField {
   static const int ffReadOnly = 1 << 0; // Bit 1
   static const int ffRequired = 1 << 1; // Bit 2
   static const int ffNoExport = 1 << 2; // Bit 3
   static const int ffMultiline = 1 << 12; // Bit 13
   static const int ffPassword = 1 << 13; // Bit 14
 
-  final List<CraftAbstractPdfFormField> childFields = [];
+  final List<AbstractPdfFormField> childFields = [];
 
-  CraftPdfFormField(super.pdfObject);
+  PdfFormField(super.pdfObject);
 
-  static Future<CraftPdfFormField> makeFormField(
-      CraftPdfObject pdfObject, CraftPdfDocument? document) async {
+  static Future<PdfFormField> makeFormField(
+      PdfObject pdfObject, PdfDocument? document) async {
     if (!pdfObject.isDictionary()) {
       throw ArgumentError("PdfObject must be a dictionary");
     }
-    CraftPdfDictionary dict = pdfObject as CraftPdfDictionary;
-    CraftPdfName? ft = await dict.nameEntry(CraftPdfName.ft);
+    PdfDictionary dict = pdfObject as PdfDictionary;
+    PdfName? ft = await dict.nameEntry(PdfName.ft);
 
-    CraftPdfFormField field;
-    if (CraftPdfName.tx == ft) {
-      field = CraftPdfTextFormField(dict);
-    } else if (CraftPdfName.btn == ft) {
-      field = CraftPdfButtonFormField(dict);
-    } else if (CraftPdfName.ch == ft) {
-      field = CraftPdfChoiceFormField(dict);
-    } else if (CraftPdfName.sig == ft) {
-      field = CraftPdfSignatureFormField(dict);
+    PdfFormField field;
+    if (PdfName.tx == ft) {
+      field = PdfTextFormField(dict);
+    } else if (PdfName.btn == ft) {
+      field = PdfButtonFormField(dict);
+    } else if (PdfName.ch == ft) {
+      field = PdfChoiceFormField(dict);
+    } else if (PdfName.sig == ft) {
+      field = PdfSignatureFormField(dict);
     } else {
-      field = CraftPdfFormField(dict);
+      field = PdfFormField(dict);
     }
 
     if (document != null) {
@@ -56,34 +56,34 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
 
   // Helper for flags
   Future<bool> getFieldFlag(int flag) async {
-    CraftPdfNumber? n = await pdfRepresentation().numberEntry(CraftPdfName.ff);
+    PdfNumber? n = await pdfRepresentation().numberEntry(PdfName.ff);
     int flags = n != null ? n.getValue().toInt() : 0;
     return (flags & flag) != 0;
   }
 
   Future<void> setFieldFlag(int flag, bool value) async {
-    CraftPdfNumber? n = await pdfRepresentation().numberEntry(CraftPdfName.ff);
+    PdfNumber? n = await pdfRepresentation().numberEntry(PdfName.ff);
     int flags = n != null ? n.getValue().toInt() : 0;
     if (value) {
       flags |= flag;
     } else {
       flags &= ~flag;
     }
-    put(CraftPdfName.ff, CraftPdfNumber(flags.toDouble()));
+    put(PdfName.ff, PdfNumber(flags.toDouble()));
   }
 
   @override
-  Future<CraftPdfString?> getDefaultAppearance() async {
-    CraftPdfString? da = await pdfRepresentation().stringEntry(CraftPdfName.da);
+  Future<PdfString?> getDefaultAppearance() async {
+    PdfString? da = await pdfRepresentation().stringEntry(PdfName.da);
     if (da != null) return da;
     return super.getDefaultAppearance();
   }
 
   @override
   Future<List<String>> getAppearanceStates() async {
-    final ap = await pdfRepresentation().dictionaryEntry(CraftPdfName.ap);
+    final ap = await pdfRepresentation().dictionaryEntry(PdfName.ap);
     if (ap == null) return [];
-    final n = await ap.dictionaryEntry(CraftPdfName.n);
+    final n = await ap.dictionaryEntry(PdfName.n);
     if (n == null) return [];
     return n.keySet().map((e) => e.getValue()).toList();
   }
@@ -94,66 +94,66 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
     return false;
   }
 
-  Future<void> addKid(CraftPdfWidgetAnnotation widget) async {
-    widget.pdfRepresentation().put(CraftPdfName.parent, pdfRepresentation());
+  Future<void> addKid(PdfWidgetAnnotation widget) async {
+    widget.pdfRepresentation().put(PdfName.parent, pdfRepresentation());
 
-    CraftPdfArray? kids = await getKids();
+    PdfArray? kids = await getKids();
     if (kids == null) {
-      kids = CraftPdfArray();
-      put(CraftPdfName.kids, kids);
+      kids = PdfArray();
+      put(PdfName.kids, kids);
     }
     kids.add(widget.pdfRepresentation());
   }
 
-  Future<void> removeChild(CraftPdfFormField child) async {
-    CraftPdfArray? kids = await getKids();
+  Future<void> removeChild(PdfFormField child) async {
+    PdfArray? kids = await getKids();
     if (kids != null) {
       kids.remove(child.pdfRepresentation());
     }
   }
 
-  Future<void> addChildField(CraftPdfFormField child) async {
-    child.pdfRepresentation().put(CraftPdfName.parent, pdfRepresentation());
+  Future<void> addChildField(PdfFormField child) async {
+    child.pdfRepresentation().put(PdfName.parent, pdfRepresentation());
 
-    CraftPdfArray? kids = await getKids();
+    PdfArray? kids = await getKids();
     if (kids == null) {
-      kids = CraftPdfArray();
-      put(CraftPdfName.kids, kids);
+      kids = PdfArray();
+      put(PdfName.kids, kids);
     }
     kids.add(child.pdfRepresentation());
   }
 
-  Future<CraftPdfArray?> getKids() async {
-    return await pdfRepresentation().arrayEntry(CraftPdfName.kids);
+  Future<PdfArray?> getKids() async {
+    return await pdfRepresentation().arrayEntry(PdfName.kids);
   }
 
   void setValue(Object value) {
     if (value is String) {
-      put(CraftPdfName.v, CraftPdfString(value));
-    } else if (value is CraftPdfObject) {
-      put(CraftPdfName.v, value);
+      put(PdfName.v, PdfString(value));
+    } else if (value is PdfObject) {
+      put(PdfName.v, value);
     } else {
       throw ArgumentError("Value must be value PdfObject or String");
     }
   }
 
-  Future<CraftPdfName?> getFormType() async {
-    return pdfRepresentation().nameEntry(CraftPdfName.ft);
+  Future<PdfName?> getFormType() async {
+    return pdfRepresentation().nameEntry(PdfName.ft);
   }
 
   void setFieldName(String name) {
-    put(CraftPdfName.t, CraftPdfString(name));
+    put(PdfName.t, PdfString(name));
   }
 
-  Future<List<CraftPdfWidgetAnnotation>> getWidgets() async {
-    List<CraftPdfWidgetAnnotation> widgets = [];
+  Future<List<PdfWidgetAnnotation>> getWidgets() async {
+    List<PdfWidgetAnnotation> widgets = [];
 
-    CraftPdfArray? kids = await getKids();
+    PdfArray? kids = await getKids();
     if (kids != null) {
       for (int i = 0; i < kids.size(); i++) {
-        CraftPdfDictionary? kid = await kids.dictionaryEntry(i);
+        PdfDictionary? kid = await kids.dictionaryEntry(i);
         if (kid != null) {
-          CraftPdfFormField kidField = CraftPdfFormField(kid);
+          PdfFormField kidField = PdfFormField(kid);
           widgets.addAll(await kidField.getWidgets());
         }
       }
@@ -164,9 +164,9 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
     // But if the list is empty so far, we definitely check self.
     // To be safe, we always check self, but usually a node with Kids isn't a terminal widget.
     if (widgets.isEmpty) {
-      if (await pdfRepresentation().nameEntry(CraftPdfName.subtype) ==
-          CraftPdfName.widget) {
-        widgets.add(CraftPdfWidgetAnnotation(pdfRepresentation()));
+      if (await pdfRepresentation().nameEntry(PdfName.subtype) ==
+          PdfName.widget) {
+        widgets.add(PdfWidgetAnnotation(pdfRepresentation()));
       }
     }
 
@@ -174,7 +174,7 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
   }
 
   Future<String> getFieldNameValue() async {
-    CraftPdfString? s = await getFieldName();
+    PdfString? s = await getFieldName();
     return s?.decodeMappingText() ?? "";
   }
 
@@ -186,7 +186,7 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
   Future<void> disableFieldRegeneration() async {
     _regenerationDisabled = true;
     for (var child in childFields) {
-      if (child is CraftPdfFormField) {
+      if (child is PdfFormField) {
         await child.disableFieldRegeneration();
       }
     }
@@ -198,7 +198,7 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
     _regenerationDisabled = false;
     await regenerateField();
     for (var child in childFields) {
-      if (child is CraftPdfFormField) {
+      if (child is PdfFormField) {
         await child.enableFieldRegeneration();
       }
     }
@@ -218,16 +218,16 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
   bool isFieldRegenerationDisabled() => _regenerationDisabled;
 
   /// Gets a child field by name.
-  Future<CraftPdfFormField?> getChildField(String name) async {
-    CraftPdfArray? kids = await getKids();
+  Future<PdfFormField?> getChildField(String name) async {
+    PdfArray? kids = await getKids();
     if (kids == null) return null;
 
     for (int i = 0; i < kids.size(); i++) {
-      CraftPdfDictionary? kidDict = await kids.dictionaryEntry(i);
+      PdfDictionary? kidDict = await kids.dictionaryEntry(i);
       if (kidDict != null) {
-        CraftPdfString? fieldName = await kidDict.stringEntry(CraftPdfName.t);
+        PdfString? fieldName = await kidDict.stringEntry(PdfName.t);
         if (fieldName != null && fieldName.decodeMappingText() == name) {
-          return CraftPdfFormField.makeFormField(kidDict, getDocument());
+          return PdfFormField.makeFormField(kidDict, getDocument());
         }
       }
     }
@@ -235,19 +235,19 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
   }
 
   /// Gets all child form fields (non-annotation children).
-  List<CraftAbstractPdfFormField> getChildFields() => childFields;
+  List<AbstractPdfFormField> getChildFields() => childFields;
 
   /// Returns the value of the field.
-  Future<CraftPdfObject?> getValue() async {
-    return await pdfRepresentation().get(CraftPdfName.v, true);
+  Future<PdfObject?> getValue() async {
+    return await pdfRepresentation().get(PdfName.v, true);
   }
 
   /// Returns the value as a string.
   Future<String?> getValueAsString() async {
-    CraftPdfObject? v = await getValue();
-    if (v is CraftPdfString) {
+    PdfObject? v = await getValue();
+    if (v is PdfString) {
       return v.decodeMappingText();
-    } else if (v is CraftPdfName) {
+    } else if (v is PdfName) {
       return v.getValue();
     }
     return null;
@@ -289,40 +289,40 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
       await setFieldFlag(ffPassword, password);
 
   /// Gets the current field partial name.
-  Future<CraftPdfString?> getPartialFieldName() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName.t);
+  Future<PdfString?> getPartialFieldName() async {
+    return await pdfRepresentation().stringEntry(PdfName.t);
   }
 
   /// Changes the alternate name of the field to the specified value.
   /// The alternate is a descriptive name to be used by status messages etc.
   void setAlternativeName(String name) {
-    put(CraftPdfName.tu, CraftPdfString(name));
+    put(PdfName.tu, PdfString(name));
   }
 
   /// Gets the current alternate name.
   /// The alternate is a descriptive name to be used by status messages etc.
-  Future<CraftPdfString?> getAlternativeName() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName.tu);
+  Future<PdfString?> getAlternativeName() async {
+    return await pdfRepresentation().stringEntry(PdfName.tu);
   }
 
   /// Changes the mapping name of the field to the specified value.
   /// The mapping name can be used when exporting the form data in the document.
   void setMappingName(String name) {
-    put(CraftPdfName.tm, CraftPdfString(name));
+    put(PdfName.tm, PdfString(name));
   }
 
   /// Gets the current mapping name.
   /// The mapping name can be used when exporting the form data in the document.
-  Future<CraftPdfString?> getMappingName() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName.tm);
+  Future<PdfString?> getMappingName() async {
+    return await pdfRepresentation().stringEntry(PdfName.tm);
   }
 
   /// Retrieves string value from PdfObject representing text string or text stream.
-  static Future<String?> getStringValue(CraftPdfObject? value) async {
+  static Future<String?> getStringValue(PdfObject? value) async {
     if (value == null) return null;
-    if (value is CraftPdfString) {
+    if (value is PdfString) {
       return value.decodeMappingText();
-    } else if (value is CraftPdfName) {
+    } else if (value is PdfName) {
       return value.getValue();
     }
     return null;
@@ -330,35 +330,34 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
 
   /// Gets the raw flags value of this field.
   Future<int> getFieldFlags() async {
-    CraftPdfNumber? n = await pdfRepresentation().numberEntry(CraftPdfName.ff);
+    PdfNumber? n = await pdfRepresentation().numberEntry(PdfName.ff);
     return n?.intValue() ?? 0;
   }
 
   /// Sets the raw flags value of this field.
   void setFieldFlags(int flags) {
-    put(CraftPdfName.ff, CraftPdfNumber(flags.toDouble()));
+    put(PdfName.ff, PdfNumber(flags.toDouble()));
   }
 
   /// Removes all children from the current field.
   Future<void> removeChildren() async {
-    pdfRepresentation().remove(CraftPdfName.kids);
+    pdfRepresentation().remove(PdfName.kids);
     childFields.clear();
   }
 
   /// Gets all child form fields of this form field (annotations are not returned).
-  Future<List<CraftPdfFormField>> getChildFormFields() async {
-    List<CraftPdfFormField> result = [];
-    CraftPdfArray? kids = await getKids();
+  Future<List<PdfFormField>> getChildFormFields() async {
+    List<PdfFormField> result = [];
+    PdfArray? kids = await getKids();
     if (kids == null) return result;
 
     for (int i = 0; i < kids.size(); i++) {
-      CraftPdfDictionary? kidDict = await kids.dictionaryEntry(i);
+      PdfDictionary? kidDict = await kids.dictionaryEntry(i);
       if (kidDict != null) {
         // Check if it's a form field (has FT or T) and not just a widget
-        if (kidDict.containsKey(CraftPdfName.ft) ||
-            kidDict.containsKey(CraftPdfName.t)) {
-          CraftPdfFormField field =
-              await CraftPdfFormField.makeFormField(kidDict, getDocument());
+        if (kidDict.containsKey(PdfName.ft) || kidDict.containsKey(PdfName.t)) {
+          PdfFormField field =
+              await PdfFormField.makeFormField(kidDict, getDocument());
           result.add(field);
         }
       }
@@ -368,14 +367,13 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
 
   /// Returns descendant fields, including nested descendants.
   /// but not annotations.
-  Future<List<CraftPdfFormField>> getAllChildFormFields() async {
-    List<CraftPdfFormField> result = [];
+  Future<List<PdfFormField>> getAllChildFormFields() async {
+    List<PdfFormField> result = [];
     await _collectAllChildFormFields(result);
     return result;
   }
 
-  Future<void> _collectAllChildFormFields(
-      List<CraftPdfFormField> result) async {
+  Future<void> _collectAllChildFormFields(List<PdfFormField> result) async {
     for (var child in await getChildFormFields()) {
       result.add(child);
       await child._collectAllChildFormFields(result);
@@ -392,58 +390,58 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
   }
 
   /// Detects whether a dictionary has field-specific entries.
-  static bool isFormField(CraftPdfDictionary dict) {
-    return dict.containsKey(CraftPdfName.ft) ||
-        dict.containsKey(CraftPdfName.t) ||
-        dict.containsKey(CraftPdfName.kids) ||
-        dict.containsKey(CraftPdfName.v);
+  static bool isFormField(PdfDictionary dict) {
+    return dict.containsKey(PdfName.ft) ||
+        dict.containsKey(PdfName.t) ||
+        dict.containsKey(PdfName.kids) ||
+        dict.containsKey(PdfName.v);
   }
 
   /// Gets a set of all possible form field keys.
-  static Set<CraftPdfName> getFormFieldKeys() {
+  static Set<PdfName> getFormFieldKeys() {
     return {
-      CraftPdfName.ft, // Field type
-      CraftPdfName.t, // Partial field name
-      CraftPdfName.tu, // Alternate field name
-      CraftPdfName.tm, // Mapping name
-      CraftPdfName.ff, // Field flags
-      CraftPdfName.v, // Field value
-      CraftPdfName.dv, // Default value
-      CraftPdfName.aa, // Additional actions
-      CraftPdfName.da, // Default appearance
-      CraftPdfName.q, // Quadding
-      CraftPdfName.ds, // Default style
-      CraftPdfName.rv, // Rich text value
-      CraftPdfName.opts, // Options (for choice fields)
+      PdfName.ft, // Field type
+      PdfName.t, // Partial field name
+      PdfName.tu, // Alternate field name
+      PdfName.tm, // Mapping name
+      PdfName.ff, // Field flags
+      PdfName.v, // Field value
+      PdfName.dv, // Default value
+      PdfName.aa, // Additional actions
+      PdfName.da, // Default appearance
+      PdfName.q, // Quadding
+      PdfName.ds, // Default style
+      PdfName.rv, // Rich text value
+      PdfName.opts, // Options (for choice fields)
     };
   }
 
   /// Gets the default value of this field.
-  Future<CraftPdfObject?> getDefaultValue() async {
-    return await pdfRepresentation().get(CraftPdfName.dv, true);
+  Future<PdfObject?> getDefaultValue() async {
+    return await pdfRepresentation().get(PdfName.dv, true);
   }
 
   /// Sets the default value of this field.
-  void setDefaultValue(CraftPdfObject value) {
-    put(CraftPdfName.dv, value);
+  void setDefaultValue(PdfObject value) {
+    put(PdfName.dv, value);
   }
 
   /// Sets the default value of this field as a string.
   void setDefaultValueString(String value) {
-    put(CraftPdfName.dv, CraftPdfString(value));
+    put(PdfName.dv, PdfString(value));
   }
 
   /// Gets the quadding (justification) of this field.
   /// 0 = Left-justified, 1 = Centered, 2 = Right-justified.
   Future<int> getQuadding() async {
-    CraftPdfNumber? q = await pdfRepresentation().numberEntry(CraftPdfName.q);
+    PdfNumber? q = await pdfRepresentation().numberEntry(PdfName.q);
     return q?.intValue() ?? 0;
   }
 
   /// Sets the quadding (justification) of this field.
   /// 0 = Left-justified, 1 = Centered, 2 = Right-justified.
   void setQuadding(int justification) {
-    put(CraftPdfName.q, CraftPdfNumber(justification.toDouble()));
+    put(PdfName.q, PdfNumber(justification.toDouble()));
   }
 
   void release() {
@@ -453,41 +451,38 @@ class CraftPdfFormField extends CraftAbstractPdfFormField {
   }
 
   /// Sets the action for this field.
-  void setAction(CraftPdfAction action) {
-    put(CraftPdfName.a, action.pdfRepresentation());
+  void setAction(PdfAction action) {
+    put(PdfName.a, action.pdfRepresentation());
   }
 
   /// Gets the action for this field.
-  Future<CraftPdfAction?> getAction() async {
-    CraftPdfDictionary? action =
-        await pdfRepresentation().dictionaryEntry(CraftPdfName.a);
+  Future<PdfAction?> getAction() async {
+    PdfDictionary? action =
+        await pdfRepresentation().dictionaryEntry(PdfName.a);
     if (action != null) {
-      return CraftPdfAction.makeAction(action);
+      return PdfAction.makeAction(action);
     }
     return null;
   }
 
   /// Sets the additional action for this field.
-  Future<void> setAdditionalAction(
-      CraftPdfName key, CraftPdfAction action) async {
-    CraftPdfDictionary? aa =
-        await pdfRepresentation().dictionaryEntry(CraftPdfName.aa);
+  Future<void> setAdditionalAction(PdfName key, PdfAction action) async {
+    PdfDictionary? aa = await pdfRepresentation().dictionaryEntry(PdfName.aa);
     if (aa == null) {
-      aa = CraftPdfDictionary();
-      put(CraftPdfName.aa, aa);
+      aa = PdfDictionary();
+      put(PdfName.aa, aa);
     }
     aa.put(key, action.pdfRepresentation());
     markChanged();
   }
 
   /// Gets the additional action for this field.
-  Future<CraftPdfAction?> getAdditionalAction(CraftPdfName key) async {
-    CraftPdfDictionary? aa =
-        await pdfRepresentation().dictionaryEntry(CraftPdfName.aa);
+  Future<PdfAction?> getAdditionalAction(PdfName key) async {
+    PdfDictionary? aa = await pdfRepresentation().dictionaryEntry(PdfName.aa);
     if (aa != null) {
-      CraftPdfDictionary? action = await aa.dictionaryEntry(key);
+      PdfDictionary? action = await aa.dictionaryEntry(key);
       if (action != null) {
-        return CraftPdfAction.makeAction(action);
+        return PdfAction.makeAction(action);
       }
     }
     return null;

@@ -3,17 +3,17 @@ import 'package:dpdf/src/layout/layout/layout_area.dart';
 import 'package:dpdf/src/layout/layout/layout_result.dart';
 import 'package:dpdf/src/layout/renderer/renderer.dart';
 
-abstract class CraftRootRenderer extends CraftAbstractRenderer {
+abstract class RootRenderer extends AbstractRenderer {
   bool immediateFlush = true;
-  CraftLayoutArea? currentArea; // Moved from DocumentRenderer
+  LayoutArea? currentArea; // Moved from DocumentRenderer
   // waitingDrawingElements should be a Set or List of IRenderer
-  final List<CraftRenderer> waitingDrawingElements = [];
+  final List<Renderer> waitingDrawingElements = [];
 
-  CraftRootRenderer(super.modelElement) {
+  RootRenderer(super.modelElement) {
     // defaults
   }
 
-  Future<void> flushSingleRenderer(CraftRenderer resultRenderer);
+  Future<void> flushSingleRenderer(Renderer resultRenderer);
 
   Future<void> flush() async {
     for (final renderer in waitingDrawingElements) {
@@ -26,8 +26,7 @@ abstract class CraftRootRenderer extends CraftAbstractRenderer {
     childRenderers.clear();
   }
 
-  Future<CraftLayoutArea?> updateCurrentArea(
-      CraftLayoutResult? overflowResult) async {
+  Future<LayoutArea?> updateCurrentArea(LayoutResult? overflowResult) async {
     return null;
   }
 
@@ -36,7 +35,7 @@ abstract class CraftRootRenderer extends CraftAbstractRenderer {
   }
 
   @override
-  Future<void> addChild(CraftRenderer renderer) async {
+  Future<void> addChild(Renderer renderer) async {
     childRenderers.add(renderer);
     renderer.setParent(this);
   }

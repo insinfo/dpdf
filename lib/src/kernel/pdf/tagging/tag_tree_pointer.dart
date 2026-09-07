@@ -6,80 +6,77 @@ import 'tag_structure_context.dart';
 import 'pdf_struct_elem.dart';
 import 'pdf_namespace.dart';
 
-class CraftTagTreePointer {
-  final CraftTagStructureContext tagStructureContext;
-  CraftPdfStructElem? _currentStructElem;
-  CraftPdfPage? _currentPage;
-  CraftPdfStream? _contentStream;
-  CraftPdfNamespace? _currentNamespace;
+class TagTreePointer {
+  final TagStructureContext tagStructureContext;
+  PdfStructElem? _currentStructElem;
+  PdfPage? _currentPage;
+  PdfStream? _contentStream;
+  PdfNamespace? _currentNamespace;
   int _nextNewKidIndex = -1;
 
-  CraftTagTreePointer(CraftPdfDocument document)
+  TagTreePointer(PdfDocument document)
       : tagStructureContext = document.taggingContext()! {
     _init(document);
   }
 
-  Future<void> _init(CraftPdfDocument document) async {
+  Future<void> _init(PdfDocument document) async {
     _currentStructElem = await tagStructureContext.getRootTag();
     _currentNamespace = tagStructureContext.getDocumentDefaultNamespace();
   }
 
-  CraftTagTreePointer.copy(CraftTagTreePointer other)
+  TagTreePointer.copy(TagTreePointer other)
       : tagStructureContext = other.tagStructureContext,
         _currentStructElem = other._currentStructElem,
         _currentPage = other._currentPage,
         _contentStream = other._contentStream,
         _currentNamespace = other._currentNamespace;
 
-  CraftTagTreePointer.fromStructElem(
-      this._currentStructElem, CraftPdfDocument document)
+  TagTreePointer.fromStructElem(this._currentStructElem, PdfDocument document)
       : tagStructureContext = document.taggingContext()!;
 
-  CraftTagTreePointer setPageForTagging(CraftPdfPage page) {
+  TagTreePointer setPageForTagging(PdfPage page) {
     _currentPage = page;
     return this;
   }
 
-  CraftPdfPage? getCurrentPage() => _currentPage;
+  PdfPage? getCurrentPage() => _currentPage;
 
-  CraftTagTreePointer setContentStreamForTagging(
-      CraftPdfStream? contentStream) {
+  TagTreePointer setContentStreamForTagging(PdfStream? contentStream) {
     _contentStream = contentStream;
     return this;
   }
 
-  CraftPdfStream? getCurrentContentStream() => _contentStream;
+  PdfStream? getCurrentContentStream() => _contentStream;
 
-  CraftTagStructureContext getContext() => tagStructureContext;
+  TagStructureContext getContext() => tagStructureContext;
 
-  CraftPdfDocument getDocument() => tagStructureContext.getDocument();
+  PdfDocument getDocument() => tagStructureContext.getDocument();
 
-  CraftTagTreePointer setNamespaceForNewTags(CraftPdfNamespace? namespace) {
+  TagTreePointer setNamespaceForNewTags(PdfNamespace? namespace) {
     _currentNamespace = namespace;
     return this;
   }
 
-  CraftPdfNamespace? getNamespaceForNewTags() => _currentNamespace;
+  PdfNamespace? getNamespaceForNewTags() => _currentNamespace;
 
-  CraftPdfStructElem getCurrentStructElem() {
+  PdfStructElem getCurrentStructElem() {
     if (_currentStructElem == null) {
       throw StateError('Current structure element is not initialized.');
     }
     return _currentStructElem!;
   }
 
-  void setCurrentStructElem(CraftPdfStructElem structElem) {
+  void setCurrentStructElem(PdfStructElem structElem) {
     _currentStructElem = structElem;
   }
 
-  Future<CraftTagTreePointer> addTag(String role) async {
+  Future<TagTreePointer> addTag(String role) async {
     return addTagAt(-1, role);
   }
 
-  Future<CraftTagTreePointer> addTagAt(int index, String role) async {
+  Future<TagTreePointer> addTagAt(int index, String role) async {
     setNextNewKidIndex(index);
-    final newKid =
-        CraftPdfStructElem.withRole(getDocument(), CraftPdfName(role));
+    final newKid = PdfStructElem.withRole(getDocument(), PdfName(role));
     if (_currentNamespace != null) {
       newKid.setNamespace(_currentNamespace!);
     }
@@ -90,7 +87,7 @@ class CraftTagTreePointer {
     return this;
   }
 
-  CraftTagTreePointer setNextNewKidIndex(int nextNewKidIndex) {
+  TagTreePointer setNextNewKidIndex(int nextNewKidIndex) {
     if (nextNewKidIndex > -1) {
       _nextNewKidIndex = nextNewKidIndex;
     }
@@ -103,15 +100,15 @@ class CraftTagTreePointer {
     return nextPos;
   }
 
-  Future<CraftTagTreePointer> moveToRoot() async {
+  Future<TagTreePointer> moveToRoot() async {
     setCurrentStructElem(await tagStructureContext.getRootTag());
     return this;
   }
 
-  Future<CraftTagTreePointer> moveToParent() async {
+  Future<TagTreePointer> moveToParent() async {
     final current = getCurrentStructElem();
     final parent = await current.getParent();
-    if (parent is CraftPdfStructElem) {
+    if (parent is PdfStructElem) {
       setCurrentStructElem(parent);
     } else {
       await moveToRoot();
@@ -119,12 +116,12 @@ class CraftTagTreePointer {
     return this;
   }
 
-  Future<CraftTagTreePointer> moveToKid(int kidIndex) async {
+  Future<TagTreePointer> moveToKid(int kidIndex) async {
     final current = getCurrentStructElem();
     final kids = await current.getKids();
     if (kidIndex >= 0 && kidIndex < kids.length) {
       final kid = kids[kidIndex];
-      if (kid is CraftPdfStructElem) {
+      if (kid is PdfStructElem) {
         setCurrentStructElem(kid);
       } else {
         throw Exception('Cannot move to non-element kid (MCR or flushed)');
@@ -150,14 +147,14 @@ class CraftTagTreePointer {
   }
 
   /// Sets a new role to the current tag.
-  CraftTagTreePointer setRole(String role) {
-    getCurrentStructElem().setRole(CraftPdfName(role));
+  TagTreePointer setRole(String role) {
+    getCurrentStructElem().setRole(PdfName(role));
     return this;
   }
 
   /// Deletes the selected tag and reparents its children to the containing tag.
   /// This method call moves this TagTreePointer to the current tag parent.
-  Future<CraftTagTreePointer> removeTag() async {
+  Future<TagTreePointer> removeTag() async {
     final currentElem = getCurrentStructElem();
     final parent = await currentElem.getParent();
     if (parent == null) {
@@ -171,13 +168,13 @@ class CraftTagTreePointer {
     final index = await _getIndexInParentKidsList(currentElem);
 
     // Remove current from parent
-    if (parent is CraftPdfStructElem && index >= 0) {
+    if (parent is PdfStructElem && index >= 0) {
       await parent.removeKid(index);
 
       // Reparent kids to parent at original index position
       var insertIdx = index;
       for (final kid in kids) {
-        if (kid is CraftPdfStructElem) {
+        if (kid is PdfStructElem) {
           await parent.addKid(kid, insertIdx);
           insertIdx++;
         }
@@ -197,11 +194,11 @@ class CraftTagTreePointer {
     return await _getIndexInParentKidsList(getCurrentStructElem());
   }
 
-  Future<int> _getIndexInParentKidsList(CraftPdfStructElem elem) async {
+  Future<int> _getIndexInParentKidsList(PdfStructElem elem) async {
     final parent = await elem.getParent();
     if (parent == null) return -1;
 
-    if (parent is CraftPdfStructElem) {
+    if (parent is PdfStructElem) {
       final kids = await parent.getKids();
       for (int i = 0; i < kids.length; i++) {
         if (kids[i] == elem) return i;
@@ -211,7 +208,7 @@ class CraftTagTreePointer {
   }
 
   /// Checks if given structure element is flushed.
-  bool isElementFlushed(CraftPdfStructElem elem) {
+  bool isElementFlushed(PdfStructElem elem) {
     return elem.hasBeenWritten();
   }
 }

@@ -2,7 +2,7 @@ import '../css/css_values.dart';
 import '../model/html_box.dart';
 
 /// Resolved content and edge dimensions for one CSS box under a constraint.
-class CraftHtmlBoxGeometry {
+class HtmlBoxGeometry {
   final double paintX;
   final double paintWidth;
   final double x;
@@ -16,7 +16,7 @@ class CraftHtmlBoxGeometry {
   final double paddingBottom;
   final double paddingLeft;
 
-  const CraftHtmlBoxGeometry({
+  const HtmlBoxGeometry({
     required this.paintX,
     required this.paintWidth,
     required this.x,
@@ -31,9 +31,9 @@ class CraftHtmlBoxGeometry {
     required this.paddingLeft,
   });
 
-  factory CraftHtmlBoxGeometry.resolve(
-      CraftHtmlBoxStyle style, double x, double availableWidth) {
-    double edge(CraftCssLength value) => value.resolve(availableWidth);
+  factory HtmlBoxGeometry.resolve(
+      HtmlBoxStyle style, double x, double availableWidth) {
+    double edge(CssLength value) => value.resolve(availableWidth);
     final marginTop = edge(style.margin.top);
     final marginRight = edge(style.margin.right);
     final marginBottom = edge(style.margin.bottom);
@@ -48,7 +48,7 @@ class CraftHtmlBoxGeometry {
     final specifiedWidth =
         style.width.resolve(availableWidth, fallback: naturalWidth);
     final contentWidth = specifiedWidth.clamp(0.0, naturalWidth);
-    return CraftHtmlBoxGeometry(
+    return HtmlBoxGeometry(
       paintX: x + marginLeft,
       paintWidth: contentWidth + paddingLeft + paddingRight,
       x: x + marginLeft + paddingLeft,

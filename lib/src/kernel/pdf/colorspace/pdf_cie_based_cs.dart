@@ -6,8 +6,8 @@ import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
 import 'package:dpdf/src/kernel/pdf/colorspace/pdf_device_cs.dart';
 
 /// Abstract class for CIE-based color spaces.
-abstract class CraftPdfCieBasedCs extends CraftPdfColorSpace {
-  CraftPdfCieBasedCs(CraftPdfArray super.pdfObject);
+abstract class PdfCieBasedCs extends PdfColorSpace {
+  PdfCieBasedCs(PdfArray super.pdfObject);
 
   @override
   bool requiresIndirectStorage() => false;
@@ -18,7 +18,7 @@ abstract class CraftPdfCieBasedCs extends CraftPdfColorSpace {
 /// The `/Gamma` and `/WhitePoint` entries are ignored: CalGray is only ever a
 /// tone curve over a single grey axis, and viewers universally treat it as
 /// DeviceGray.
-class PdfCieBasedCsCalGray extends CraftPdfCieBasedCs {
+class PdfCieBasedCsCalGray extends PdfCieBasedCs {
   PdfCieBasedCsCalGray(super.pdfObject);
 
   @override
@@ -26,8 +26,7 @@ class PdfCieBasedCsCalGray extends CraftPdfCieBasedCs {
 
   @override
   List<double> toRgb(List<double> components) {
-    return PdfDeviceCsGray.grayToRgb(
-        CraftPdfColorSpace.componentAt(components, 0));
+    return PdfDeviceCsGray.grayToRgb(PdfColorSpace.componentAt(components, 0));
   }
 }
 
@@ -37,7 +36,7 @@ class PdfCieBasedCsCalGray extends CraftPdfCieBasedCs {
 /// almost always describe an sRGB-like space already, and applying them
 /// without a full colour-management chain would move colours further from what
 /// other viewers show, not closer.
-class PdfCieBasedCsCalRgb extends CraftPdfCieBasedCs {
+class PdfCieBasedCsCalRgb extends PdfCieBasedCs {
   PdfCieBasedCsCalRgb(super.pdfObject);
 
   @override
@@ -46,12 +45,9 @@ class PdfCieBasedCsCalRgb extends CraftPdfCieBasedCs {
   @override
   List<double> toRgb(List<double> components) {
     return <double>[
-      CraftPdfColorSpace.clampUnit(
-          CraftPdfColorSpace.componentAt(components, 0)),
-      CraftPdfColorSpace.clampUnit(
-          CraftPdfColorSpace.componentAt(components, 1)),
-      CraftPdfColorSpace.clampUnit(
-          CraftPdfColorSpace.componentAt(components, 2)),
+      PdfColorSpace.clampUnit(PdfColorSpace.componentAt(components, 0)),
+      PdfColorSpace.clampUnit(PdfColorSpace.componentAt(components, 1)),
+      PdfColorSpace.clampUnit(PdfColorSpace.componentAt(components, 2)),
     ];
   }
 }
@@ -59,7 +55,7 @@ class PdfCieBasedCsCalRgb extends CraftPdfCieBasedCs {
 /// Represents a Lab color space (ISO 32000-1, clause 8.6.5.4).
 ///
 /// Components are `L*` in 0..100 and `a*`, `b*` inside [range].
-class PdfCieBasedCsLab extends CraftPdfCieBasedCs {
+class PdfCieBasedCsLab extends PdfCieBasedCs {
   /// Default `/Range`, i.e. `[-100 100 -100 100]` (clause 8.6.5.4, table 65).
   static const List<double> defaultRange = <double>[
     -100.0,
@@ -84,16 +80,16 @@ class PdfCieBasedCsLab extends CraftPdfCieBasedCs {
         range = range ?? defaultRange;
 
   /// Builds a Lab space from its `[/Lab << ... >>]` array form.
-  static Future<PdfCieBasedCsLab> parseArray(CraftPdfArray array) async {
+  static Future<PdfCieBasedCsLab> parseArray(PdfArray array) async {
     final dict = await array.dictionaryEntry(1);
     List<double>? whitePoint;
     List<double>? range;
     if (dict != null) {
-      final wp = await dict.arrayEntry(CraftPdfName.intern('WhitePoint'));
+      final wp = await dict.arrayEntry(PdfName.intern('WhitePoint'));
       if (wp != null && wp.size() >= 3) {
         whitePoint = await wp.toDoubleArray();
       }
-      final r = await dict.arrayEntry(CraftPdfName.intern('Range'));
+      final r = await dict.arrayEntry(PdfName.intern('Range'));
       if (r != null && r.size() >= 4) {
         range = await r.toDoubleArray();
       }
@@ -114,9 +110,9 @@ class PdfCieBasedCsLab extends CraftPdfCieBasedCs {
 
   @override
   List<double> toRgb(List<double> components) {
-    var lStar = CraftPdfColorSpace.componentAt(components, 0);
-    var aStar = CraftPdfColorSpace.componentAt(components, 1);
-    var bStar = CraftPdfColorSpace.componentAt(components, 2);
+    var lStar = PdfColorSpace.componentAt(components, 0);
+    var aStar = PdfColorSpace.componentAt(components, 1);
+    var bStar = PdfColorSpace.componentAt(components, 2);
     lStar = lStar.clamp(0.0, 100.0).toDouble();
     aStar = aStar.clamp(range[0], range[1]).toDouble();
     bStar = bStar.clamp(range[2], range[3]).toDouble();
@@ -201,7 +197,7 @@ class PdfCieBasedCsLab extends CraftPdfCieBasedCs {
     final v = linear <= 0.0031308
         ? 12.92 * linear
         : 1.055 * math.pow(linear.abs(), 1.0 / 2.4).toDouble() - 0.055;
-    return CraftPdfColorSpace.clampUnit(v);
+    return PdfColorSpace.clampUnit(v);
   }
 }
 
@@ -210,16 +206,16 @@ class PdfCieBasedCsLab extends CraftPdfCieBasedCs {
 /// The embedded ICC profile is not interpreted; the space behaves like the
 /// device space with the same number of components, which is what `/Alternate`
 /// would name anyway for the profiles found in practice.
-class PdfCieBasedCsIccBased extends CraftPdfCieBasedCs {
+class PdfCieBasedCsIccBased extends PdfCieBasedCs {
   /// The `/N` entry of the profile stream: 1, 3 or 4.
   final int numberOfComponents;
 
   PdfCieBasedCsIccBased(super.pdfObject, [this.numberOfComponents = 3]);
 
   /// Builds an ICCBased space from its `[/ICCBased stream]` array form.
-  static Future<PdfCieBasedCsIccBased> parseArray(CraftPdfArray array) async {
+  static Future<PdfCieBasedCsIccBased> parseArray(PdfArray array) async {
     final stream = await array.streamEntry(1);
-    final n = stream == null ? null : await stream.integerEntry(CraftPdfName.n);
+    final n = stream == null ? null : await stream.integerEntry(PdfName.n);
     // Three components is the least damaging guess for a profile whose /N is
     // missing, since RGB is by far the most common ICCBased flavour.
     return PdfCieBasedCsIccBased(array, n ?? 3);
@@ -233,21 +229,18 @@ class PdfCieBasedCsIccBased extends CraftPdfCieBasedCs {
     switch (numberOfComponents) {
       case 1:
         return PdfDeviceCsGray.grayToRgb(
-            CraftPdfColorSpace.componentAt(components, 0));
+            PdfColorSpace.componentAt(components, 0));
       case 4:
         return PdfDeviceCsCmyk.cmykToRgb(
-            CraftPdfColorSpace.componentAt(components, 0),
-            CraftPdfColorSpace.componentAt(components, 1),
-            CraftPdfColorSpace.componentAt(components, 2),
-            CraftPdfColorSpace.componentAt(components, 3));
+            PdfColorSpace.componentAt(components, 0),
+            PdfColorSpace.componentAt(components, 1),
+            PdfColorSpace.componentAt(components, 2),
+            PdfColorSpace.componentAt(components, 3));
       default:
         return <double>[
-          CraftPdfColorSpace.clampUnit(
-              CraftPdfColorSpace.componentAt(components, 0)),
-          CraftPdfColorSpace.clampUnit(
-              CraftPdfColorSpace.componentAt(components, 1)),
-          CraftPdfColorSpace.clampUnit(
-              CraftPdfColorSpace.componentAt(components, 2)),
+          PdfColorSpace.clampUnit(PdfColorSpace.componentAt(components, 0)),
+          PdfColorSpace.clampUnit(PdfColorSpace.componentAt(components, 1)),
+          PdfColorSpace.clampUnit(PdfColorSpace.componentAt(components, 2)),
         ];
     }
   }

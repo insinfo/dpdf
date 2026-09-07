@@ -24,7 +24,7 @@ embutidas, de modo que negrito, itálico, serifada e monoespaçada são
 selecionadas de verdade.
 
 ```dart
-final pdf = await CraftHtmlConverter.convertToBytes('''
+final pdf = await HtmlConverter.convertToBytes('''
   <h1 style="font-family: serif">Relatório</h1>
   <p>Texto que quebra em linhas com as larguras reais da fonte.</p>
   <table><tr><th>Item</th><th>Valor</th></tr>
@@ -152,13 +152,13 @@ final out = JpegEncoder.encode(smaller,
 
 ### Layout de texto
 
-`CraftDocument` compõe parágrafos, divs, listas, tabelas com `colspan`/
+`Document` compõe parágrafos, divs, listas, tabelas com `colspan`/
 `rowspan`, imagens e quebras de área sobre o kernel, com colapso de margens e
 cálculo de largura mínima/máxima.
 
 ```dart
-final doc = CraftDocument(pdfDocument);
-await doc.add(CraftParagraph('Primeiro parágrafo'));
+final doc = Document(pdfDocument);
+await doc.add(Paragraph('Primeiro parágrafo'));
 await doc.close();
 ```
 

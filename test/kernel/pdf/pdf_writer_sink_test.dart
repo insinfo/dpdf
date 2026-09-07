@@ -8,7 +8,7 @@ void main() {
   test('o coletor em memória do escritor implementa a codificação de IOSink',
       () {
     final bytes = BytesBuilder(copy: false);
-    final sink = CraftPdfWriter.fromBytesBuilder(bytes).getSink();
+    final sink = PdfWriter.fromBytesBuilder(bytes).getSink();
 
     expect(sink.encoding, latin1);
 

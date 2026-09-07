@@ -6,7 +6,7 @@ import 'package:dpdf/src/kernel/crypto/decryptor.dart';
 import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
 
 /// Base class for security handlers.
-abstract class CraftSecurityHandler {
+abstract class SecurityHandler {
   /// The global encryption key
   Uint8List mkey = Uint8List(0);
 
@@ -21,7 +21,7 @@ abstract class CraftSecurityHandler {
   /// Work area to prepare the object/generation bytes
   final Uint8List extra = Uint8List(5);
 
-  CraftSecurityHandler() {
+  SecurityHandler() {
     _initMd5MessageDigest();
   }
 
@@ -45,10 +45,10 @@ abstract class CraftSecurityHandler {
   }
 
   /// Gets a stream wrapper, responsible for encryption.
-  CraftOutputStreamEncryption getEncryptionStream(dynamic os);
+  OutputStreamEncryption getEncryptionStream(dynamic os);
 
   /// Gets decryptor object.
-  CraftDecryptor getDecryptor();
+  Decryptor getDecryptor();
 
   /// Gets encryption key for a particular object/generation.
   Uint8List getNextObjectKey() {
@@ -62,6 +62,6 @@ abstract class CraftSecurityHandler {
 
   /// Init md5 message digest.
   void _initMd5MessageDigest() {
-    md5 = CraftDigestAlgorithms.getMessageDigest("MD5");
+    md5 = DigestAlgorithms.getMessageDigest("MD5");
   }
 }

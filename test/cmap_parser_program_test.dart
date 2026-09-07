@@ -8,19 +8,18 @@ import 'package:dpdf/src/io/font/cmap/cmap_location.dart';
 import 'package:dpdf/src/io/source/pdf_tokenizer.dart';
 import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 
-class _Map extends CraftAbstractCMap {
+class _Map extends AbstractCMap {
   final entries = <String, String>{};
   @override
-  void registerMappedCode(String mark, CraftCMapObject code) {
+  void registerMappedCode(String mark, CMapObject code) {
     entries[mark] = code.toString();
   }
 }
 
-class _Input extends CraftPdfTokenizer {
+class _Input extends PdfTokenizer {
   bool closed = false;
   _Input(String text)
-      : super(CraftRandomAccessFileOrArray(
-            Uint8List.fromList(ascii.encode(text))));
+      : super(RandomAccessFileOrArray(Uint8List.fromList(ascii.encode(text))));
   @override
   void closeSync() {
     closed = true;
@@ -34,7 +33,7 @@ class _Input extends CraftPdfTokenizer {
   }
 }
 
-class _Sources implements CraftCMapLocation {
+class _Sources implements CMapLocation {
   final Map<String, String> programs;
   final opened = <_Input>[];
   _Sources(this.programs);
@@ -54,9 +53,9 @@ void main() {
   for (final sync in [true, false]) {
     Future<void> read(String name, _Map map, _Sources source) async {
       if (sync) {
-        CraftCMapParser.loadCidMappingsSync(name, map, source);
+        CMapParser.loadCidMappingsSync(name, map, source);
       } else {
-        await CraftCMapParser.loadCidMappings(name, map, source);
+        await CMapParser.loadCidMappings(name, map, source);
       }
     }
 

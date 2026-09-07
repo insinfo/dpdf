@@ -9,7 +9,7 @@ void main() {
       <style>#target { display: grid; } div { display: flex; }</style>
       <div id="target"></div>
     ''');
-    final styles = CraftHtmlStyleSheet.fromDocument(document);
+    final styles = HtmlStyleSheet.fromDocument(document);
 
     expect(
         styles.resolve(document.querySelector('#target')!)['display'], 'grid');
@@ -19,13 +19,13 @@ void main() {
     final document = parse(
         '<style>article.card { display: flex; }</style><article class="card"></article>');
     expect(
-        CraftHtmlStyleSheet.fromDocument(document)
+        HtmlStyleSheet.fromDocument(document)
             .resolve(document.querySelector('article')!)['display'],
         'flex');
   });
 
   test('keeps delimiters inside strings and CSS functions intact', () {
-    final rules = CraftCssSyntax.parseStyleRules('''
+    final rules = CssSyntax.parseStyleRules('''
       /* one; two */ .card {
         content: "a; b: c";
         background: linear-gradient(90deg, red, blue);
@@ -48,7 +48,7 @@ void main() {
       </style><div id="target" style="display: block"></div>
     ''');
     expect(
-        CraftHtmlStyleSheet.fromDocument(document)
+        HtmlStyleSheet.fromDocument(document)
             .resolve(document.querySelector('#target')!)['display'],
         'flex');
   });

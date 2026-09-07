@@ -5,8 +5,7 @@ import 'package:test/test.dart';
 
 Future<Uint8List> _plainDocument() async {
   final output = BytesBuilder(copy: false);
-  final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   await document.appendBlankPage();
   await document.close();
   return output.takeBytes();
@@ -22,8 +21,7 @@ Future<Uint8List> _declaringDocument({
   String? title,
 }) async {
   final output = BytesBuilder(copy: false);
-  final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   await document.appendBlankPage();
   if (outputIntent) {
     await document.configureArchivalProfile();

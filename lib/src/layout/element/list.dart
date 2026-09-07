@@ -10,15 +10,15 @@ import 'package:dpdf/src/layout/renderer/list_renderer.dart';
 import 'package:dpdf/src/layout/element/image.dart';
 import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
 
-class CraftList extends CraftBlockElement<CraftList> {
+class PdfList extends BlockElement<PdfList> {
   static const String DEFAULT_LIST_SYMBOL = "- ";
 
   @override
-  CraftAccessibilityProperties getAccessibilityProperties() {
-    return CraftAccessibilityProperties();
+  AccessibilityProperties getAccessibilityProperties() {
+    return AccessibilityProperties();
   }
 
-  CraftList([CraftListNumberingType? numberingType]) : super() {
+  PdfList([ListNumberingType? numberingType]) : super() {
     if (numberingType != null) {
       setListSymbol(numberingType);
     }
@@ -27,25 +27,25 @@ class CraftList extends CraftBlockElement<CraftList> {
   @override
   T? getDefaultProperty<T>(int property) {
     switch (property) {
-      case CraftProperty.LIST_SYMBOL:
-        return CraftText(DEFAULT_LIST_SYMBOL) as T;
-      case CraftProperty.LIST_SYMBOL_PRE_TEXT:
+      case Property.LIST_SYMBOL:
+        return Text(DEFAULT_LIST_SYMBOL) as T;
+      case Property.LIST_SYMBOL_PRE_TEXT:
         return "" as T;
-      case CraftProperty.LIST_SYMBOL_POST_TEXT:
+      case Property.LIST_SYMBOL_POST_TEXT:
         return ". " as T;
-      case CraftProperty.LIST_SYMBOL_POSITION:
-        return CraftListSymbolPosition.DEFAULT as T;
+      case Property.LIST_SYMBOL_POSITION:
+        return ListSymbolPosition.DEFAULT as T;
       default:
         return super.getDefaultProperty<T>(property);
     }
   }
 
   @override
-  CraftList add(dynamic item) {
-    if (item is CraftListItem) {
+  PdfList add(dynamic item) {
+    if (item is ListItem) {
       childElements.add(item);
     } else if (item is String) {
-      childElements.add(CraftListItem(item));
+      childElements.add(ListItem(item));
     } else if (item != null) {
       //  allows adding other things to List?
       // List.cs Add(ListItem) is the main one.
@@ -55,62 +55,62 @@ class CraftList extends CraftBlockElement<CraftList> {
     return this;
   }
 
-  CraftList setItemStartIndex(int start) {
-    setProperty(CraftProperty.LIST_START, start);
+  PdfList setItemStartIndex(int start) {
+    setProperty(Property.LIST_START, start);
     return this;
   }
 
-  CraftList setListSymbol(dynamic symbol) {
+  PdfList setListSymbol(dynamic symbol) {
     if (symbol is String) {
-      setProperty(CraftProperty.LIST_SYMBOL, CraftText(symbol));
-    } else if (symbol is CraftText ||
-        symbol is CraftListNumberingType ||
-        symbol is CraftImage) {
-      if (symbol is CraftListNumberingType) {
-        if (symbol == CraftListNumberingType.ZAPF_DINGBATS_1 ||
-            symbol == CraftListNumberingType.ZAPF_DINGBATS_2 ||
-            symbol == CraftListNumberingType.ZAPF_DINGBATS_3 ||
-            symbol == CraftListNumberingType.ZAPF_DINGBATS_4) {
+      setProperty(Property.LIST_SYMBOL, Text(symbol));
+    } else if (symbol is Text ||
+        symbol is ListNumberingType ||
+        symbol is Image) {
+      if (symbol is ListNumberingType) {
+        if (symbol == ListNumberingType.ZAPF_DINGBATS_1 ||
+            symbol == ListNumberingType.ZAPF_DINGBATS_2 ||
+            symbol == ListNumberingType.ZAPF_DINGBATS_3 ||
+            symbol == ListNumberingType.ZAPF_DINGBATS_4) {
           setPostSymbolText(" ");
         }
       }
-      setProperty(CraftProperty.LIST_SYMBOL, symbol);
+      setProperty(Property.LIST_SYMBOL, symbol);
     }
     return this;
   }
 
-  CraftList setListSymbolAlignment(CraftListSymbolAlignment alignment) {
-    setProperty(CraftProperty.LIST_SYMBOL_ALIGNMENT, alignment);
+  PdfList setListSymbolAlignment(ListSymbolAlignment alignment) {
+    setProperty(Property.LIST_SYMBOL_ALIGNMENT, alignment);
     return this;
   }
 
   double? getSymbolIndent() {
-    return getProperty<double?>(CraftProperty.LIST_SYMBOL_INDENT);
+    return getProperty<double?>(Property.LIST_SYMBOL_INDENT);
   }
 
-  CraftList setSymbolIndent(double symbolIndent) {
-    setProperty(CraftProperty.LIST_SYMBOL_INDENT, symbolIndent);
+  PdfList setSymbolIndent(double symbolIndent) {
+    setProperty(Property.LIST_SYMBOL_INDENT, symbolIndent);
     return this;
   }
 
   String? getPostSymbolText() {
-    return getProperty<String?>(CraftProperty.LIST_SYMBOL_POST_TEXT);
+    return getProperty<String?>(Property.LIST_SYMBOL_POST_TEXT);
   }
 
   void setPostSymbolText(String postSymbolText) {
-    setProperty(CraftProperty.LIST_SYMBOL_POST_TEXT, postSymbolText);
+    setProperty(Property.LIST_SYMBOL_POST_TEXT, postSymbolText);
   }
 
   String? getPreSymbolText() {
-    return getProperty<String?>(CraftProperty.LIST_SYMBOL_PRE_TEXT);
+    return getProperty<String?>(Property.LIST_SYMBOL_PRE_TEXT);
   }
 
   void setPreSymbolText(String preSymbolText) {
-    setProperty(CraftProperty.LIST_SYMBOL_PRE_TEXT, preSymbolText);
+    setProperty(Property.LIST_SYMBOL_PRE_TEXT, preSymbolText);
   }
 
   @override
-  CraftRenderer makeNewRenderer() {
-    return CraftListRenderer(this);
+  Renderer makeNewRenderer() {
+    return ListRenderer(this);
   }
 }

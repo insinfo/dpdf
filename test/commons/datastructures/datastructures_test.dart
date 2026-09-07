@@ -7,7 +7,7 @@ import 'package:dpdf/src/commons/datastructures/tuple.dart';
 void main() {
   group('BiMap', () {
     test('put and getByKey', () {
-      final biMap = CraftBiMap<String, int>();
+      final biMap = BiMap<String, int>();
       biMap.put('one', 1);
       biMap.put('two', 2);
 
@@ -17,7 +17,7 @@ void main() {
     });
 
     test('getByValue', () {
-      final biMap = CraftBiMap<String, int>();
+      final biMap = BiMap<String, int>();
       biMap.put('one', 1);
       biMap.put('two', 2);
 
@@ -27,7 +27,7 @@ void main() {
     });
 
     test('removeByKey', () {
-      final biMap = CraftBiMap<String, int>();
+      final biMap = BiMap<String, int>();
       biMap.put('one', 1);
       biMap.removeByKey('one');
 
@@ -36,7 +36,7 @@ void main() {
     });
 
     test('removeByValue', () {
-      final biMap = CraftBiMap<String, int>();
+      final biMap = BiMap<String, int>();
       biMap.put('one', 1);
       biMap.removeByValue(1);
 
@@ -45,7 +45,7 @@ void main() {
     });
 
     test('size and isEmpty', () {
-      final biMap = CraftBiMap<String, int>();
+      final biMap = BiMap<String, int>();
       expect(biMap.isEmpty(), isTrue);
       expect(biMap.size(), equals(0));
 
@@ -55,7 +55,7 @@ void main() {
     });
 
     test('containsKey and containsValue', () {
-      final biMap = CraftBiMap<String, int>();
+      final biMap = BiMap<String, int>();
       biMap.put('one', 1);
 
       expect(biMap.containsKey('one'), isTrue);
@@ -65,7 +65,7 @@ void main() {
     });
 
     test('overwrite existing key', () {
-      final biMap = CraftBiMap<String, int>();
+      final biMap = BiMap<String, int>();
       biMap.put('one', 1);
       biMap.put('one', 999);
 
@@ -75,7 +75,7 @@ void main() {
     });
 
     test('overwrite existing value', () {
-      final biMap = CraftBiMap<String, int>();
+      final biMap = BiMap<String, int>();
       biMap.put('one', 1);
       biMap.put('new_one', 1);
 

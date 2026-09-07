@@ -10,15 +10,15 @@ import 'package:dpdf/src/svg/svg_constants.dart';
 /// duas tabelas de cores nomeadas divergindo com o tempo; aqui só se
 /// acrescenta o que é específico do SVG: `none`, `transparent` e a forma
 /// percentual de `rgb()`, que o perfil HTML não precisa suportar.
-class CraftSvgColorUtils {
-  CraftSvgColorUtils._();
+class SvgColorUtils {
+  SvgColorUtils._();
 
   static final RegExp _percentRgb =
       RegExp(r'^rgba?\(([^)]*)\)$', caseSensitive: false);
 
   /// Devolve `null` quando o valor significa "não pintar" ou é ininteligível,
   /// para o chamador poder distinguir ausência de pintura de preto explícito.
-  static CraftColor? parse(String? value) {
+  static Color? parse(String? value) {
     if (value == null) return null;
     final normalized = value.trim().toLowerCase();
     if (normalized.isEmpty ||
@@ -28,14 +28,14 @@ class CraftSvgColorUtils {
     }
     final percent = _parsePercentageRgb(normalized);
     if (percent != null) return percent;
-    final parsed = CraftCssColors.parse(normalized);
+    final parsed = CssColors.parse(normalized);
     if (parsed == null) return null;
-    return CraftDeviceRgb(parsed.red, parsed.green, parsed.blue);
+    return DeviceRgb(parsed.red, parsed.green, parsed.blue);
   }
 
   /// `rgb(100%, 0%, 0%)` só aparece em SVG; o parser do perfil HTML rejeita a
   /// forma percentual, então ela é tratada antes de delegar.
-  static CraftColor? _parsePercentageRgb(String value) {
+  static Color? _parsePercentageRgb(String value) {
     final match = _percentRgb.firstMatch(value);
     if (match == null) return null;
     final parts = match
@@ -52,6 +52,6 @@ class CraftSvgColorUtils {
       if (amount == null || !amount.isFinite) return null;
       channels.add((amount / 100).clamp(0.0, 1.0));
     }
-    return CraftDeviceRgb(channels[0], channels[1], channels[2]);
+    return DeviceRgb(channels[0], channels[1], channels[2]);
   }
 }

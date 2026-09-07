@@ -16,7 +16,7 @@ import 'barcode_1d.dart';
 /// The Code 39 specification defines 43 characters, consisting of uppercase letters (A through Z), numeric digits (0
 /// through 9) and a number of special characters (-, ., $, /, +, %, and space). An additional character (denoted '*') is
 /// used for both start and stop delimiters. Each character is composed of nine elements: five bars and four spaces.
-class CraftBarcode39 extends CraftBarcode1D {
+class Barcode39 extends Barcode1D {
   /// The bars to generate the code.
   static const List<List<int>> BARS = [
     [0, 0, 0, 1, 1, 0, 1, 0, 0],
@@ -84,16 +84,16 @@ class CraftBarcode39 extends CraftBarcode1D {
   /// To generate the font the [PdfDocument.getDefaultFont] will be implicitly called.
   /// If you want to use this barcode in PDF/A documents, please consider using
   /// [Barcode39](PdfDocument document, PdfFont font).
-  factory CraftBarcode39(CraftPdfDocument document, [CraftPdfFont? font]) {
+  factory Barcode39(PdfDocument document, [PdfFont? font]) {
     final resolvedFont = font ?? document.defaultTypeface();
     if (resolvedFont == null) {
       throw ArgumentError(
           'Could not create default font for barcode. Please provide a font explicitly.');
     }
-    return CraftBarcode39._internal(document, resolvedFont);
+    return Barcode39._internal(document, resolvedFont);
   }
 
-  CraftBarcode39._internal(super.document, CraftPdfFont font) {
+  Barcode39._internal(super.document, PdfFont font) {
     x = 0.8;
     n = 2;
     this.font = font;
@@ -184,14 +184,14 @@ class CraftBarcode39 extends CraftBarcode1D {
   }
 
   @override
-  CraftRectangle getBarcodeSize() {
+  Rectangle getBarcodeSize() {
     final (runs, label) = _visualData();
     return measureLinearSymbol(this, runs, label);
   }
 
   @override
-  Future<CraftRectangle> placeBarcode(CraftPdfCanvas canvas,
-      CraftColor? barColor, CraftColor? textColor) async {
+  Future<Rectangle> placeBarcode(
+      PdfCanvas canvas, Color? barColor, Color? textColor) async {
     final (runs, label) = _visualData();
     await drawLinearSymbol(this, canvas, runs, label, barColor, textColor);
     return measureLinearSymbol(this, runs, label);

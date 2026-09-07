@@ -3,18 +3,17 @@ import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/renderers/impl/abstract_container_svg_node_renderer.dart';
 
-class CraftClipPathSvgNodeRenderer
-    extends CraftAbstractContainerSvgNodeRenderer {
+class ClipPathSvgNodeRenderer extends AbstractContainerSvgNodeRenderer {
   @override
-  Future<void> doDraw(CraftSvgDrawContext context) async {}
+  Future<void> doDraw(SvgDrawContext context) async {}
 
   void setClippedRenderer(dynamic renderer) {}
 
   @override
-  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context) => null;
+  Rectangle? getObjectBoundingBox(SvgDrawContext context) => null;
 
   @override
-  CraftSvgNodeRenderer createDeepCopy() {
+  SvgNodeRenderer createDeepCopy() {
     throw UnimplementedError();
   }
 }

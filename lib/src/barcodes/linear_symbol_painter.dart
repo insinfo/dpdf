@@ -4,19 +4,14 @@ import '../kernel/geom/rectangle.dart';
 import '../kernel/pdf/canvas/pdf_canvas.dart';
 
 /// Draws alternating runs and aligns the optional label within their union.
-Future<void> drawLinearSymbol(
-    CraftBarcode1D symbol,
-    CraftPdfCanvas canvas,
-    List<double> runs,
-    String label,
-    CraftColor? barColor,
-    CraftColor? textColor) async {
+Future<void> drawLinearSymbol(Barcode1D symbol, PdfCanvas canvas,
+    List<double> runs, String label, Color? barColor, Color? textColor) async {
   final barWidth = runs.fold<double>(0, (sum, width) => sum + width);
   final labelWidth = symbol.font?.getWidthPoint(label, symbol.size) ?? 0.0;
   final width = barWidth > labelWidth ? barWidth : labelWidth;
   final alignment = switch (symbol.textAlignment) {
-    CraftBarcode1D.ALIGN_LEFT => 0.0,
-    CraftBarcode1D.ALIGN_RIGHT => 1.0,
+    Barcode1D.ALIGN_LEFT => 0.0,
+    Barcode1D.ALIGN_RIGHT => 1.0,
     _ => 0.5,
   };
   final textY = symbol.font == null
@@ -47,8 +42,8 @@ Future<void> drawLinearSymbol(
 }
 
 /// Bounds of the bars and optional label, including their baseline gap.
-CraftRectangle measureLinearSymbol(
-    CraftBarcode1D symbol, List<double> runs, String label) {
+Rectangle measureLinearSymbol(
+    Barcode1D symbol, List<double> runs, String label) {
   final bars = runs.fold<double>(0, (sum, width) => sum + width);
   final text = symbol.font?.getWidthPoint(label, symbol.size) ?? 0.0;
   final labelHeight = symbol.font == null
@@ -56,6 +51,6 @@ CraftRectangle measureLinearSymbol(
       : symbol.baseline > 0
           ? symbol.baseline - symbol.getDescender()
           : symbol.size - symbol.baseline;
-  return CraftRectangle(
+  return Rectangle(
       0, 0, bars > text ? bars : text, symbol.barHeight + labelHeight);
 }

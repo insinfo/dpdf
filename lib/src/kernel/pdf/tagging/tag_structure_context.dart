@@ -8,59 +8,59 @@ import 'waiting_tags_manager.dart';
 import 'tag_tree_pointer.dart';
 import 'standard_roles.dart';
 
-class CraftTagStructureContext {
-  final CraftPdfDocument document;
-  late final CraftWaitingTagsManager waitingTagsManager;
-  final Set<CraftPdfDictionary> namespaces = {};
-  final Map<String, CraftPdfNamespace> nameToNamespace = {};
-  CraftTagTreePointer? autoTaggingPointer;
-  CraftPdfStructElem? rootTagElement;
+class TagStructureContext {
+  final PdfDocument document;
+  late final WaitingTagsManager waitingTagsManager;
+  final Set<PdfDictionary> namespaces = {};
+  final Map<String, PdfNamespace> nameToNamespace = {};
+  TagTreePointer? autoTaggingPointer;
+  PdfStructElem? rootTagElement;
   bool forbidUnknownRoles = true;
-  CraftPdfNamespace? documentDefaultNamespace;
+  PdfNamespace? documentDefaultNamespace;
 
-  CraftTagStructureContext(this.document) {
-    waitingTagsManager = CraftWaitingTagsManager();
+  TagStructureContext(this.document) {
+    waitingTagsManager = WaitingTagsManager();
   }
 
-  Future<CraftTagTreePointer> getAutoTaggingPointer() async {
-    autoTaggingPointer ??= CraftTagTreePointer(document);
+  Future<TagTreePointer> getAutoTaggingPointer() async {
+    autoTaggingPointer ??= TagTreePointer(document);
     return autoTaggingPointer!;
   }
 
-  CraftWaitingTagsManager getWaitingTagsManager() => waitingTagsManager;
+  WaitingTagsManager getWaitingTagsManager() => waitingTagsManager;
 
-  CraftPdfNamespace? getDocumentDefaultNamespace() => documentDefaultNamespace;
+  PdfNamespace? getDocumentDefaultNamespace() => documentDefaultNamespace;
 
-  void setDocumentDefaultNamespace(CraftPdfNamespace? ns) {
+  void setDocumentDefaultNamespace(PdfNamespace? ns) {
     documentDefaultNamespace = ns;
   }
 
-  CraftPdfNamespace fetchNamespace(String namespaceName) {
+  PdfNamespace fetchNamespace(String namespaceName) {
     var ns = nameToNamespace[namespaceName];
     if (ns == null) {
-      ns = CraftPdfNamespace.fromName(namespaceName);
+      ns = PdfNamespace.fromName(namespaceName);
       nameToNamespace[namespaceName] = ns;
     }
     return ns;
   }
 
-  Future<CraftPdfStructElem> getRootTag() async {
+  Future<PdfStructElem> getRootTag() async {
     if (rootTagElement == null) {
       final structTreeRoot = document.structureRoot();
       final kids = await structTreeRoot.getKids();
-      if (kids.isNotEmpty && kids[0] is CraftPdfDictionary) {
-        rootTagElement = CraftPdfStructElem(kids[0] as CraftPdfDictionary);
+      if (kids.isNotEmpty && kids[0] is PdfDictionary) {
+        rootTagElement = PdfStructElem(kids[0] as PdfDictionary);
       } else {
         // Create default root Document tag
-        rootTagElement = CraftPdfStructElem.withRole(
-            document, CraftPdfName(CraftStandardRoles.document));
+        rootTagElement =
+            PdfStructElem.withRole(document, PdfName(StandardRoles.document));
         await structTreeRoot.addKid(rootTagElement!);
       }
     }
     return rootTagElement!;
   }
 
-  Future<CraftTagStructureContext> removePageTags(CraftPdfPage page) async {
+  Future<TagStructureContext> removePageTags(PdfPage page) async {
     final structTreeRoot = document.structureRoot();
     final pageMcrs = await structTreeRoot.getPageMarkedContentReferences(page);
     if (pageMcrs != null) {
@@ -78,5 +78,5 @@ class CraftTagStructureContext {
     waitingTagsManager.removeAllWaitingStates();
   }
 
-  CraftPdfDocument getDocument() => document;
+  PdfDocument getDocument() => document;
 }

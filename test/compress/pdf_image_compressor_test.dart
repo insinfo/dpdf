@@ -41,7 +41,7 @@ Uint8List _scannedPage({
 Future<Uint8List> _scan({
   int width = 800,
   int height = 1000,
-  CraftPdfName? filter,
+  PdfName? filter,
   bool noisy = true,
 }) async {
   final samples = _scannedPage(width: width, height: height, noisy: noisy);
@@ -50,8 +50,7 @@ Future<Uint8List> _scan({
       : samples;
 
   final output = BytesBuilder(copy: false);
-  final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await document.appendBlankPage();
   final image = buildBilevelImage(
     width: width,
@@ -60,15 +59,13 @@ Future<Uint8List> _scan({
     filter: filter,
   )..attachToDocument(document);
   page.pdfRepresentation().put(
-      CraftPdfName.resources,
-      CraftPdfDictionary()
-        ..put(
-            CraftPdfName('XObject'),
-            CraftPdfDictionary()
-              ..put(CraftPdfName('Im0'), image.indirectHandle()!)));
+      PdfName.resources,
+      PdfDictionary()
+        ..put(PdfName('XObject'),
+            PdfDictionary()..put(PdfName('Im0'), image.indirectHandle()!)));
   page.pdfRepresentation().put(
-      CraftPdfName.contents,
-      CraftPdfStream.withBytes(
+      PdfName.contents,
+      PdfStream.withBytes(
           Uint8List.fromList(ascii.encode('q 595 0 0 842 0 0 cm /Im0 Do Q')),
           0));
   await document.close();
@@ -77,13 +74,13 @@ Future<Uint8List> _scan({
 
 /// Reads the image back and returns its decoded samples in PDF polarity.
 Future<Uint8List> _samplesOf(Uint8List pdf) async {
-  final document = await CraftPdfDocument.open(CraftPdfReader.fromBytes(pdf));
+  final document = await PdfDocument.open(PdfReader.fromBytes(pdf));
   try {
     final page = (await document.pageAt(1))!;
     final resources =
-        await page.pdfRepresentation().dictionaryEntry(CraftPdfName.resources);
-    final xobjects = await resources!.dictionaryEntry(CraftPdfName('XObject'));
-    final image = await xobjects!.streamEntry(CraftPdfName('Im0'));
+        await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+    final xobjects = await resources!.dictionaryEntry(PdfName('XObject'));
+    final image = await xobjects!.streamEntry(PdfName('Im0'));
     return (await image!.getBytes())!;
   } finally {
     await document.close();
@@ -179,7 +176,7 @@ void main() {
     });
 
     test('improves on an already deflated image', () async {
-      final source = await _scan(filter: CraftPdfName('FlateDecode'));
+      final source = await _scan(filter: PdfName('FlateDecode'));
 
       final result = await PdfCompressor.compress(source);
 

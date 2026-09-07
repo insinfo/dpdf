@@ -7,12 +7,12 @@ import 'random_access_source.dart';
 /// This wrapper does not provide locking or share a source between isolates.
 /// Each worker must own its source. The historical class name is retained for
 /// source compatibility.
-class CraftThreadSafeRandomAccessSource implements CraftRandomAccessSource {
+class ThreadSafeRandomAccessSource implements RandomAccessSource {
   /// The underlying source.
-  final CraftRandomAccessSource _source;
+  final RandomAccessSource _source;
 
   /// Constructs a new ThreadSafeRandomAccessSource.
-  CraftThreadSafeRandomAccessSource(this._source);
+  ThreadSafeRandomAccessSource(this._source);
 
   @override
   int get(int position) {

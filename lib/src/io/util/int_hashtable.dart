@@ -1,12 +1,12 @@
 /// Integer lookup backed by the Dart SDK map implementation.
 /// Missing entries read as zero; key iteration follows insertion order.
-class CraftIntHashtable {
+class IntHashtable {
   final Map<int, int> _values = {};
 
-  CraftIntHashtable();
-  CraftIntHashtable.withInitialCapacity(int initialCapacity)
+  IntHashtable();
+  IntHashtable.withInitialCapacity(int initialCapacity)
       : this.withCapacity(initialCapacity, 0.75);
-  CraftIntHashtable.withCapacity(int initialCapacity, double loadFactor) {
+  IntHashtable.withCapacity(int initialCapacity, double loadFactor) {
     if (initialCapacity < 0) {
       throw ArgumentError.value(
           initialCapacity, 'initialCapacity', 'Must be nonnegative');
@@ -34,7 +34,7 @@ class CraftIntHashtable {
   List<int> getKeys() => _values.keys.toList();
   List<int> toOrderedKeys() => getKeys()..sort();
   int getOneKey() => _values.isEmpty ? 0 : _values.keys.first;
-  CraftIntHashtable clone() => CraftIntHashtable().._values.addAll(_values);
+  IntHashtable clone() => IntHashtable().._values.addAll(_values);
   int operator [](int key) => get(key);
   void operator []=(int key, int value) {
     _values[key] = value;

@@ -20,8 +20,7 @@ void main() {
   ]) {
     test('opens and extracts authorized synthetic $file', () async {
       final bytes = await File('test/compatibility/assets/$file').readAsBytes();
-      final document =
-          await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
       try {
         expect(document.pageTotal(), pages);
         for (var page = 1; page <= pages; page++) {

@@ -7,7 +7,7 @@ import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
 
 Future<int> inspect(Uint8List bytes, int pages) async {
-  final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+  final doc = await PdfDocument.open(PdfReader.fromBytes(bytes));
   try {
     if (doc.pageTotal() != pages) throw StateError('Unexpected page count');
     var characters = 0;

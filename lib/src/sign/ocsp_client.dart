@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'certificate_details.dart';
 
 /// Retrieves certificate status using OCSP.
-abstract class CraftOcspClient {
+abstract class OcspClient {
   /// Fetch a DER-encoded BasicOCSPResponse from an OCSP responder.
   ///
   /// The method should not throw an exception.

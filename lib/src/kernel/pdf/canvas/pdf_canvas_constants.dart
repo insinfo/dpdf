@@ -1,6 +1,6 @@
 /// Numeric constants for PDF graphics operations.
-class CraftPdfCanvasConstants {
-  CraftPdfCanvasConstants._();
+class PdfCanvasConstants {
+  PdfCanvasConstants._();
 }
 
 /// Text rendering selects whether glyph outlines are

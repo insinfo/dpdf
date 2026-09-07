@@ -190,7 +190,7 @@ class X509Certificate implements CertificateDetails {
   @override
   void verify(Uint8List issuerPublicKey) {
     final key =
-        CraftSignUtils.parsePublicKeyFromSubjectPublicKeyInfo(issuerPublicKey);
+        SignUtils.parsePublicKeyFromSubjectPublicKeyInfo(issuerPublicKey);
     const algorithms = {
       '1.2.840.113549.1.1.5': 'SHA-1/RSA',
       '1.2.840.113549.1.1.11': 'SHA-256/RSA',
@@ -292,7 +292,7 @@ class X509Certificate implements CertificateDetails {
 
   @override
   Uint8List? getSubjectKeyIdentifier() {
-    final val = getExtensionValue(CraftOID.subjectKeyIdentifier);
+    final val = getExtensionValue(OID.subjectKeyIdentifier);
     if (val == null) return null;
     try {
       final p = ASN1Parser(val);
@@ -308,7 +308,7 @@ class X509Certificate implements CertificateDetails {
 
   @override
   List<String>? getExtendedKeyUsage() {
-    final val = getExtensionValue(CraftOID.extendedKeyUsage);
+    final val = getExtensionValue(OID.extendedKeyUsage);
     if (val != null) {
       try {
         final p = ASN1Parser(val);
@@ -328,7 +328,7 @@ class X509Certificate implements CertificateDetails {
 
   @override
   List<bool>? getKeyUsage() {
-    final val = getExtensionValue(CraftOID.keyUsage);
+    final val = getExtensionValue(OID.keyUsage);
     if (val != null) {
       try {
         final p = ASN1Parser(val);
@@ -346,7 +346,7 @@ class X509Certificate implements CertificateDetails {
 
   @override
   int getBasicConstraints() {
-    final val = getExtensionValue(CraftOID.basicConstraints);
+    final val = getExtensionValue(OID.basicConstraints);
     if (val != null) {
       try {
         final p = ASN1Parser(val);

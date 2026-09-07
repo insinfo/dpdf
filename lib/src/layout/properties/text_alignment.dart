@@ -1,5 +1,5 @@
 /// A specialized enum containing potential property values for text alignment.
-enum CraftTextAlignment {
+enum TextAlignment {
   /// Align text to the left.
   left,
 

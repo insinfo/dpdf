@@ -10,25 +10,25 @@ import '../kernel/pdf/pdf_object_wrapper.dart';
 import 'pdf_signature_build_properties.dart';
 
 /// Represents the signature dictionary.
-class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+class PdfSignature extends PdfObjectWrapper<PdfDictionary> {
   /// Creates new PdfSignature.
-  CraftPdfSignature() : super(CraftPdfDictionary()) {
-    put(CraftPdfName.type, CraftPdfName.sig);
+  PdfSignature() : super(PdfDictionary()) {
+    put(PdfName.type, PdfName.sig);
   }
 
   /// Creates new PdfSignature.
   ///
   /// @param filter signature validation handler name
   /// @param subFilter signature encoding identifier
-  CraftPdfSignature.withFilter(CraftPdfName filter, CraftPdfName subFilter)
-      : super(CraftPdfDictionary()) {
-    put(CraftPdfName.type, CraftPdfName.sig);
-    put(CraftPdfName.filter, filter);
-    put(CraftPdfName.subFilter, subFilter);
+  PdfSignature.withFilter(PdfName filter, PdfName subFilter)
+      : super(PdfDictionary()) {
+    put(PdfName.type, PdfName.sig);
+    put(PdfName.filter, filter);
+    put(PdfName.subFilter, subFilter);
   }
 
   /// Creates new PdfSignature instance from the provided PdfDictionary.
-  CraftPdfSignature.fromDictionary(CraftPdfDictionary sigDictionary)
+  PdfSignature.fromDictionary(PdfDictionary sigDictionary)
       : super(sigDictionary) {
     // Contents should be marked as unencrypted if needed
     // This is handled during signature processing
@@ -39,8 +39,8 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   ///
   /// @return a PdfName which usually has a value either
   /// PdfName.Adbe_pkcs7_detached or PdfName.ETSI_CAdES_DETACHED.
-  Future<CraftPdfName?> getSubFilter() async {
-    return await pdfRepresentation().nameEntry(CraftPdfName.subFilter);
+  Future<PdfName?> getSubFilter() async {
+    return await pdfRepresentation().nameEntry(PdfName.subFilter);
   }
 
   /// The type of PDF object that the wrapped dictionary describes.
@@ -51,8 +51,8 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   ///
   /// @return a PdfName that identifies type of the wrapped dictionary,
   /// returns null if it is not explicitly specified.
-  Future<CraftPdfName?> getSignatureType() async {
-    return await pdfRepresentation().nameEntry(CraftPdfName.type);
+  Future<PdfName?> getSignatureType() async {
+    return await pdfRepresentation().nameEntry(PdfName.type);
   }
 
   /// Sets the /ByteRange.
@@ -61,29 +61,28 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// used in the digest calculation. A pair consists of the starting byte
   /// offset and the length.
   void setByteRange(List<int> range) {
-    final array = CraftPdfArray();
+    final array = PdfArray();
     for (final i in range) {
-      array.add(CraftPdfNumber.fromInt(i));
+      array.add(PdfNumber.fromInt(i));
     }
-    put(CraftPdfName.byteRange, array);
+    put(PdfName.byteRange, array);
   }
 
   /// Gets the /ByteRange.
   ///
   /// @return an array of pairs of integers that specifies the byte range used
   /// in the digest calculation.
-  Future<CraftPdfArray?> getByteRange() async {
-    return await pdfRepresentation().arrayEntry(CraftPdfName.byteRange);
+  Future<PdfArray?> getByteRange() async {
+    return await pdfRepresentation().arrayEntry(PdfName.byteRange);
   }
 
   /// Sets the /Contents value to the specified bytes.
   ///
   /// @param contents a bytes representing the digest
   void setContents(Uint8List contents) {
-    final contentsString =
-        CraftPdfString.fromBytes(contents).setHexWriting(true);
+    final contentsString = PdfString.fromBytes(contents).setHexWriting(true);
     // contentsString.markAsUnencryptedObject();
-    put(CraftPdfName.contents, contentsString);
+    put(PdfName.contents, contentsString);
   }
 
   /// Gets the /Contents entry value.
@@ -91,15 +90,15 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// See ISO 32000-1 12.8.1, Table 252 – Entries in a signature dictionary.
   ///
   /// @return the signature content
-  Future<CraftPdfString?> getContents() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName.contents);
+  Future<PdfString?> getContents() async {
+    return await pdfRepresentation().stringEntry(PdfName.contents);
   }
 
   /// Sets the /Cert value of this signature.
   ///
   /// @param cert the bytes representing the certificate chain
   void setCert(Uint8List cert) {
-    put(CraftPdfName.cert, CraftPdfString.fromBytes(cert));
+    put(PdfName.cert, PdfString.fromBytes(cert));
   }
 
   /// Gets the /Cert entry value of this signature.
@@ -107,8 +106,8 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// See ISO 32000-1 12.8.1, Table 252 – Entries in a signature dictionary.
   ///
   /// @return the signature cert
-  Future<CraftPdfString?> getCert() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName.cert);
+  Future<PdfString?> getCert() async {
+    return await pdfRepresentation().stringEntry(PdfName.cert);
   }
 
   /// Gets the /Cert entry value of this signature.
@@ -117,9 +116,9 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// May be array or byte string.
   ///
   /// @return the signature cert value
-  Future<CraftPdfObject?> getCertObject() async {
-    final certAsStr = await pdfRepresentation().stringEntry(CraftPdfName.cert);
-    final certAsArray = await pdfRepresentation().arrayEntry(CraftPdfName.cert);
+  Future<PdfObject?> getCertObject() async {
+    final certAsStr = await pdfRepresentation().stringEntry(PdfName.cert);
+    final certAsArray = await pdfRepresentation().arrayEntry(PdfName.cert);
     if (certAsStr != null) {
       return certAsStr;
     } else {
@@ -131,15 +130,15 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   ///
   /// @param name name of the person signing the document
   void setName(String name) {
-    put(CraftPdfName.name, CraftPdfString(name));
+    put(PdfName.name, PdfString(name));
   }
 
   /// Gets the /Name of the person signing the document.
   ///
   /// @return name of the person signing the document.
   Future<String?> getName() async {
-    final nameStr = await pdfRepresentation().stringEntry(CraftPdfName.name);
-    final nameName = await pdfRepresentation().nameEntry(CraftPdfName.name);
+    final nameStr = await pdfRepresentation().stringEntry(PdfName.name);
+    final nameName = await pdfRepresentation().nameEntry(PdfName.name);
     if (nameStr != null) {
       return nameStr.decodeMappingText();
     } else {
@@ -152,8 +151,8 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// Should only be used if the time of signing is not available in the signature.
   ///
   /// @param date time of signing as PdfString
-  void setDate(CraftPdfString date) {
-    put(CraftPdfName.m, date);
+  void setDate(PdfString date) {
+    put(PdfName.m, date);
   }
 
   /// Gets the /M value.
@@ -161,23 +160,22 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// Should only be used if the time of signing is not available in the signature.
   ///
   /// @return PdfString which denotes time of signing.
-  Future<CraftPdfString?> getDate() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName.m);
+  Future<PdfString?> getDate() async {
+    return await pdfRepresentation().stringEntry(PdfName.m);
   }
 
   /// Sets the /Location value.
   ///
   /// @param location physical location of signing
   void setLocation(String location) {
-    put(CraftPdfName.location, CraftPdfString(location));
+    put(PdfName.location, PdfString(location));
   }
 
   /// Gets the /Location entry value.
   ///
   /// @return physical location of signing.
   Future<String?> getLocation() async {
-    final locationStr =
-        await pdfRepresentation().stringEntry(CraftPdfName.location);
+    final locationStr = await pdfRepresentation().stringEntry(PdfName.location);
     return locationStr?.decodeMappingText();
   }
 
@@ -185,15 +183,14 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   ///
   /// @param reason reason for signing
   void setReason(String reason) {
-    put(CraftPdfName.reason, CraftPdfString(reason));
+    put(PdfName.reason, PdfString(reason));
   }
 
   /// Gets the /Reason value.
   ///
   /// @return reason for signing
   Future<String?> getReason() async {
-    final reasonStr =
-        await pdfRepresentation().stringEntry(CraftPdfName.reason);
+    final reasonStr = await pdfRepresentation().stringEntry(PdfName.reason);
     return reasonStr?.decodeMappingText();
   }
 
@@ -210,7 +207,7 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   ///
   /// @param contactInfo signer contact details
   void setContact(String contactInfo) {
-    put(CraftPdfName.contactInfo, CraftPdfString(contactInfo));
+    put(PdfName.contactInfo, PdfString(contactInfo));
   }
 
   /// Add new key-value pair to the signature dictionary.
@@ -218,7 +215,7 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// @param key PdfName to be added as a key
   /// @param value PdfObject to be added as a value
   /// @return the same PdfSignature instance
-  CraftPdfSignature put(CraftPdfName key, CraftPdfObject value) {
+  PdfSignature put(PdfName key, PdfObject value) {
     pdfRepresentation().put(key, value);
     markChanged();
     return this;
@@ -233,15 +230,15 @@ class CraftPdfSignature extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   /// not it adds a new one and returns this.
   ///
   /// @return PdfSignatureBuildProperties
-  CraftPdfSignatureBuildProperties getPdfSignatureBuildProperties() {
+  PdfSignatureBuildProperties getPdfSignatureBuildProperties() {
     // Access the map directly for synchronous operation
     final map = pdfRepresentation().getMap();
-    final obj = map?[CraftPdfName.propBuild];
-    if (obj == null || obj is! CraftPdfDictionary) {
-      final newDict = CraftPdfDictionary();
-      put(CraftPdfName.propBuild, newDict);
-      return CraftPdfSignatureBuildProperties.fromDictionary(newDict);
+    final obj = map?[PdfName.propBuild];
+    if (obj == null || obj is! PdfDictionary) {
+      final newDict = PdfDictionary();
+      put(PdfName.propBuild, newDict);
+      return PdfSignatureBuildProperties.fromDictionary(newDict);
     }
-    return CraftPdfSignatureBuildProperties.fromDictionary(obj);
+    return PdfSignatureBuildProperties.fromDictionary(obj);
   }
 }

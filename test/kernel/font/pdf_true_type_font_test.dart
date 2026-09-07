@@ -21,12 +21,12 @@ void main() {
       final directory = Directory.systemTemp.createTempSync('dpdf_ttf_');
       addTearDown(() => directory.deleteSync(recursive: true));
       final file = File('${directory.path}/test_ttf.pdf');
-      final writer = CraftPdfWriter.toFile(file.path);
-      final doc = CraftPdfDocument.create(writer);
+      final writer = PdfWriter.toFile(file.path);
+      final doc = PdfDocument.create(writer);
 
-      final resources = CraftPdfResources();
-      final stream = CraftPdfStream();
-      final canvas = CraftPdfCanvas(stream, resources, doc);
+      final resources = PdfResources();
+      final stream = PdfStream();
+      final canvas = PdfCanvas(stream, resources, doc);
 
       // Load font using FontProgramFactory (assuming it works for TTF)
       // Or manually create TrueTypeFont
@@ -36,9 +36,8 @@ void main() {
       // Let's rely on OpenTypeParser logic via TrueTypeFont constructor if available?
       // TrueTypeFont constructor accepts String path.
 
-      final ttf = CraftTrueTypeFont.fromFile(fontPath);
-      final font =
-          CraftPdfTrueTypeFont(ttf, "WinAnsiEncoding", true); // Embedded
+      final ttf = TrueTypeFont.fromFile(fontPath);
+      final font = PdfTrueTypeFont(ttf, "WinAnsiEncoding", true); // Embedded
 
       await canvas.setFontAndSize(font, 12);
       canvas.beginText().moveText(50, 700).showText("Hello ABeeZee").endText();

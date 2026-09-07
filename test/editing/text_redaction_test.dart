@@ -17,26 +17,24 @@ List<PdfPositionedCharacter> positions(Uint8List content) =>
 Future<Uint8List> fixture(List<String> contents,
     {String? prohibited, String? encoding}) async {
   final buffer = BytesBuilder();
-  final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(buffer));
-  CraftPdfStream.withBytes(bytes('UNREFERENCED_SECRET'), 0)
-      .attachToDocument(doc);
-  final font = CraftPdfDictionary()
-    ..put(CraftPdfName.type, CraftPdfName.font)
-    ..put(CraftPdfName.subtype, CraftPdfName('Type1'))
-    ..put(CraftPdfName.baseFont, CraftPdfName('Courier'));
-  if (encoding != null) font.put(CraftPdfName.encoding, CraftPdfName(encoding));
-  final fonts = CraftPdfDictionary()..put(CraftPdfName('F1'), font);
-  final resources = CraftPdfDictionary()..put(CraftPdfName.font, fonts);
+  final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(buffer));
+  PdfStream.withBytes(bytes('UNREFERENCED_SECRET'), 0).attachToDocument(doc);
+  final font = PdfDictionary()
+    ..put(PdfName.type, PdfName.font)
+    ..put(PdfName.subtype, PdfName('Type1'))
+    ..put(PdfName.baseFont, PdfName('Courier'));
+  if (encoding != null) font.put(PdfName.encoding, PdfName(encoding));
+  final fonts = PdfDictionary()..put(PdfName('F1'), font);
+  final resources = PdfDictionary()..put(PdfName.font, fonts);
   resources.attachToDocument(doc);
   for (final content in contents) {
     final page = await doc.appendBlankPage();
-    page.pdfRepresentation().put(CraftPdfName.resources, resources);
-    page.pdfRepresentation().put(
-        CraftPdfName.contents, CraftPdfStream.withBytes(bytes(content), 0));
+    page.pdfRepresentation().put(PdfName.resources, resources);
+    page
+        .pdfRepresentation()
+        .put(PdfName.contents, PdfStream.withBytes(bytes(content), 0));
     if (prohibited != null) {
-      page
-          .pdfRepresentation()
-          .put(CraftPdfName(prohibited), CraftPdfString('SECRET'));
+      page.pdfRepresentation().put(PdfName(prohibited), PdfString('SECRET'));
     }
   }
   (await doc.documentDetails()).pdfRepresentation().clear();
@@ -50,21 +48,19 @@ void main() {
     final standard = await fixture(['BT /F1 12 Tf <2760534543524554> Tj ET']);
     final clean = await PdfTextRedaction.remove(
         standard, [const PdfTextRemoval(1, 'SECRET')]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(clean));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(clean));
     expect(await PdfTextExtraction.fromPage((await doc.pageAt(1))!), '’‘');
     await doc.close();
     final accented = await fixture(['BT /F1 12 Tf <61e7e36f2058> Tj ET'],
         encoding: 'WinAnsiEncoding');
     final removed = await PdfTextRedaction.remove(
         accented, [const PdfTextRemoval(1, 'ação')]);
-    final reopened =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(removed));
+    final reopened = await PdfDocument.open(PdfReader.fromBytes(removed));
     expect(await PdfTextExtraction.fromPage((await reopened.pageAt(1))!), ' X');
     await reopened.close();
     final quoteRemoved =
         await PdfTextRedaction.remove(standard, [const PdfTextRemoval(1, '’')]);
-    final quoteDoc =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(quoteRemoved));
+    final quoteDoc = await PdfDocument.open(PdfReader.fromBytes(quoteRemoved));
     expect(await PdfTextExtraction.fromPage((await quoteDoc.pageAt(1))!),
         '‘SECRET');
     await quoteDoc.close();
@@ -99,7 +95,7 @@ void main() {
     expect(latin1.decode(removed), isNot(contains('UNREFERENCED_SECRET')));
     expect(latin1.decode(removed), isNot(contains('also present in comment')));
     expect(latin1.decode(removed), isNot(contains('/Prev')));
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(removed));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(removed));
     expect(doc.pageTotal(), 2);
     final page = (await doc.pageAt(1))!;
     expect(await PdfTextExtraction.fromPage(page), 'before  after');
@@ -122,7 +118,7 @@ void main() {
     final output = await PdfTextRedaction.remove(
         await fixture(['BT /F1 12 Tf (ABABA) Tj ET']),
         [const PdfTextRemoval(1, 'ABA')]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(output));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(output));
     expect(await PdfTextExtraction.fromPage((await doc.pageAt(1))!), '');
     await doc.close();
   });
@@ -133,7 +129,7 @@ void main() {
           r'BT /F1 12 Tf <5345> Tj (\103\122\105\124) Tj ( safe) Tj ET',
         ]),
         [const PdfTextRemoval(1, 'SECRET')]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(output));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(output));
     expect(await PdfTextExtraction.fromPage((await doc.pageAt(1))!), ' safe');
     await doc.close();
     await expectLater(
@@ -152,7 +148,7 @@ void main() {
           'BT /F1 12 Tf (SECRET) Tj ET',
         ]),
         [const PdfTextRemoval(1, 'SECRET')]);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(output));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(output));
     expect(await PdfTextExtraction.fromPage((await doc.pageAt(1))!), '');
     expect(await PdfTextExtraction.fromPage((await doc.pageAt(2))!), 'SECRET');
     await doc.close();

@@ -9,32 +9,32 @@ import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
 
-Future<CraftPdfDocument> create(BytesBuilder b) async =>
-    CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(b));
+Future<PdfDocument> create(BytesBuilder b) async =>
+    PdfDocument.create(PdfWriter.fromBytesBuilder(b));
 void main() {
   test('Object copy preserves cycles and shared identity through serialization',
       () async {
-    final root = CraftPdfDictionary();
-    final shared = CraftPdfDictionary()..put(CraftPdfName('Owner'), root);
-    root.put(CraftPdfName('Left'), shared);
-    root.put(CraftPdfName('Right'), shared);
+    final root = PdfDictionary();
+    final shared = PdfDictionary()..put(PdfName('Owner'), root);
+    root.put(PdfName('Left'), shared);
+    root.put(PdfName('Right'), shared);
     final buffer = BytesBuilder();
     final output = await create(buffer);
     await output.appendBlankPage();
-    final copied = await root.copyTo(output) as CraftPdfDictionary;
-    expect(await copied.dictionaryEntry(CraftPdfName('Left')),
-        same(await copied.dictionaryEntry(CraftPdfName('Right'))));
-    output.rootCatalog().pdfRepresentation().put(CraftPdfName('Graph'), copied);
+    final copied = await root.copyTo(output) as PdfDictionary;
+    expect(await copied.dictionaryEntry(PdfName('Left')),
+        same(await copied.dictionaryEntry(PdfName('Right'))));
+    output.rootCatalog().pdfRepresentation().put(PdfName('Graph'), copied);
     await output.close();
-    final reopened = await CraftPdfDocument.open(
-        CraftPdfReader.fromBytes(buffer.takeBytes()));
+    final reopened =
+        await PdfDocument.open(PdfReader.fromBytes(buffer.takeBytes()));
     final graph = (await reopened
         .rootCatalog()
         .pdfRepresentation()
-        .dictionaryEntry(CraftPdfName('Graph')))!;
-    final left = (await graph.dictionaryEntry(CraftPdfName('Left')))!;
-    expect(await left.dictionaryEntry(CraftPdfName('Owner')), same(graph));
-    expect(await graph.dictionaryEntry(CraftPdfName('Right')), same(left));
+        .dictionaryEntry(PdfName('Graph')))!;
+    final left = (await graph.dictionaryEntry(PdfName('Left')))!;
+    expect(await left.dictionaryEntry(PdfName('Owner')), same(graph));
+    expect(await graph.dictionaryEntry(PdfName('Right')), same(left));
     await reopened.close();
   });
   test('Original copyPagesTo maps links and shared resources across documents',
@@ -43,46 +43,42 @@ void main() {
     final source = await create(sourceBuffer);
     final first = await source.appendBlankPage();
     final second = await source.appendBlankPage();
-    final resources = CraftPdfDictionary();
+    final resources = PdfDictionary();
     resources.attachToDocument(source);
     for (final page in [first, second]) {
-      page.pdfRepresentation().put(CraftPdfName.resources, resources);
-      page.pdfRepresentation().put(CraftPdfName.contents,
-          CraftPdfStream.withBytes(Uint8List.fromList(ascii.encode('q Q')), 0));
+      page.pdfRepresentation().put(PdfName.resources, resources);
+      page.pdfRepresentation().put(PdfName.contents,
+          PdfStream.withBytes(Uint8List.fromList(ascii.encode('q Q')), 0));
     }
-    final annotation = CraftPdfDictionary()
-      ..put(CraftPdfName.type, CraftPdfName('Annot'))
-      ..put(CraftPdfName.subtype, CraftPdfName('Link'))
-      ..put(CraftPdfName('P'), first.pdfRepresentation())
-      ..put(
-          CraftPdfName('Dest'),
-          CraftPdfArray.fromList(
-              [second.pdfRepresentation(), CraftPdfName('Fit')]));
+    final annotation = PdfDictionary()
+      ..put(PdfName.type, PdfName('Annot'))
+      ..put(PdfName.subtype, PdfName('Link'))
+      ..put(PdfName('P'), first.pdfRepresentation())
+      ..put(PdfName('Dest'),
+          PdfArray.fromList([second.pdfRepresentation(), PdfName('Fit')]));
     first
         .pdfRepresentation()
-        .put(CraftPdfName.annots, CraftPdfArray.fromList([annotation]));
+        .put(PdfName.annots, PdfArray.fromList([annotation]));
     final outBuffer = BytesBuilder();
     final output = await create(outBuffer);
     final copied = await source.transferPagesInto([1, 2], output);
     expect(copied.length, 2);
     expect(
-        await copied[0]
-            .pdfRepresentation()
-            .dictionaryEntry(CraftPdfName.resources),
+        await copied[0].pdfRepresentation().dictionaryEntry(PdfName.resources),
         same(await copied[1]
             .pdfRepresentation()
-            .dictionaryEntry(CraftPdfName.resources)));
+            .dictionaryEntry(PdfName.resources)));
     await output.close();
     await source.close();
-    final reopened = await CraftPdfDocument.open(
-        CraftPdfReader.fromBytes(outBuffer.takeBytes()));
+    final reopened =
+        await PdfDocument.open(PdfReader.fromBytes(outBuffer.takeBytes()));
     final page1 = (await reopened.pageAt(1))!.pdfRepresentation();
     final page2 = (await reopened.pageAt(2))!.pdfRepresentation();
-    final annots = (await page1.arrayEntry(CraftPdfName.annots))!;
-    final annot = await annots.get(0) as CraftPdfDictionary;
-    expect(await annot.dictionaryEntry(CraftPdfName('P')), same(page1));
-    expect(await (await annot.arrayEntry(CraftPdfName('Dest')))!.get(0),
-        same(page2));
+    final annots = (await page1.arrayEntry(PdfName.annots))!;
+    final annot = await annots.get(0) as PdfDictionary;
+    expect(await annot.dictionaryEntry(PdfName('P')), same(page1));
+    expect(
+        await (await annot.arrayEntry(PdfName('Dest')))!.get(0), same(page2));
     await reopened.close();
   });
   test('Unselected page links fail without publishing partial objects',
@@ -90,9 +86,7 @@ void main() {
     final source = await create(BytesBuilder());
     final first = await source.appendBlankPage();
     final second = await source.appendBlankPage();
-    first
-        .pdfRepresentation()
-        .put(CraftPdfName('Peer'), second.pdfRepresentation());
+    first.pdfRepresentation().put(PdfName('Peer'), second.pdfRepresentation());
     final output = await create(BytesBuilder());
     final countBefore = output.crossReferenceTable().size();
     await expectLater(

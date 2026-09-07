@@ -5,7 +5,7 @@ import 'cmap_object.dart';
 import 'cmap_location.dart';
 
 /// Reads mapping programs, sharing command semantics between both I/O modes.
-class CraftCMapParser {
+class CMapParser {
   static const String def = 'def';
   static const String endcidrange = 'endcidrange';
   static const String endcidchar = 'endcidchar';
@@ -22,11 +22,11 @@ class CraftCMapParser {
   static const int maxLevel = 10;
 
   static Future<void> loadCidMappings(
-          String name, CraftAbstractCMap map, CraftCMapLocation location) =>
+          String name, AbstractCMap map, CMapLocation location) =>
       _read(name, map, location, <String>[]);
 
   static void loadCidMappingsSync(
-          String name, CraftAbstractCMap map, CraftCMapLocation location) =>
+          String name, AbstractCMap map, CMapLocation location) =>
       _readSync(name, map, location, <String>[]);
 
   static List<String> _enter(String name, List<String> ancestors) {
@@ -41,14 +41,14 @@ class CraftCMapParser {
     return [...ancestors, name];
   }
 
-  static Future<void> _read(String name, CraftAbstractCMap map,
-      CraftCMapLocation location, List<String> ancestors) async {
+  static Future<void> _read(String name, AbstractCMap map,
+      CMapLocation location, List<String> ancestors) async {
     final path = _enter(name, ancestors);
     final input = await location.getLocation(name);
     try {
-      final parser = CraftCMapContentParser(input);
+      final parser = CMapContentParser(input);
       final program = _MappingCommands(map, ancestors.isEmpty);
-      final operands = <CraftCMapObject>[];
+      final operands = <CMapObject>[];
       while (true) {
         parser.parse(operands);
         if (operands.isEmpty) {
@@ -65,14 +65,14 @@ class CraftCMapParser {
     }
   }
 
-  static void _readSync(String name, CraftAbstractCMap map,
-      CraftCMapLocation location, List<String> ancestors) {
+  static void _readSync(String name, AbstractCMap map, CMapLocation location,
+      List<String> ancestors) {
     final path = _enter(name, ancestors);
     final input = location.getLocationSync(name);
     try {
-      final parser = CraftCMapContentParser(input);
+      final parser = CMapContentParser(input);
       final program = _MappingCommands(map, ancestors.isEmpty);
-      final operands = <CraftCMapObject>[];
+      final operands = <CMapObject>[];
       while (true) {
         parser.parseSync(operands);
         if (operands.isEmpty) {
@@ -91,7 +91,7 @@ class CraftCMapParser {
 }
 
 class _MappingCommands {
-  final CraftAbstractCMap map;
+  final AbstractCMap map;
   final bool root;
   String? pending;
   int expected = 0;
@@ -111,7 +111,7 @@ class _MappingCommands {
     }
   }
 
-  String? accept(List<CraftCMapObject> tokens) {
+  String? accept(List<CMapObject> tokens) {
     if (!tokens.last.isLiteral()) {
       throw const FormatException('CMap operands have no command');
     }
@@ -147,25 +147,25 @@ class _MappingCommands {
             'CMap closing command $command has no opening block');
       }
     }
-    if (command == CraftCMapParser.usecmap) {
+    if (command == CMapParser.usecmap) {
       if (values.length != 1 || !values.single.isName()) {
         throw const FormatException('CMap inclusion requires one name');
       }
       return values.single.toString();
     }
     if (root &&
-        command == CraftCMapParser.def &&
+        command == CMapParser.def &&
         values.length == 2 &&
         values[0].isName()) {
       final value = values[1];
       switch (values[0].toString()) {
-        case CraftCMapParser.registry:
+        case CMapParser.registry:
           map.assignCharacterRegistry(value.toString());
-        case CraftCMapParser.ordering:
+        case CMapParser.ordering:
           map.assignCharacterCollection(value.toString());
-        case CraftCMapParser.cmapName:
+        case CMapParser.cmapName:
           map.setName(value.toString());
-        case CraftCMapParser.supplement:
+        case CMapParser.supplement:
           if (!value.isNumber() ||
               value.getValue() is! int ||
               (value.getValue() as int) < 0) {
@@ -178,7 +178,7 @@ class _MappingCommands {
     return null;
   }
 
-  void _mapEntries(String kind, List<CraftCMapObject> values) {
+  void _mapEntries(String kind, List<CMapObject> values) {
     final stride = widths[kind]!;
     for (var offset = 0; offset < values.length; offset += stride) {
       final first = values[offset];

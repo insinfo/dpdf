@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 /// Interface for decryption operations.
-abstract class CraftDecryptor {
+abstract class Decryptor {
   /// Updates the decryptor with a chunk of data.
   ///
   /// [b] The data to decrypt.

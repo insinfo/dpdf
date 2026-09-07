@@ -12,33 +12,30 @@ import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 import 'package:dpdf/src/render/image_decoder.dart';
 import 'package:test/test.dart';
 
-CraftPdfStream _image({
+PdfStream _image({
   required int width,
   required int height,
   required Uint8List data,
   required Object colorSpace,
   int bits = 8,
-  CraftPdfArray? decode,
+  PdfArray? decode,
   bool imageMask = false,
-  CraftPdfName? filter,
+  PdfName? filter,
 }) {
-  final stream = CraftPdfStream.withBytes(data, 0)
-    ..put(CraftPdfName.subtype, CraftPdfName('Image'))
-    ..put(CraftPdfName.width, CraftPdfNumber.fromInt(width))
-    ..put(CraftPdfName.height, CraftPdfNumber.fromInt(height));
+  final stream = PdfStream.withBytes(data, 0)
+    ..put(PdfName.subtype, PdfName('Image'))
+    ..put(PdfName.width, PdfNumber.fromInt(width))
+    ..put(PdfName.height, PdfNumber.fromInt(height));
   if (imageMask) {
-    stream.put(CraftPdfName('ImageMask'), CraftPdfBoolean(true));
+    stream.put(PdfName('ImageMask'), PdfBoolean(true));
   } else {
     stream
-      ..put(CraftPdfName('BitsPerComponent'), CraftPdfNumber.fromInt(bits))
-      ..put(
-          CraftPdfName('ColorSpace'),
-          colorSpace is String
-              ? CraftPdfName(colorSpace)
-              : colorSpace as CraftPdfArray);
+      ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(bits))
+      ..put(PdfName('ColorSpace'),
+          colorSpace is String ? PdfName(colorSpace) : colorSpace as PdfArray);
   }
-  if (decode != null) stream.put(CraftPdfName('Decode'), decode);
-  if (filter != null) stream.put(CraftPdfName.filter, filter);
+  if (decode != null) stream.put(PdfName('Decode'), decode);
+  if (filter != null) stream.put(PdfName.filter, filter);
   return stream;
 }
 
@@ -130,7 +127,7 @@ void main() {
         height: 1,
         data: Uint8List.fromList([0, 255]),
         colorSpace: 'DeviceGray',
-        decode: CraftPdfArray.fromDoubles([1, 0]),
+        decode: PdfArray.fromDoubles([1, 0]),
       )))!;
 
       expect(_at(image, 0, 0)[0], equals(255));
@@ -138,11 +135,11 @@ void main() {
     });
 
     test('resolves an Indexed palette', () async {
-      final palette = CraftPdfArray()
-        ..add(CraftPdfName('Indexed'))
-        ..add(CraftPdfName('DeviceRGB'))
-        ..add(CraftPdfNumber.fromInt(2))
-        ..add(CraftPdfString.fromBytes(Uint8List.fromList([
+      final palette = PdfArray()
+        ..add(PdfName('Indexed'))
+        ..add(PdfName('DeviceRGB'))
+        ..add(PdfNumber.fromInt(2))
+        ..add(PdfString.fromBytes(Uint8List.fromList([
           255, 0, 0, //
           0, 255, 0,
           0, 0, 255,
@@ -192,7 +189,7 @@ void main() {
         data: Uint8List.fromList([0xA0]),
         colorSpace: 'DeviceGray',
         imageMask: true,
-        decode: CraftPdfArray.fromDoubles([1, 0]),
+        decode: PdfArray.fromDoubles([1, 0]),
       )))!;
       expect(inverted.stencil!.sublist(0, 4), equals([255, 0, 255, 0]));
     });
@@ -210,7 +207,7 @@ void main() {
         data: Uint8List.fromList([0, 255]),
         colorSpace: 'DeviceGray',
       );
-      base.put(CraftPdfName('SMask'), soft);
+      base.put(PdfName('SMask'), soft);
 
       final image = (await PdfImageDecoder.decode(base))!;
 
@@ -226,7 +223,7 @@ void main() {
         colorSpace: 'DeviceRGB',
       );
       base.put(
-          CraftPdfName('SMask'),
+          PdfName('SMask'),
           _image(
             width: 2,
             height: 1,
@@ -261,7 +258,7 @@ void main() {
         height: height,
         data: jpeg,
         colorSpace: 'DeviceRGB',
-        filter: CraftPdfName('DCTDecode'),
+        filter: PdfName('DCTDecode'),
       )))!;
 
       expect(image.width, equals(width));
@@ -286,7 +283,7 @@ void main() {
         height: height,
         data: jpeg,
         colorSpace: 'DeviceGray',
-        filter: CraftPdfName('DCTDecode'),
+        filter: PdfName('DCTDecode'),
       )))!;
 
       final pixel = _at(image, 8, 8);
@@ -330,20 +327,20 @@ void main() {
 
   group('inlineImageToStream', () {
     test('expands the abbreviated keys and values', () async {
-      final dictionary = CraftPdfDictionary()
-        ..put(CraftPdfName('W'), CraftPdfNumber.fromInt(2))
-        ..put(CraftPdfName('H'), CraftPdfNumber.fromInt(1))
-        ..put(CraftPdfName('BPC'), CraftPdfNumber.fromInt(8))
-        ..put(CraftPdfName('CS'), CraftPdfName('RGB'));
+      final dictionary = PdfDictionary()
+        ..put(PdfName('W'), PdfNumber.fromInt(2))
+        ..put(PdfName('H'), PdfNumber.fromInt(1))
+        ..put(PdfName('BPC'), PdfNumber.fromInt(8))
+        ..put(PdfName('CS'), PdfName('RGB'));
 
       final stream = inlineImageToStream(
           dictionary, Uint8List.fromList([255, 0, 0, 0, 0, 255]));
 
-      expect(await stream.integerEntry(CraftPdfName.width), equals(2));
-      expect(await stream.integerEntry(CraftPdfName.height), equals(1));
-      expect((await stream.nameEntry(CraftPdfName('ColorSpace')))?.getValue(),
+      expect(await stream.integerEntry(PdfName.width), equals(2));
+      expect(await stream.integerEntry(PdfName.height), equals(1));
+      expect((await stream.nameEntry(PdfName('ColorSpace')))?.getValue(),
           equals('DeviceRGB'));
-      expect((await stream.nameEntry(CraftPdfName.subtype))?.getValue(),
+      expect((await stream.nameEntry(PdfName.subtype))?.getValue(),
           equals('Image'));
 
       final image = (await PdfImageDecoder.decode(stream))!;
@@ -352,14 +349,14 @@ void main() {
     });
 
     test('expands abbreviated filter names', () async {
-      final dictionary = CraftPdfDictionary()
-        ..put(CraftPdfName('W'), CraftPdfNumber.fromInt(1))
-        ..put(CraftPdfName('H'), CraftPdfNumber.fromInt(1))
-        ..put(CraftPdfName('F'), CraftPdfName('Fl'));
+      final dictionary = PdfDictionary()
+        ..put(PdfName('W'), PdfNumber.fromInt(1))
+        ..put(PdfName('H'), PdfNumber.fromInt(1))
+        ..put(PdfName('F'), PdfName('Fl'));
 
       final stream = inlineImageToStream(dictionary, Uint8List(0));
 
-      expect((await stream.nameEntry(CraftPdfName.filter))?.getValue(),
+      expect((await stream.nameEntry(PdfName.filter))?.getValue(),
           equals('FlateDecode'));
     });
   });

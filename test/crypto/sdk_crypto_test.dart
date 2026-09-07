@@ -23,13 +23,11 @@ void main() {
   };
   for (final vector in vectors.entries) {
     test('NIST SP800-38A CBC ${vector.key.length * 4}', () {
-      final cipher =
-          CraftAESCipher(true, hex(vector.key), iv, usePadding: false);
+      final cipher = AESCipher(true, hex(vector.key), iv, usePadding: false);
       final encrypted = cipher.update(plaintext, 0, plaintext.length);
       expect(cipher.doFinal(), isEmpty);
       expect(encrypted, hex(vector.value));
-      final decrypt =
-          CraftAESCipher(false, hex(vector.key), iv, usePadding: false);
+      final decrypt = AESCipher(false, hex(vector.key), iv, usePadding: false);
       expect(decrypt.update(encrypted, 0, encrypted.length), plaintext);
       expect(decrypt.doFinal(), isEmpty);
     });
@@ -53,7 +51,7 @@ void main() {
             : pc.process(message);
         final encrypted = PkiUtils.processAesCbc(true, key, iv, message);
         expect(encrypted, expected);
-        final cipher = CraftAESCipher(false, key, iv);
+        final cipher = AESCipher(false, key, iv);
         final out = BytesBuilder();
         for (var i = 0; i < encrypted.length; i++) {
           out.add(cipher.update(encrypted, i, 1));
@@ -68,11 +66,11 @@ void main() {
     final malformed = Uint8List(16)
       ..[14] = 1
       ..[15] = 2;
-    final cipher = CraftAESCipher(true, key, iv, usePadding: false);
+    final cipher = AESCipher(true, key, iv, usePadding: false);
     final encrypted = cipher.update(malformed, 0, 16);
     expect(() => PkiUtils.processAesCbc(false, key, iv, encrypted),
         throwsFormatException);
-    final incomplete = CraftAESCipher(false, key, iv, usePadding: false)
+    final incomplete = AESCipher(false, key, iv, usePadding: false)
       ..update(Uint8List(3), 0, 3);
     expect(incomplete.doFinal, throwsFormatException);
   });

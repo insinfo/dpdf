@@ -7,7 +7,7 @@ import 'certificate_details.dart';
 import '../commons/digest/digest_bytes.dart';
 
 /// Utilities for cryptographic signature operations.
-class CraftSignUtils {
+class SignUtils {
   /// Generates a CertificateID for OCSP.
   ///
   /// This is a simplified implementation. Real implementation needs hashing of Issuer Name and PublicKey.

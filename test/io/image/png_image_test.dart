@@ -11,14 +11,14 @@ void main() {
       expect(await file.exists(), isTrue);
 
       final bytes = await file.readAsBytes();
-      final image = CraftPngImageData.fromBytes(bytes);
+      final image = PngImageData.fromBytes(bytes);
 
       // Initially, PngImageData might not have all info until processed
-      CraftPngImageHelper.processImage(image);
+      PngImageHelper.processImage(image);
 
       expect(image.width, greaterThan(0));
       expect(image.height, greaterThan(0));
-      expect(image.getOriginalType(), CraftImageType.PNG);
+      expect(image.getOriginalType(), ImageType.PNG);
       expect(image.getData(), isNotNull);
     });
 
@@ -27,9 +27,9 @@ void main() {
       expect(await file.exists(), isTrue);
 
       final bytes = await file.readAsBytes();
-      final image = CraftPngImageData.fromBytes(bytes);
+      final image = PngImageData.fromBytes(bytes);
 
-      CraftPngImageHelper.processImage(image);
+      PngImageHelper.processImage(image);
 
       expect(image.width, greaterThan(0));
       expect(image.height, greaterThan(0));

@@ -5,8 +5,8 @@ import 'oid.dart';
 import 'crypto_digest.dart';
 
 /// Digest algorithm names and identifier mappings.
-class CraftDigestAlgorithms {
-  CraftDigestAlgorithms._();
+class DigestAlgorithms {
+  DigestAlgorithms._();
 
   /// Algorithm available for signatures since PDF 1.3.
   static const String sha1 = 'SHA-1';
@@ -41,10 +41,10 @@ class CraftDigestAlgorithms {
     '1.2.840.113549.2.5': 'MD5',
     '1.2.840.113549.2.2': 'MD2',
     '1.3.14.3.2.26': 'SHA1',
-    CraftOID.sha224: 'SHA224',
-    CraftOID.sha256: 'SHA256',
-    CraftOID.sha384: 'SHA384',
-    CraftOID.sha512: 'SHA512',
+    OID.sha224: 'SHA224',
+    OID.sha256: 'SHA256',
+    OID.sha384: 'SHA384',
+    OID.sha512: 'SHA512',
     '1.3.36.3.2.2': 'RIPEMD128',
     '1.3.36.3.2.1': 'RIPEMD160',
     '1.3.36.3.2.3': 'RIPEMD256',
@@ -64,10 +64,10 @@ class CraftDigestAlgorithms {
     '1.3.36.3.3.1.2': 'RIPEMD160',
     '1.3.36.3.3.1.4': 'RIPEMD256',
     '1.2.643.2.2.9': 'GOST3411',
-    CraftOID.sha3_224: 'SHA3-224',
-    CraftOID.sha3_256: 'SHA3-256',
-    CraftOID.sha3_384: 'SHA3-384',
-    CraftOID.sha3_512: 'SHA3-512',
+    OID.sha3_224: 'SHA3-224',
+    OID.sha3_256: 'SHA3-256',
+    OID.sha3_384: 'SHA3-384',
+    OID.sha3_512: 'SHA3-512',
   };
 
   /// Maps the name of a digest algorithm with its ID.
@@ -78,14 +78,14 @@ class CraftDigestAlgorithms {
     'MD-5': '1.2.840.113549.2.5',
     'SHA1': '1.3.14.3.2.26',
     'SHA-1': '1.3.14.3.2.26',
-    'SHA224': CraftOID.sha224,
-    'SHA-224': CraftOID.sha224,
-    'SHA256': CraftOID.sha256,
-    'SHA-256': CraftOID.sha256,
-    'SHA384': CraftOID.sha384,
-    'SHA-384': CraftOID.sha384,
-    'SHA512': CraftOID.sha512,
-    'SHA-512': CraftOID.sha512,
+    'SHA224': OID.sha224,
+    'SHA-224': OID.sha224,
+    'SHA256': OID.sha256,
+    'SHA-256': OID.sha256,
+    'SHA384': OID.sha384,
+    'SHA-384': OID.sha384,
+    'SHA512': OID.sha512,
+    'SHA-512': OID.sha512,
     'RIPEMD128': '1.3.36.3.2.2',
     'RIPEMD-128': '1.3.36.3.2.2',
     'RIPEMD160': '1.3.36.3.2.1',
@@ -93,10 +93,10 @@ class CraftDigestAlgorithms {
     'RIPEMD256': '1.3.36.3.2.3',
     'RIPEMD-256': '1.3.36.3.2.3',
     'GOST3411': '1.2.643.2.2.9',
-    'SHA3-224': CraftOID.sha3_224,
-    'SHA3-256': CraftOID.sha3_256,
-    'SHA3-384': CraftOID.sha3_384,
-    'SHA3-512': CraftOID.sha3_512,
+    'SHA3-224': OID.sha3_224,
+    'SHA3-256': OID.sha3_256,
+    'SHA3-384': OID.sha3_384,
+    'SHA3-512': OID.sha3_512,
   };
 
   /// Maps algorithm names to output lengths in bits.
@@ -129,7 +129,7 @@ class CraftDigestAlgorithms {
   };
 
   /// Default digest implementation.
-  static const CraftExternalDigest _defaultDigest = CryptoDigest();
+  static const ExternalDigest _defaultDigest = CryptoDigest();
 
   /// Get a digest algorithm.
   ///

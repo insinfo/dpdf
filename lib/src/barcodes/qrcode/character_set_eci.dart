@@ -1,10 +1,10 @@
 /// Names and numeric assignments for Extended Channel Interpretation character sets.
 /// of ISO 18004.
-class CraftCharacterSetECI {
-  static Map<String, CraftCharacterSetECI>? _NAME_TO_ECI;
+class CharacterSetECI {
+  static Map<String, CharacterSetECI>? _NAME_TO_ECI;
 
   static void _initialize() {
-    Map<String, CraftCharacterSetECI> n = {};
+    Map<String, CharacterSetECI> n = {};
     _addCharacterSet(0, "Cp437", n);
     _addCharacterSetList(1, ["ISO8859_1", "ISO-8859-1"], n);
     _addCharacterSet(2, "Cp437", n);
@@ -30,7 +30,7 @@ class CraftCharacterSetECI {
   final String _encodingName;
   final int _value;
 
-  CraftCharacterSetECI._(this._value, this._encodingName);
+  CharacterSetECI._(this._value, this._encodingName);
 
   String getEncodingName() {
     return _encodingName;
@@ -41,20 +41,20 @@ class CraftCharacterSetECI {
   }
 
   static void _addCharacterSet(
-      int value, String encodingName, Map<String, CraftCharacterSetECI> n) {
-    CraftCharacterSetECI eci = CraftCharacterSetECI._(value, encodingName);
+      int value, String encodingName, Map<String, CharacterSetECI> n) {
+    CharacterSetECI eci = CharacterSetECI._(value, encodingName);
     n[encodingName] = eci;
   }
 
-  static void _addCharacterSetList(int value, List<String> encodingNames,
-      Map<String, CraftCharacterSetECI> n) {
-    CraftCharacterSetECI eci = CraftCharacterSetECI._(value, encodingNames[0]);
+  static void _addCharacterSetList(
+      int value, List<String> encodingNames, Map<String, CharacterSetECI> n) {
+    CharacterSetECI eci = CharacterSetECI._(value, encodingNames[0]);
     for (int i = 0; i < encodingNames.length; i++) {
       n[encodingNames[i]] = eci;
     }
   }
 
-  static CraftCharacterSetECI? getCharacterSetECIByName(String name) {
+  static CharacterSetECI? getCharacterSetECIByName(String name) {
     if (_NAME_TO_ECI == null) {
       _initialize();
     }

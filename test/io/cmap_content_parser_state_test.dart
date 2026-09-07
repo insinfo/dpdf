@@ -5,14 +5,13 @@ import 'package:dpdf/src/io/font/cmap/cmap_content_parser.dart';
 import 'package:dpdf/src/io/font/cmap/cmap_object.dart';
 import 'package:test/test.dart';
 
-CraftCMapContentParser parser(String text) =>
-    CraftCMapContentParser(CraftPdfTokenizer(
-        CraftRandomAccessFileOrArray(Uint8List.fromList(ascii.encode(text)))));
+CMapContentParser parser(String text) => CMapContentParser(PdfTokenizer(
+    RandomAccessFileOrArray(Uint8List.fromList(ascii.encode(text)))));
 
 void main() {
   for (final primaryApi in [false, true]) {
     final mode = primaryApi ? 'primary' : 'sync alias';
-    CraftCMapObject? read(String text) {
+    CMapObject? read(String text) {
       final input = parser(text);
       return primaryApi ? input.readObject() : input.readObjectSync();
     }
@@ -20,10 +19,10 @@ void main() {
     test('$mode nested CMap objects preserve decimals and decoded keys', () {
       final result =
           read('<< /A#20B [0.125 << /Text (a\\n\\050b\\051) >> <4142>] >>');
-      final dictionary = result!.getValue() as Map<String, CraftCMapObject>;
-      final values = dictionary['A B']!.getValue() as List<CraftCMapObject>;
+      final dictionary = result!.getValue() as Map<String, CMapObject>;
+      final values = dictionary['A B']!.getValue() as List<CMapObject>;
       expect(values[0].getValue(), 0.125);
-      final nested = values[1].getValue() as Map<String, CraftCMapObject>;
+      final nested = values[1].getValue() as Map<String, CMapObject>;
       expect(nested['Text']!.getValue(), [97, 10, 40, 98, 41]);
       expect(values[2].getValue(), [65, 66]);
     });
@@ -44,7 +43,7 @@ void main() {
     });
     test('$mode parser returns successive commands and skips comments', () {
       final input = parser('% ignored\n /A 3 def [1 2] use');
-      final operands = <CraftCMapObject>[];
+      final operands = <CMapObject>[];
       if (primaryApi) {
         input.parse(operands);
       } else {

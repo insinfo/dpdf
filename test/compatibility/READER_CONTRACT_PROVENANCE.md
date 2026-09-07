@@ -4,7 +4,7 @@
 `C:/MyDartProjects/insinfo_dart_pdf/test/api_contract_test.dart`: vazio, prosa,
 cabeçalho isolado, cabeçalho seguido de zeros/letras e um único byte.
 A API síncrona original foi substituída explicitamente por
-`CraftPdfDocument.open(CraftPdfReader.fromBytes(...))`, com fechamento assíncrono.
+`PdfDocument.open(PdfReader.fromBytes(...))`, com fechamento assíncrono.
 Foram acrescentados três casos próprios de xref truncado ou fora dos limites.
 
 O contrato adaptado aceita exceções recuperáveis de dpdf; não aceita `Error`

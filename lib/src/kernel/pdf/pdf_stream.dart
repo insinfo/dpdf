@@ -11,9 +11,9 @@ import '../utils/filter_handlers.dart';
 ///
 /// A stream consists of a dictionary describing the stream, followed by
 /// the keyword 'stream', followed by the stream data, ending with 'endstream'.
-class CraftPdfStream extends CraftPdfDictionary {
+class PdfStream extends PdfDictionary {
   /// Compression level for this stream.
-  int _compressionLevel = CraftCompressionConstants.undefinedCompression;
+  int _compressionLevel = CompressionConstants.undefinedCompression;
 
   /// Output buffer for stream data.
   Uint8List? _outputBytes;
@@ -27,16 +27,16 @@ class CraftPdfStream extends CraftPdfDictionary {
   /// Length of the stream data (from dictionary or calculated).
   int _length = -1;
 
-  CraftPdfOutputStream? _outputStream;
+  PdfOutputStream? _outputStream;
   BytesBuilder? _bytesBuilder;
 
   /// Creates a PdfStream with bytes content.
   ///
   /// [bytes] The initial content of the stream.
   /// [compressionLevel] The compression level (0 = best speed, 9 = best compression, -1 is default).
-  CraftPdfStream.withBytes(Uint8List? bytes,
-      [int compressionLevel = CraftCompressionConstants.undefinedCompression]) {
-    setState(CraftPdfObject.mustBeIndirect);
+  PdfStream.withBytes(Uint8List? bytes,
+      [int compressionLevel = CompressionConstants.undefinedCompression]) {
+    setState(PdfObject.mustBeIndirect);
     _compressionLevel = compressionLevel;
     if (bytes != null && bytes.isNotEmpty) {
       _outputBytes = Uint8List.fromList(bytes);
@@ -44,17 +44,16 @@ class CraftPdfStream extends CraftPdfDictionary {
   }
 
   /// Creates an empty PdfStream.
-  CraftPdfStream() : this.withBytes(null);
+  PdfStream() : this.withBytes(null);
 
   /// Creates a PdfStream with specified compression level.
-  CraftPdfStream.withCompression(int compressionLevel)
+  PdfStream.withCompression(int compressionLevel)
       : this.withBytes(null, compressionLevel);
 
   /// Creates a PdfStream for reading from an existing PDF file.
-  static Future<CraftPdfStream> fromReader(
-      int offset, CraftPdfDictionary keys) async {
-    final stream = CraftPdfStream();
-    stream._compressionLevel = CraftCompressionConstants.undefinedCompression;
+  static Future<PdfStream> fromReader(int offset, PdfDictionary keys) async {
+    final stream = PdfStream();
+    stream._compressionLevel = CompressionConstants.undefinedCompression;
     stream._offset = offset;
     // Copy all entries from the keys dictionary
     final entries = await keys.entrySet();
@@ -62,7 +61,7 @@ class CraftPdfStream extends CraftPdfDictionary {
       stream.put(entry.key, entry.value);
     }
     // Get length from dictionary
-    final lengthNum = await stream.numberEntry(CraftPdfName.length);
+    final lengthNum = await stream.numberEntry(PdfName.length);
     stream._length = lengthNum?.intValue() ?? 0;
     return stream;
   }
@@ -71,7 +70,7 @@ class CraftPdfStream extends CraftPdfDictionary {
   int objectKind() => PdfObjectType.stream;
 
   @override
-  CraftPdfObject clone() {
+  PdfObject clone() {
     Uint8List? bytes;
     if (_bytesBuilder != null) {
       bytes = _bytesBuilder!.toBytes();
@@ -79,7 +78,7 @@ class CraftPdfStream extends CraftPdfDictionary {
       bytes = _outputBytes;
     }
 
-    final cloned = CraftPdfStream.withBytes(bytes, _compressionLevel);
+    final cloned = PdfStream.withBytes(bytes, _compressionLevel);
     // Note: Clone here is sync
     final map = getMap();
     if (map != null) {
@@ -91,8 +90,8 @@ class CraftPdfStream extends CraftPdfDictionary {
   }
 
   @override
-  CraftPdfObject newInstance() {
-    return CraftPdfStream();
+  PdfObject newInstance() {
+    return PdfStream();
   }
 
   /// Gets the compression level of this stream.
@@ -113,14 +112,14 @@ class CraftPdfStream extends CraftPdfDictionary {
   int getOffset() => _offset;
 
   /// Gets the output stream.
-  CraftPdfOutputStream getOutputStream() {
+  PdfOutputStream getOutputStream() {
     if (_outputStream == null) {
       _bytesBuilder = BytesBuilder();
       if (_outputBytes != null) {
         _bytesBuilder!.add(_outputBytes!);
         // _outputBytes = null; // Keep it as fallback or clear? safer to clear to avoid dupe
       }
-      _outputStream = CraftPdfOutputStream.fromBuilder(_bytesBuilder!);
+      _outputStream = PdfOutputStream.fromBuilder(_bytesBuilder!);
     }
     return _outputStream!;
   }
@@ -147,8 +146,8 @@ class CraftPdfStream extends CraftPdfDictionary {
       bytes = _outputBytes;
     }
 
-    if (bytes != null && decoded && containsKey(CraftPdfName.filter)) {
-      bytes = await CraftFilterHandlers.decodeBytes(bytes, this);
+    if (bytes != null && decoded && containsKey(PdfName.filter)) {
+      bytes = await FilterHandlers.decodeBytes(bytes, this);
     }
     return bytes;
   }
@@ -176,7 +175,7 @@ class CraftPdfStream extends CraftPdfDictionary {
     } else {
       // Replace content
       _bytesBuilder = BytesBuilder();
-      _outputStream = CraftPdfOutputStream.fromBuilder(_bytesBuilder!);
+      _outputStream = PdfOutputStream.fromBuilder(_bytesBuilder!);
       _outputBytes = null;
       if (bytes != null) {
         _bytesBuilder!.add(bytes);
@@ -185,8 +184,8 @@ class CraftPdfStream extends CraftPdfDictionary {
 
     _offset = 0;
     // Remove filters since data is now raw
-    remove(CraftPdfName.filter);
-    remove(CraftPdfName.decodeParms);
+    remove(PdfName.filter);
+    remove(PdfName.decodeParms);
   }
 
   /// Updates the length field.

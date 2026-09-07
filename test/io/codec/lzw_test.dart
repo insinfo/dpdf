@@ -7,7 +7,7 @@ import 'package:dpdf/src/io/codec/tiff_lzw_decoder.dart';
 void main() {
   group('LZWStringTable', () {
     test('initializes with single byte codes', () {
-      final table = CraftLZWStringTable();
+      final table = LZWStringTable();
       table.clearTable(8);
 
       // After clearing with codeSize 8, codes 0-255 are single bytes
@@ -17,7 +17,7 @@ void main() {
     });
 
     test('addCharString adds new strings', () {
-      final table = CraftLZWStringTable();
+      final table = LZWStringTable();
       table.clearTable(8);
 
       // Add a new string starting with code 0 and byte 1
@@ -26,7 +26,7 @@ void main() {
     });
 
     test('findCharString finds existing strings', () {
-      final table = CraftLZWStringTable();
+      final table = LZWStringTable();
       table.clearTable(8);
 
       // Add a string
@@ -38,7 +38,7 @@ void main() {
     });
 
     test('findCharString returns -1 for missing strings', () {
-      final table = CraftLZWStringTable();
+      final table = LZWStringTable();
       table.clearTable(8);
 
       final code = table.findCharString(0, 1);
@@ -70,7 +70,7 @@ void main() {
     test('decodes simple LZW data', () {
       // Simple LZW encoded data for testing
       // This is a basic test - real LZW data would come from images
-      final decoder = CraftTIFFLZWDecoder(10, 1, 1);
+      final decoder = TIFFLZWDecoder(10, 1, 1);
 
       // The decoder should not throw for valid setup
       expect(decoder, isNotNull);

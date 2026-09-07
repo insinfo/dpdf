@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
 /// Fixed-length bits. The exposed words use bit zero as their low bit.
-class CraftBitArray {
+class BitArray {
   final int _size;
   late Int32List _words;
 
-  CraftBitArray(this._size) {
+  BitArray(this._size) {
     if (_size <= 0) {
       throw ArgumentError.value(_size, 'size', 'Expected a positive bit count');
     }

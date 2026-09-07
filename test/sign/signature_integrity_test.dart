@@ -16,7 +16,7 @@ import 'package:dpdf/src/layout/element/paragraph.dart';
 import 'package:dpdf/src/pki/rsa.dart' as pc;
 import 'package:test/test.dart';
 
-class LocalExternalSignature implements CraftExternalSignature {
+class LocalExternalSignature implements ExternalSignature {
   final pc.RSAPrivateKey key;
   final String digestAlgorithm;
 
@@ -29,7 +29,7 @@ class LocalExternalSignature implements CraftExternalSignature {
   String getSignatureAlgorithmName() => 'RSA';
 
   @override
-  CraftSignatureMechanismParams? getSignatureMechanismParameters() => null;
+  SignatureMechanismParams? getSignatureMechanismParameters() => null;
 
   @override
   Future<Uint8List> sign(Uint8List message) async {
@@ -51,11 +51,11 @@ void main() {
       final file = File(filePath);
 
       // 1. Create Base PDF
-      final writer = CraftPdfWriter.toFile(filePath);
-      final pdfDoc = CraftPdfDocument.create(writer);
-      final doc = CraftDocument(pdfDoc);
-      await doc.add(
-          CraftParagraph("Documento de teste para integridade de assinatura."));
+      final writer = PdfWriter.toFile(filePath);
+      final pdfDoc = PdfDocument.create(writer);
+      final doc = Document(pdfDoc);
+      await doc
+          .add(Paragraph("Documento de teste para integridade de assinatura."));
       await doc.close();
       await pdfDoc.close();
 
@@ -95,8 +95,8 @@ void main() {
       // 3. Sign the PDF
       final inputBytes = await file.readAsBytes();
       final outputStream = file.openWrite();
-      final reader = CraftPdfReader.fromBytes(inputBytes);
-      final signer = CraftPdfSigner(reader, outputStream);
+      final reader = PdfReader.fromBytes(inputBytes);
+      final signer = PdfSigner(reader, outputStream);
 
       final pks = LocalExternalSignature(
           userKeyPair.privateKey as pc.RSAPrivateKey, 'SHA-256');
@@ -147,19 +147,16 @@ void main() {
           content.substring(r2 + 1, r3 - 1).replaceAll(RegExp(r'\s'), '');
       final cms = Uint8List.fromList(List.generate(cmsHex.length ~/ 2,
           (i) => int.parse(cmsHex.substring(i * 2, i * 2 + 2), radix: 16)));
-      final verified =
-          CraftPdfPKCS7.forVerifying(cms, CraftPdfName.adbePkcs7Detached);
+      final verified = PdfPKCS7.forVerifying(cms, PdfName.adbePkcs7Detached);
       verified.update(hashedData);
       expect(verified.verify(), isTrue,
           reason: 'Detached CMS must authenticate the covered bytes');
       final changed = Uint8List.fromList(hashedData)..[0] ^= 1;
-      final tampered =
-          CraftPdfPKCS7.forVerifying(cms, CraftPdfName.adbePkcs7Detached)
-            ..update(changed);
+      final tampered = PdfPKCS7.forVerifying(cms, PdfName.adbePkcs7Detached)
+        ..update(changed);
       expect(tampered.verify(), isFalse,
           reason: 'A change within ByteRange must fail authentication');
-      final missing =
-          CraftPdfPKCS7.forVerifying(cms, CraftPdfName.adbePkcs7Detached);
+      final missing = PdfPKCS7.forVerifying(cms, PdfName.adbePkcs7Detached);
       expect(missing.verify(), isFalse,
           reason: 'Missing detached content must not validate');
     });
@@ -173,9 +170,9 @@ void main() {
       final file = File(filePath);
 
       // Create base
-      final pdfDoc = CraftPdfDocument.create(CraftPdfWriter.toFile(filePath));
-      await (CraftDocument(pdfDoc))
-          .add(CraftParagraph("Multi-signature integrity test."));
+      final pdfDoc = PdfDocument.create(PdfWriter.toFile(filePath));
+      await (Document(pdfDoc))
+          .add(Paragraph("Multi-signature integrity test."));
       await pdfDoc.close();
 
       final rootKeyPair = PkiUtils.generateRSAKeyPair(bitStrength: 1024);
@@ -236,8 +233,8 @@ Future<void> _signFile(File file, pc.RSAPrivateKey key, List<Uint8List> chain,
     String fieldName) async {
   final bytes = await file.readAsBytes();
   final sink = file.openWrite();
-  final reader = CraftPdfReader.fromBytes(bytes);
-  final signer = CraftPdfSigner(reader, sink);
+  final reader = PdfReader.fromBytes(bytes);
+  final signer = PdfSigner(reader, sink);
   signer.setFieldName(fieldName);
   final pks = LocalExternalSignature(key, 'SHA-256');
   await signer.signDetached(pks, chain);

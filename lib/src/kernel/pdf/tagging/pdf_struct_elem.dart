@@ -16,191 +16,188 @@ import 'pdf_namespace.dart';
 /// with a dictionary at its root. The structure tree
 /// called the structure tree root (see [PdfStructTreeRoot]). Immediate children of the structure tree root
 /// contains structure elements and references to content items.
-class CraftPdfStructElem extends CraftPdfObjectWrapper<CraftPdfDictionary>
-    implements CraftStructureNode {
-  CraftPdfStructElem(CraftPdfDictionary pdfObject) : super(pdfObject) {
+class PdfStructElem extends PdfObjectWrapper<PdfDictionary>
+    implements StructureNode {
+  PdfStructElem(PdfDictionary pdfObject) : super(pdfObject) {
     setForbidRelease();
   }
 
-  CraftPdfStructElem.withRole(CraftPdfDocument document, CraftPdfName role)
-      : super(CraftPdfDictionary()) {
+  PdfStructElem.withRole(PdfDocument document, PdfName role)
+      : super(PdfDictionary()) {
     attachToDocument(document);
-    pdfRepresentation().put(CraftPdfName.type, CraftPdfName.structElem);
-    pdfRepresentation().put(CraftPdfName('S'), role);
+    pdfRepresentation().put(PdfName.type, PdfName.structElem);
+    pdfRepresentation().put(PdfName('S'), role);
   }
 
-  CraftPdfStructElem.withRoleAndPage(
-      CraftPdfDocument document, CraftPdfName role, CraftPdfPage page)
-      : super(CraftPdfDictionary()) {
+  PdfStructElem.withRoleAndPage(
+      PdfDocument document, PdfName role, PdfPage page)
+      : super(PdfDictionary()) {
     attachToDocument(document);
-    pdfRepresentation().put(CraftPdfName.type, CraftPdfName.structElem);
-    pdfRepresentation().put(CraftPdfName('S'), role);
+    pdfRepresentation().put(PdfName.type, PdfName.structElem);
+    pdfRepresentation().put(PdfName('S'), role);
     // Uses the indirect handle so released objects remain addressable.
     final pageRef = page.pdfRepresentation().indirectHandle();
     if (pageRef != null) {
-      pdfRepresentation().put(CraftPdfName('Pg'), pageRef);
+      pdfRepresentation().put(PdfName('Pg'), pageRef);
     }
   }
 
   /// Recognizes structure elements among logical-tree entries.
-  static Future<bool> isStructElem(CraftPdfDictionary dictionary) async {
+  static Future<bool> isStructElem(PdfDictionary dictionary) async {
     // S is required key of the struct elem
-    final type = await dictionary.nameEntry(CraftPdfName.type);
-    if (CraftPdfName.structElem == type) {
+    final type = await dictionary.nameEntry(PdfName.type);
+    if (PdfName.structElem == type) {
       return true;
     }
-    return dictionary.containsKey(CraftPdfName('S'));
+    return dictionary.containsKey(PdfName('S'));
   }
 
   /// Gets attributes object.
-  Future<CraftPdfObject?> getAttributes([bool createNewIfNull = false]) async {
-    var attributes = await pdfRepresentation().get(CraftPdfName('A'), true);
+  Future<PdfObject?> getAttributes([bool createNewIfNull = false]) async {
+    var attributes = await pdfRepresentation().get(PdfName('A'), true);
     if (attributes == null && createNewIfNull) {
-      attributes = CraftPdfDictionary();
+      attributes = PdfDictionary();
       setAttributes(attributes);
     }
     return attributes;
   }
 
   /// Sets attributes object.
-  void setAttributes(CraftPdfObject attributes) {
-    put(CraftPdfName('A'), attributes);
+  void setAttributes(PdfObject attributes) {
+    put(PdfName('A'), attributes);
   }
 
   /// Gets the Lang value.
-  Future<CraftPdfString?> getLang() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName('Lang'));
+  Future<PdfString?> getLang() async {
+    return await pdfRepresentation().stringEntry(PdfName('Lang'));
   }
 
   /// Sets the Lang value.
-  void setLang(CraftPdfString lang) {
-    put(CraftPdfName('Lang'), lang);
+  void setLang(PdfString lang) {
+    put(PdfName('Lang'), lang);
   }
 
   /// Gets the Alt (alternative text) value.
-  Future<CraftPdfString?> getAlt() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName('Alt'));
+  Future<PdfString?> getAlt() async {
+    return await pdfRepresentation().stringEntry(PdfName('Alt'));
   }
 
   /// Sets the Alt (alternative text) value.
-  void setAlt(CraftPdfString alt) {
-    put(CraftPdfName('Alt'), alt);
+  void setAlt(PdfString alt) {
+    put(PdfName('Alt'), alt);
   }
 
   /// Gets the ActualText value.
-  Future<CraftPdfString?> getActualText() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName('ActualText'));
+  Future<PdfString?> getActualText() async {
+    return await pdfRepresentation().stringEntry(PdfName('ActualText'));
   }
 
   /// Sets the ActualText value.
-  void setActualText(CraftPdfString actualText) {
-    put(CraftPdfName('ActualText'), actualText);
+  void setActualText(PdfString actualText) {
+    put(PdfName('ActualText'), actualText);
   }
 
   /// Gets the E (expanded form of abbreviation) value.
-  Future<CraftPdfString?> getE() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName('E'));
+  Future<PdfString?> getE() async {
+    return await pdfRepresentation().stringEntry(PdfName('E'));
   }
 
   /// Sets the E (expanded form of abbreviation) value.
-  void setE(CraftPdfString e) {
-    put(CraftPdfName('E'), e);
+  void setE(PdfString e) {
+    put(PdfName('E'), e);
   }
 
   /// Gets the structure element's ID string, if it has one.
-  Future<CraftPdfString?> getStructureElementId() async {
-    return await pdfRepresentation().stringEntry(CraftPdfName.id);
+  Future<PdfString?> getStructureElementId() async {
+    return await pdfRepresentation().stringEntry(PdfName.id);
   }
 
   /// Gets the role of this structure element.
   @override
-  Future<CraftPdfName?> getRole() async {
-    return await pdfRepresentation().nameEntry(CraftPdfName('S'));
+  Future<PdfName?> getRole() async {
+    return await pdfRepresentation().nameEntry(PdfName('S'));
   }
 
   /// Sets the role of this structure element.
-  void setRole(CraftPdfName role) {
-    put(CraftPdfName('S'), role);
+  void setRole(PdfName role) {
+    put(PdfName('S'), role);
   }
 
   /// Gets the namespace of this structure element.
-  Future<CraftPdfNamespace?> getNamespace() async {
-    final ns =
-        await pdfRepresentation().dictionaryEntry(CraftPdfName.namespace);
-    return ns == null ? null : CraftPdfNamespace(ns);
+  Future<PdfNamespace?> getNamespace() async {
+    final ns = await pdfRepresentation().dictionaryEntry(PdfName.namespace);
+    return ns == null ? null : PdfNamespace(ns);
   }
 
   /// Sets the namespace of this structure element.
-  CraftPdfStructElem setNamespace(CraftPdfNamespace? namespace) {
+  PdfStructElem setNamespace(PdfNamespace? namespace) {
     if (namespace == null) {
-      pdfRepresentation().remove(CraftPdfName.namespace);
+      pdfRepresentation().remove(PdfName.namespace);
     } else {
-      pdfRepresentation()
-          .put(CraftPdfName.namespace, namespace.pdfRepresentation());
+      pdfRepresentation().put(PdfName.namespace, namespace.pdfRepresentation());
     }
     markChanged();
     return this;
   }
 
   /// Adds a child structure element.
-  Future<CraftPdfStructElem> addKid(CraftPdfStructElem kid,
-      [int index = -1]) async {
+  Future<PdfStructElem> addKid(PdfStructElem kid, [int index = -1]) async {
     await _addKidObject(pdfRepresentation(), index, kid.pdfRepresentation());
     return kid;
   }
 
   /// Removes a child at the given index.
-  Future<CraftStructureNode?> removeKid(int index) async {
+  Future<StructureNode?> removeKid(int index) async {
     final k = await getK();
     if (k == null || (!k.isArray() && index != 0)) {
       return null;
     }
-    CraftPdfObject? removedKidObj;
+    PdfObject? removedKidObj;
     if (k.isArray()) {
-      final kidsArray = k as CraftPdfArray;
+      final kidsArray = k as PdfArray;
       if (index < 0 || index >= kidsArray.size()) return null;
       removedKidObj = await kidsArray.get(index, true);
       if (removedKidObj != null) {
         await kidsArray.remove(removedKidObj);
         if (kidsArray.isEmpty()) {
-          pdfRepresentation().remove(CraftPdfName.k);
+          pdfRepresentation().remove(PdfName.k);
         }
       }
     } else {
       removedKidObj = k;
-      pdfRepresentation().remove(CraftPdfName.k);
+      pdfRepresentation().remove(PdfName.k);
     }
     markChanged();
     return removedKidObj != null ? await wrapKid(removedKidObj) : null;
   }
 
   /// Removes a specific kid object.
-  Future<void> removeKidObject(CraftPdfObject kid) async {
+  Future<void> removeKidObject(PdfObject kid) async {
     final k = await getK();
     if (k == null) return;
     if (k.isArray()) {
-      final kidsArray = k as CraftPdfArray;
+      final kidsArray = k as PdfArray;
       await kidsArray.remove(kid);
       if (kidsArray.isEmpty()) {
-        pdfRepresentation().remove(CraftPdfName.k);
+        pdfRepresentation().remove(PdfName.k);
       }
     } else {
       if (k == kid) {
-        pdfRepresentation().remove(CraftPdfName.k);
+        pdfRepresentation().remove(PdfName.k);
       }
     }
     markChanged();
   }
 
   /// Gets the parent of this structure element.
-  Future<CraftStructureNode?> getParent() async {
-    final parentObj = await pdfRepresentation().dictionaryEntry(CraftPdfName.p);
+  Future<StructureNode?> getParent() async {
+    final parentObj = await pdfRepresentation().dictionaryEntry(PdfName.p);
     if (parentObj == null) return null;
     if (await isStructElem(parentObj)) {
-      return CraftPdfStructElem(parentObj);
+      return PdfStructElem(parentObj);
     }
     // Could be PdfStructTreeRoot
-    if (parentObj.nameEntry(CraftPdfName.type) == CraftPdfName.structTreeRoot) {
+    if (parentObj.nameEntry(PdfName.type) == PdfName.structTreeRoot) {
       // We lack a way to wrap PdfStructTreeRoot without PdfDocument easily here
       // but it implements IStructureNode.
       // Actually, PdfStructTreeRoot(parentObj) might work if we setDocument later.
@@ -210,12 +207,12 @@ class CraftPdfStructElem extends CraftPdfObjectWrapper<CraftPdfDictionary>
   }
 
   /// Gets list of the direct kids of structure element.
-  Future<List<CraftStructureNode>> getKids() async {
+  Future<List<StructureNode>> getKids() async {
     final k = await getK();
-    final kids = <CraftStructureNode>[];
+    final kids = <StructureNode>[];
     if (k != null) {
       if (k.isArray()) {
-        final a = k as CraftPdfArray;
+        final a = k as PdfArray;
         for (int i = 0; i < a.size(); i++) {
           final kidObj = await a.get(i, true);
           if (kidObj != null) {
@@ -229,27 +226,27 @@ class CraftPdfStructElem extends CraftPdfObjectWrapper<CraftPdfDictionary>
     return kids;
   }
 
-  Future<CraftStructureNode> wrapKid(CraftPdfObject kid) async {
-    if (kid is CraftPdfDictionary) {
+  Future<StructureNode> wrapKid(PdfObject kid) async {
+    if (kid is PdfDictionary) {
       if (await isStructElem(kid)) {
-        return CraftPdfStructElem(kid);
+        return PdfStructElem(kid);
       } else {
-        final mcr = await CraftPdfMcr.fromDictionary(kid, this);
+        final mcr = await PdfMcr.fromDictionary(kid, this);
         return mcr!;
       }
-    } else if (kid is CraftPdfNumber) {
-      return CraftPdfMcr.fromObject(kid, this);
+    } else if (kid is PdfNumber) {
+      return PdfMcr.fromObject(kid, this);
     }
     throw Exception('Unknown kid type: ${kid.runtimeType}');
   }
 
   /// Gets the K value (kids).
-  Future<CraftPdfObject?> getK() async {
-    return await pdfRepresentation().get(CraftPdfName.k, true);
+  Future<PdfObject?> getK() async {
+    return await pdfRepresentation().get(PdfName.k, true);
   }
 
   /// Puts a value into the structure element dictionary.
-  CraftPdfStructElem put(CraftPdfName key, CraftPdfObject value) {
+  PdfStructElem put(PdfName key, PdfObject value) {
     pdfRepresentation().put(key, value);
     markChanged();
     return this;
@@ -259,35 +256,35 @@ class CraftPdfStructElem extends CraftPdfObjectWrapper<CraftPdfDictionary>
   bool requiresIndirectStorage() => true;
 
   /// Adds a child MCR.
-  Future<CraftPdfMcr> addMcr(CraftPdfMcr mcr) async {
+  Future<PdfMcr> addMcr(PdfMcr mcr) async {
     await _addKidObject(pdfRepresentation(), -1, mcr.pdfRepresentation());
     return mcr;
   }
 
   /// Internal method to add kid object to parent.
   Future<void> _addKidObject(
-      CraftPdfDictionary parent, int index, CraftPdfObject kid) async {
-    final k = await parent.get(CraftPdfName.k, true);
+      PdfDictionary parent, int index, PdfObject kid) async {
+    final k = await parent.get(PdfName.k, true);
     if (k == null) {
       if (index == -1) {
-        parent.put(CraftPdfName.k, kid);
+        parent.put(PdfName.k, kid);
       } else {
         if (index == 0) {
-          parent.put(CraftPdfName.k, kid);
+          parent.put(PdfName.k, kid);
         } else {
-          final a = CraftPdfArray();
+          final a = PdfArray();
           a.insert(index, kid);
-          parent.put(CraftPdfName.k, a);
+          parent.put(PdfName.k, a);
         }
       }
     } else {
-      CraftPdfArray a;
-      if (k is CraftPdfArray) {
+      PdfArray a;
+      if (k is PdfArray) {
         a = k;
       } else {
-        a = CraftPdfArray();
+        a = PdfArray();
         a.add(k);
-        parent.put(CraftPdfName.k, a);
+        parent.put(PdfName.k, a);
       }
       if (index == -1) {
         a.add(kid);
@@ -296,9 +293,8 @@ class CraftPdfStructElem extends CraftPdfObjectWrapper<CraftPdfDictionary>
       }
     }
     parent.markChanged();
-    if (kid is CraftPdfDictionary &&
-        await CraftPdfStructElem.isStructElem(kid)) {
-      kid.put(CraftPdfName.p, parent);
+    if (kid is PdfDictionary && await PdfStructElem.isStructElem(kid)) {
+      kid.put(PdfName.p, parent);
       kid.markChanged();
     }
   }

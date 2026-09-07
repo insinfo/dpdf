@@ -1,30 +1,30 @@
 import 'package:dpdf/src/styledxmlparser/css/common_css_constants.dart';
 
 /// Utilities class for CSS types validating operations.
-class CraftCssTypesValidationUtils {
-  CraftCssTypesValidationUtils._();
+class CssTypesValidationUtils {
+  CssTypesValidationUtils._();
 
   static const List<String> ANGLE_MEASUREMENTS_VALUES = [
-    CraftCommonCssConstants.DEG,
-    CraftCommonCssConstants.GRAD,
-    CraftCommonCssConstants.RAD
+    CommonCssConstants.DEG,
+    CommonCssConstants.GRAD,
+    CommonCssConstants.RAD
   ];
 
   static const List<String> RELATIVE_MEASUREMENTS_VALUES = [
-    CraftCommonCssConstants.PERCENTAGE,
-    CraftCommonCssConstants.EM,
-    CraftCommonCssConstants.EX,
-    CraftCommonCssConstants.REM
+    CommonCssConstants.PERCENTAGE,
+    CommonCssConstants.EM,
+    CommonCssConstants.EX,
+    CommonCssConstants.REM
   ];
 
   static const List<String> METRIC_MEASUREMENTS_VALUES = [
-    CraftCommonCssConstants.PX,
-    CraftCommonCssConstants.IN,
-    CraftCommonCssConstants.CM,
-    CraftCommonCssConstants.MM,
-    CraftCommonCssConstants.PC,
-    CraftCommonCssConstants.PT,
-    CraftCommonCssConstants.Q
+    CommonCssConstants.PX,
+    CommonCssConstants.IN,
+    CommonCssConstants.CM,
+    CommonCssConstants.MM,
+    CommonCssConstants.PC,
+    CommonCssConstants.PT,
+    CommonCssConstants.Q
   ];
 
   /// Recognizes angular CSS units: rad, deg and grad.
@@ -44,18 +44,18 @@ class CraftCssTypesValidationUtils {
   static bool isEmValue(String? valueArgument) {
     if (valueArgument == null) return false;
     String value = valueArgument.trim();
-    return value.endsWith(CraftCommonCssConstants.EM) &&
-        isNumber(value.substring(
-            0, value.length - CraftCommonCssConstants.EM.length));
+    return value.endsWith(CommonCssConstants.EM) &&
+        isNumber(
+            value.substring(0, value.length - CommonCssConstants.EM.length));
   }
 
   /// Recognizes values relative to the element's font height.
   static bool isExValue(String? valueArgument) {
     if (valueArgument == null) return false;
     String value = valueArgument.trim();
-    return value.endsWith(CraftCommonCssConstants.EX) &&
-        isNumber(value.substring(
-            0, value.length - CraftCommonCssConstants.EX.length));
+    return value.endsWith(CommonCssConstants.EX) &&
+        isNumber(
+            value.substring(0, value.length - CommonCssConstants.EX.length));
   }
 
   /// Recognizes absolute CSS lengths: px, in, cm, mm, pc, Q and pt.
@@ -83,9 +83,9 @@ class CraftCssTypesValidationUtils {
   static bool isPercentageValue(String? valueArgument) {
     if (valueArgument == null) return false;
     String value = valueArgument.trim();
-    return value.endsWith(CraftCommonCssConstants.PERCENTAGE) &&
+    return value.endsWith(CommonCssConstants.PERCENTAGE) &&
         isNumber(value.substring(
-            0, value.length - CraftCommonCssConstants.PERCENTAGE.length));
+            0, value.length - CommonCssConstants.PERCENTAGE.length));
   }
 
   /// Recognizes values relative to the previous value.
@@ -105,9 +105,9 @@ class CraftCssTypesValidationUtils {
   static bool isRemValue(String? valueArgument) {
     if (valueArgument == null) return false;
     String value = valueArgument.trim();
-    return value.endsWith(CraftCommonCssConstants.REM) &&
-        isNumber(value.substring(
-            0, value.length - CraftCommonCssConstants.REM.length));
+    return value.endsWith(CommonCssConstants.REM) &&
+        isNumber(
+            value.substring(0, value.length - CommonCssConstants.REM.length));
   }
 
   static bool isNegativeValue(String? value) {

@@ -6,15 +6,15 @@ import 'css_syntax.dart';
 ///
 /// Selectors deliberately cover the portable profile: type, class, id and
 /// compounds of those forms. The parser safely skips unsupported selectors.
-class CraftHtmlStyleSheet {
+class HtmlStyleSheet {
   final List<_Rule> _rules;
-  CraftHtmlStyleSheet._(this._rules);
+  HtmlStyleSheet._(this._rules);
 
-  factory CraftHtmlStyleSheet.fromDocument(dom.Document document) {
+  factory HtmlStyleSheet.fromDocument(dom.Document document) {
     final rules = <_Rule>[];
     var order = 0;
     for (final style in document.querySelectorAll('style')) {
-      for (final rule in CraftCssSyntax.parseStyleRules(style.text)) {
+      for (final rule in CssSyntax.parseStyleRules(style.text)) {
         for (final source in _splitSelectorList(rule.selectorText)) {
           final selector = _Selector.parse(source.trim(), order++);
           if (selector != null && rule.declarations.isNotEmpty) {
@@ -23,7 +23,7 @@ class CraftHtmlStyleSheet {
         }
       }
     }
-    return CraftHtmlStyleSheet._(rules);
+    return HtmlStyleSheet._(rules);
   }
 
   Map<String, String> resolve(dom.Element element) {
@@ -31,7 +31,7 @@ class CraftHtmlStyleSheet {
         .where((rule) => rule.selector.matches(element))
         .toList()
       ..sort((a, b) => a.selector.compareCascadeOrder(b.selector));
-    final result = <String, CraftCssDeclarationSyntax>{};
+    final result = <String, CssDeclarationSyntax>{};
     for (final rule in matched) {
       for (final declaration in rule.declarations) {
         final previous = result[declaration.property];
@@ -42,8 +42,8 @@ class CraftHtmlStyleSheet {
     }
     // Inline author declarations are stronger than an equally-important
     // stylesheet declaration, while a stylesheet !important beats inline.
-    for (final declaration in CraftCssSyntax.parseDeclarations(
-        element.attributes['style'] ?? '')) {
+    for (final declaration
+        in CssSyntax.parseDeclarations(element.attributes['style'] ?? '')) {
       final previous = result[declaration.property];
       if (previous == null || declaration.important || !previous.important) {
         result[declaration.property] = declaration;
@@ -53,14 +53,14 @@ class CraftHtmlStyleSheet {
   }
 
   static Map<String, String> declarationsOf(String source) => {
-        for (final declaration in CraftCssSyntax.parseDeclarations(source))
+        for (final declaration in CssSyntax.parseDeclarations(source))
           declaration.property: declaration.value
       };
 }
 
 class _Rule {
   final _Selector selector;
-  final List<CraftCssDeclarationSyntax> declarations;
+  final List<CssDeclarationSyntax> declarations;
   const _Rule(this.selector, this.declarations);
 }
 

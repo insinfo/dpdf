@@ -6,35 +6,29 @@ import 'package:dpdf/src/render/page_renderer.dart';
 import 'package:test/test.dart';
 
 /// A one-page document whose content stream is [content].
-Future<CraftPdfDocument> _document(
+Future<PdfDocument> _document(
   String content, {
   double width = 100,
   double height = 100,
-  CraftPdfDictionary? resources,
+  PdfDictionary? resources,
   int rotate = 0,
 }) async {
   final output = BytesBuilder(copy: false);
-  final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await document.appendBlankPage();
   page.pdfRepresentation()
-    ..put(
-        CraftPdfName.mediaBox, CraftPdfArray.fromDoubles([0, 0, width, height]))
-    ..put(
-        CraftPdfName.contents,
-        CraftPdfStream.withBytes(
-            Uint8List.fromList(latin1.encode(content)), 0));
+    ..put(PdfName.mediaBox, PdfArray.fromDoubles([0, 0, width, height]))
+    ..put(PdfName.contents,
+        PdfStream.withBytes(Uint8List.fromList(latin1.encode(content)), 0));
   if (resources != null) {
-    page.pdfRepresentation().put(CraftPdfName.resources, resources);
+    page.pdfRepresentation().put(PdfName.resources, resources);
   }
   if (rotate != 0) {
-    page
-        .pdfRepresentation()
-        .put(CraftPdfName('Rotate'), CraftPdfNumber.fromInt(rotate));
+    page.pdfRepresentation().put(PdfName('Rotate'), PdfNumber.fromInt(rotate));
   }
   await document.close();
 
-  return CraftPdfDocument.open(CraftPdfReader.fromBytes(output.takeBytes()));
+  return PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
 }
 
 Future<PdfRenderedPage> _render(
@@ -42,7 +36,7 @@ Future<PdfRenderedPage> _render(
   double dpi = 72,
   double width = 100,
   double height = 100,
-  CraftPdfDictionary? resources,
+  PdfDictionary? resources,
   int rotate = 0,
 }) async {
   final document = await _document(content,
@@ -201,11 +195,9 @@ void main() {
     });
 
     test('resolves a named colour space and its components', () async {
-      final resources = CraftPdfDictionary()
-        ..put(
-            CraftPdfName('ColorSpace'),
-            CraftPdfDictionary()
-              ..put(CraftPdfName('CS0'), CraftPdfName('DeviceRGB')));
+      final resources = PdfDictionary()
+        ..put(PdfName('ColorSpace'),
+            PdfDictionary()..put(PdfName('CS0'), PdfName('DeviceRGB')));
 
       final page = await _render('/CS0 cs 0 0 1 scn 0 0 100 100 re f',
           resources: resources);
@@ -215,14 +207,12 @@ void main() {
     });
 
     test('applies ca from an ExtGState to a fill', () async {
-      final resources = CraftPdfDictionary()
+      final resources = PdfDictionary()
         ..put(
-            CraftPdfName('ExtGState'),
-            CraftPdfDictionary()
-              ..put(
-                  CraftPdfName('GS0'),
-                  CraftPdfDictionary()
-                    ..put(CraftPdfName('ca'), CraftPdfNumber(0.5))));
+            PdfName('ExtGState'),
+            PdfDictionary()
+              ..put(PdfName('GS0'),
+                  PdfDictionary()..put(PdfName('ca'), PdfNumber(0.5))));
 
       final page =
           await _render('/GS0 gs 0 g 0 0 100 100 re f', resources: resources);
@@ -235,21 +225,20 @@ void main() {
   group('PdfPageRenderer images', () {
     test('draws an image XObject into the unit square of the CTM', () async {
       // A 2x2 image: red, green / blue, white.
-      final image = CraftPdfStream.withBytes(
+      final image = PdfStream.withBytes(
           Uint8List.fromList([
             255, 0, 0, 0, 255, 0, //
             0, 0, 255, 255, 255, 255,
           ]),
           0)
-        ..put(CraftPdfName.subtype, CraftPdfName('Image'))
-        ..put(CraftPdfName.width, CraftPdfNumber.fromInt(2))
-        ..put(CraftPdfName.height, CraftPdfNumber.fromInt(2))
-        ..put(CraftPdfName('BitsPerComponent'), CraftPdfNumber.fromInt(8))
-        ..put(CraftPdfName('ColorSpace'), CraftPdfName('DeviceRGB'));
+        ..put(PdfName.subtype, PdfName('Image'))
+        ..put(PdfName.width, PdfNumber.fromInt(2))
+        ..put(PdfName.height, PdfNumber.fromInt(2))
+        ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+        ..put(PdfName('ColorSpace'), PdfName('DeviceRGB'));
 
-      final resources = CraftPdfDictionary()
-        ..put(CraftPdfName('XObject'),
-            CraftPdfDictionary()..put(CraftPdfName('Im0'), image));
+      final resources = PdfDictionary()
+        ..put(PdfName('XObject'), PdfDictionary()..put(PdfName('Im0'), image));
 
       final page =
           await _render('q 100 0 0 100 0 0 cm /Im0 Do Q', resources: resources);
@@ -273,16 +262,14 @@ void main() {
 
   group('PdfPageRenderer forms and reporting', () {
     test('runs a form XObject with its own matrix', () async {
-      final form = CraftPdfStream.withBytes(
+      final form = PdfStream.withBytes(
           Uint8List.fromList(latin1.encode('0 g 0 0 20 20 re f')), 0)
-        ..put(CraftPdfName.subtype, CraftPdfName('Form'))
-        ..put(CraftPdfName('BBox'), CraftPdfArray.fromDoubles([0, 0, 20, 20]))
-        ..put(CraftPdfName('Matrix'),
-            CraftPdfArray.fromDoubles([1, 0, 0, 1, 40, 40]));
+        ..put(PdfName.subtype, PdfName('Form'))
+        ..put(PdfName('BBox'), PdfArray.fromDoubles([0, 0, 20, 20]))
+        ..put(PdfName('Matrix'), PdfArray.fromDoubles([1, 0, 0, 1, 40, 40]));
 
-      final resources = CraftPdfDictionary()
-        ..put(CraftPdfName('XObject'),
-            CraftPdfDictionary()..put(CraftPdfName('Fm0'), form));
+      final resources = PdfDictionary()
+        ..put(PdfName('XObject'), PdfDictionary()..put(PdfName('Fm0'), form));
 
       final page = await _render('/Fm0 Do', resources: resources);
 

@@ -3,26 +3,26 @@ import 'package:dpdf/src/layout/element/element.dart';
 import 'package:dpdf/src/layout/element/element_model.dart';
 import 'package:dpdf/src/layout/renderer/renderer.dart';
 
-abstract class CraftAbstractElement<T extends CraftElement>
-    extends CraftElementPropertyContainer<T> implements CraftElementModel {
-  CraftRenderer? nextRenderer;
-  final List<CraftElement> childElements = [];
+abstract class AbstractElement<T extends Element>
+    extends ElementPropertyContainer<T> implements ElementModel {
+  Renderer? nextRenderer;
+  final List<Element> childElements = [];
 
   @override
-  List<CraftElement> getChildren() => childElements;
+  List<Element> getChildren() => childElements;
 
-  T add(CraftElement element) {
+  T add(Element element) {
     childElements.add(element);
     return this as T;
   }
 
   @override
-  void setNextRenderer(CraftRenderer renderer) {
+  void setNextRenderer(Renderer renderer) {
     nextRenderer = renderer;
   }
 
   @override
-  CraftRenderer? getRenderer() {
+  Renderer? getRenderer() {
     if (nextRenderer != null) {
       return nextRenderer;
     }
@@ -30,13 +30,13 @@ abstract class CraftAbstractElement<T extends CraftElement>
   }
 
   @override
-  CraftRenderer? createRendererSubTree() {
-    CraftRenderer? renderer = getRenderer();
+  Renderer? createRendererSubTree() {
+    Renderer? renderer = getRenderer();
     for (var child in childElements) {
       renderer?.addChild(child.createRendererSubTree()!);
     }
     return renderer;
   }
 
-  CraftRenderer makeNewRenderer();
+  Renderer makeNewRenderer();
 }

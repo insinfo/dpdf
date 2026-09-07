@@ -3,7 +3,7 @@ import 'package:dpdf/src/io/font/open_type_parser.dart';
 import 'package:dpdf/src/io/font/true_type_font.dart';
 import 'package:test/test.dart';
 
-CraftOpenTypeParser parser(int revision, int size, {int? declaredSize}) {
+OpenTypeParser parser(int revision, int size, {int? declaredSize}) {
   final bytes = Uint8List(28 + size);
   final view = ByteData.sublistView(bytes);
   view.setUint32(0, 0x00010000);
@@ -12,10 +12,10 @@ CraftOpenTypeParser parser(int revision, int size, {int? declaredSize}) {
   view.setUint32(20, 28);
   view.setUint32(24, declaredSize ?? size);
   if (size >= 2) view.setUint16(28, revision);
-  return CraftOpenTypeParser(bytes);
+  return OpenTypeParser(bytes);
 }
 
-ByteData fields(CraftOpenTypeParser parser) =>
+ByteData fields(OpenTypeParser parser) =>
     ByteData.sublistView(parser.raf.getBytes(), 28);
 
 void main() {
@@ -83,7 +83,7 @@ void main() {
     expect(parser(6, 100).loadWindowsMetrics, throwsUnsupportedError);
   });
   test('Font metric snapshot consistently scales geometry and decorations', () {
-    final font = CraftTrueTypeFont.fromFile('test/assets/ABeeZee-Regular.ttf');
+    final font = TrueTypeFont.fromFile('test/assets/ABeeZee-Regular.ttf');
     final source = font.fontParser;
     source.head
       ..unitsPerEm = 2000

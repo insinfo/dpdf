@@ -13,16 +13,16 @@ void main() {
   group('Barcode39 Tests', () {
     test('Barcode39 Standard Test', () async {
       final file = File('test/tmp/barcode_39_test.pdf');
-      final writer = CraftPdfWriter(file.openWrite());
-      final pdf = CraftPdfDocument.create(writer);
+      final writer = PdfWriter(file.openWrite());
+      final pdf = PdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
-      final canvas = await CraftPdfCanvas.fromPage(page);
+      final canvas = await PdfCanvas.fromPage(page);
 
-      final barcode = CraftBarcode39(pdf);
+      final barcode = Barcode39(pdf);
       barcode.setCode("CODE39");
 
-      final rect = await barcode.placeBarcode(
-          canvas, CraftDeviceGray(0), CraftDeviceGray(0));
+      final rect =
+          await barcode.placeBarcode(canvas, DeviceGray(0), DeviceGray(0));
 
       expect(rect.getWidth(), greaterThan(0));
       // Label
@@ -39,17 +39,17 @@ void main() {
 
     test('Barcode39 Extended Test', () async {
       final file = File('test/tmp/barcode_39_ext_test.pdf');
-      final writer = CraftPdfWriter(file.openWrite());
-      final pdf = CraftPdfDocument.create(writer);
+      final writer = PdfWriter(file.openWrite());
+      final pdf = PdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
-      final canvas = await CraftPdfCanvas.fromPage(page);
+      final canvas = await PdfCanvas.fromPage(page);
 
-      final barcode = CraftBarcode39(pdf);
+      final barcode = Barcode39(pdf);
       barcode.setExtended(true);
       barcode.setCode("Code 39 Extended");
 
-      final rect = await barcode.placeBarcode(
-          canvas, CraftDeviceGray(0), CraftDeviceGray(0));
+      final rect =
+          await barcode.placeBarcode(canvas, DeviceGray(0), DeviceGray(0));
 
       expect(rect.getWidth(), greaterThan(0));
       await pdf.close();

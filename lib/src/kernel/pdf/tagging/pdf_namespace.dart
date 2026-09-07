@@ -9,79 +9,77 @@ import '../filespec/pdf_file_spec.dart';
 import 'standard_namespaces.dart';
 
 /// A wrapper for namespace dictionaries (ISO 32000-2 section 14.7.4).
-class CraftPdfNamespace extends CraftPdfObjectWrapper<CraftPdfDictionary> {
-  CraftPdfNamespace(CraftPdfDictionary dictionary) : super(dictionary);
+class PdfNamespace extends PdfObjectWrapper<PdfDictionary> {
+  PdfNamespace(PdfDictionary dictionary) : super(dictionary);
 
-  CraftPdfNamespace.fromName(String namespaceName)
-      : this.fromPdfString(CraftPdfString(namespaceName));
+  PdfNamespace.fromName(String namespaceName)
+      : this.fromPdfString(PdfString(namespaceName));
 
-  CraftPdfNamespace.fromPdfString(CraftPdfString namespaceName)
-      : super(CraftPdfDictionary()) {
-    put(CraftPdfName.type, CraftPdfName.namespace);
-    put(CraftPdfName.ns, namespaceName);
+  PdfNamespace.fromPdfString(PdfString namespaceName) : super(PdfDictionary()) {
+    put(PdfName.type, PdfName.namespace);
+    put(PdfName.ns, namespaceName);
   }
 
-  static Future<CraftPdfNamespace> getDefault(
-      CraftPdfDocument pdfDocument) async {
+  static Future<PdfNamespace> getDefault(PdfDocument pdfDocument) async {
     // TODO: implement getNamespaces and addNamespace in PdfStructTreeRoot
-    return CraftPdfNamespace.fromName(CraftStandardNamespaces.pdf17);
+    return PdfNamespace.fromName(StandardNamespaces.pdf17);
   }
 
-  CraftPdfNamespace setNamespaceName(String namespaceName) {
-    return setNamespaceNameString(CraftPdfString(namespaceName));
+  PdfNamespace setNamespaceName(String namespaceName) {
+    return setNamespaceNameString(PdfString(namespaceName));
   }
 
-  CraftPdfNamespace setNamespaceNameString(CraftPdfString namespaceName) {
-    return put(CraftPdfName.ns, namespaceName);
+  PdfNamespace setNamespaceNameString(PdfString namespaceName) {
+    return put(PdfName.ns, namespaceName);
   }
 
   Future<String?> getNamespaceName() async {
-    final ns = await pdfRepresentation().stringEntry(CraftPdfName.ns);
+    final ns = await pdfRepresentation().stringEntry(PdfName.ns);
     return ns?.decodeMappingText();
   }
 
-  CraftPdfNamespace setSchema(CraftPdfFileSpec fileSpec) {
-    return put(CraftPdfName.schema, fileSpec.pdfRepresentation());
+  PdfNamespace setSchema(PdfFileSpec fileSpec) {
+    return put(PdfName.schema, fileSpec.pdfRepresentation());
   }
 
-  Future<CraftPdfFileSpec?> getSchema() async {
-    final schemaObject = await pdfRepresentation().get(CraftPdfName.schema);
-    if (schemaObject is CraftPdfDictionary) {
-      return CraftPdfFileSpec(schemaObject);
+  Future<PdfFileSpec?> getSchema() async {
+    final schemaObject = await pdfRepresentation().get(PdfName.schema);
+    if (schemaObject is PdfDictionary) {
+      return PdfFileSpec(schemaObject);
     }
     return null;
   }
 
-  CraftPdfNamespace setNamespaceRoleMap(CraftPdfDictionary roleMapNs) {
-    return put(CraftPdfName.roleMapNS, roleMapNs);
+  PdfNamespace setNamespaceRoleMap(PdfDictionary roleMapNs) {
+    return put(PdfName.roleMapNS, roleMapNs);
   }
 
-  Future<CraftPdfDictionary?> getNamespaceRoleMap(
+  Future<PdfDictionary?> getNamespaceRoleMap(
       [bool createIfNotExist = false]) async {
     var roleMapNs =
-        await pdfRepresentation().dictionaryEntry(CraftPdfName.roleMapNS);
+        await pdfRepresentation().dictionaryEntry(PdfName.roleMapNS);
     if (createIfNotExist && roleMapNs == null) {
-      roleMapNs = CraftPdfDictionary();
-      put(CraftPdfName.roleMapNS, roleMapNs);
+      roleMapNs = PdfDictionary();
+      put(PdfName.roleMapNS, roleMapNs);
     }
     return roleMapNs;
   }
 
-  Future<CraftPdfNamespace> addNamespaceRoleMapping(
+  Future<PdfNamespace> addNamespaceRoleMapping(
       String thisNsRole, String defaultNsRole) async {
     final roleMap = await getNamespaceRoleMap(true);
-    roleMap!.put(CraftPdfName(thisNsRole), CraftPdfName(defaultNsRole));
+    roleMap!.put(PdfName(thisNsRole), PdfName(defaultNsRole));
     markChanged();
     return this;
   }
 
-  Future<CraftPdfNamespace> addNamespaceRoleMappingWithTarget(String thisNsRole,
-      String targetNsRole, CraftPdfNamespace targetNs) async {
-    final targetMapping = CraftPdfArray();
-    targetMapping.add(CraftPdfName(targetNsRole));
+  Future<PdfNamespace> addNamespaceRoleMappingWithTarget(
+      String thisNsRole, String targetNsRole, PdfNamespace targetNs) async {
+    final targetMapping = PdfArray();
+    targetMapping.add(PdfName(targetNsRole));
     targetMapping.add(targetNs.pdfRepresentation());
     final roleMap = await getNamespaceRoleMap(true);
-    roleMap!.put(CraftPdfName(thisNsRole), targetMapping);
+    roleMap!.put(PdfName(thisNsRole), targetMapping);
     markChanged();
     return this;
   }
@@ -89,7 +87,7 @@ class CraftPdfNamespace extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   @override
   bool requiresIndirectStorage() => true;
 
-  CraftPdfNamespace put(CraftPdfName key, CraftPdfObject value) {
+  PdfNamespace put(PdfName key, PdfObject value) {
     pdfRepresentation().put(key, value);
     markChanged();
     return this;

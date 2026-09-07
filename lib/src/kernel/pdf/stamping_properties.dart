@@ -8,18 +8,17 @@ enum PdfRepairedSaveMode { reject, fullRewrite }
 /// Needs to be passed at document initialization.
 /// See [PageFlushingHelper] documentation to find more information about modes
 /// of document processing.
-class CraftStampingProperties extends CraftDocumentProperties {
+class StampingProperties extends DocumentProperties {
   PdfRepairedSaveMode repairedSaveMode = PdfRepairedSaveMode.reject;
   bool _appendMode = false;
   bool _preserveEncryption = false;
   bool _disableMac = false;
 
   /// Default constructor, use provided setters for configuration options.
-  CraftStampingProperties();
+  StampingProperties();
 
   /// Creates a copy of class instance.
-  CraftStampingProperties.copy(CraftStampingProperties other)
-      : super.copy(other) {
+  StampingProperties.copy(StampingProperties other) : super.copy(other) {
     repairedSaveMode = other.repairedSaveMode;
     _appendMode = other._appendMode;
     _preserveEncryption = other._preserveEncryption;
@@ -27,7 +26,7 @@ class CraftStampingProperties extends CraftDocumentProperties {
   }
 
   /// Creates a copy of [DocumentProperties] instance.
-  CraftStampingProperties.fromDocumentProperties(super.documentProperties)
+  StampingProperties.fromDocumentProperties(super.documentProperties)
       : super.copy();
 
   /// Defines if the document will be edited in append mode.
@@ -36,7 +35,7 @@ class CraftStampingProperties extends CraftDocumentProperties {
   /// preserving the original content. This is essential for multiple signatures.
   ///
   /// Returns this [StampingProperties] instance for fluent API.
-  CraftStampingProperties useAppendMode() {
+  StampingProperties useAppendMode() {
     _appendMode = true;
     return this;
   }
@@ -47,7 +46,7 @@ class CraftStampingProperties extends CraftDocumentProperties {
   /// Output encryption is not retained unless explicitly requested.
   ///
   /// Returns this [StampingProperties] instance for fluent API.
-  CraftStampingProperties preserveEncryption() {
+  StampingProperties preserveEncryption() {
     _preserveEncryption = true;
     return this;
   }
@@ -59,7 +58,7 @@ class CraftStampingProperties extends CraftDocumentProperties {
   /// because it removes MAC protection from all previous revisions also.
   ///
   /// Returns this [StampingProperties] instance for fluent API.
-  CraftStampingProperties disableMac() {
+  StampingProperties disableMac() {
     _disableMac = true;
     return this;
   }

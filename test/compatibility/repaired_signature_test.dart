@@ -13,7 +13,7 @@ void main() {
   late Uint8List certificate;
   setUpAll(() async {
     final bytes = BytesBuilder();
-    final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+    final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(bytes));
     await doc.appendBlankPage();
     await doc.close();
     valid = bytes.takeBytes();
@@ -35,8 +35,8 @@ void main() {
       'repaired input rejects incremental signing by default before emitting bytes',
       () async {
     final output = BytesBuilder();
-    final signer = CraftPdfSigner.fromBytesBuilder(broken, output,
-        readerProperties: CraftReaderProperties()
+    final signer = PdfSigner.fromBytesBuilder(broken, output,
+        readerProperties: ReaderProperties()
           ..recoveryMode = PdfRecoveryMode.scan);
     await expectLater(signer.signDetached(_Signature(key), [certificate]),
         throwsFormatException);
@@ -46,16 +46,16 @@ void main() {
       'explicit full rewrite signs repaired input with valid digest and no dangling Prev',
       () async {
     final output = BytesBuilder();
-    final signer = CraftPdfSigner.fromBytesBuilder(broken, output,
-        readerProperties: CraftReaderProperties()
+    final signer = PdfSigner.fromBytesBuilder(broken, output,
+        readerProperties: ReaderProperties()
           ..recoveryMode = PdfRecoveryMode.scan,
         repairedSaveMode: PdfRepairedSaveMode.fullRewrite);
     await signer.signDetached(_Signature(key), [certificate]);
     final bytes = output.takeBytes();
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(bytes));
     expect(doc.wasRepaired, isFalse);
-    expect(doc.fileTrailer().containsKey(CraftPdfName.prev), isFalse);
-    final signatures = CraftSignatureUtil(doc);
+    expect(doc.fileTrailer().containsKey(PdfName.prev), isFalse);
+    final signatures = SignatureUtil(doc);
     final names = await signatures.getSignatureNames();
     expect(names, hasLength(1));
     expect(
@@ -64,14 +64,13 @@ void main() {
   });
   test('explicit fullRewrite signing works for an unrepaired input', () async {
     final output = BytesBuilder();
-    final signer = CraftPdfSigner.fromBytesBuilder(valid, output,
+    final signer = PdfSigner.fromBytesBuilder(valid, output,
         mode: PdfSigningMode.fullRewrite);
     await signer.signDetached(_Signature(key), [certificate]);
-    final doc = await CraftPdfDocument.open(
-        CraftPdfReader.fromBytes(output.takeBytes()));
+    final doc = await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
     expect(doc.wasRepaired, isFalse);
-    expect(doc.fileTrailer().containsKey(CraftPdfName.prev), isFalse);
-    final signatures = CraftSignatureUtil(doc);
+    expect(doc.fileTrailer().containsKey(PdfName.prev), isFalse);
+    final signatures = SignatureUtil(doc);
     final names = await signatures.getSignatureNames();
     expect(
         (await signatures.readSignatureData(names.single))!.verify(), isTrue);
@@ -80,28 +79,26 @@ void main() {
   test('incremental editing of repaired input needs explicit rewrite policy',
       () async {
     final output = BytesBuilder();
-    final doc = CraftPdfDocument(
-        reader: CraftPdfReader.fromBytes(
-            broken,
-            CraftReaderProperties()
-              ..recoveryMode = PdfRecoveryMode.skipStreams),
-        writer: CraftPdfWriter.fromBytesBuilder(output),
-        properties: CraftStampingProperties()
+    final doc = PdfDocument(
+        reader: PdfReader.fromBytes(broken,
+            ReaderProperties()..recoveryMode = PdfRecoveryMode.skipStreams),
+        writer: PdfWriter.fromBytesBuilder(output),
+        properties: StampingProperties()
           ..useAppendMode()
           ..repairedSaveMode = PdfRepairedSaveMode.fullRewrite);
     await doc.load();
     expect(doc.wasRepaired, isTrue);
     await doc.appendBlankPage();
     await doc.close();
-    final reopened = await CraftPdfDocument.open(
-        CraftPdfReader.fromBytes(output.takeBytes()));
+    final reopened =
+        await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
     expect(reopened.pageTotal(), 2);
-    expect(reopened.fileTrailer().containsKey(CraftPdfName.prev), isFalse);
+    expect(reopened.fileTrailer().containsKey(PdfName.prev), isFalse);
     await reopened.close();
   });
 }
 
-class _Signature implements CraftExternalSignature {
+class _Signature implements ExternalSignature {
   final RSAPrivateKey key;
   _Signature(this.key);
   @override
@@ -109,7 +106,7 @@ class _Signature implements CraftExternalSignature {
   @override
   String getSignatureAlgorithmName() => 'RSA';
   @override
-  CraftSignatureMechanismParams? getSignatureMechanismParameters() => null;
+  SignatureMechanismParams? getSignatureMechanismParameters() => null;
   @override
   Future<Uint8List> sign(Uint8List bytes) async {
     final signer = Signer('SHA-256/RSA')..init(true, PrivateKeyParameter(key));

@@ -36,7 +36,7 @@ class CryptoMessageDigest implements SigningDigest {
 }
 
 /// Selects supported SDK-only digests without loading an external provider.
-class CryptoDigest implements CraftExternalDigest {
+class CryptoDigest implements ExternalDigest {
   const CryptoDigest();
 
   static const _algorithms = <String, (String, int)>{

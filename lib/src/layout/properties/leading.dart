@@ -1,11 +1,11 @@
-class CraftLeading {
+class Leading {
   static const int FIXED = 1;
   static const int MULTIPLIED = 2;
 
   final int type;
   final double value;
 
-  CraftLeading(this.type, this.value);
+  Leading(this.type, this.value);
 
   int getType() => type;
 

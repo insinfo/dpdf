@@ -1,23 +1,22 @@
 import 'package:dpdf/src/kernel/font/pdf_font.dart';
 
-class CraftFontInfo {
+class FontInfo {
   // Stub
 }
 
-class CraftFontSet {
-  final List<CraftFontInfo> _fonts = [];
-  List<CraftFontInfo> getFonts() => _fonts;
+class FontSet {
+  final List<FontInfo> _fonts = [];
+  List<FontInfo> getFonts() => _fonts;
   bool isEmpty() => _fonts.isEmpty;
 }
 
-class CraftFontProvider {
-  final CraftFontSet fontSet;
-  CraftFontProvider([CraftFontSet? fontSet])
-      : fontSet = fontSet ?? CraftFontSet();
+class FontProvider {
+  final FontSet fontSet;
+  FontProvider([FontSet? fontSet]) : fontSet = fontSet ?? FontSet();
 
-  CraftPdfFont? getPdfFont(CraftFontInfo fontInfo) => null;
+  PdfFont? getPdfFont(FontInfo fontInfo) => null;
 }
 
-class CraftBasicFontProvider extends CraftFontProvider {
-  CraftBasicFontProvider() : super();
+class BasicFontProvider extends FontProvider {
+  BasicFontProvider() : super();
 }

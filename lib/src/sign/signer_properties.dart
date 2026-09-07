@@ -2,7 +2,7 @@ import '../kernel/geom/rectangle.dart';
 import 'access_permissions.dart';
 
 /// Properties to be used in signing operations.
-class CraftSignerProperties {
+class SignerProperties {
   /// This string could be used to create the SignatureFieldAppearance instance
   /// which will be used for signing since its ID will be ignored anyway.
   static const String ignoredId = '';
@@ -14,18 +14,18 @@ class CraftSignerProperties {
   AccessPermissions _certificationLevel;
   String? _fieldName;
   int _pageNumber;
-  CraftRectangle _pageRect;
+  Rectangle _pageRect;
   String _signatureCreator;
   String _contact;
   String _reason;
   String _location;
 
   /// Create instance of SignerProperties.
-  CraftSignerProperties()
+  SignerProperties()
       : _signDate = DateTime.now(),
         _certificationLevel = AccessPermissions.unspecified,
         _pageNumber = 1,
-        _pageRect = CraftRectangle(0, 0, 0, 0),
+        _pageRect = Rectangle(0, 0, 0, 0),
         _signatureCreator = '',
         _contact = '',
         _reason = '',
@@ -40,7 +40,7 @@ class CraftSignerProperties {
   ///
   /// @param signDate the signature date
   /// @return this instance to support fluent interface
-  CraftSignerProperties setClaimedSignDate(DateTime signDate) {
+  SignerProperties setClaimedSignDate(DateTime signDate) {
     _signDate = signDate;
     return this;
   }
@@ -60,8 +60,7 @@ class CraftSignerProperties {
   /// @param accessPermissions AccessPermissions enum which specifies
   ///        which certification level shall be used
   /// @return this instance to support fluent interface
-  CraftSignerProperties setCertificationLevel(
-      AccessPermissions accessPermissions) {
+  SignerProperties setCertificationLevel(AccessPermissions accessPermissions) {
     _certificationLevel = accessPermissions;
     return this;
   }
@@ -78,7 +77,7 @@ class CraftSignerProperties {
   ///
   /// @param fieldName the name indicating the field to be signed
   /// @return this instance to support fluent interface
-  CraftSignerProperties setFieldName(String? fieldName) {
+  SignerProperties setFieldName(String? fieldName) {
     if (fieldName != null) {
       _fieldName = fieldName;
     }
@@ -96,7 +95,7 @@ class CraftSignerProperties {
   ///
   /// @param pageNumber the page number of the signature field
   /// @return this instance to support fluent interface
-  CraftSignerProperties setPageNumber(int pageNumber) {
+  SignerProperties setPageNumber(int pageNumber) {
     _pageNumber = pageNumber;
     return this;
   }
@@ -106,7 +105,7 @@ class CraftSignerProperties {
   ///
   /// @return the rectangle that represent the position and dimension of the
   ///         signature field in the page
-  CraftRectangle getPageRect() => _pageRect;
+  Rectangle getPageRect() => _pageRect;
 
   /// Sets the rectangle that represent the position and dimension of the
   /// signature field in the page.
@@ -114,7 +113,7 @@ class CraftSignerProperties {
   /// @param pageRect the rectangle that represents the position and dimension
   ///        of the signature field in the page
   /// @return this instance to support fluent interface
-  CraftSignerProperties setPageRect(CraftRectangle pageRect) {
+  SignerProperties setPageRect(Rectangle pageRect) {
     _pageRect = pageRect;
     return this;
   }
@@ -131,7 +130,7 @@ class CraftSignerProperties {
   ///
   /// @param signatureCreator application label for the signature
   /// @return this instance to support fluent interface.
-  CraftSignerProperties setSignatureCreator(String signatureCreator) {
+  SignerProperties setSignatureCreator(String signatureCreator) {
     _signatureCreator = signatureCreator;
     return this;
   }
@@ -145,7 +144,7 @@ class CraftSignerProperties {
   ///
   /// @param contact a new signing contact
   /// @return this instance to support fluent interface
-  CraftSignerProperties setContact(String contact) {
+  SignerProperties setContact(String contact) {
     _contact = contact;
     return this;
   }
@@ -159,7 +158,7 @@ class CraftSignerProperties {
   ///
   /// @param reason a new signing reason
   /// @return this instance to support fluent interface
-  CraftSignerProperties setReason(String reason) {
+  SignerProperties setReason(String reason) {
     _reason = reason;
     return this;
   }
@@ -173,7 +172,7 @@ class CraftSignerProperties {
   ///
   /// @param location a new signing location
   /// @return this instance to support fluent interface
-  CraftSignerProperties setLocation(String location) {
+  SignerProperties setLocation(String location) {
     _location = location;
     return this;
   }

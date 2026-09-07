@@ -12,49 +12,42 @@ import 'package:dpdf/src/layout/renderer/list_item_renderer.dart';
 import 'package:dpdf/src/layout/renderer/text_renderer.dart';
 import 'package:test/test.dart';
 
-class GlyphFixture extends CraftPdfType1Font {
-  final available = {
-    65: CraftGlyph(1, 600, 65),
-    0x1f600: CraftGlyph(2, 700, 0x1f600)
-  };
-  GlyphFixture() : super.fromDictionary(CraftPdfDictionary());
+class GlyphFixture extends PdfType1Font {
+  final available = {65: Glyph(1, 600, 65), 0x1f600: Glyph(2, 700, 0x1f600)};
+  GlyphFixture() : super.fromDictionary(PdfDictionary());
   @override
-  CraftGlyph? getGlyph(int unicode) => available[unicode];
+  Glyph? getGlyph(int unicode) => available[unicode];
   @override
   bool containsGlyph(int unicode) => available.containsKey(unicode);
 }
 
 void main() {
   test('Affine classification notices direct coefficient changes', () {
-    final value = CraftAffineTransform();
-    expect(value.getTransformType(), CraftAffineTransform.typeIdentity);
+    final value = AffineTransform();
+    expect(value.getTransformType(), AffineTransform.typeIdentity);
     value.m02 = 10;
-    expect(value.getTransformType(), CraftAffineTransform.typeTranslation);
+    expect(value.getTransformType(), AffineTransform.typeTranslation);
     value.m00 = 2;
-    expect(
-        value.getTransformType(),
-        CraftAffineTransform.typeTranslation |
-            CraftAffineTransform.typeGeneralScale);
+    expect(value.getTransformType(),
+        AffineTransform.typeTranslation | AffineTransform.typeGeneralScale);
     value.m01 = 1;
-    expect(value.getTransformType(), CraftAffineTransform.typeGeneralTransform);
+    expect(value.getTransformType(), AffineTransform.typeGeneralTransform);
   });
   test(
       'Affine classification preserves rotation, uniform scale and reflection flags',
       () {
     expect(
-        CraftAffineTransform.fromValues(0, 2, -2, 0, 0, 0).getTransformType(),
-        CraftAffineTransform.typeQuadrantRotation |
-            CraftAffineTransform.typeUniformScale);
-    expect(
-        CraftAffineTransform.fromValues(-1, 0, 0, 1, 0, 0).getTransformType(),
-        CraftAffineTransform.typeQuadrantRotation |
-            CraftAffineTransform.typeFlip);
+        AffineTransform.fromValues(0, 2, -2, 0, 0, 0).getTransformType(),
+        AffineTransform.typeQuadrantRotation |
+            AffineTransform.typeUniformScale);
+    expect(AffineTransform.fromValues(-1, 0, 0, 1, 0, 0).getTransformType(),
+        AffineTransform.typeQuadrantRotation | AffineTransform.typeFlip);
   });
   test(
       'Glyph appending counts UTF16 units while producing supplementary glyphs',
       () {
     final font = GlyphFixture();
-    final glyphs = <CraftGlyph>[];
+    final glyphs = <Glyph>[];
     expect(font.appendGlyphs('A😀?A', 0, 4, glyphs), 3);
     expect(glyphs.map((glyph) => glyph.getUnicode()), [65, 0x1f600]);
     glyphs.clear();
@@ -64,12 +57,11 @@ void main() {
   test(
       'Glyph appending skips unmapped whitespace and preserves byte-specific semantics',
       () {
-    final glyphs = <CraftGlyph>[];
+    final glyphs = <Glyph>[];
     expect(GlyphFixture().appendGlyphs('A\nA', 0, 2, glyphs), 3);
     expect(glyphs.length, 2);
-    final font = CraftPdfType1Font(
-        CraftType1Font.createBuiltInFont('Helvetica'),
-        CraftFontEncoding.FONT_SPECIFIC);
+    final font = PdfType1Font(
+        Type1Font.createBuiltInFont('Helvetica'), FontEncoding.FONT_SPECIFIC);
     glyphs.clear();
     expect(font.appendGlyphs(String.fromCharCode(0x141), 0, 0, glyphs), 1);
     expect(glyphs.single.getCode(), 65);
@@ -77,23 +69,23 @@ void main() {
   test('List numbering selects symbol families and keeps decimal text renderer',
       () {
     final choices = {
-      CraftListNumberingType.GREEK_LOWER: 'Symbol',
-      CraftListNumberingType.GREEK_UPPER: 'Symbol',
-      CraftListNumberingType.ZAPF_DINGBATS_1: 'ZapfDingbats',
-      CraftListNumberingType.ZAPF_DINGBATS_2: 'ZapfDingbats',
-      CraftListNumberingType.ZAPF_DINGBATS_3: 'ZapfDingbats',
-      CraftListNumberingType.ZAPF_DINGBATS_4: 'ZapfDingbats',
+      ListNumberingType.GREEK_LOWER: 'Symbol',
+      ListNumberingType.GREEK_UPPER: 'Symbol',
+      ListNumberingType.ZAPF_DINGBATS_1: 'ZapfDingbats',
+      ListNumberingType.ZAPF_DINGBATS_2: 'ZapfDingbats',
+      ListNumberingType.ZAPF_DINGBATS_3: 'ZapfDingbats',
+      ListNumberingType.ZAPF_DINGBATS_4: 'ZapfDingbats',
     };
     for (final entry in choices.entries) {
-      final list = CraftListRenderer(CraftList(entry.key));
-      final symbol = list.makeListSymbolRenderer(
-          1, CraftListItemRenderer(CraftListItem('item')))!;
+      final list = ListRenderer(PdfList(entry.key));
+      final symbol =
+          list.makeListSymbolRenderer(1, ListItemRenderer(ListItem('item')))!;
       final dynamic renderer = symbol.getChildRenderers()[1];
       expect(renderer.constantFontName, entry.value);
     }
-    final list = CraftListRenderer(CraftList(CraftListNumberingType.DECIMAL));
-    final symbol = list.makeListSymbolRenderer(
-        1, CraftListItemRenderer(CraftListItem('item')))!;
-    expect(symbol.getChildRenderers()[1].runtimeType, CraftTextRenderer);
+    final list = ListRenderer(PdfList(ListNumberingType.DECIMAL));
+    final symbol =
+        list.makeListSymbolRenderer(1, ListItemRenderer(ListItem('item')))!;
+    expect(symbol.getChildRenderers()[1].runtimeType, TextRenderer);
   });
 }

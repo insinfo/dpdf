@@ -10,62 +10,61 @@ import 'pdf_stream.dart';
 /// A representation of an array as described in the PDF specification.
 ///
 /// A PdfArray can contain any subclass of [PdfObject].
-class CraftPdfArray extends CraftPdfObject {
+class PdfArray extends PdfObject {
   /// The internal list of objects.
-  List<CraftPdfObject>? _list;
+  List<PdfObject>? _list;
 
   /// Create a new, empty PdfArray.
-  CraftPdfArray() {
-    _list = <CraftPdfObject>[];
+  PdfArray() {
+    _list = <PdfObject>[];
   }
 
   /// Create a new PdfArray with the provided PdfObject as the first item.
-  CraftPdfArray.withObject(CraftPdfObject obj) {
-    _list = <CraftPdfObject>[obj];
+  PdfArray.withObject(PdfObject obj) {
+    _list = <PdfObject>[obj];
   }
 
   /// Create a new PdfArray from another PdfArray.
-  CraftPdfArray.fromArray(CraftPdfArray arr) {
-    _list = List<CraftPdfObject>.from(arr._list ?? []);
+  PdfArray.fromArray(PdfArray arr) {
+    _list = List<PdfObject>.from(arr._list ?? []);
   }
 
   /// Create a new PdfArray from a list of PdfObjects.
-  CraftPdfArray.fromList(List<CraftPdfObject> objects) {
-    _list = List<CraftPdfObject>.from(objects);
+  PdfArray.fromList(List<PdfObject> objects) {
+    _list = List<PdfObject>.from(objects);
   }
 
   /// Create a new PdfArray from a list of doubles.
-  CraftPdfArray.fromDoubles(List<double> numbers) {
-    _list = numbers.map((n) => CraftPdfNumber(n)).toList();
+  PdfArray.fromDoubles(List<double> numbers) {
+    _list = numbers.map((n) => PdfNumber(n)).toList();
   }
 
   /// Create a new PdfArray from a list of ints.
-  CraftPdfArray.fromInts(List<int> numbers) {
-    _list = numbers.map((n) => CraftPdfNumber.fromInt(n)).toList();
+  PdfArray.fromInts(List<int> numbers) {
+    _list = numbers.map((n) => PdfNumber.fromInt(n)).toList();
   }
 
   /// Create a new PdfArray from a list of booleans.
-  CraftPdfArray.fromBooleans(List<bool> values) {
-    _list = values.map((b) => CraftPdfBoolean(b)).toList();
+  PdfArray.fromBooleans(List<bool> values) {
+    _list = values.map((b) => PdfBoolean(b)).toList();
   }
 
   /// Create a new PdfArray from a list of strings.
   ///
   /// [asNames] if true, strings are added as PdfName, otherwise as PdfString.
-  CraftPdfArray.fromStrings(List<String> strings, {bool asNames = false}) {
+  PdfArray.fromStrings(List<String> strings, {bool asNames = false}) {
     _list = strings
-        .map((s) =>
-            asNames ? CraftPdfName(s) as CraftPdfObject : CraftPdfString(s))
+        .map((s) => asNames ? PdfName(s) as PdfObject : PdfString(s))
         .toList();
   }
 
   /// Create a new PdfArray from a Rectangle.
-  CraftPdfArray.fromRectangle(CraftRectangle rect) {
+  PdfArray.fromRectangle(Rectangle rect) {
     _list = [
-      CraftPdfNumber(rect.getX()),
-      CraftPdfNumber(rect.getY()),
-      CraftPdfNumber(rect.getX() + rect.getWidth()),
-      CraftPdfNumber(rect.getY() + rect.getHeight())
+      PdfNumber(rect.getX()),
+      PdfNumber(rect.getY()),
+      PdfNumber(rect.getX() + rect.getWidth()),
+      PdfNumber(rect.getY() + rect.getHeight())
     ];
   }
 
@@ -73,8 +72,8 @@ class CraftPdfArray extends CraftPdfObject {
   int objectKind() => PdfObjectType.array;
 
   @override
-  CraftPdfObject clone() {
-    final cloned = CraftPdfArray();
+  PdfObject clone() {
+    final cloned = PdfArray();
     if (_list != null) {
       for (final obj in _list!) {
         if (obj.indirectHandle() != null) {
@@ -88,8 +87,8 @@ class CraftPdfArray extends CraftPdfObject {
   }
 
   @override
-  CraftPdfObject newInstance() {
-    return CraftPdfArray();
+  PdfObject newInstance() {
+    return PdfArray();
   }
 
   /// Gets the size of the array.
@@ -105,7 +104,7 @@ class CraftPdfArray extends CraftPdfObject {
   bool isEmpty() => _list?.isEmpty ?? true;
 
   /// Checks whether the array contains the passed object.
-  Future<bool> containsObject(CraftPdfObject o) async {
+  Future<bool> containsObject(PdfObject o) async {
     if (_list == null) return false;
     for (final pdfObject in _list!) {
       if (await _equalContent(o, pdfObject)) {
@@ -116,17 +115,17 @@ class CraftPdfArray extends CraftPdfObject {
   }
 
   /// Adds the passed PdfObject to the array.
-  void add(CraftPdfObject pdfObject) {
+  void add(PdfObject pdfObject) {
     _list?.add(pdfObject);
   }
 
   /// Adds the specified PdfObject at the specified index.
-  void insert(int index, CraftPdfObject element) {
+  void insert(int index, PdfObject element) {
     _list?.insert(index, element);
   }
 
   /// Sets the PdfObject at the specified index.
-  CraftPdfObject? set(int index, CraftPdfObject element) {
+  PdfObject? set(int index, PdfObject element) {
     if (_list == null || index >= _list!.length) return null;
     final old = _list![index];
     _list![index] = element;
@@ -134,23 +133,23 @@ class CraftPdfArray extends CraftPdfObject {
   }
 
   /// Adds all PdfObjects from a collection.
-  void addAll(Iterable<CraftPdfObject> c) {
+  void addAll(Iterable<PdfObject> c) {
     _list?.addAll(c);
   }
 
   /// Adds all PdfObjects from another PdfArray.
-  void addAllFromArray(CraftPdfArray a) {
+  void addAllFromArray(PdfArray a) {
     if (a._list != null) {
       addAll(a._list!);
     }
   }
 
   /// Gets the (direct) PdfObject at the specified index.
-  Future<CraftPdfObject?> get(int index, [bool asDirect = true]) async {
+  Future<PdfObject?> get(int index, [bool asDirect = true]) async {
     if (_list == null || index >= _list!.length) return null;
     final obj = _list![index];
     if (asDirect && obj.objectKind() == PdfObjectType.indirectReference) {
-      return await (obj as CraftPdfIndirectReference).targetObject(true);
+      return await (obj as PdfIndirectReference).targetObject(true);
     }
     return obj;
   }
@@ -161,7 +160,7 @@ class CraftPdfArray extends CraftPdfObject {
   }
 
   /// Removes the first occurrence of the specified PdfObject.
-  Future<void> remove(CraftPdfObject o) async {
+  Future<void> remove(PdfObject o) async {
     if (_list == null) return;
     for (var i = 0; i < _list!.length; i++) {
       if (await _equalContent(o, _list![i])) {
@@ -177,7 +176,7 @@ class CraftPdfArray extends CraftPdfObject {
   }
 
   /// Gets the first index of the specified PdfObject.
-  Future<int> indexOf(CraftPdfObject o) async {
+  Future<int> indexOf(PdfObject o) async {
     if (_list == null) return -1;
     for (var i = 0; i < _list!.length; i++) {
       if (await _equalContent(o, _list![i])) {
@@ -188,82 +187,82 @@ class CraftPdfArray extends CraftPdfObject {
   }
 
   /// Returns a sublist of this PdfArray.
-  List<CraftPdfObject> subList(int fromIndex, int toIndex) {
+  List<PdfObject> subList(int fromIndex, int toIndex) {
     return _list?.sublist(fromIndex, toIndex) ?? [];
   }
 
   /// Returns a list copy of the array elements.
-  List<CraftPdfObject> toListCopy({bool growable = true}) {
+  List<PdfObject> toListCopy({bool growable = true}) {
     if (!growable) {
       return List.unmodifiable(_list ?? []);
     }
-    return List<CraftPdfObject>.from(_list ?? []);
+    return List<PdfObject>.from(_list ?? []);
   }
 
   /// Returns a list of the array elements (alias for toListCopy).
-  List<CraftPdfObject> toList() {
-    return List<CraftPdfObject>.from(_list ?? []);
+  List<PdfObject> toList() {
+    return List<PdfObject>.from(_list ?? []);
   }
 
   /// Returns the element at the specified index as a PdfArray.
-  Future<CraftPdfArray?> arrayEntry(int index) async {
+  Future<PdfArray?> arrayEntry(int index) async {
     final direct = await get(index, true);
     if (direct != null && direct.objectKind() == PdfObjectType.array) {
-      return direct as CraftPdfArray;
+      return direct as PdfArray;
     }
     return null;
   }
 
   /// Returns the element at the specified index as a PdfDictionary.
-  Future<CraftPdfDictionary?> dictionaryEntry(int index) async {
+  Future<PdfDictionary?> dictionaryEntry(int index) async {
     final direct = await get(index, true);
     if (direct != null && direct.objectKind() == PdfObjectType.dictionary) {
-      return direct as CraftPdfDictionary;
+      return direct as PdfDictionary;
     }
     return null;
   }
 
   /// Returns the element at the specified index as a PdfNumber.
-  Future<CraftPdfNumber?> numberEntry(int index) async {
+  Future<PdfNumber?> numberEntry(int index) async {
     final direct = await get(index, true);
     if (direct != null && direct.objectKind() == PdfObjectType.number) {
-      return direct as CraftPdfNumber;
+      return direct as PdfNumber;
     }
     return null;
   }
 
   /// Returns the element at the specified index as a PdfName.
-  Future<CraftPdfName?> nameEntry(int index) async {
+  Future<PdfName?> nameEntry(int index) async {
     final direct = await get(index, true);
     if (direct != null && direct.objectKind() == PdfObjectType.name) {
-      return direct as CraftPdfName;
+      return direct as PdfName;
     }
     return null;
   }
 
   /// Returns the element at the specified index as a PdfString.
-  Future<CraftPdfString?> stringEntry(int index) async {
+  Future<PdfString?> stringEntry(int index) async {
     final direct = await get(index, true);
     if (direct != null && direct.objectKind() == PdfObjectType.string) {
-      return direct as CraftPdfString;
+      return direct as PdfString;
     }
     return null;
   }
 
   /// Returns the element at the specified index as a PdfBoolean.
-  Future<CraftPdfBoolean?> booleanEntry(int index) async {
+  Future<PdfBoolean?> booleanEntry(int index) async {
     final direct = await get(index, true);
     if (direct != null && direct.objectKind() == PdfObjectType.boolean) {
-      return direct as CraftPdfBoolean;
+      return direct as PdfBoolean;
     }
     return null;
   }
 
   /// Returns the element at the specified index as a PdfStream.
-  Future<CraftPdfStream?> streamEntry(int index) async {
+  Future<PdfStream?> streamEntry(int index) async {
     final direct = await get(index, true);
     if (direct != null && direct.objectKind() == PdfObjectType.stream) {
-      return direct as CraftPdfStream;
+      return direct as PdfStream;
     }
     return null;
   }
@@ -310,16 +309,15 @@ class CraftPdfArray extends CraftPdfObject {
   }
 
   /// Helper to compare PDF object content.
-  static Future<bool> _equalContent(
-      CraftPdfObject? obj1, CraftPdfObject? obj2) async {
+  static Future<bool> _equalContent(PdfObject? obj1, PdfObject? obj2) async {
     if (obj1 == null || obj2 == null) return obj1 == obj2;
-    CraftPdfObject? direct1 = obj1;
-    CraftPdfObject? direct2 = obj2;
+    PdfObject? direct1 = obj1;
+    PdfObject? direct2 = obj2;
     if (obj1.isIndirectReference()) {
-      direct1 = await (obj1 as CraftPdfIndirectReference).targetObject(true);
+      direct1 = await (obj1 as PdfIndirectReference).targetObject(true);
     }
     if (obj2.isIndirectReference()) {
-      direct2 = await (obj2 as CraftPdfIndirectReference).targetObject(true);
+      direct2 = await (obj2 as PdfIndirectReference).targetObject(true);
     }
     return direct1 == direct2;
   }

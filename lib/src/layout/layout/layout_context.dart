@@ -2,30 +2,30 @@ import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/layout/layout/layout_area.dart';
 import 'package:dpdf/src/layout/margincollapse/margins_collapse_info.dart';
 
-class CraftLayoutContext {
-  CraftLayoutArea area;
-  CraftMarginsCollapseInfo? marginsCollapseInfo;
-  List<CraftRectangle> floatRendererAreas = [];
+class LayoutContext {
+  LayoutArea area;
+  MarginsCollapseInfo? marginsCollapseInfo;
+  List<Rectangle> floatRendererAreas = [];
   bool clippedHeight = false;
 
-  CraftLayoutContext(this.area,
+  LayoutContext(this.area,
       [this.marginsCollapseInfo,
-      List<CraftRectangle>? floatRendererAreas,
+      List<Rectangle>? floatRendererAreas,
       this.clippedHeight = false]) {
     if (floatRendererAreas != null) {
       this.floatRendererAreas = floatRendererAreas;
     }
   }
 
-  CraftLayoutArea getArea() {
+  LayoutArea getArea() {
     return area;
   }
 
-  CraftMarginsCollapseInfo? getMarginsCollapseInfo() {
+  MarginsCollapseInfo? getMarginsCollapseInfo() {
     return marginsCollapseInfo;
   }
 
-  List<CraftRectangle> getFloatRendererAreas() {
+  List<Rectangle> getFloatRendererAreas() {
     return floatRendererAreas;
   }
 

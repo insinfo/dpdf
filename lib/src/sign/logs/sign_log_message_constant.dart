@@ -1,6 +1,6 @@
 /// Diagnostic templates for DPDF. Public identifiers and format slots are stable.
-class CraftSignLogMessageConstant {
-  CraftSignLogMessageConstant._();
+class SignLogMessageConstant {
+  SignLogMessageConstant._();
 
   static const String countrySpecificFetchingFailed =
       'Fetching the national LOTL for schema "{0}" failed: {1}.';

@@ -11,11 +11,11 @@ import 'pdf_stream.dart';
 /// Copies a graph of PDF objects into one destination document.
 /// Reuse a copier when multiple roots must retain shared object identity.
 class PdfObjectCopier {
-  final CraftPdfDocument destination;
+  final PdfDocument destination;
   final Set<String> forbiddenUnmappedTypes;
   final bool deferIndirectRegistration;
-  final _copies = HashMap<CraftPdfObject, CraftPdfObject>.identity();
-  final _pending = HashSet<CraftPdfObject>.identity();
+  final _copies = HashMap<PdfObject, PdfObject>.identity();
+  final _pending = HashSet<PdfObject>.identity();
   PdfObjectCopier(this.destination,
       {this.forbiddenUnmappedTypes = const {},
       this.deferIndirectRegistration = false}) {
@@ -25,7 +25,7 @@ class PdfObjectCopier {
   }
 
   /// Registers roots before copying their children, allowing forward links.
-  void register(CraftPdfObject source, CraftPdfObject target) {
+  void register(PdfObject source, PdfObject target) {
     if (_copies.containsKey(source)) {
       throw StateError('The source object already has a destination.');
     }
@@ -41,7 +41,7 @@ class PdfObjectCopier {
     _pending.clear();
   }
 
-  void _attach(CraftPdfObject object) {
+  void _attach(PdfObject object) {
     if (deferIndirectRegistration) {
       _pending.add(object);
     } else {
@@ -49,21 +49,20 @@ class PdfObjectCopier {
     }
   }
 
-  Future<void> copyDictionaryEntries(
-      CraftPdfDictionary source, CraftPdfDictionary target,
-      {Set<CraftPdfName> excludedKeys = const {}}) async {
+  Future<void> copyDictionaryEntries(PdfDictionary source, PdfDictionary target,
+      {Set<PdfName> excludedKeys = const {}}) async {
     for (final entry in await source.entrySet()) {
       if (excludedKeys.contains(entry.key)) continue;
-      if (source is CraftPdfStream && entry.key == CraftPdfName.length) {
+      if (source is PdfStream && entry.key == PdfName.length) {
         continue;
       }
       target.put(entry.key, await copy(entry.value));
     }
   }
 
-  Future<CraftPdfObject> copy(CraftPdfObject source) async {
-    final references = HashSet<CraftPdfIndirectReference>.identity();
-    while (source is CraftPdfIndirectReference) {
+  Future<PdfObject> copy(PdfObject source) async {
+    final references = HashSet<PdfIndirectReference>.identity();
+    while (source is PdfIndirectReference) {
       if (!references.add(source)) {
         throw FormatException('Cyclic indirect reference chain.');
       }
@@ -73,26 +72,26 @@ class PdfObjectCopier {
     }
     final prior = _copies[source];
     if (prior != null) return prior;
-    if (source is CraftPdfDictionary) {
-      final type = (await source.nameEntry(CraftPdfName.type))?.getValue();
+    if (source is PdfDictionary) {
+      final type = (await source.nameEntry(PdfName.type))?.getValue();
       if (forbiddenUnmappedTypes.contains(type)) {
         throw UnsupportedError(
             'The copied graph references an unselected /$type object.');
       }
-      final CraftPdfDictionary target;
-      if (source is CraftPdfStream) {
+      final PdfDictionary target;
+      if (source is PdfStream) {
         final bytes = await source.getBytes(false);
-        target = CraftPdfStream.withBytes(bytes ?? Uint8List(0), 0);
+        target = PdfStream.withBytes(bytes ?? Uint8List(0), 0);
       } else {
-        target = CraftPdfDictionary();
+        target = PdfDictionary();
       }
       _copies[source] = target;
       _attach(target);
       await copyDictionaryEntries(source, target);
       return target;
     }
-    if (source is CraftPdfArray) {
-      final target = CraftPdfArray();
+    if (source is PdfArray) {
+      final target = PdfArray();
       _copies[source] = target;
       _attach(target);
       for (var i = 0; i < source.size(); i++) {

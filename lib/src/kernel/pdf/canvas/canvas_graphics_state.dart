@@ -12,15 +12,15 @@ import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
 
 /// Represents the graphics state for the canvas.
-class CraftCanvasGraphicsState {
-  CraftAffineTransform ctm = CraftAffineTransform();
-  CraftColor strokeColor = CraftDeviceGray.BLACK;
-  CraftColor fillColor = CraftDeviceGray.BLACK;
+class CanvasGraphicsState {
+  AffineTransform ctm = AffineTransform();
+  Color strokeColor = DeviceGray.BLACK;
+  Color fillColor = DeviceGray.BLACK;
   double charSpacing = 0;
   double wordSpacing = 0;
   double horizontalScaling = 100;
   double leading = 0;
-  CraftPdfFont? font;
+  PdfFont? font;
   double fontSize = 0;
   int textRenderingMode = TextRenderingMode.FILL;
   double textRise = 0;
@@ -29,40 +29,39 @@ class CraftCanvasGraphicsState {
   int lineCapStyle = LineCapStyle.BUTT;
   int lineJoinStyle = LineJoinStyle.MITER;
   double miterLimit = 10;
-  CraftPdfArray dashPattern =
-      CraftPdfArray.fromList([CraftPdfArray(), CraftPdfNumber(0)]);
-  CraftPdfName renderingIntent = CraftPdfName.relativeColorimetric;
+  PdfArray dashPattern = PdfArray.fromList([PdfArray(), PdfNumber(0)]);
+  PdfName renderingIntent = PdfName.relativeColorimetric;
 
   bool automaticStrokeAdjustment = false;
-  CraftPdfObject blendMode = CraftPdfName.normal; // Normal
-  CraftPdfObject softMask = CraftPdfName.none; // None
+  PdfObject blendMode = PdfName.normal; // Normal
+  PdfObject softMask = PdfName.none; // None
   double strokeAlpha = 1.0;
   double fillAlpha = 1.0;
   bool alphaIsShape = false;
   bool strokeOverprint = false;
   bool fillOverprint = false;
   int overprintMode = 0;
-  CraftPdfObject? blackGenerationFunction;
-  CraftPdfObject? blackGenerationFunction2;
-  CraftPdfObject? underColorRemovalFunction;
-  CraftPdfObject? underColorRemovalFunction2;
-  CraftPdfObject? transferFunction;
-  CraftPdfObject? transferFunction2;
-  CraftPdfObject? halftone;
+  PdfObject? blackGenerationFunction;
+  PdfObject? blackGenerationFunction2;
+  PdfObject? underColorRemovalFunction;
+  PdfObject? underColorRemovalFunction2;
+  PdfObject? transferFunction;
+  PdfObject? transferFunction2;
+  PdfObject? halftone;
   double flatnessTolerance = 1.0;
   double? smoothnessTolerance;
-  CraftPdfObject? htp;
+  PdfObject? htp;
 
-  CraftCanvasGraphicsState([CraftCanvasGraphicsState? source]) {
+  CanvasGraphicsState([CanvasGraphicsState? source]) {
     if (source != null) {
       copyFrom(source);
     }
   }
 
-  CraftAffineTransform getCtm() => ctm;
+  AffineTransform getCtm() => ctm;
 
-  CraftCanvasGraphicsState copy() {
-    return CraftCanvasGraphicsState(this);
+  CanvasGraphicsState copy() {
+    return CanvasGraphicsState(this);
   }
 
   double getCharSpacing() => charSpacing;
@@ -77,8 +76,8 @@ class CraftCanvasGraphicsState {
   double getLeading() => leading;
   void setLeading(double value) => leading = value;
 
-  CraftPdfFont? resolveTypeface() => font;
-  void setFont(CraftPdfFont? value) => font = value;
+  PdfFont? resolveTypeface() => font;
+  void setFont(PdfFont? value) => font = value;
 
   double getFontSize() => fontSize;
   void setFontSize(double value) => fontSize = value;
@@ -89,8 +88,8 @@ class CraftCanvasGraphicsState {
   double getTextRise() => textRise;
   void setTextRise(double value) => textRise = value;
 
-  void copyFrom(CraftCanvasGraphicsState source) {
-    ctm = CraftAffineTransform.copy(source.ctm);
+  void copyFrom(CanvasGraphicsState source) {
+    ctm = AffineTransform.copy(source.ctm);
     strokeColor = source.strokeColor;
     fillColor = source.fillColor;
     charSpacing = source.charSpacing;
@@ -129,9 +128,9 @@ class CraftCanvasGraphicsState {
     htp = source.htp;
   }
 
-  Future<void> updateFromExtGState(CraftPdfDictionary extGStateDict,
-      [CraftPdfDocument? pdfDocument]) async {
-    final extGState = CraftPdfExtGState(extGStateDict);
+  Future<void> updateFromExtGState(PdfDictionary extGStateDict,
+      [PdfDocument? pdfDocument]) async {
+    final extGState = PdfExtGState(extGStateDict);
 
     final lw = await extGState.getLineWidth();
     if (lw != null) lineWidth = lw;

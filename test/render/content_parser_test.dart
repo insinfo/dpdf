@@ -42,7 +42,7 @@ void main() {
       final ops = _parse(r'(plain) (a\(b\)c) (line\nbreak) (\101\102) Tj');
 
       final strings =
-          ops.single.operands.cast<CraftPdfString>().map((s) => s.getValue());
+          ops.single.operands.cast<PdfString>().map((s) => s.getValue());
       expect(strings, equals(['plain', 'a(b)c', 'line\nbreak', 'AB']));
     });
 
@@ -50,7 +50,7 @@ void main() {
       final ops = _parse('<48656C6C6F> <41 42> <4> Tj');
 
       final bytes = ops.single.operands
-          .cast<CraftPdfString>()
+          .cast<PdfString>()
           .map((s) => s.getValueBytes()!.toList())
           .toList();
       expect(bytes.first, equals('Hello'.codeUnits));
@@ -62,7 +62,7 @@ void main() {
       final ops = _parse('[(A) -250 (B) 120 (C)] TJ');
 
       expect(ops.single.operator, equals('TJ'));
-      final array = ops.single.operands.single as CraftPdfArray;
+      final array = ops.single.operands.single as PdfArray;
       expect(array.size(), equals(5));
     });
 
@@ -77,9 +77,9 @@ void main() {
     test('reads booleans and null as objects, not operators', () {
       final ops = _parse('true false null Tf');
 
-      expect(ops.single.operands[0], isA<CraftPdfBoolean>());
-      expect(ops.single.operands[1], isA<CraftPdfBoolean>());
-      expect(ops.single.operands[2], isA<CraftPdfNull>());
+      expect(ops.single.operands[0], isA<PdfBoolean>());
+      expect(ops.single.operands[1], isA<PdfBoolean>());
+      expect(ops.single.operands[2], isA<PdfNull>());
     });
 
     test('skips comments', () {
@@ -103,7 +103,7 @@ void main() {
       expect(ops.map((o) => o.operator), equals(['q', 'Do', 'BI', 'Q']));
       final image = ops[2];
       expect(image.inlineImage, isNotNull);
-      expect(image.inlineImage!.getNumberSync(CraftPdfName('W'))?.intValue(),
+      expect(image.inlineImage!.getNumberSync(PdfName('W'))?.intValue(),
           equals(2));
       expect(image.inlineImageData, equals([1, 2, 3, 4]));
     });

@@ -15,7 +15,7 @@ import 'cmap/cmap_codepoint_to_cid.dart';
 import 'cjk_resource_provider.dart';
 
 /// This class is responsible for loading and handling CJK fonts and CMaps.
-class CraftCjkResourceLoader {
+class CjkResourceLoader {
   static final Map<String, Map<String, dynamic>> allCidFonts = {};
   static final Map<String, Set<String>> registryNames = {};
 
@@ -25,24 +25,24 @@ class CraftCjkResourceLoader {
   static const String W_PROP = "W";
   static const String W2_PROP = "W2";
 
-  static CraftCMapLocationResource cmapLocation = CraftCMapLocationResource();
-  static CraftCjkResourceProvider? _resourceProvider;
-  static CraftCMapLocation? _providerCmapLocation;
+  static CMapLocationResource cmapLocation = CMapLocationResource();
+  static CjkResourceProvider? _resourceProvider;
+  static CMapLocation? _providerCmapLocation;
   static bool _loaded = false;
 
-  CraftCjkResourceLoader._();
+  CjkResourceLoader._();
 
   /// Installs resources supplied by the application, or restores path-based
   /// loading when [provider] is null. Existing CJK caches are discarded.
-  static void setResourceProvider(CraftCjkResourceProvider? provider) {
+  static void setResourceProvider(CjkResourceProvider? provider) {
     _resourceProvider = provider;
     _providerCmapLocation =
-        provider == null ? null : CraftCMapLocationFromProvider(provider);
+        provider == null ? null : CMapLocationFromProvider(provider);
     reset();
   }
 
   /// The active CMap source, including an installed in-memory provider.
-  static CraftCMapLocation get activeCmapLocation =>
+  static CMapLocation get activeCmapLocation =>
       _providerCmapLocation ?? cmapLocation;
 
   /// Clears loaded registry and font metadata without changing the provider.
@@ -114,8 +114,8 @@ class CraftCjkResourceLoader {
     return fontProperties;
   }
 
-  static CraftIntHashtable createMetric(String s) {
-    final h = CraftIntHashtable();
+  static IntHashtable createMetric(String s) {
+    final h = IntHashtable();
     final tk = StringTokenizer(s);
     while (tk.hasMoreTokens()) {
       try {
@@ -130,21 +130,21 @@ class CraftCjkResourceLoader {
     return h;
   }
 
-  static Future<CraftCMapCidUni> getCid2UniCmap(String cmap) async {
+  static Future<CMapCidUni> getCid2UniCmap(String cmap) async {
     await init();
-    final cidUni = CraftCMapCidUni();
+    final cidUni = CMapCidUni();
     return await _parseCmap(cmap, cidUni);
   }
 
-  static Future<CraftCMapUniCid> getUni2CidCmap(String uniMap) async {
+  static Future<CMapUniCid> getUni2CidCmap(String uniMap) async {
     await init();
-    final uniCid = CraftCMapUniCid();
+    final uniCid = CMapUniCid();
     return await _parseCmap(uniMap, uniCid);
   }
 
-  static Future<T> _parseCmap<T extends CraftAbstractCMap>(
+  static Future<T> _parseCmap<T extends AbstractCMap>(
       String name, T cmap) async {
-    await CraftCMapParser.loadCidMappings(name, cmap, activeCmapLocation);
+    await CMapParser.loadCidMappings(name, cmap, activeCmapLocation);
     return cmap;
   }
 
@@ -209,50 +209,48 @@ class CraftCjkResourceLoader {
     return fontProperties;
   }
 
-  static CraftCMapCidUni getCid2UniCmapSync(String cmap) {
+  static CMapCidUni getCid2UniCmapSync(String cmap) {
     initSync();
-    final cidUni = CraftCMapCidUni();
+    final cidUni = CMapCidUni();
     _parseCmapSync(cmap, cidUni);
     return cidUni;
   }
 
-  static CraftCMapUniCid getUni2CidCmapSync(String uniMap) {
+  static CMapUniCid getUni2CidCmapSync(String uniMap) {
     initSync();
-    final uniCid = CraftCMapUniCid();
+    final uniCid = CMapUniCid();
     _parseCmapSync(uniMap, uniCid);
     return uniCid;
   }
 
-  static CraftCMapCidToCodepoint getCidToCodepointCmapSync(String cmap) {
+  static CMapCidToCodepoint getCidToCodepointCmapSync(String cmap) {
     initSync();
-    final cidByte = CraftCMapCidToCodepoint();
+    final cidByte = CMapCidToCodepoint();
     _parseCmapSync(cmap, cidByte);
     return cidByte;
   }
 
-  static CraftCMapCodepointToCid getCodepointToCidCmapSync(String uniMap) {
+  static CMapCodepointToCid getCodepointToCidCmapSync(String uniMap) {
     initSync();
-    final cp2cid = CraftCMapCodepointToCid();
+    final cp2cid = CMapCodepointToCid();
     _parseCmapSync(uniMap, cp2cid);
     return cp2cid;
   }
 
-  static Future<CraftCMapCidToCodepoint> getCidToCodepointCmap(
-      String cmap) async {
+  static Future<CMapCidToCodepoint> getCidToCodepointCmap(String cmap) async {
     await init();
-    final cidByte = CraftCMapCidToCodepoint();
+    final cidByte = CMapCidToCodepoint();
     return await _parseCmap(cmap, cidByte);
   }
 
-  static Future<CraftCMapCodepointToCid> getCodepointToCidCmap(
-      String uniMap) async {
+  static Future<CMapCodepointToCid> getCodepointToCidCmap(String uniMap) async {
     await init();
-    final cp2cid = CraftCMapCodepointToCid();
+    final cp2cid = CMapCodepointToCid();
     return await _parseCmap(uniMap, cp2cid);
   }
 
-  static void _parseCmapSync<T extends CraftAbstractCMap>(String name, T cmap) {
-    CraftCMapParser.loadCidMappingsSync(name, cmap, activeCmapLocation);
+  static void _parseCmapSync<T extends AbstractCMap>(String name, T cmap) {
+    CMapParser.loadCidMappingsSync(name, cmap, activeCmapLocation);
   }
 
   static Future<Uint8List?> _readResource(String name) async {

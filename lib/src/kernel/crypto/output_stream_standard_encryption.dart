@@ -5,12 +5,12 @@ import 'package:dpdf/src/kernel/crypto/arcfour_encryption.dart';
 import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
 
 /// Standard encryption output stream (RC4).
-class CraftOutputStreamStandardEncryption extends CraftOutputStreamEncryption {
-  late CraftARCFOUREncryption _arcfour;
+class OutputStreamStandardEncryption extends OutputStreamEncryption {
+  late ARCFOUREncryption _arcfour;
 
-  CraftOutputStreamStandardEncryption(super.output, Uint8List key,
+  OutputStreamStandardEncryption(super.output, Uint8List key,
       [int off = 0, int? len]) {
-    _arcfour = CraftARCFOUREncryption();
+    _arcfour = ARCFOUREncryption();
     _arcfour.prepareARCFOURKey(key, off, len);
   }
 

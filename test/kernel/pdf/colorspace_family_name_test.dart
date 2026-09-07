@@ -6,14 +6,11 @@ import 'package:test/test.dart';
 
 void main() {
   test('PDF family names do not depend on implementation class names', () {
-    expect(PdfSpecialCsPattern().getName(), CraftPdfName.pattern);
-    expect(
-        PdfCieBasedCsCalGray(CraftPdfArray.fromList([CraftPdfName.calGray]))
-            .getName(),
-        CraftPdfName.calGray);
-    expect(
-        PdfCieBasedCsLab(CraftPdfArray.fromList([CraftPdfName.lab])).getName(),
-        CraftPdfName.lab);
-    expect(() => PdfCieBasedCsLab(CraftPdfArray()).getName(), throwsStateError);
+    expect(PdfSpecialCsPattern().getName(), PdfName.pattern);
+    expect(PdfCieBasedCsCalGray(PdfArray.fromList([PdfName.calGray])).getName(),
+        PdfName.calGray);
+    expect(PdfCieBasedCsLab(PdfArray.fromList([PdfName.lab])).getName(),
+        PdfName.lab);
+    expect(() => PdfCieBasedCsLab(PdfArray()).getName(), throwsStateError);
   });
 }

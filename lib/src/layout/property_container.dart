@@ -1,4 +1,4 @@
-abstract class CraftPropertyContainer {
+abstract class PropertyContainer {
   bool hasProperty(int property);
 
   bool hasOwnProperty(int property);

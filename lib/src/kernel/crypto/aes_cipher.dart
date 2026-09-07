@@ -4,15 +4,14 @@ import 'aes_cbc_core.dart';
 
 /// AES cipher implementation using the SDK-only FIPS 197 core.
 /// Supports CBC mode and optional PKCS7 padding.
-class CraftAESCipher {
+class AESCipher {
   final AesCbcCore _cipher;
   final bool _encrypt;
   final bool _usePadding;
   final Uint8List _buffer = Uint8List(16);
   int _bufferPtr = 0;
 
-  CraftAESCipher(bool encrypt, Uint8List key, Uint8List iv,
-      {bool usePadding = true})
+  AESCipher(bool encrypt, Uint8List key, Uint8List iv, {bool usePadding = true})
       : _cipher = AesCbcCore(encrypt, key, iv),
         _encrypt = encrypt,
         _usePadding = usePadding;

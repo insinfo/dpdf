@@ -7,24 +7,23 @@ import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 import 'package:dpdf/src/io/image/image_data.dart';
 import 'package:dpdf/src/io/image/png_image_data.dart';
 
-class CraftPdfImageXObject extends CraftPdfXObject {
+class PdfImageXObject extends PdfXObject {
   late final double _width;
   late final double _height;
 
-  CraftPdfImageXObject(CraftImageData image) : super(_createPdfStream(image)) {
+  PdfImageXObject(ImageData image) : super(_createPdfStream(image)) {
     _width = image.width;
     _height = image.height;
   }
 
-  CraftPdfImageXObject._(super.stream, this._width, this._height);
+  PdfImageXObject._(super.stream, this._width, this._height);
 
-  static Future<CraftPdfImageXObject> createFromStream(
-      CraftPdfStream stream) async {
-    CraftPdfNumber? w = await stream.numberEntry(CraftPdfName.width);
+  static Future<PdfImageXObject> createFromStream(PdfStream stream) async {
+    PdfNumber? w = await stream.numberEntry(PdfName.width);
     double width = w?.getValue() ?? 0;
-    CraftPdfNumber? h = await stream.numberEntry(CraftPdfName.height);
+    PdfNumber? h = await stream.numberEntry(PdfName.height);
     double height = h?.getValue() ?? 0;
-    return CraftPdfImageXObject._(stream, width, height);
+    return PdfImageXObject._(stream, width, height);
   }
 
   @override
@@ -33,85 +32,83 @@ class CraftPdfImageXObject extends CraftPdfXObject {
   @override
   double getHeight() => _height;
 
-  static CraftPdfStream _createPdfStream(CraftImageData image) {
-    final stream = CraftPdfStream.withBytes(image.getData());
-    stream.put(CraftPdfName.type, CraftPdfName.xObject);
-    stream.put(CraftPdfName.subtype, CraftPdfName.image);
+  static PdfStream _createPdfStream(ImageData image) {
+    final stream = PdfStream.withBytes(image.getData());
+    stream.put(PdfName.type, PdfName.xObject);
+    stream.put(PdfName.subtype, PdfName.image);
 
-    stream.put(CraftPdfName.width, CraftPdfNumber(image.width));
-    stream.put(CraftPdfName.height, CraftPdfNumber(image.height));
+    stream.put(PdfName.width, PdfNumber(image.width));
+    stream.put(PdfName.height, PdfNumber(image.height));
 
     if (image.bpc != 0) {
-      stream.put(
-          CraftPdfName.bitsPerComponent, CraftPdfNumber(image.bpc.toDouble()));
+      stream.put(PdfName.bitsPerComponent, PdfNumber(image.bpc.toDouble()));
     }
 
     if (image.filter != null) {
-      stream.put(CraftPdfName.filter, CraftPdfName(image.filter!));
+      stream.put(PdfName.filter, PdfName(image.filter!));
     }
 
     // Colorspace
     if (image.colorEncodingComponentsNumber != -1) {
-      CraftPdfName colorSpaceName;
+      PdfName colorSpaceName;
       switch (image.colorEncodingComponentsNumber) {
         case 1:
-          colorSpaceName = CraftPdfName.deviceGray;
+          colorSpaceName = PdfName.deviceGray;
           break;
         case 3:
-          colorSpaceName = CraftPdfName.deviceRgb;
+          colorSpaceName = PdfName.deviceRgb;
           break;
         case 4:
-          colorSpaceName = CraftPdfName.deviceCmyk;
+          colorSpaceName = PdfName.deviceCmyk;
           break;
         default:
-          colorSpaceName = CraftPdfName.deviceGray;
+          colorSpaceName = PdfName.deviceGray;
       }
 
       if (image.colorPalette != null) {
-        final colorSpace = CraftPdfArray();
-        colorSpace.add(CraftPdfName.indexed);
+        final colorSpace = PdfArray();
+        colorSpace.add(PdfName.indexed);
         colorSpace.add(colorSpaceName);
-        colorSpace.add(
-            CraftPdfNumber((image.colorPalette!.length ~/ 3 - 1).toDouble()));
-        colorSpace.add(CraftPdfStream.withBytes(image.colorPalette!));
-        stream.put(CraftPdfName.colorSpace, colorSpace);
+        colorSpace
+            .add(PdfNumber((image.colorPalette!.length ~/ 3 - 1).toDouble()));
+        colorSpace.add(PdfStream.withBytes(image.colorPalette!));
+        stream.put(PdfName.colorSpace, colorSpace);
       } else {
-        stream.put(CraftPdfName.colorSpace, colorSpaceName);
+        stream.put(PdfName.colorSpace, colorSpaceName);
       }
     }
 
     if (image.decodeParms != null) {
-      final parms = CraftPdfDictionary();
+      final parms = PdfDictionary();
       image.decodeParms!.forEach((key, value) {
         if (value is int) {
-          parms.put(CraftPdfName(key), CraftPdfNumber(value.toDouble()));
+          parms.put(PdfName(key), PdfNumber(value.toDouble()));
         } else if (value is double) {
-          parms.put(CraftPdfName(key), CraftPdfNumber(value));
+          parms.put(PdfName(key), PdfNumber(value));
         } else if (value is String) {
-          parms.put(CraftPdfName(key), CraftPdfName(value));
+          parms.put(PdfName(key), PdfName(value));
         }
       });
-      stream.put(CraftPdfName.decodeParms, parms);
+      stream.put(PdfName.decodeParms, parms);
     }
 
-    if (image is CraftPngImageData) {
+    if (image is PngImageData) {
       if (image.smask != null) {
-        final mask = CraftPdfImageXObject(image.smask!);
-        stream.put(CraftPdfName.sMask, mask.pdfRepresentation());
+        final mask = PdfImageXObject(image.smask!);
+        stream.put(PdfName.sMask, mask.pdfRepresentation());
       }
       if (image.transparency != null) {
-        stream.put(
-            CraftPdfName.mask, CraftPdfArray.fromInts(image.transparency!));
+        stream.put(PdfName.mask, PdfArray.fromInts(image.transparency!));
       }
     }
 
     Object? mask = image.imageAttributes?["Mask"];
     if (mask is List<int>) {
-      stream.put(CraftPdfName.mask, CraftPdfArray.fromInts(mask));
+      stream.put(PdfName.mask, PdfArray.fromInts(mask));
     }
 
     if (image.decode != null) {
-      stream.put(CraftPdfName.decode, CraftPdfArray.fromDoubles(image.decode!));
+      stream.put(PdfName.decode, PdfArray.fromDoubles(image.decode!));
     }
 
     return stream;

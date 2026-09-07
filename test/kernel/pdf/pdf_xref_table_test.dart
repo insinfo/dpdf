@@ -4,9 +4,9 @@ import 'package:test/test.dart';
 
 void main() {
   test('clearAllReferences deixa somente a entrada obrigatória zero', () {
-    final table = CraftPdfXrefTable()
-      ..add(CraftPdfIndirectReference(1, 0))
-      ..add(CraftPdfIndirectReference(4, 0));
+    final table = PdfXrefTable()
+      ..add(PdfIndirectReference(1, 0))
+      ..add(PdfIndirectReference(4, 0));
 
     table.clearAllReferences();
 
@@ -17,9 +17,9 @@ void main() {
   });
 
   test('clear conserva entradas livres acessíveis e ajusta seu limite', () {
-    final table = CraftPdfXrefTable()
-      ..add(CraftPdfIndirectReference(1, 0))
-      ..add(CraftPdfIndirectReference(4, 0));
+    final table = PdfXrefTable()
+      ..add(PdfIndirectReference(1, 0))
+      ..add(PdfIndirectReference(4, 0));
     table.freeReference(table.get(4)!);
 
     table.clear();

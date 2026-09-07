@@ -6,15 +6,15 @@ import 'package:dpdf/src/commons/dpdf_log_manager.dart';
 
 class _Notification extends AbstractEvent {}
 
-class _Handler implements CraftEventHandler {
-  final void Function(CraftEvent) callback;
+class _Handler implements EventHandler {
+  final void Function(Event) callback;
   _Handler(this.callback);
   @override
-  void onEvent(CraftEvent event) => callback(event);
+  void onEvent(Event event) => callback(event);
 }
 
 void main() {
-  final manager = CraftEventManager.instance;
+  final manager = EventManager.instance;
   setUp(manager.clear);
   tearDown(() {
     manager.clear();
@@ -115,8 +115,7 @@ void main() {
     expect(error.getCause(), same(cause));
     expect(error.getMessage(), 'write failed');
     expect(error.toString(), contains('disk full'));
-    final aggregate =
-        CraftAggregatedException('multiple failures', [error], cause);
+    final aggregate = AggregatedException('multiple failures', [error], cause);
     expect(aggregate.toString(), contains('[0] Exception: write failed'));
     expect(aggregate.toString(), contains('Caused by: Bad state: disk full'));
     expect(DpdfException.withDefaultMessage().getMessage(), isNotEmpty);

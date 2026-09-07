@@ -1,7 +1,7 @@
 /// Standard structure element roles as defined by PDF specification.
 /// These roles are used for accessibility tagging in PDF documents.
-class CraftStandardRoles {
-  CraftStandardRoles._();
+class StandardRoles {
+  StandardRoles._();
 
   static const String annot = 'Annot';
   static const String art = 'Art';

@@ -10,7 +10,7 @@ import 'ocsp_client.dart';
 import 'certificate_details.dart';
 
 /// OcspClient implementation using the local DER model and Dart HTTP client.
-class HttpOcspClient implements CraftOcspClient {
+class HttpOcspClient implements OcspClient {
   static final _logger = LogManager.getLoggerByName('HttpOcspClient');
 
   /// Creates an HttpOcspClient instance.
@@ -76,7 +76,7 @@ class HttpOcspClient implements CraftOcspClient {
 
   Future<Uint8List?> _getOcspResponse(CertificateDetails checkCert,
       CertificateDetails rootCert, String? url) async {
-    url ??= CraftCertificateUtil.getOCSPURL(checkCert);
+    url ??= CertificateUtil.getOCSPURL(checkCert);
     if (url == null) return null;
 
     // Generate Request
@@ -160,7 +160,7 @@ class HttpOcspClient implements CraftOcspClient {
   }
 
   Uint8List _calculateSha1(Uint8List input) {
-    final digest = CraftDigestAlgorithms.getMessageDigest("SHA-1");
+    final digest = DigestAlgorithms.getMessageDigest("SHA-1");
     // DigestAlgorithms wrapper usually exposes process or digestWithInput or similar
     return digest.digestWithInput(input);
   }

@@ -15,17 +15,17 @@ void main() {
       final originalBytes = await _createTaggedPdf();
 
       final appendBuilder = BytesBuilder();
-      final appendWriter = CraftPdfWriter.fromBytesBuilder(appendBuilder);
-      final reader = CraftPdfReader.fromBytes(originalBytes);
-      final props = CraftStampingProperties()..useAppendMode();
-      final doc = CraftPdfDocument(
-          reader: reader, writer: appendWriter, properties: props);
+      final appendWriter = PdfWriter.fromBytesBuilder(appendBuilder);
+      final reader = PdfReader.fromBytes(originalBytes);
+      final props = StampingProperties()..useAppendMode();
+      final doc =
+          PdfDocument(reader: reader, writer: appendWriter, properties: props);
       await doc.load();
 
       final root = await doc.loadStructureRoot();
       expect(root, isNotNull);
 
-      final newElem = CraftPdfStructElem.withRole(doc, CraftPdfName('P'));
+      final newElem = PdfStructElem.withRole(doc, PdfName('P'));
       await root!.addKid(newElem);
 
       await doc.close();
@@ -36,7 +36,7 @@ void main() {
           equals(originalBytes));
 
       final readDoc =
-          CraftPdfDocument.fromReader(CraftPdfReader.fromBytes(appendedBytes));
+          PdfDocument.fromReader(PdfReader.fromBytes(appendedBytes));
       await readDoc.load();
 
       final readRoot = await readDoc.loadStructureRoot();
@@ -45,17 +45,17 @@ void main() {
       final kids = await readRoot!.getKids();
       expect(kids.length, 2);
 
-      final roles = <CraftPdfName>[];
+      final roles = <PdfName>[];
       for (final kid in kids) {
-        expect(kid is CraftPdfDictionary, isTrue);
-        final elem = CraftPdfStructElem(kid as CraftPdfDictionary);
+        expect(kid is PdfDictionary, isTrue);
+        final elem = PdfStructElem(kid as PdfDictionary);
         final role = await elem.getRole();
         expect(role, isNotNull);
         roles.add(role!);
       }
 
-      expect(roles, contains(CraftPdfName('Document')));
-      expect(roles, contains(CraftPdfName('P')));
+      expect(roles, contains(PdfName('Document')));
+      expect(roles, contains(PdfName('P')));
 
       await readDoc.close();
     });
@@ -64,12 +64,12 @@ void main() {
 
 Future<Uint8List> _createTaggedPdf() async {
   final builder = BytesBuilder();
-  final writer = CraftPdfWriter.fromBytesBuilder(builder);
-  final doc = CraftPdfDocument(writer: writer);
+  final writer = PdfWriter.fromBytesBuilder(builder);
+  final doc = PdfDocument(writer: writer);
   await doc.appendBlankPage();
 
   final root = doc.structureRoot();
-  final docElem = CraftPdfStructElem.withRole(doc, CraftPdfName('Document'));
+  final docElem = PdfStructElem.withRole(doc, PdfName('Document'));
   await root.addKid(docElem);
 
   await doc.close();

@@ -1,6 +1,6 @@
 /// Diagnostic templates for DPDF. Public identifiers and format slots are stable.
-class CraftSvgLogMessageConstant {
-  CraftSvgLogMessageConstant._();
+class SvgLogMessageConstant {
+  SvgLogMessageConstant._();
 
   static const String CUSTOM_ABSTRACT_CSS_CONTEXT_NOT_SUPPORTED =
       'This renderer does not accept custom AbstractCssContext implementations.';

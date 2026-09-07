@@ -2,7 +2,7 @@ import 'package:dpdf/src/styledxmlparser/css/resolve/style_inheritance.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 
 /// Determines whether an SVG attribute can be inherited.
-class CraftSvgAttributeInheritance implements CraftStyleInheritance {
+class SvgAttributeInheritance implements StyleInheritance {
   /// Set of inheritable SVG style attributes in accordance with "https://www.w3.org/TR/SVG2/propidx.html".
   static final Set<String> _inheritableProperties = {
     SvgAttributes.DIRECTION,

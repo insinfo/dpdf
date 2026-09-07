@@ -37,8 +37,8 @@ class XmpIdentification {
   /// The packet is read as text rather than through an RDF model: the four
   /// values below are the only ones a conformance check needs, and they appear
   /// either as an attribute or as an element, in packets written by any tool.
-  static Future<XmpIdentification> read(CraftPdfDictionary catalog) async {
-    final stream = await catalog.streamEntry(CraftPdfName.metadata);
+  static Future<XmpIdentification> read(PdfDictionary catalog) async {
+    final stream = await catalog.streamEntry(PdfName.metadata);
     if (stream == null) return none;
 
     String packet;

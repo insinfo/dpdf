@@ -1,6 +1,6 @@
 /// Encryption constants for .
-class CraftEncryptionConstants {
-  CraftEncryptionConstants._();
+class EncryptionConstants {
+  EncryptionConstants._();
 
   /// Selects RC4 with a 40-bit key.
   static const int standardEncryption40 = 0;

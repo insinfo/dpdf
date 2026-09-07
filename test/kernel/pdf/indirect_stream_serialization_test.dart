@@ -9,21 +9,19 @@ void main() {
     test('Nested shared streams become indirect, compression=$compressed',
         () async {
       final buffer = BytesBuilder();
-      final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(
-          buffer,
-          properties:
-              CraftWriterProperties().setFullCompressionMode(compressed)));
+      final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(buffer,
+          properties: WriterProperties().setFullCompressionMode(compressed)));
       final content =
-          CraftPdfStream.withBytes(Uint8List.fromList(ascii.encode('q Q')), 0);
-      final nested = CraftPdfStream.withBytes(
+          PdfStream.withBytes(Uint8List.fromList(ascii.encode('q Q')), 0);
+      final nested = PdfStream.withBytes(
           Uint8List.fromList(ascii.encode('nested-data')), 0);
       for (var i = 0; i < 2; i++) {
         final page = await doc.appendBlankPage();
-        page.pdfRepresentation().put(CraftPdfName.contents, content);
+        page.pdfRepresentation().put(PdfName.contents, content);
         page.pdfRepresentation().put(
-            CraftPdfName.resources,
-            CraftPdfDictionary()
-              ..put(CraftPdfName('Fixture'), CraftPdfArray.fromList([nested])));
+            PdfName.resources,
+            PdfDictionary()
+              ..put(PdfName('Fixture'), PdfArray.fromList([nested])));
       }
       await doc.close();
       expect(content.indirectHandle(), isNotNull);
@@ -34,14 +32,13 @@ void main() {
       expect(RegExp(r'/Contents\s*<<').hasMatch(raw), isFalse);
       final n = content.indirectHandle()!.objectNumber();
       expect(RegExp('$n 0 obj\\s*<<[^>]*>>\\s*stream').hasMatch(raw), isTrue);
-      final reopened =
-          await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+      final reopened = await PdfDocument.open(PdfReader.fromBytes(bytes));
       final first = await (await reopened.pageAt(1))!.contentSegmentAt(0);
       final second = await (await reopened.pageAt(2))!.contentSegmentAt(0);
       expect(first!.indirectHandle()!.objectNumber(), n);
       expect(second!.indirectHandle()!.objectNumber(), n);
-      expect(ascii.decode((await (first as CraftPdfStream).getBytes(false))!),
-          'q Q');
+      expect(
+          ascii.decode((await (first as PdfStream).getBytes(false))!), 'q Q');
       await reopened.close();
     });
   }

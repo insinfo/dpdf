@@ -6,7 +6,7 @@ import '../../kernel/pdf/pdf_string.dart';
 import '../../commons/dpdf_log_manager.dart';
 import 'pdf_form_field.dart';
 
-class CraftPdfChoiceFormField extends CraftPdfFormField {
+class PdfChoiceFormField extends PdfFormField {
   static const int ffCombo = 1 << 17; // Bit 18
   static const int ffEdit = 1 << 18; // Bit 19
   static const int ffSort = 1 << 19; // Bit 20
@@ -16,28 +16,28 @@ class CraftPdfChoiceFormField extends CraftPdfFormField {
 
   static final _logger = LogManager.getLoggerByName('PdfChoiceFormField');
 
-  CraftPdfChoiceFormField(super.pdfObject);
+  PdfChoiceFormField(super.pdfObject);
 
   @override
-  Future<CraftPdfName?> getFormType() async {
-    return CraftPdfName.ch;
+  Future<PdfName?> getFormType() async {
+    return PdfName.ch;
   }
 
   void setTopIndex(int index) {
-    put(CraftPdfName.ti, CraftPdfNumber(index.toDouble()));
+    put(PdfName.ti, PdfNumber(index.toDouble()));
     regenerateField();
   }
 
-  Future<CraftPdfNumber?> getTopIndex() async {
-    return pdfRepresentation().numberEntry(CraftPdfName.ti);
+  Future<PdfNumber?> getTopIndex() async {
+    return pdfRepresentation().numberEntry(PdfName.ti);
   }
 
-  void setIndices(CraftPdfArray indices) {
-    put(CraftPdfName.i, indices);
+  void setIndices(PdfArray indices) {
+    put(PdfName.i, indices);
   }
 
-  Future<CraftPdfArray?> getIndices() async {
-    return pdfRepresentation().arrayEntry(CraftPdfName.i);
+  Future<PdfArray?> getIndices() async {
+    return pdfRepresentation().arrayEntry(PdfName.i);
   }
 
   Future<bool> isCombo() async {
@@ -88,12 +88,11 @@ class CraftPdfChoiceFormField extends CraftPdfFormField {
     setFieldFlag(ffCommitOnSelChange, commitOnSelChange);
   }
 
-  Future<CraftPdfArray> getOptions() async {
-    CraftPdfArray? options =
-        await pdfRepresentation().arrayEntry(CraftPdfName.opt);
+  Future<PdfArray> getOptions() async {
+    PdfArray? options = await pdfRepresentation().arrayEntry(PdfName.opt);
     if (options == null) {
-      options = CraftPdfArray();
-      put(CraftPdfName.opt, options);
+      options = PdfArray();
+      put(PdfName.opt, options);
     }
     return options;
   }
@@ -104,9 +103,9 @@ class CraftPdfChoiceFormField extends CraftPdfFormField {
       _logger.logWarning(
           "This field permits one selection, but several values were supplied.");
     }
-    CraftPdfArray options = await getOptions();
-    CraftPdfArray indices = CraftPdfArray();
-    CraftPdfArray values = CraftPdfArray();
+    PdfArray options = await getOptions();
+    PdfArray indices = PdfArray();
+    PdfArray values = PdfArray();
     List<String?> optionsNames = await _optionsToUnicodeNames();
 
     for (String element in optionValues) {
@@ -114,21 +113,20 @@ class CraftPdfChoiceFormField extends CraftPdfFormField {
       // Prefer exported values; display labels remain accepted for compatibility.
       for (var candidate = 0; candidate < options.size(); candidate++) {
         final option = await options.get(candidate);
-        final exported = option is CraftPdfArray ? await option.get(0) : option;
-        if (exported is CraftPdfString &&
-            exported.decodeMappingText() == element) {
+        final exported = option is PdfArray ? await option.get(0) : option;
+        if (exported is PdfString && exported.decodeMappingText() == element) {
           index = candidate;
           break;
         }
       }
       if (index == -1) index = optionsNames.indexOf(element);
       if (index != -1) {
-        indices.add(CraftPdfNumber(index.toDouble()));
-        CraftPdfObject? optByIndex = await options.get(index);
-        if (optByIndex is CraftPdfString) {
+        indices.add(PdfNumber(index.toDouble()));
+        PdfObject? optByIndex = await options.get(index);
+        if (optByIndex is PdfString) {
           values.add(optByIndex);
-        } else if (optByIndex is CraftPdfArray) {
-          CraftPdfObject? val = await optByIndex.get(0);
+        } else if (optByIndex is PdfArray) {
+          PdfObject? val = await optByIndex.get(0);
           if (val != null) {
             values.add(val);
           }
@@ -140,20 +138,20 @@ class CraftPdfChoiceFormField extends CraftPdfFormField {
           _logger.logWarning(
               "The supplied value does not match any configured option.");
         }
-        values.add(CraftPdfString(element));
+        values.add(PdfString(element));
       }
     }
 
     if (indices.size() > 0) {
       setIndices(indices);
     } else {
-      pdfRepresentation().remove(CraftPdfName.i);
+      pdfRepresentation().remove(PdfName.i);
     }
 
     if (values.size() == 1) {
-      put(CraftPdfName.v, await values.get(0) ?? CraftPdfString(''));
+      put(PdfName.v, await values.get(0) ?? PdfString(''));
     } else {
-      put(CraftPdfName.v, values);
+      put(PdfName.v, values);
     }
 
     if (generateAppearance) {
@@ -162,15 +160,15 @@ class CraftPdfChoiceFormField extends CraftPdfFormField {
   }
 
   Future<List<String?>> _optionsToUnicodeNames() async {
-    CraftPdfArray options = await getOptions();
+    PdfArray options = await getOptions();
     List<String?> names = [];
     for (int i = 0; i < options.size(); i++) {
-      CraftPdfObject? obj = await options.get(i);
-      if (obj is CraftPdfString) {
+      PdfObject? obj = await options.get(i);
+      if (obj is PdfString) {
         names.add(obj.decodeMappingText());
-      } else if (obj is CraftPdfArray && obj.size() > 1) {
-        CraftPdfObject? val = await obj.get(1);
-        if (val is CraftPdfString) {
+      } else if (obj is PdfArray && obj.size() > 1) {
+        PdfObject? val = await obj.get(1);
+        if (val is PdfString) {
           names.add(val.decodeMappingText());
         } else {
           names.add(null);

@@ -12,21 +12,21 @@ import 'package:dpdf/src/layout/properties/unit_value.dart';
 import 'package:dpdf/src/layout/renderer/renderer.dart';
 import 'package:dpdf/src/layout/renderer/cell_renderer.dart';
 
-class CraftTableRenderer extends CraftAbstractRenderer {
+class TableRenderer extends AbstractRenderer {
   List<double>? columns;
-  List<List<CraftCellRenderer?>> rows = [];
+  List<List<CellRenderer?>> rows = [];
 
-  CraftTableRenderer(CraftTable super.modelElement);
+  TableRenderer(Table super.modelElement);
 
   @override
-  CraftTable getModelElement() {
-    return super.getModelElement() as CraftTable;
+  Table getModelElement() {
+    return super.getModelElement() as Table;
   }
 
   @override
-  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
-    CraftLayoutArea area = layoutContext.getArea();
-    CraftRectangle parentBox = area.getBBox().clone();
+  LayoutResult? layout(LayoutContext layoutContext) {
+    LayoutArea area = layoutContext.getArea();
+    Rectangle parentBox = area.getBBox().clone();
     double availableWidth = parentBox.getWidth();
 
     // Resolve columns
@@ -52,22 +52,22 @@ class CraftTableRenderer extends CraftAbstractRenderer {
     // To do this, we layout each cell in the row with calculated width and infinite height.
 
     for (int r = 0; r < rows.length; r++) {
-      List<CraftCellRenderer?> row = rows[r];
+      List<CellRenderer?> row = rows[r];
       double rowHeight = 0;
 
       // Pass 1: Measure Max Height for cells (including rowspans effectively sets min height for the first row of span)
       for (int c = 0; c < row.length; c++) {
-        CraftCellRenderer? cell = row[c];
+        CellRenderer? cell = row[c];
         if (cell == null || isPlaceholder(r, c)) continue;
 
-        CraftCell cellModel = cell.getModelElement() as CraftCell;
+        Cell cellModel = cell.getModelElement() as Cell;
 
         double cellW = getCellWidth(c, cellModel.colspan);
 
-        CraftLayoutArea cellMeasureArea = CraftLayoutArea(
-            area.pageOrdinal(), CraftRectangle(0, 0, cellW, 10000));
-        CraftLayoutResult? measureResult =
-            cell.layout(CraftLayoutContext(cellMeasureArea));
+        LayoutArea cellMeasureArea =
+            LayoutArea(area.pageOrdinal(), Rectangle(0, 0, cellW, 10000));
+        LayoutResult? measureResult =
+            cell.layout(LayoutContext(cellMeasureArea));
 
         if (measureResult != null && measureResult.getOccupiedArea() != null) {
           double h = measureResult.getOccupiedArea()!.getBBox().getHeight();
@@ -77,46 +77,44 @@ class CraftTableRenderer extends CraftAbstractRenderer {
 
       // Check for available height
       if (totalHeight + rowHeight > parentBox.getHeight() && r > 0) {
-        CraftTableRenderer splitRenderer =
-            createSplitRenderer(CraftLayoutResult.PARTIAL)
-                as CraftTableRenderer;
+        TableRenderer splitRenderer =
+            createSplitRenderer(LayoutResult.PARTIAL) as TableRenderer;
         splitRenderer.rows = rows.sublist(0, r);
         splitRenderer._populateChildRenderersFromRows();
 
-        CraftTableRenderer overflowRenderer =
-            createOverflowRenderer(CraftLayoutResult.PARTIAL)
-                as CraftTableRenderer;
+        TableRenderer overflowRenderer =
+            createOverflowRenderer(LayoutResult.PARTIAL) as TableRenderer;
         overflowRenderer.rows = rows.sublist(r);
         overflowRenderer._populateChildRenderersFromRows();
 
-        occupiedArea = CraftLayoutArea(
+        occupiedArea = LayoutArea(
             area.pageOrdinal(),
-            CraftRectangle(
+            Rectangle(
                 parentBox.getX(),
                 parentBox.getY() + parentBox.getHeight() - totalHeight,
                 parentBox.getWidth(),
                 totalHeight));
-        return CraftLayoutResult(CraftLayoutResult.PARTIAL, occupiedArea,
-            splitRenderer, overflowRenderer);
+        return LayoutResult(LayoutResult.PARTIAL, occupiedArea, splitRenderer,
+            overflowRenderer);
       }
 
       // Pass 2: Set final rects for this row
       double currentColX = 0;
       for (int c = 0; c < columns!.length; c++) {
         if (c >= row.length) break;
-        CraftCellRenderer? cell = row[c];
+        CellRenderer? cell = row[c];
         double colW = columns![c];
 
         if (cell != null && !isPlaceholder(r, c)) {
-          CraftCell cellModel = cell.getModelElement() as CraftCell;
+          Cell cellModel = cell.getModelElement() as Cell;
           double cellW = getCellWidth(c, cellModel.colspan);
           double cellH = rowHeight;
 
-          CraftLayoutArea finalArea = CraftLayoutArea(
+          LayoutArea finalArea = LayoutArea(
               area.pageOrdinal(),
-              CraftRectangle(
+              Rectangle(
                   parentBox.getX() + currentColX, curY - cellH, cellW, cellH));
-          cell.layout(CraftLayoutContext(finalArea));
+          cell.layout(LayoutContext(finalArea));
         }
         currentColX += colW;
       }
@@ -134,21 +132,21 @@ class CraftTableRenderer extends CraftAbstractRenderer {
       tableWidth = availableWidth;
     }
 
-    occupiedArea = CraftLayoutArea(
+    occupiedArea = LayoutArea(
         area.pageOrdinal(),
-        CraftRectangle(
+        Rectangle(
             parentBox.getX(),
             parentBox.getY() + parentBox.getHeight() - totalHeight,
             tableWidth,
             totalHeight));
 
-    return CraftLayoutResult(CraftLayoutResult.FULL, occupiedArea, null, null);
+    return LayoutResult(LayoutResult.FULL, occupiedArea, null, null);
   }
 
   void prepareColumns(double availableWidth) {
     if (columns != null) return;
-    CraftTable table = getModelElement();
-    List<CraftUnitValue>? definedWidths = table.columnWidths;
+    Table table = getModelElement();
+    List<UnitValue>? definedWidths = table.columnWidths;
 
     if (definedWidths == null || definedWidths.isEmpty) {
       // Default: single column?
@@ -185,9 +183,9 @@ class CraftTableRenderer extends CraftAbstractRenderer {
     int r = 0;
     int c = 0;
 
-    for (CraftRenderer child in childRenderers) {
-      if (child is CraftCellRenderer) {
-        CraftCell cellModel = child.getModelElement() as CraftCell;
+    for (Renderer child in childRenderers) {
+      if (child is CellRenderer) {
+        Cell cellModel = child.getModelElement() as Cell;
         int colspan = cellModel.colspan;
         int rowspan = cellModel.rowspan;
 
@@ -246,7 +244,7 @@ class CraftTableRenderer extends CraftAbstractRenderer {
   }
 
   @override
-  Future<void> draw(CraftDrawContext drawContext) async {
+  Future<void> draw(DrawContext drawContext) async {
     await super.draw(drawContext);
     // Borders are drawn by CellRenderers?
     // AbstractRenderer.drawBorder draws individual borders.
@@ -254,13 +252,13 @@ class CraftTableRenderer extends CraftAbstractRenderer {
   }
 
   @override
-  CraftRenderer getNextRenderer() {
-    return CraftTableRenderer(getModelElement());
+  Renderer getNextRenderer() {
+    return TableRenderer(getModelElement());
   }
 
   @override
-  CraftAbstractRenderer createSplitRenderer(int layoutResult) {
-    CraftTableRenderer splitRenderer = getNextRenderer() as CraftTableRenderer;
+  AbstractRenderer createSplitRenderer(int layoutResult) {
+    TableRenderer splitRenderer = getNextRenderer() as TableRenderer;
     splitRenderer.modelElement = modelElement;
     splitRenderer.parent = parent;
     splitRenderer.columns = columns;
@@ -268,9 +266,8 @@ class CraftTableRenderer extends CraftAbstractRenderer {
   }
 
   @override
-  CraftAbstractRenderer createOverflowRenderer(int layoutResult) {
-    CraftTableRenderer overflowRenderer =
-        getNextRenderer() as CraftTableRenderer;
+  AbstractRenderer createOverflowRenderer(int layoutResult) {
+    TableRenderer overflowRenderer = getNextRenderer() as TableRenderer;
     overflowRenderer.modelElement = modelElement;
     overflowRenderer.parent = parent;
     overflowRenderer.columns = columns;
@@ -279,7 +276,7 @@ class CraftTableRenderer extends CraftAbstractRenderer {
 
   void _populateChildRenderersFromRows() {
     childRenderers.clear();
-    Set<CraftRenderer> uniqueChildren = {};
+    Set<Renderer> uniqueChildren = {};
     for (var row in rows) {
       for (var cell in row) {
         if (cell != null) {
@@ -295,7 +292,7 @@ class CraftTableRenderer extends CraftAbstractRenderer {
   }
 }
 
-class _CellPlaceholder extends CraftCellRenderer {
-  final CraftCellRenderer origin;
-  _CellPlaceholder(this.origin) : super(origin.getModelElement() as CraftCell);
+class _CellPlaceholder extends CellRenderer {
+  final CellRenderer origin;
+  _CellPlaceholder(this.origin) : super(origin.getModelElement() as Cell);
 }

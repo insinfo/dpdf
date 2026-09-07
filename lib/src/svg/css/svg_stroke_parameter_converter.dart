@@ -14,14 +14,14 @@ class SvgStrokeParameterConverter {
       String? strokeDashArray,
       String? strokeDashOffset,
       double fontSize,
-      CraftSvgDrawContext context) {
+      SvgDrawContext context) {
     if (strokeDashArray != null &&
         strokeDashArray.toLowerCase() != SvgValues.NONE) {
       double rem = context.getCssContext().getRootFontSize();
       double percentBaseValue =
-          CraftSvgCoordinateUtils.calculateNormalizedDiagonalLength(context);
+          SvgCoordinateUtils.calculateNormalizedDiagonalLength(context);
       List<String> dashArrayStrings =
-          CraftSvgCssUtils.splitValueList(strokeDashArray);
+          SvgCssUtils.splitValueList(strokeDashArray);
 
       if (dashArrayStrings.isNotEmpty) {
         if (dashArrayStrings.length % 2 == 1) {
@@ -32,7 +32,7 @@ class SvgStrokeParameterConverter {
 
         List<double> dashArrayData = [];
         for (String s in dashArrayStrings) {
-          dashArrayData.add(CraftCssDimensionParsingUtils.parseLength(
+          dashArrayData.add(CssDimensionParsingUtils.parseLength(
               s, percentBaseValue, 1.0, fontSize, rem));
         }
 
@@ -41,7 +41,7 @@ class SvgStrokeParameterConverter {
         if (strokeDashOffset != null &&
             strokeDashOffset.isNotEmpty &&
             strokeDashOffset.toLowerCase() != SvgValues.NONE) {
-          dashPhase = CraftCssDimensionParsingUtils.parseLength(
+          dashPhase = CssDimensionParsingUtils.parseLength(
               strokeDashOffset, percentBaseValue, 1.0, fontSize, rem);
         }
 

@@ -8,13 +8,13 @@ import '../kernel/pdf/xobject/pdf_form_x_object.dart';
 ///
 /// A 2D barcode is a barcode with two dimensions; this means that
 /// data can be encoded vertically and horizontally.
-abstract class CraftBarcode2D {
+abstract class Barcode2D {
   static const double DEFAULT_MODULE_SIZE = 1;
 
   /// Gets the maximum area that the barcode and the text, if any, will occupy.
   ///
   /// The lower left corner is always (0, 0).
-  CraftRectangle? getBarcodeSize();
+  Rectangle? getBarcodeSize();
 
   /// Places the barcode in a [PdfCanvas].
   ///
@@ -23,11 +23,11 @@ abstract class CraftBarcode2D {
   /// [canvas] - the [PdfCanvas] where the barcode will be placed
   /// [foreground] - the foreground color. It can be [null]
   /// Returns the dimensions the barcode occupies
-  CraftRectangle? placeBarcode(CraftPdfCanvas canvas, CraftColor? foreground);
+  Rectangle? placeBarcode(PdfCanvas canvas, Color? foreground);
 
   /// Creates a [PdfFormXObject] with the barcode.
   ///
   /// Default foreground color will be used.
-  Future<CraftPdfFormXObject> createFormXObject(CraftPdfDocument document,
-      [CraftColor? foreground]);
+  Future<PdfFormXObject> createFormXObject(PdfDocument document,
+      [Color? foreground]);
 }

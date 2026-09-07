@@ -18,22 +18,20 @@ enum PdfMergeSignaturePolicy {
 
 class PdfFormMerge {
   static Future<PdfFormMergePlan> prepare(
-      CraftPdfDocument source, List<CraftPdfPage> selected,
+      PdfDocument source, List<PdfPage> selected,
       {PdfMergeSignaturePolicy signaturePolicy =
           PdfMergeSignaturePolicy.reject}) async {
-    final pages = HashSet<CraftPdfDictionary>.identity();
-    final widgetPages =
-        HashMap<CraftPdfDictionary, CraftPdfDictionary>.identity();
+    final pages = HashSet<PdfDictionary>.identity();
+    final widgetPages = HashMap<PdfDictionary, PdfDictionary>.identity();
     for (final page in selected) {
       final dictionary = page.pdfRepresentation();
       pages.add(dictionary);
-      final annotations = await dictionary.arrayEntry(CraftPdfName.annots);
+      final annotations = await dictionary.arrayEntry(PdfName.annots);
       if (annotations != null) {
         for (var i = 0; i < annotations.size(); i++) {
           final widget = await annotations.dictionaryEntry(i);
           if (widget != null &&
-              await widget.nameEntry(CraftPdfName.subtype) ==
-                  CraftPdfName.widget) {
+              await widget.nameEntry(PdfName.subtype) == PdfName.widget) {
             widgetPages[widget] = dictionary;
           }
         }
@@ -42,7 +40,7 @@ class PdfFormMerge {
     final form = await source
         .rootCatalog()
         .pdfRepresentation()
-        .dictionaryEntry(CraftPdfName.acroForm);
+        .dictionaryEntry(PdfName.acroForm);
     if (form == null) {
       if (widgetPages.isNotEmpty) {
         throw FormatException('Page widgets have no AcroForm hierarchy');
@@ -50,44 +48,43 @@ class PdfFormMerge {
       return PdfFormMergePlan._(null, [], widgetPages, signaturePolicy);
     }
     for (final key in ['XFA', 'CO', 'AA']) {
-      if (form.containsKey(CraftPdfName(key))) {
+      if (form.containsKey(PdfName(key))) {
         throw UnsupportedError(
             'AcroForm /$key requires specialized merge support');
       }
     }
-    final roots = await form.arrayEntry(CraftPdfName.fields);
-    final seen = HashSet<CraftPdfDictionary>.identity();
-    final accounted = HashSet<CraftPdfDictionary>.identity();
+    final roots = await form.arrayEntry(PdfName.fields);
+    final seen = HashSet<PdfDictionary>.identity();
+    final accounted = HashSet<PdfDictionary>.identity();
     Future<_FieldNode> visit(
-        CraftPdfDictionary dictionary, String? inheritedType, int depth) async {
+        PdfDictionary dictionary, String? inheritedType, int depth) async {
       if (depth > 128 || !seen.add(dictionary)) {
         throw FormatException('Cyclic or shared AcroForm field hierarchy');
       }
       for (final key in ['A', 'AA']) {
-        if (dictionary.containsKey(CraftPdfName(key))) {
+        if (dictionary.containsKey(PdfName(key))) {
           throw UnsupportedError('Field actions require merge reconciliation');
         }
       }
-      final type = (await dictionary.nameEntry(CraftPdfName.ft))?.getValue() ??
-          inheritedType;
+      final type =
+          (await dictionary.nameEntry(PdfName.ft))?.getValue() ?? inheritedType;
       final signed =
-          type == 'Sig' && await dictionary.get(CraftPdfName.v, true) != null;
+          type == 'Sig' && await dictionary.get(PdfName.v, true) != null;
       if (signed && signaturePolicy == PdfMergeSignaturePolicy.reject) {
         throw UnsupportedError(
             'Merging would invalidate an existing PDF signature');
       }
       final children = <_FieldNode>[];
-      final widgets = <CraftPdfDictionary>[];
-      final kids = await dictionary.arrayEntry(CraftPdfName.kids);
+      final widgets = <PdfDictionary>[];
+      final kids = await dictionary.arrayEntry(PdfName.kids);
       if (kids != null) {
         for (var i = 0; i < kids.size(); i++) {
           final child = await kids.dictionaryEntry(i);
           if (child == null) {
             throw FormatException('AcroForm child must be a dictionary');
           }
-          if (await child.nameEntry(CraftPdfName.subtype) ==
-                  CraftPdfName.widget &&
-              !child.containsKey(CraftPdfName.t)) {
+          if (await child.nameEntry(PdfName.subtype) == PdfName.widget &&
+              !child.containsKey(PdfName.t)) {
             if (widgetPages.containsKey(child)) {
               widgets.add(child);
               accounted.add(child);
@@ -97,15 +94,14 @@ class PdfFormMerge {
           }
         }
       }
-      if (await dictionary.nameEntry(CraftPdfName.subtype) ==
-              CraftPdfName.widget &&
+      if (await dictionary.nameEntry(PdfName.subtype) == PdfName.widget &&
           widgetPages.containsKey(dictionary)) {
         widgets.add(dictionary);
         accounted.add(dictionary);
       }
-      final hasAnyWidgets = await dictionary.nameEntry(CraftPdfName.subtype) ==
-              CraftPdfName.widget ||
-          (kids != null && children.isEmpty);
+      final hasAnyWidgets =
+          await dictionary.nameEntry(PdfName.subtype) == PdfName.widget ||
+              (kids != null && children.isEmpty);
       return _FieldNode(
           dictionary,
           children,
@@ -134,9 +130,9 @@ class PdfFormMerge {
 }
 
 class _FieldNode {
-  final CraftPdfDictionary source;
+  final PdfDictionary source;
   final List<_FieldNode> children;
-  final List<CraftPdfDictionary> widgets;
+  final List<PdfDictionary> widgets;
   final bool signed;
   final bool retained;
   _FieldNode(
@@ -144,14 +140,14 @@ class _FieldNode {
 }
 
 class PdfFormMergePlan {
-  final CraftPdfDictionary? _form;
+  final PdfDictionary? _form;
   final List<_FieldNode> _roots;
-  final Map<CraftPdfDictionary, CraftPdfDictionary> _widgetPages;
+  final Map<PdfDictionary, PdfDictionary> _widgetPages;
   final PdfMergeSignaturePolicy _policy;
   PdfFormMergePlan._(this._form, this._roots, this._widgetPages, this._policy);
 
   /// Tests whether a selected widget belongs to a populated signature field.
-  bool isSignedWidget(CraftPdfDictionary widget) {
+  bool isSignedWidget(PdfDictionary widget) {
     bool contains(_FieldNode node, bool inherited) {
       final signed = inherited || node.signed;
       if (signed && node.widgets.any((value) => identical(value, widget))) {
@@ -164,42 +160,40 @@ class PdfFormMergePlan {
   }
 
   Future<void> importInto(
-      CraftPdfDocument output,
-      Map<CraftPdfDictionary, CraftPdfDictionary> targets,
-      Future<CraftPdfObject> Function(CraftPdfObject) copy,
-      {Map<CraftPdfDictionary, List<CraftPdfDictionary>>?
-          repeatedTargets}) async {
+      PdfDocument output,
+      Map<PdfDictionary, PdfDictionary> targets,
+      Future<PdfObject> Function(PdfObject) copy,
+      {Map<PdfDictionary, List<PdfDictionary>>? repeatedTargets}) async {
     if (_form == null) return;
     final catalog = output.rootCatalog().pdfRepresentation();
-    var destination = await catalog.dictionaryEntry(CraftPdfName.acroForm);
+    var destination = await catalog.dictionaryEntry(PdfName.acroForm);
     if (destination == null) {
-      destination = CraftPdfDictionary()..attachToDocument(output);
-      catalog.put(CraftPdfName.acroForm, destination);
+      destination = PdfDictionary()..attachToDocument(output);
+      catalog.put(PdfName.acroForm, destination);
     }
-    var fields = await destination.arrayEntry(CraftPdfName.fields);
+    var fields = await destination.arrayEntry(PdfName.fields);
     if (fields == null) {
-      fields = CraftPdfArray();
-      destination.put(CraftPdfName.fields, fields);
+      fields = PdfArray();
+      destination.put(PdfName.fields, fields);
     }
     final usedNames = <String>{};
-    Future<void> collectNames(CraftPdfDictionary node, String prefix,
-        Set<CraftPdfDictionary> seen) async {
+    Future<void> collectNames(
+        PdfDictionary node, String prefix, Set<PdfDictionary> seen) async {
       if (!seen.add(node)) {
         throw FormatException('Output form hierarchy contains a cycle');
       }
-      final partial =
-          (await node.stringEntry(CraftPdfName.t))?.decodeMappingText();
+      final partial = (await node.stringEntry(PdfName.t))?.decodeMappingText();
       final full = partial == null
           ? prefix
           : prefix.isEmpty
               ? partial
               : '$prefix.$partial';
       if (partial != null) usedNames.add(full);
-      final kids = await node.arrayEntry(CraftPdfName.kids);
+      final kids = await node.arrayEntry(PdfName.kids);
       if (kids != null) {
         for (var i = 0; i < kids.size(); i++) {
           final child = await kids.dictionaryEntry(i);
-          if (child != null && child.containsKey(CraftPdfName.t)) {
+          if (child != null && child.containsKey(PdfName.t)) {
             await collectNames(child, full, seen);
           }
         }
@@ -209,15 +203,15 @@ class PdfFormMergePlan {
     for (var i = 0; i < fields.size(); i++) {
       final field = await fields.dictionaryEntry(i);
       if (field != null) {
-        await collectNames(field, '', HashSet<CraftPdfDictionary>.identity());
+        await collectNames(field, '', HashSet<PdfDictionary>.identity());
       }
     }
     Future<Set<String>> incomingNames(_FieldNode node, String name) async {
       final result = <String>{name};
       for (final child in node.children) {
         if (!child.retained) continue;
-        final partial = (await child.source.stringEntry(CraftPdfName.t))
-            ?.decodeMappingText();
+        final partial =
+            (await child.source.stringEntry(PdfName.t))?.decodeMappingText();
         result.addAll(await incomingNames(
             child, partial == null ? name : '$name.$partial'));
       }
@@ -225,12 +219,12 @@ class PdfFormMergePlan {
     }
 
     final resourceNames = <String, String>{};
-    final resources = await _form.dictionaryEntry(CraftPdfName.dr);
+    final resources = await _form.dictionaryEntry(PdfName.dr);
     if (resources != null) {
-      var destResources = await destination.dictionaryEntry(CraftPdfName.dr);
+      var destResources = await destination.dictionaryEntry(PdfName.dr);
       if (destResources == null) {
-        destResources = CraftPdfDictionary();
-        destination.put(CraftPdfName.dr, destResources);
+        destResources = PdfDictionary();
+        destination.put(PdfName.dr, destResources);
       }
       for (final category in await resources.entrySet()) {
         final sourceGroup = await resources.dictionaryEntry(category.key);
@@ -242,7 +236,7 @@ class PdfFormMergePlan {
             }
             var combined = await destResources.arrayEntry(category.key);
             if (combined == null) {
-              combined = CraftPdfArray();
+              combined = PdfArray();
               destResources.put(category.key, combined);
             }
             for (var i = 0; i < value.size(); i++) {
@@ -256,17 +250,17 @@ class PdfFormMergePlan {
         }
         var group = await destResources.dictionaryEntry(category.key);
         if (group == null) {
-          group = CraftPdfDictionary();
+          group = PdfDictionary();
           destResources.put(category.key, group);
         }
         for (final entry in await sourceGroup.entrySet()) {
           final original = entry.key.getValue();
           var name = original;
           var suffix = 2;
-          while (group.containsKey(CraftPdfName(name))) {
+          while (group.containsKey(PdfName(name))) {
             name = '${original}_${suffix++}';
           }
-          group.put(CraftPdfName(name), await copy(entry.value));
+          group.put(PdfName(name), await copy(entry.value));
           if (category.key.getValue() == 'Font') resourceNames[original] = name;
         }
       }
@@ -279,18 +273,18 @@ class PdfFormMergePlan {
                   String.fromCharCode(int.parse(escape.group(1)!, radix: 16)));
           final replacement = resourceNames[name];
           if (replacement == null) return match.group(0)!;
-          final encoded = CraftPdfName(replacement).toString();
+          final encoded = PdfName(replacement).toString();
           return encoded.startsWith('/') ? encoded : '/$encoded';
         });
-    Future<void> copyEntries(CraftPdfDictionary from, CraftPdfDictionary to,
-        Set<String> excluded) async {
+    Future<void> copyEntries(
+        PdfDictionary from, PdfDictionary to, Set<String> excluded) async {
       for (final entry in await from.entrySet()) {
         if (excluded.contains(entry.key.getValue())) continue;
-        if (entry.key == CraftPdfName.da) {
+        if (entry.key == PdfName.da) {
           final text = await from.stringEntry(entry.key);
           if (text != null) {
             to.put(entry.key,
-                CraftPdfString(rewriteAppearance(text.decodeMappingText())));
+                PdfString(rewriteAppearance(text.decodeMappingText())));
             continue;
           }
         }
@@ -298,31 +292,31 @@ class PdfFormMergePlan {
       }
     }
 
-    Future<List<CraftPdfDictionary>> attachWidget(
-        CraftPdfDictionary source, CraftPdfDictionary target) async {
+    Future<List<PdfDictionary>> attachWidget(
+        PdfDictionary source, PdfDictionary target) async {
       final sourcePage = _widgetPages[source];
       final first = targets[sourcePage];
       final pages = repeatedTargets?[sourcePage] ??
-          (first == null ? <CraftPdfDictionary>[] : [first]);
+          (first == null ? <PdfDictionary>[] : [first]);
       if (pages.isEmpty) throw StateError('Merged widget has no target page');
-      final instances = <CraftPdfDictionary>[];
+      final instances = <PdfDictionary>[];
       for (final page in pages) {
-        CraftPdfDictionary instance;
+        PdfDictionary instance;
         if (instances.isEmpty) {
           instance = target;
         } else {
-          instance = CraftPdfDictionary()..attachToDocument(output);
+          instance = PdfDictionary()..attachToDocument(output);
           for (final entry in await target.entrySet()) {
-            if (entry.key != CraftPdfName.p) {
+            if (entry.key != PdfName.p) {
               instance.put(entry.key, entry.value);
             }
           }
         }
-        instance.put(CraftPdfName.p, page);
-        var annotations = await page.arrayEntry(CraftPdfName.annots);
+        instance.put(PdfName.p, page);
+        var annotations = await page.arrayEntry(PdfName.annots);
         if (annotations == null) {
-          annotations = CraftPdfArray();
-          page.put(CraftPdfName.annots, annotations);
+          annotations = PdfArray();
+          page.put(PdfName.annots, annotations);
         }
         annotations.add(instance);
         instances.add(instance);
@@ -330,18 +324,18 @@ class PdfFormMergePlan {
       return instances;
     }
 
-    Future<void> preserveStamp(CraftPdfDictionary widget) async {
-      final appearance = await widget.dictionaryEntry(CraftPdfName.ap);
-      var normal = await appearance?.get(CraftPdfName.n, true);
-      if (normal is CraftPdfDictionary && normal is! CraftPdfStream) {
-        final state = await widget.nameEntry(CraftPdfName.as);
+    Future<void> preserveStamp(PdfDictionary widget) async {
+      final appearance = await widget.dictionaryEntry(PdfName.ap);
+      var normal = await appearance?.get(PdfName.n, true);
+      if (normal is PdfDictionary && normal is! PdfStream) {
+        final state = await widget.nameEntry(PdfName.as);
         normal = state == null ? null : await normal.get(state, true);
       }
-      if (normal is! CraftPdfStream) {
+      if (normal is! PdfStream) {
         throw UnsupportedError(
             'Signature appearance cannot be preserved without a normal appearance stream');
       }
-      final stamp = CraftPdfDictionary()..attachToDocument(output);
+      final stamp = PdfDictionary()..attachToDocument(output);
       await copyEntries(widget, stamp, {
         'Parent',
         'P',
@@ -359,14 +353,13 @@ class PdfFormMergePlan {
         'A',
         'AA'
       });
-      stamp.put(CraftPdfName.subtype, CraftPdfName('Stamp'));
-      stamp.put(CraftPdfName.ap,
-          CraftPdfDictionary()..put(CraftPdfName.n, await copy(normal)));
+      stamp.put(PdfName.subtype, PdfName('Stamp'));
+      stamp.put(
+          PdfName.ap, PdfDictionary()..put(PdfName.n, await copy(normal)));
       await attachWidget(widget, stamp);
     }
 
-    Future<CraftPdfDictionary?> clone(
-        _FieldNode node, CraftPdfDictionary? parent) async {
+    Future<PdfDictionary?> clone(_FieldNode node, PdfDictionary? parent) async {
       if (!node.retained) return null;
       if (node.signed && _policy != PdfMergeSignaturePolicy.keepInvalid) {
         if (_policy == PdfMergeSignaturePolicy.removeKeepAppearance) {
@@ -383,16 +376,16 @@ class PdfFormMergePlan {
         }
         return null;
       }
-      final field = CraftPdfDictionary()..attachToDocument(output);
+      final field = PdfDictionary()..attachToDocument(output);
       await copyEntries(node.source, field,
           {'Parent', 'Kids', 'P', 'Subtype', 'Rect', 'AP', 'AS', 'V'});
       // Value cloning is deliberately deferred until after signature policy filtering.
-      final value = await node.source.get(CraftPdfName.v, true);
-      if (value != null) field.put(CraftPdfName.v, await copy(value));
-      if (parent != null) field.put(CraftPdfName.parent, parent);
+      final value = await node.source.get(PdfName.v, true);
+      if (value != null) field.put(PdfName.v, await copy(value));
+      if (parent != null) field.put(PdfName.parent, parent);
       if (parent == null) {
-        final original = (await node.source.stringEntry(CraftPdfName.t))
-            ?.decodeMappingText();
+        final original =
+            (await node.source.stringEntry(PdfName.t))?.decodeMappingText();
         if (original != null) {
           var name = original;
           var suffix = 2;
@@ -402,23 +395,23 @@ class PdfFormMergePlan {
             names = await incomingNames(node, name);
           }
           usedNames.addAll(names);
-          field.put(CraftPdfName.t, CraftPdfString(name));
+          field.put(PdfName.t, PdfString(name));
         }
-        if (!field.containsKey(CraftPdfName.da)) {
-          final da = await _form.stringEntry(CraftPdfName.da);
+        if (!field.containsKey(PdfName.da)) {
+          final da = await _form.stringEntry(PdfName.da);
           if (da != null) {
-            field.put(CraftPdfName.da,
-                CraftPdfString(rewriteAppearance(da.decodeMappingText())));
+            field.put(PdfName.da,
+                PdfString(rewriteAppearance(da.decodeMappingText())));
           }
         }
       }
-      final kids = CraftPdfArray();
+      final kids = PdfArray();
       for (final child in node.children) {
         final copied = await clone(child, field);
         if (copied != null) kids.add(copied);
       }
       for (final widget in node.widgets) {
-        final target = CraftPdfDictionary()..attachToDocument(output);
+        final target = PdfDictionary()..attachToDocument(output);
         await copyEntries(widget, target, {
           'Parent',
           'P',
@@ -433,12 +426,12 @@ class PdfFormMergePlan {
           'A',
           'AA'
         });
-        target.put(CraftPdfName.parent, field);
+        target.put(PdfName.parent, field);
         for (final instance in await attachWidget(widget, target)) {
           kids.add(instance);
         }
       }
-      if (kids.size() > 0) field.put(CraftPdfName.kids, kids);
+      if (kids.size() > 0) field.put(PdfName.kids, kids);
       return field;
     }
 

@@ -7,7 +7,7 @@ import 'package:dpdf/src/io/font/cmap/cmap_uni_cid.dart';
 import 'package:dpdf/src/io/font/cmap/cmap_object.dart';
 import 'package:test/test.dart';
 
-CraftOpenTypeParser grouped(List<(int, int, int)> groups) {
+OpenTypeParser grouped(List<(int, int, int)> groups) {
   final size = 16 + 12 * groups.length;
   final bytes = Uint8List(12 + size);
   final values = ByteData.sublistView(bytes);
@@ -21,7 +21,7 @@ CraftOpenTypeParser grouped(List<(int, int, int)> groups) {
     values.setUint32(32 + i * 12, last);
     values.setUint32(36 + i * 12, glyph);
   }
-  return CraftOpenTypeParser(bytes)
+  return OpenTypeParser(bytes)
     ..glyphWidthsByIndex = [0, 100, 200, 300, 400]
     ..tables = {
       'cmap': [12, size]
@@ -51,8 +51,8 @@ EndKernPairs
 EndKernData
 EndFontMetrics
 ''';
-CraftType1Font loadAfm(String content) =>
-    CraftType1Font('', '', Uint8List.fromList(latin1.encode(content)), null);
+Type1Font loadAfm(String content) =>
+    Type1Font('', '', Uint8List.fromList(latin1.encode(content)), null);
 
 void main() {
   test('Grouped Unicode cmap expands BMP and supplementary ranges', () {
@@ -89,10 +89,9 @@ void main() {
   });
   test('CID directions preserve supplementary scalars', () {
     final source = String.fromCharCodes([0xd8, 0x3d, 0xde, 0]);
-    final destination = CraftCMapObject(CraftCMapObject.number, 42);
-    final toUnicode = CraftCMapCidUni()
-      ..registerMappedCode(source, destination);
-    final toCid = CraftCMapUniCid()..registerMappedCode(source, destination);
+    final destination = CMapObject(CMapObject.number, 42);
+    final toUnicode = CMapCidUni()..registerMappedCode(source, destination);
+    final toCid = CMapUniCid()..registerMappedCode(source, destination);
     expect(toUnicode.lookup(42), 0x1f600);
     expect(toCid.lookup(0x1f600), 42);
     expect(toCid.exportToUnicode().lookupInt(42), '😀');
@@ -105,10 +104,10 @@ void main() {
       String.fromCharCodes([0xd8, 0, 0, 65]),
       String.fromCharCodes([0xdc, 0])
     ]) {
-      final code = CraftCMapObject(CraftCMapObject.number, 1);
-      expect(() => CraftCMapCidUni().registerMappedCode(source, code),
+      final code = CMapObject(CMapObject.number, 1);
+      expect(() => CMapCidUni().registerMappedCode(source, code),
           throwsFormatException);
-      expect(() => CraftCMapUniCid().registerMappedCode(source, code),
+      expect(() => CMapUniCid().registerMappedCode(source, code),
           throwsFormatException);
     }
   });

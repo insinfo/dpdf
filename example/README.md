@@ -24,7 +24,7 @@ dart run example/dpdf_example.dart build/exemplos
 ```dart
 import 'package:dpdf/dpdf.dart';
 
-final pdf = await CraftHtmlConverter.convertToBytes('<h1>Olá</h1>');
+final pdf = await HtmlConverter.convertToBytes('<h1>Olá</h1>');
 
 final integridade = await PdfIntegrityChecker.inspect(pdf);
 print(integridade.isDamaged);        // false

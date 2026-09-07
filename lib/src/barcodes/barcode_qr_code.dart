@@ -10,18 +10,18 @@ import 'qrcode/encode_hint_type.dart';
 import 'qrcode/qr_code_writer.dart';
 
 /// Draws a QR symbol as PDF vector modules.
-class CraftBarcodeQRCode extends CraftBarcode2D {
-  CraftByteMatrix? _bm;
+class BarcodeQRCode extends Barcode2D {
+  ByteMatrix? _bm;
 
   /// modifiers to change the way the barcode is create.
-  Map<CraftEncodeHintType, dynamic>? _hints;
+  Map<EncodeHintType, dynamic>? _hints;
 
   String? _code;
 
   /// Creates the QR barcode.
   /// [code] - the text to be encoded
   /// [hints] - barcode hints. See #setHints for description.
-  CraftBarcodeQRCode([String? code, Map<CraftEncodeHintType, dynamic>? hints]) {
+  BarcodeQRCode([String? code, Map<EncodeHintType, dynamic>? hints]) {
     _code = code;
     _hints = hints;
     if (_code != null) {
@@ -44,7 +44,7 @@ class CraftBarcodeQRCode extends CraftBarcode2D {
   }
 
   /// Returns modifiers to change the way the barcode is created.
-  Map<CraftEncodeHintType, dynamic>? getHints() {
+  Map<EncodeHintType, dynamic>? getHints() {
     return _hints;
   }
 
@@ -53,7 +53,7 @@ class CraftBarcodeQRCode extends CraftBarcode2D {
   /// The current encoder supports ISO-8859-1 and UTF-8 byte conversion.
   /// UTF-8 segments include ECI assignment 26.
   /// The default value is ISO-8859-1.
-  void setHints(Map<CraftEncodeHintType, dynamic> hints) {
+  void setHints(Map<EncodeHintType, dynamic> hints) {
     _hints = hints;
     regenerate();
   }
@@ -62,7 +62,7 @@ class CraftBarcodeQRCode extends CraftBarcode2D {
   void regenerate() {
     if (_code != null) {
       try {
-        CraftQRCodeWriter qc = CraftQRCodeWriter();
+        QRCodeWriter qc = QRCodeWriter();
         _bm = qc.encode(_code!, 1, 1, _hints);
       } catch (ex) {
         throw ArgumentError(ex.toString());
@@ -72,23 +72,23 @@ class CraftBarcodeQRCode extends CraftBarcode2D {
 
   /// Gets the size of the barcode grid
   @override
-  CraftRectangle? getBarcodeSize() {
-    return CraftRectangle(
+  Rectangle? getBarcodeSize() {
+    return Rectangle(
         0, 0, _bm!.getWidth().toDouble(), _bm!.getHeight().toDouble());
   }
 
   /// Gets the barcode size
   /// [moduleSize] - The module size
   /// Returns The size of the barcode
-  CraftRectangle getBarcodeSizeWithModuleSize(double moduleSize) {
-    return CraftRectangle(
+  Rectangle getBarcodeSizeWithModuleSize(double moduleSize) {
+    return Rectangle(
         0, 0, _bm!.getWidth() * moduleSize, _bm!.getHeight() * moduleSize);
   }
 
   @override
-  CraftRectangle placeBarcode(CraftPdfCanvas canvas, CraftColor? foreground) {
+  Rectangle placeBarcode(PdfCanvas canvas, Color? foreground) {
     return placeBarcodeWithModuleSide(
-        canvas, foreground, CraftBarcode2D.DEFAULT_MODULE_SIZE);
+        canvas, foreground, Barcode2D.DEFAULT_MODULE_SIZE);
   }
 
   /// Places the barcode in a [PdfCanvas].
@@ -100,8 +100,8 @@ class CraftBarcodeQRCode extends CraftBarcode2D {
   /// [foreground] - the foreground color. It can be [null]
   /// [moduleSide] - the size of the square grid cell
   /// Returns the dimensions the barcode occupies
-  CraftRectangle placeBarcodeWithModuleSide(
-      CraftPdfCanvas canvas, CraftColor? foreground, double moduleSide) {
+  Rectangle placeBarcodeWithModuleSide(
+      PdfCanvas canvas, Color? foreground, double moduleSide) {
     if (!moduleSide.isFinite || moduleSide <= 0) {
       throw ArgumentError.value(
           moduleSide, 'moduleSide', 'Module size must be finite and positive');
@@ -134,10 +134,10 @@ class CraftBarcodeQRCode extends CraftBarcode2D {
   /// [foreground] - the color of the pixels. It can be [null]
   /// Returns the XObject.
   @override
-  Future<CraftPdfFormXObject> createFormXObject(CraftPdfDocument document,
-      [CraftColor? foreground]) async {
+  Future<PdfFormXObject> createFormXObject(PdfDocument document,
+      [Color? foreground]) async {
     return createFormXObjectWithModuleSize(
-        foreground, CraftBarcode2D.DEFAULT_MODULE_SIZE, document);
+        foreground, Barcode2D.DEFAULT_MODULE_SIZE, document);
   }
 
   /// Creates a PdfFormXObject with the barcode.
@@ -145,16 +145,11 @@ class CraftBarcodeQRCode extends CraftBarcode2D {
   /// [moduleSize] - The size of the pixels.
   /// [document] - The document
   /// Returns the XObject.
-  Future<CraftPdfFormXObject> createFormXObjectWithModuleSize(
-      CraftColor? foreground,
-      double moduleSize,
-      CraftPdfDocument document) async {
-    CraftPdfFormXObject xObject =
-        CraftPdfFormXObject(CraftRectangle(0, 0, 0, 0));
-    CraftPdfCanvas canvas =
-        await CraftPdfCanvas.fromFormXObject(xObject, document);
-    CraftRectangle rect =
-        placeBarcodeWithModuleSide(canvas, foreground, moduleSize);
+  Future<PdfFormXObject> createFormXObjectWithModuleSize(
+      Color? foreground, double moduleSize, PdfDocument document) async {
+    PdfFormXObject xObject = PdfFormXObject(Rectangle(0, 0, 0, 0));
+    PdfCanvas canvas = await PdfCanvas.fromFormXObject(xObject, document);
+    Rectangle rect = placeBarcodeWithModuleSide(canvas, foreground, moduleSize);
     xObject.setBBox(rect);
     return xObject;
   }

@@ -9,28 +9,28 @@ void main() {
   group('MessageFormatUtil', () {
     test('formats simple placeholders', () {
       expect(
-        CraftMessageFormatUtil.format('Hello {0}!', ['World']),
+        MessageFormatUtil.format('Hello {0}!', ['World']),
         equals('Hello World!'),
       );
     });
 
     test('formats multiple placeholders', () {
       expect(
-        CraftMessageFormatUtil.format('{0} has {1} messages', ['John', 5]),
+        MessageFormatUtil.format('{0} has {1} messages', ['John', 5]),
         equals('John has 5 messages'),
       );
     });
 
     test('handles null arguments', () {
       expect(
-        CraftMessageFormatUtil.format('Value: {0}', [null]),
+        MessageFormatUtil.format('Value: {0}', [null]),
         equals('Value: null'),
       );
     });
 
     test('handles repeated placeholders', () {
       expect(
-        CraftMessageFormatUtil.format('{0} and {0}', ['test']),
+        MessageFormatUtil.format('{0} and {0}', ['test']),
         equals('test and test'),
       );
     });
@@ -39,19 +39,19 @@ void main() {
   group('DateTimeUtil', () {
     test('getUtcMillisFromEpoch returns milliseconds', () {
       final epoch = DateTime.utc(1970, 1, 1, 0, 0, 0);
-      expect(CraftDateTimeUtil.getUtcMillisFromEpoch(epoch), equals(0.0));
+      expect(DateTimeUtil.getUtcMillisFromEpoch(epoch), equals(0.0));
 
       final later = DateTime.utc(1970, 1, 1, 0, 0, 1);
-      expect(CraftDateTimeUtil.getUtcMillisFromEpoch(later), equals(1000.0));
+      expect(DateTimeUtil.getUtcMillisFromEpoch(later), equals(1000.0));
     });
 
     test('getRelativeTime returns milliseconds', () {
       final date = DateTime.utc(1970, 1, 1, 0, 1, 0);
-      expect(CraftDateTimeUtil.getRelativeTime(date), equals(60000));
+      expect(DateTimeUtil.getRelativeTime(date), equals(60000));
     });
 
     test('createDateTime creates correct date', () {
-      final date = CraftDateTimeUtil.createDateTime(2024, 12, 25, 10, 30, 0);
+      final date = DateTimeUtil.createDateTime(2024, 12, 25, 10, 30, 0);
       expect(date.year, equals(2024));
       expect(date.month, equals(12));
       expect(date.day, equals(25));
@@ -61,18 +61,17 @@ void main() {
 
     test('createUtcDateTime uses 0-indexed months', () {
       // Month 0 = January
-      final date = CraftDateTimeUtil.createUtcDateTime(2024, 0, 15, 12, 0, 0);
+      final date = DateTimeUtil.createUtcDateTime(2024, 0, 15, 12, 0, 0);
       expect(date.month, equals(1));
     });
 
     test('formatWithDefaultPattern formats correctly', () {
       final date = DateTime(2024, 3, 15);
-      expect(CraftDateTimeUtil.formatWithDefaultPattern(date),
-          equals('2024-03-15'));
+      expect(DateTimeUtil.formatWithDefaultPattern(date), equals('2024-03-15'));
     });
 
     test('parseWithDefaultPattern parses correctly', () {
-      final date = CraftDateTimeUtil.parseWithDefaultPattern('2024-03-15');
+      final date = DateTimeUtil.parseWithDefaultPattern('2024-03-15');
       expect(date.year, equals(2024));
       expect(date.month, equals(3));
       expect(date.day, equals(15));
@@ -80,7 +79,7 @@ void main() {
 
     test('addMillisToDate adds time', () {
       final date = DateTime(2024, 1, 1, 0, 0, 0);
-      final result = CraftDateTimeUtil.addMillisToDate(date, 3600000);
+      final result = DateTimeUtil.addMillisToDate(date, 3600000);
       expect(result.hour, equals(1));
     });
 
@@ -88,12 +87,12 @@ void main() {
       final past = DateTime(2000, 1, 1);
       final future = DateTime(2100, 1, 1);
 
-      expect(CraftDateTimeUtil.isInPast(past), isTrue);
-      expect(CraftDateTimeUtil.isInPast(future), isFalse);
+      expect(DateTimeUtil.isInPast(past), isTrue);
+      expect(DateTimeUtil.isInPast(future), isFalse);
     });
 
     test('getTimeFromMillis converts from epoch', () {
-      final date = CraftDateTimeUtil.getTimeFromMillis(86400000);
+      final date = DateTimeUtil.getTimeFromMillis(86400000);
       expect(date.day, equals(2));
       expect(date.month, equals(1));
       expect(date.year, equals(1970));
@@ -117,32 +116,32 @@ void main() {
   group('StringUtil', () {
     test('replaceAll with regex', () {
       expect(
-        CraftStringUtil.replaceAll('hello world', r'\s+', '-'),
+        StringUtil.replaceAll('hello world', r'\s+', '-'),
         equals('hello-world'),
       );
     });
 
     test('split with single char', () {
-      final result = CraftStringUtil.split('a,b,c', ',');
+      final result = StringUtil.split('a,b,c', ',');
       expect(result, equals(['a', 'b', 'c']));
     });
 
     test('split with regex pattern', () {
-      final result = CraftStringUtil.split('a  b   c', r'\s+');
+      final result = StringUtil.split('a  b   c', r'\s+');
       expect(result, equals(['a', 'b', 'c']));
     });
 
     test('isNullOrEmpty checks correctly', () {
-      expect(CraftStringUtil.isNullOrEmpty(null), isTrue);
-      expect(CraftStringUtil.isNullOrEmpty(''), isTrue);
-      expect(CraftStringUtil.isNullOrEmpty('hello'), isFalse);
+      expect(StringUtil.isNullOrEmpty(null), isTrue);
+      expect(StringUtil.isNullOrEmpty(''), isTrue);
+      expect(StringUtil.isNullOrEmpty('hello'), isFalse);
     });
 
     test('isNullOrWhitespace checks correctly', () {
-      expect(CraftStringUtil.isNullOrWhitespace(null), isTrue);
-      expect(CraftStringUtil.isNullOrWhitespace(''), isTrue);
-      expect(CraftStringUtil.isNullOrWhitespace('   '), isTrue);
-      expect(CraftStringUtil.isNullOrWhitespace('hello'), isFalse);
+      expect(StringUtil.isNullOrWhitespace(null), isTrue);
+      expect(StringUtil.isNullOrWhitespace(''), isTrue);
+      expect(StringUtil.isNullOrWhitespace('   '), isTrue);
+      expect(StringUtil.isNullOrWhitespace('hello'), isFalse);
     });
   });
 

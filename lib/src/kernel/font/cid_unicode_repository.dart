@@ -6,15 +6,15 @@ import 'cid_unicode_table.dart';
 /// Unsupported collections return null; absent or invalid resources report errors.
 class CidUnicodeRepository {
   static final shared = CidUnicodeRepository();
-  final CraftCMapLocation? _location;
+  final CMapLocation? _location;
   final _completed = <(String, String), CidUnicodeTable>{};
   final _pending = <(String, String), Future<CidUnicodeTable?>>{};
   int _generation = 0;
 
-  CidUnicodeRepository({CraftCMapLocation? location}) : _location = location;
+  CidUnicodeRepository({CMapLocation? location}) : _location = location;
 
-  CraftCMapLocation get _provider =>
-      _location ?? CraftCjkResourceLoader.activeCmapLocation;
+  CMapLocation get _provider =>
+      _location ?? CjkResourceLoader.activeCmapLocation;
 
   static String? _resource(String registry, String collection) {
     if (registry != 'Adobe' ||

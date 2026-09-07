@@ -9,8 +9,8 @@ void main() async {
   if (outputFile.existsSync()) outputFile.deleteSync();
 
   print('--- Phase 1: Creating Base PDF with Compliance ---');
-  final writer = CraftPdfWriter.toFile(outputFile.path);
-  final pdfDoc = CraftPdfDocument.fromWriter(writer);
+  final writer = PdfWriter.toFile(outputFile.path);
+  final pdfDoc = PdfDocument.fromWriter(writer);
 
   // 1. Set PDF/A-1B and PDF/UA Conformance
   await pdfDoc.configureArchivalProfile();
@@ -19,12 +19,12 @@ void main() async {
 
   // 2. Load Font
   final fontName = 'test/assets/ABeeZee-Regular.ttf';
-  final font = CraftPdfFontFactory.createFont(
-      fontName, CraftPdfEncodings.IDENTITY_H, true);
+  final font =
+      PdfFontFactory.createFont(fontName, PdfEncodings.IDENTITY_H, true);
 
   // 3. Add Content
   final page = await pdfDoc.appendBlankPage();
-  final canvas = await CraftPdfCanvas.fromPage(page);
+  final canvas = await PdfCanvas.fromPage(page);
   canvas.beginText();
   await canvas.setFontAndSize(font, 12);
   canvas
@@ -36,11 +36,11 @@ void main() async {
   final iccFile = File(
       'referencias/dpdf-dotnet-develop/dpdf.tests/dpdf.layout.tests/resources/dpdf/layout/ImageColorProfileTest/sRGB_v4_ICC_preference.icc');
   if (iccFile.existsSync()) {
-    final iccStream = CraftPdfStream();
+    final iccStream = PdfStream();
     iccStream.setData(iccFile.readAsBytesSync());
     iccStream.attachToDocument(pdfDoc);
 
-    final outputIntent = CraftPdfOutputIntent.create(
+    final outputIntent = PdfOutputIntent.create(
       'sRGB IEC61966-2.1',
       'sRGB IEC61966-2.1',
       'http://www.color.org',
@@ -68,11 +68,11 @@ void main() async {
 
 Future<void> signDocument(
     String inputPath, String outputPath, String name, String reason) async {
-  final reader = await CraftPdfReader.fromFile(inputPath);
-  final writer = CraftPdfWriter.toFile(outputPath);
+  final reader = await PdfReader.fromFile(inputPath);
+  final writer = PdfWriter.toFile(outputPath);
 
   // PdfSigner always uses append mode by default in this port
-  final signer = CraftPdfSigner(reader, writer.getSink());
+  final signer = PdfSigner(reader, writer.getSink());
 
   signer.setFieldName(name);
   signer.setReason(reason);
@@ -139,7 +139,7 @@ Future<void> verifyIntegrity(String path) async {
   }
 }
 
-class MockSignatureContainer implements CraftExternalSignature {
+class MockSignatureContainer implements ExternalSignature {
   final String digestAlgorithm;
   final String encryptionAlgorithm;
 

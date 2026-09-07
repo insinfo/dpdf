@@ -1,7 +1,7 @@
 import 'dart:convert';
 import '../resources/embedded_font_resources.dart';
 
-class CraftAdobeGlyphList {
+class AdobeGlyphList {
   static final Map<int, String> _unicode2names = {};
   static final Map<String, int> _names2unicode = {};
   static bool _initialized = false;

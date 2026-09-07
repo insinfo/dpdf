@@ -3,8 +3,8 @@ import 'package:dpdf/src/layout/element/cell.dart';
 import 'package:dpdf/src/layout/layout/layout_context.dart';
 import 'package:dpdf/src/layout/layout/layout_result.dart';
 
-class CraftCellRenderer extends CraftBlockRenderer {
-  CraftCellRenderer(CraftCell super.modelElement);
+class CellRenderer extends BlockRenderer {
+  CellRenderer(Cell super.modelElement);
 
   // Cell specific layout logic if needed, e.g. vertical alignment.
   // For now, standard Block layout is sufficient for content INSIDE the cell.
@@ -14,9 +14,9 @@ class CraftCellRenderer extends CraftBlockRenderer {
   // The layout() method will be called with a constrained area defined by the Table.
 
   @override
-  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
+  LayoutResult? layout(LayoutContext layoutContext) {
     // Use block layout
-    CraftLayoutResult? result = super.layout(layoutContext);
+    LayoutResult? result = super.layout(layoutContext);
 
     // If result is full, we might need to ensure the occupied area matches the Cell's expected height?
     // Or TableRenderer handles that.

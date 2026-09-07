@@ -1,3 +1,3 @@
-class CraftAccessibilityProperties {
+class AccessibilityProperties {
   void setRole(String? role) {}
 }

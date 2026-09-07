@@ -6,7 +6,7 @@ import 'dart:typed_data';
 /// Implementations do not keep track of a current 'position', but rather
 /// provide absolute get methods. Tracking position should be handled in
 /// classes that use RandomAccessSource internally (via composition).
-abstract class CraftRandomAccessSource {
+abstract class RandomAccessSource {
   /// Gets a byte at the specified position.
   ///
   /// [position] byte position

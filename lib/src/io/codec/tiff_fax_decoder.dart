@@ -3,7 +3,7 @@ import '../exceptions/io_exception.dart';
 import '../exceptions/io_exception_message_constant.dart';
 
 /// Decodes TIFF FAX compressed data (CCITT Group 3 and Group 4).
-class CraftTIFFFaxDecoder {
+class TIFFFaxDecoder {
   int _bitPointer = 0;
   int _bytePointer = 0;
   Uint8List? _data;
@@ -1729,7 +1729,7 @@ class CraftTIFFFaxDecoder {
   }, growable: false);
 
   /// Creates a TIFFFaxDecoder.
-  CraftTIFFFaxDecoder(this._fillOrder, this._w, this._h) {
+  TIFFFaxDecoder(this._fillOrder, this._w, this._h) {
     _prevChangingElems = List<int>.filled(2 * _w, 0);
     _currChangingElems = List<int>.filled(2 * _w, 0);
   }
@@ -1798,7 +1798,7 @@ class CraftTIFFFaxDecoder {
         if (_bitPointer > 0) {
           int bitsLeft = 8 - _bitPointer;
           if (_nextNBits(bitsLeft) != 0) {
-            throw IoException(CraftIoExceptionMessageConstant
+            throw IoException(IoExceptionMessageConstant
                 .expectedTrailingZeroBitsForByteAlignedLines);
           }
         }
@@ -1860,7 +1860,7 @@ class CraftTIFFFaxDecoder {
             } else {
               if (code == 11) {
                 if (_nextLesserThan8Bits(3) != 7) {
-                  throw IoException(CraftIoExceptionMessageConstant
+                  throw IoException(IoExceptionMessageConstant
                       .invalidCodeEncounteredWhileDecoding2dGroup4CompressedData);
                 }
                 // Uncompressed extension words encode a white run followed

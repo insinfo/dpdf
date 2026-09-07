@@ -1,6 +1,6 @@
 /// Diagnostic templates for DPDF. Public identifiers and format slots are stable.
-class CraftIoExceptionMessageConstant {
-  CraftIoExceptionMessageConstant._();
+class IoExceptionMessageConstant {
+  IoExceptionMessageConstant._();
 
   static const String allFillBitsPrecedingEolCodeMustBe0 =
       'Nonzero padding bits precede the fax EOL code; only zero fill bits are allowed.';

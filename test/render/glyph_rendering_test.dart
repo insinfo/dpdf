@@ -21,17 +21,18 @@ Future<Uint8List> _pageWithText(
   double horizontalScale = 100,
 }) async {
   final output = BytesBuilder(copy: false);
-  final pdf = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final pdf = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await pdf.appendBlankPage();
-  page.pdfRepresentation().put(
-      CraftPdfName.mediaBox, CraftPdfArray.fromDoubles([0, 0, width, height]));
+  page
+      .pdfRepresentation()
+      .put(PdfName.mediaBox, PdfArray.fromDoubles([0, 0, width, height]));
 
-  final program = CraftTrueTypeFont.fromFile(_fontPath);
+  final program = TrueTypeFont.fromFile(_fontPath);
   // The third argument embeds the program, which is what gives the renderer
   // outlines to draw.
-  final font = CraftPdfTrueTypeFont(program, 'WinAnsiEncoding', true);
+  final font = PdfTrueTypeFont(program, 'WinAnsiEncoding', true);
 
-  final canvas = await CraftPdfCanvas.fromPage(page);
+  final canvas = await PdfCanvas.fromPage(page);
   canvas.beginText();
   await canvas.setFontAndSize(font, size);
   if (renderMode != 0) canvas.setTextRenderingMode(renderMode);
@@ -47,7 +48,7 @@ Future<Uint8List> _pageWithText(
 
 Future<PdfRenderedPage> _renderWithFallback(
     Uint8List bytes, PdfFontFallback fallback) async {
-  final document = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+  final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
   try {
     return await PdfPageRenderer.render((await document.pageAt(1))!,
         options: PdfRenderOptions(dpi: 72, fontFallback: fallback));
@@ -57,7 +58,7 @@ Future<PdfRenderedPage> _renderWithFallback(
 }
 
 Future<PdfRenderedPage> _render(Uint8List bytes, {double dpi = 72}) async {
-  final document = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+  final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
   try {
     return await PdfPageRenderer.render((await document.pageAt(1))!,
         options: PdfRenderOptions(dpi: dpi));
@@ -91,12 +92,12 @@ int _inked(PdfRenderedPage page) {
 /// A page whose text uses a standard font, which carries no program.
 Future<Uint8List> _pageWithStandardFont(String text) async {
   final output = BytesBuilder(copy: false);
-  final pdf = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final pdf = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await pdf.appendBlankPage();
   page
       .pdfRepresentation()
-      .put(CraftPdfName.mediaBox, CraftPdfArray.fromDoubles([0, 0, 320, 100]));
-  final canvas = await CraftPdfCanvas.fromPage(page);
+      .put(PdfName.mediaBox, PdfArray.fromDoubles([0, 0, 320, 100]));
+  final canvas = await PdfCanvas.fromPage(page);
   canvas.beginText();
   await canvas.setFontAndSize(pdf.defaultTypeface()!, 36);
   canvas.moveText(20, 40);
@@ -261,10 +262,9 @@ void main() {
       // A base-14 font carries no program. Substituting a different typeface
       // would change the page, so the renderer says so instead.
       final output = BytesBuilder(copy: false);
-      final pdf =
-          CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+      final pdf = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
       final page = await pdf.appendBlankPage();
-      final canvas = await CraftPdfCanvas.fromPage(page);
+      final canvas = await PdfCanvas.fromPage(page);
       canvas.beginText();
       await canvas.setFontAndSize(pdf.defaultTypeface()!, 24);
       canvas.moveText(20, 100);

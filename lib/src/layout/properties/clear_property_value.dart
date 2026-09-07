@@ -1,5 +1,5 @@
 /// A specialized enum containing potential property values for clear.
-enum CraftClearPropertyValue {
+enum ClearPropertyValue {
   /// Clear left floats.
   left,
 

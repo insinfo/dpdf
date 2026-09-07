@@ -31,13 +31,13 @@ void main() {
       702: 'ZZ',
       703: 'AAA'
     }.entries) {
-      expect(CraftAlphabetNumbering.toAlphabetNumber(item.key, alphabet),
-          item.value);
+      expect(
+          AlphabetNumbering.toAlphabetNumber(item.key, alphabet), item.value);
     }
-    expect(CraftAlphabetNumbering.toAlphabetNumber(3, ['x']), 'xxx');
-    expect(() => CraftAlphabetNumbering.toAlphabetNumber(1, []),
-        throwsArgumentError);
-    expect(() => CraftAlphabetNumbering.toAlphabetNumber(0, alphabet),
+    expect(AlphabetNumbering.toAlphabetNumber(3, ['x']), 'xxx');
+    expect(
+        () => AlphabetNumbering.toAlphabetNumber(1, []), throwsArgumentError);
+    expect(() => AlphabetNumbering.toAlphabetNumber(0, alphabet),
         throwsArgumentError);
   });
 }

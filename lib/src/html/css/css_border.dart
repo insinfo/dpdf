@@ -2,23 +2,23 @@ import 'css_color.dart';
 import 'css_values.dart';
 
 /// Typed parser for the portable single, solid CSS border profile.
-class CraftCssBorderValue {
+class CssBorderValue {
   final double width;
-  final CraftCssColor color;
-  const CraftCssBorderValue(this.width, this.color);
+  final CssColor color;
+  const CssBorderValue(this.width, this.color);
 }
 
-class CraftCssBorders {
-  CraftCssBorders._();
+class CssBorders {
+  CssBorders._();
 
-  static CraftCssBorderValue? parse(Map<String, String> declarations) {
-    var width = CraftCssValues.length(declarations['border-width']);
-    var color = CraftCssColors.parse(declarations['border-color']);
+  static CssBorderValue? parse(Map<String, String> declarations) {
+    var width = CssValues.length(declarations['border-width']);
+    var color = CssColors.parse(declarations['border-color']);
     var solid = declarations['border-style']?.trim().toLowerCase() == 'solid';
     final shorthand = declarations['border'];
     if (shorthand != null) {
       for (final token in _tokens(shorthand)) {
-        final length = CraftCssValues.length(token, fallback: -1);
+        final length = CssValues.length(token, fallback: -1);
         if (length >= 0) {
           width = length;
           continue;
@@ -27,11 +27,11 @@ class CraftCssBorders {
           solid = true;
           continue;
         }
-        color ??= CraftCssColors.parse(token);
+        color ??= CssColors.parse(token);
       }
     }
     if (!solid || width <= 0 || color == null) return null;
-    return CraftCssBorderValue(width, color);
+    return CssBorderValue(width, color);
   }
 
   static List<String> _tokens(String source) {

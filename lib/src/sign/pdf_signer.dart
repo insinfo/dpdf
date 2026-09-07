@@ -39,11 +39,11 @@ import 'simple_signature_appearance.dart';
 enum PdfSigningMode { incremental, fullRewrite }
 
 /// Coordinates signature configuration and its visual representation.
-class CraftPdfSigner {
-  CraftPdfDocument? _document;
-  CraftSignerProperties _signerProperties = CraftSignerProperties();
-  CraftPdfSignature? _cryptoDictionary;
-  CraftPdfAcroForm? _acroForm;
+class PdfSigner {
+  PdfDocument? _document;
+  SignerProperties _signerProperties = SignerProperties();
+  PdfSignature? _cryptoDictionary;
+  PdfAcroForm? _acroForm;
 
   bool _closed = false;
   bool _preClosed = false;
@@ -53,46 +53,45 @@ class CraftPdfSigner {
   // Temporary storage for the signed document before filling the signature
   BytesBuilder? _tempBuilder;
   IOSink? _tempSink;
-  final Map<CraftPdfName, CraftPdfLiteral> _exclusionLocations = {};
+  final Map<PdfName, PdfLiteral> _exclusionLocations = {};
 
   /// Creates a PdfSigner instance.
   ///
   /// @param reader the PdfReader to open the document
   /// @param outputStream the sink to write the signed document to
   /// @param properties properties for the signing document
-  CraftPdfSigner(CraftPdfReader reader, IOSink outputStream,
-      {CraftWriterProperties? properties,
+  PdfSigner(PdfReader reader, IOSink outputStream,
+      {WriterProperties? properties,
       PdfRepairedSaveMode repairedSaveMode = PdfRepairedSaveMode.reject,
       PdfSigningMode mode = PdfSigningMode.incremental}) {
     _originalOS = outputStream;
-    properties ??= CraftWriterProperties();
+    properties ??= WriterProperties();
     _initDocument(reader, properties, repairedSaveMode, mode);
   }
 
-  factory CraftPdfSigner.fromBytes(Uint8List bytes, IOSink outputStream,
-      {CraftWriterProperties? properties,
-      CraftReaderProperties? readerProperties,
+  factory PdfSigner.fromBytes(Uint8List bytes, IOSink outputStream,
+      {WriterProperties? properties,
+      ReaderProperties? readerProperties,
       PdfRepairedSaveMode repairedSaveMode = PdfRepairedSaveMode.reject,
       PdfSigningMode mode = PdfSigningMode.incremental}) {
-    return CraftPdfSigner(
-        CraftPdfReader.fromBytes(bytes, readerProperties), outputStream,
+    return PdfSigner(PdfReader.fromBytes(bytes, readerProperties), outputStream,
         properties: properties, repairedSaveMode: repairedSaveMode, mode: mode);
   }
 
   /// Collects a signed revision in memory on VM, JavaScript and WebAssembly.
-  factory CraftPdfSigner.fromBytesBuilder(Uint8List bytes, BytesBuilder output,
-      {CraftWriterProperties? properties,
-      CraftReaderProperties? readerProperties,
+  factory PdfSigner.fromBytesBuilder(Uint8List bytes, BytesBuilder output,
+      {WriterProperties? properties,
+      ReaderProperties? readerProperties,
       PdfRepairedSaveMode repairedSaveMode = PdfRepairedSaveMode.reject,
       PdfSigningMode mode = PdfSigningMode.incremental}) {
-    return CraftPdfSigner.fromBytes(bytes, _BytesBuilderSink(output),
+    return PdfSigner.fromBytes(bytes, _BytesBuilderSink(output),
         properties: properties,
         readerProperties: readerProperties,
         repairedSaveMode: repairedSaveMode,
         mode: mode);
   }
 
-  void _initDocument(CraftPdfReader reader, CraftWriterProperties properties,
+  void _initDocument(PdfReader reader, WriterProperties properties,
       PdfRepairedSaveMode repairedSaveMode, PdfSigningMode mode) {
     _tempBuilder = BytesBuilder();
 
@@ -100,13 +99,13 @@ class CraftPdfSigner {
 
     // Use append mode for signing - essential for multiple signatures
     // Each signature creates a new PDF revision incrementally
-    final stampingProperties = CraftStampingProperties()
+    final stampingProperties = StampingProperties()
       ..repairedSaveMode = repairedSaveMode;
     if (mode == PdfSigningMode.incremental) stampingProperties.useAppendMode();
 
-    _document = CraftPdfDocument(
+    _document = PdfDocument(
         reader: reader,
-        writer: CraftPdfWriter(_tempSink!,
+        writer: PdfWriter(_tempSink!,
             properties: properties, initialPosition: _tempBuilder!.length),
         properties: stampingProperties);
   }
@@ -115,7 +114,7 @@ class CraftPdfSigner {
   ///
   /// @param properties the signer properties
   /// @return this instance to support fluent interface
-  CraftPdfSigner setSignerProperties(CraftSignerProperties properties) {
+  PdfSigner setSignerProperties(SignerProperties properties) {
     _signerProperties = properties;
     return this;
   }
@@ -123,46 +122,46 @@ class CraftPdfSigner {
   /// Gets the properties to be used in signing operations.
   ///
   /// @return the signer properties
-  CraftSignerProperties getSignerProperties() => _signerProperties;
+  SignerProperties getSignerProperties() => _signerProperties;
 
   /// Returns the user made signature dictionary.
   ///
   /// This is the dictionary at the /V key of the signature field.
   ///
   /// @return the user made signature dictionary
-  CraftPdfSignature? getSignatureDictionary() => _cryptoDictionary;
+  PdfSignature? getSignatureDictionary() => _cryptoDictionary;
 
   /// Gets the PdfDocument associated with this instance.
   ///
   /// @return the PdfDocument associated with this instance
-  CraftPdfDocument? getDocument() => _document;
+  PdfDocument? getDocument() => _document;
 
-  CraftPdfSigner setFieldName(String name) {
+  PdfSigner setFieldName(String name) {
     _signerProperties.setFieldName(name);
     return this;
   }
 
-  CraftPdfSigner setPageNumber(int page) {
+  PdfSigner setPageNumber(int page) {
     _signerProperties.setPageNumber(page);
     return this;
   }
 
-  CraftPdfSigner setReason(String reason) {
+  PdfSigner setReason(String reason) {
     _signerProperties.setReason(reason);
     return this;
   }
 
-  CraftPdfSigner setLocation(String loc) {
+  PdfSigner setLocation(String loc) {
     _signerProperties.setLocation(loc);
     return this;
   }
 
-  CraftPdfSigner setContact(String contact) {
+  PdfSigner setContact(String contact) {
     _signerProperties.setContact(contact);
     return this;
   }
 
-  CraftPdfSigner setSignatureCreator(String creator) {
+  PdfSigner setSignatureCreator(String creator) {
     _signerProperties.setSignatureCreator(creator);
     return this;
   }
@@ -180,7 +179,7 @@ class CraftPdfSigner {
   Future<String> getNewSigFieldName() async {
     var name = 'Signature';
     var step = 1;
-    final util = CraftSignatureUtil(_document!);
+    final util = SignatureUtil(_document!);
     while (await util.doesSignatureFieldExist(name + step.toString())) {
       step++;
     }
@@ -189,7 +188,7 @@ class CraftPdfSigner {
 
   /// Signs the document using the specified signature container.
   Future<void> signExternalContainer(
-    CraftExternalSignatureContainer container,
+    ExternalSignatureContainer container,
     int estimatedSize,
   ) async {
     _checkClosed();
@@ -199,22 +198,22 @@ class CraftPdfSigner {
       _signerProperties.setFieldName(await getNewSigFieldName());
     }
 
-    _acroForm = await CraftPdfFormCreator.getAcroForm(_document!, true);
+    _acroForm = await PdfFormCreator.getAcroForm(_document!, true);
 
     // Create Signature Dictionary
-    final dic = CraftPdfSignature();
+    final dic = PdfSignature();
     dic.setReason(_signerProperties.getReason());
     dic.setLocation(_signerProperties.getLocation());
     dic.setSignatureCreator(_signerProperties.getSignatureCreator());
     dic.setContact(_signerProperties.getContact());
-    dic.setDate(CraftPdfString(CraftPdfDate(DateTime.now()).getValue()));
+    dic.setDate(PdfString(PdfDate(DateTime.now()).getValue()));
 
     container.modifySigningDictionary(dic.pdfRepresentation());
 
     _cryptoDictionary = dic;
 
-    final exc = <CraftPdfName, int>{};
-    exc[CraftPdfName.contents] = estimatedSize * 2 + 2;
+    final exc = <PdfName, int>{};
+    exc[PdfName.contents] = estimatedSize * 2 + 2;
 
     await _preClose(exc);
 
@@ -225,15 +224,15 @@ class CraftPdfSigner {
     final encodedSig = await container.sign(Stream.value(data));
 
     if (estimatedSize < encodedSig.length) {
-      throw CraftPdfException("Not enough space for signature");
+      throw PdfException("Not enough space for signature");
     }
 
     final paddedSig = Uint8List(estimatedSize);
     paddedSig.setRange(0, encodedSig.length, encodedSig);
 
-    final dic2 = CraftPdfDictionary();
-    dic2.put(CraftPdfName.contents,
-        CraftPdfString.fromBytes(paddedSig).setHexWriting(true));
+    final dic2 = PdfDictionary();
+    dic2.put(
+        PdfName.contents, PdfString.fromBytes(paddedSig).setHexWriting(true));
 
     await _close(dic2);
     _closed = true;
@@ -245,13 +244,13 @@ class CraftPdfSigner {
   /// @param chain the certificate chain (as list of DER-encoded certificates)
   /// @param estimatedSize the estimated size of the signature
   Future<void> signDetached(
-    CraftExternalSignature externalSignature,
+    ExternalSignature externalSignature,
     List<Uint8List> chain, {
-    List<CraftCrlClient>? crlList,
-    CraftOcspClient? ocspClient,
-    CraftTSAClient? tsaClient,
+    List<CrlClient>? crlList,
+    OcspClient? ocspClient,
+    TSAClient? tsaClient,
     int estimatedSize = 8192,
-    CraftExternalDigest? externalDigest,
+    ExternalDigest? externalDigest,
   }) async {
     _checkClosed();
     await _document!.load();
@@ -262,7 +261,7 @@ class CraftPdfSigner {
     }
 
     // Prepare AcroForm
-    _acroForm = await CraftPdfFormCreator.getAcroForm(_document!, true);
+    _acroForm = await PdfFormCreator.getAcroForm(_document!, true);
 
     if (estimatedSize == 0) {
       estimatedSize = 8192;
@@ -271,8 +270,8 @@ class CraftPdfSigner {
     final hashAlgorithm = externalSignature.getDigestAlgorithmName();
 
     // Create Signature Dictionary
-    final dic = CraftPdfSignature.withFilter(
-        CraftPdfName.intern('Adobe.PPKLite'), CraftPdfName.adbePkcs7Detached);
+    final dic = PdfSignature.withFilter(
+        PdfName.intern('Adobe.PPKLite'), PdfName.adbePkcs7Detached);
 
     // Fixed: Removed unnecessary null checks
     dic.setReason(_signerProperties.getReason());
@@ -280,12 +279,12 @@ class CraftPdfSigner {
     dic.setSignatureCreator(_signerProperties.getSignatureCreator());
     dic.setContact(_signerProperties.getContact());
 
-    dic.setDate(CraftPdfString(CraftPdfDate(DateTime.now()).getValue()));
+    dic.setDate(PdfString(PdfDate(DateTime.now()).getValue()));
 
     _cryptoDictionary = dic;
 
-    final exc = <CraftPdfName, int>{};
-    exc[CraftPdfName.contents] = estimatedSize * 2 + 2;
+    final exc = <PdfName, int>{};
+    exc[PdfName.contents] = estimatedSize * 2 + 2;
 
     await _preClose(exc);
 
@@ -293,7 +292,7 @@ class CraftPdfSigner {
     await _updateByteRange();
 
     // Create PKCS7
-    final sgn = CraftPdfPKCS7.forSigning(
+    final sgn = PdfPKCS7.forSigning(
         null, chain, hashAlgorithm, externalDigest ?? _DefaultDigest(),
         hasEncapContent: false);
 
@@ -301,7 +300,7 @@ class CraftPdfSigner {
     final data = await _getRangeStream();
 
     // Calculate digest
-    final messageDigest = CraftDigestAlgorithms.getMessageDigest(hashAlgorithm);
+    final messageDigest = DigestAlgorithms.getMessageDigest(hashAlgorithm);
     // data is Uint8List
     messageDigest.update(data);
     final hash = messageDigest.digest();
@@ -320,15 +319,15 @@ class CraftPdfSigner {
     final encodedSig = await sgn.getEncodedPKCS7(hash, tsaClient: tsaClient);
 
     if (estimatedSize < encodedSig.length) {
-      throw CraftPdfException("Not enough space for signature");
+      throw PdfException("Not enough space for signature");
     }
 
     final paddedSig = Uint8List(estimatedSize);
     paddedSig.setRange(0, encodedSig.length, encodedSig);
 
-    final dic2 = CraftPdfDictionary();
-    dic2.put(CraftPdfName.contents,
-        CraftPdfString.fromBytes(paddedSig).setHexWriting(true));
+    final dic2 = PdfDictionary();
+    dic2.put(
+        PdfName.contents, PdfString.fromBytes(paddedSig).setHexWriting(true));
 
     await _close(dic2);
     _closed = true;
@@ -338,11 +337,10 @@ class CraftPdfSigner {
   /// This must be called BEFORE hashing to ensure the signature integrity.
   Future<void> _updateByteRange() async {
     final totalLen = _tempBuilder!.length;
-    final byteRangePos =
-        _exclusionLocations[CraftPdfName.byteRange]!.getOffset();
+    final byteRangePos = _exclusionLocations[PdfName.byteRange]!.getOffset();
     final contentsHex = await _cryptoDictionary!
         .pdfRepresentation()
-        .get(CraftPdfName.contents) as CraftPdfString;
+        .get(PdfName.contents) as PdfString;
     final contentsPos = contentsHex.getOffset();
     final contentsLen = contentsHex.getValueBytes()!.length * 2 + 2;
 
@@ -356,7 +354,7 @@ class CraftPdfSigner {
     // Format ByteRange string: "[ 0 123 456 789 ]"
     var s = "[ ${range[0]} ${range[1]} ${range[2]} ${range[3]} ]";
     if (s.length > 100) {
-      throw CraftPdfException("ByteRange string too long for placeholder");
+      throw PdfException("ByteRange string too long for placeholder");
     }
     while (s.length < 100) {
       s += " ";
@@ -375,7 +373,7 @@ class CraftPdfSigner {
     _tempBuilder!.add(bytes);
   }
 
-  Future<void> _preClose(Map<CraftPdfName, int> exclusionSizes) async {
+  Future<void> _preClose(Map<PdfName, int> exclusionSizes) async {
     if (_preClosed) {
       throw StateError("Document already pre-closed");
     }
@@ -383,11 +381,11 @@ class CraftPdfSigner {
 
     // Ensure field exists or create it
     final name = _signerProperties.getFieldName()!;
-    final util = CraftSignatureUtil(_document!);
+    final util = SignatureUtil(_document!);
     final fieldExist = await util.doesSignatureFieldExist(name);
 
     await _acroForm!.setSignatureFlags(
-        CraftPdfAcroForm.SIGNATURE_EXIST | CraftPdfAcroForm.APPEND_ONLY);
+        PdfAcroForm.SIGNATURE_EXIST | PdfAcroForm.APPEND_ONLY);
 
     if (_cryptoDictionary == null) {
       throw StateError("No crypto dictionary defined");
@@ -399,22 +397,21 @@ class CraftPdfSigner {
       // Populate existing field (Simplified)
       final field = await _acroForm!.getField(name);
       if (field != null) {
-        field.put(CraftPdfName.v, _cryptoDictionary!.pdfRepresentation());
+        field.put(PdfName.v, _cryptoDictionary!.pdfRepresentation());
         field.markChanged();
       }
     } else {
       // Create new field
-      final sigField = CraftPdfDictionary();
-      sigField.put(CraftPdfName.ft, CraftPdfName.sig);
-      sigField.put(CraftPdfName.subtype, CraftPdfName.widget);
-      sigField.put(CraftPdfName.t, CraftPdfString(name));
+      final sigField = PdfDictionary();
+      sigField.put(PdfName.ft, PdfName.sig);
+      sigField.put(PdfName.subtype, PdfName.widget);
+      sigField.put(PdfName.t, PdfString(name));
       // PDF/UA: TU key (Alternative description) is mandatory for form fields
-      sigField.put(
-          CraftPdfName.tu, CraftPdfString('Assinatura Digital: $name'));
+      sigField.put(PdfName.tu, PdfString('Assinatura Digital: $name'));
 
       // Rectangle
       final rect = _signerProperties.getPageRect();
-      sigField.put(CraftPdfName.rect, rect.toPdfArray());
+      sigField.put(PdfName.rect, rect.toPdfArray());
 
       // Page
       final pageNum = _signerProperties.pageOrdinal();
@@ -422,16 +419,16 @@ class CraftPdfSigner {
       if (page == null) {
         throw StateError("Page $pageNum not found");
       }
-      sigField.put(CraftPdfName.p, page.pdfRepresentation().indirectHandle()!);
+      sigField.put(PdfName.p, page.pdfRepresentation().indirectHandle()!);
 
       // Add value
-      sigField.put(CraftPdfName.v, _cryptoDictionary!.pdfRepresentation());
+      sigField.put(PdfName.v, _cryptoDictionary!.pdfRepresentation());
 
       // Flag
-      sigField.put(CraftPdfName.f, CraftPdfNumber(4)); // Print
+      sigField.put(PdfName.f, PdfNumber(4)); // Print
 
       // Create Wrapper
-      final fieldWrapper = CraftPdfSignatureFormField(sigField);
+      final fieldWrapper = PdfSignatureFormField(sigField);
       fieldWrapper.pdfRepresentation().attachToDocument(_document!);
 
       // Generate Appearance
@@ -445,7 +442,7 @@ class CraftPdfSigner {
       await _acroForm!.addField(fieldWrapper, page);
 
       // PDF/UA: Every page with annotations shall have /Tabs /S
-      page.pdfRepresentation().put(CraftPdfName.tabs, CraftPdfName.s);
+      page.pdfRepresentation().put(PdfName.tabs, PdfName.s);
       page.pdfRepresentation().markChanged();
     }
 
@@ -455,14 +452,14 @@ class CraftPdfSigner {
       byteRangePlaceholder[i] = 0x20; // spaces
     }
 
-    final byteRangeLit = CraftPdfLiteral.fromBytes(byteRangePlaceholder);
-    _exclusionLocations[CraftPdfName.byteRange] = byteRangeLit;
-    _cryptoDictionary!.put(CraftPdfName.byteRange, byteRangeLit);
+    final byteRangeLit = PdfLiteral.fromBytes(byteRangePlaceholder);
+    _exclusionLocations[PdfName.byteRange] = byteRangeLit;
+    _cryptoDictionary!.put(PdfName.byteRange, byteRangeLit);
 
     exclusionSizes.forEach((key, size) {
       // Only Contents supported directly for now
-      final hexString = CraftPdfString.fromBytes(Uint8List((size - 2) ~/ 2))
-          .setHexWriting(true);
+      final hexString =
+          PdfString.fromBytes(Uint8List((size - 2) ~/ 2)).setHexWriting(true);
       _cryptoDictionary!.put(key, hexString);
     });
 
@@ -470,15 +467,15 @@ class CraftPdfSigner {
     await _document!.close();
   }
 
-  Future<void> _close(CraftPdfDictionary dic) async {
+  Future<void> _close(PdfDictionary dic) async {
     final contentsHex = await _cryptoDictionary!
         .pdfRepresentation()
-        .get(CraftPdfName.contents) as CraftPdfString;
+        .get(PdfName.contents) as PdfString;
     final contentsPos = contentsHex.getOffset();
 
     // Write Contents
-    final newContents = (await dic.get(CraftPdfName.contents) as CraftPdfString)
-        .getValueBytes()!;
+    final newContents =
+        (await dic.get(PdfName.contents) as PdfString).getValueBytes()!;
 
     // We overwrite content at contentsPos with Hex String representation
     var hex = "";
@@ -506,7 +503,7 @@ class CraftPdfSigner {
 
     final contentsHex = await _cryptoDictionary!
         .pdfRepresentation()
-        .get(CraftPdfName.contents) as CraftPdfString;
+        .get(PdfName.contents) as PdfString;
     final contentsPos = contentsHex.getOffset();
     final contentsEnd =
         contentsPos + contentsHex.getValueBytes()!.length * 2 + 2;
@@ -591,9 +588,9 @@ class _BytesBuilderSink implements IOSink {
   }
 }
 
-class _DefaultDigest implements CraftExternalDigest {
+class _DefaultDigest implements ExternalDigest {
   @override
   SigningDigest getMessageDigest(String hashAlgorithm) {
-    return CraftDigestAlgorithms.getMessageDigest(hashAlgorithm);
+    return DigestAlgorithms.getMessageDigest(hashAlgorithm);
   }
 }

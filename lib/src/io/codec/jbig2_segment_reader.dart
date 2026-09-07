@@ -8,7 +8,7 @@ import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 /// associating segments with their pages and determining
 /// page dimensions and document-wide segments when they
 /// are any.
-class CraftJbig2SegmentReader {
+class Jbig2SegmentReader {
   static const int symbolDictionary = 0;
   static const int intermediateTextRegion = 4;
   static const int immediateTextRegion = 6;
@@ -35,13 +35,13 @@ class CraftJbig2SegmentReader {
   final Map<int, Jbig2Page> _pages = SplayTreeMap();
   final Set<Jbig2Segment> _globals = SplayTreeSet();
 
-  final CraftRandomAccessFileOrArray _ra;
+  final RandomAccessFileOrArray _ra;
   bool _sequential = false;
   bool _numberOfPagesKnown = false;
   // int _numberOfPages = -1;
   bool _read = false;
 
-  CraftJbig2SegmentReader(this._ra);
+  Jbig2SegmentReader(this._ra);
 
   static Uint8List copyByteArray(Uint8List b) {
     return Uint8List.fromList(b);
@@ -312,7 +312,7 @@ class Jbig2Segment implements Comparable<Jbig2Segment> {
 
 class Jbig2Page {
   final int page;
-  final CraftJbig2SegmentReader sr;
+  final Jbig2SegmentReader sr;
   final Map<int, Jbig2Segment> segs = SplayTreeMap();
   int pageBitmapWidth = -1;
   int pageBitmapHeight = -1;
@@ -333,13 +333,13 @@ class Jbig2Page {
     for (var sn in segs.keys) {
       Jbig2Segment s = segs[sn]!;
       if (forEmbedding &&
-          (s.type == CraftJbig2SegmentReader.endOfFile ||
-              s.type == CraftJbig2SegmentReader.endOfPage)) {
+          (s.type == Jbig2SegmentReader.endOfFile ||
+              s.type == Jbig2SegmentReader.endOfPage)) {
         continue;
       }
       if (forEmbedding) {
         Uint8List headerDataEmb =
-            CraftJbig2SegmentReader.copyByteArray(s.headerData!);
+            Jbig2SegmentReader.copyByteArray(s.headerData!);
         if (s.pageAssociationSize) {
           headerDataEmb[s.pageAssociationOffset] = 0x0;
           headerDataEmb[s.pageAssociationOffset + 1] = 0x0;

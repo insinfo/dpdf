@@ -18,7 +18,7 @@ class IoException extends DpdfException {
   ///
   /// [cause] the cause of the exception.
   IoException.fromCause(Object cause)
-      : super(CraftIoExceptionMessageConstant.unknownIoException, cause);
+      : super(IoExceptionMessageConstant.unknownIoException, cause);
 
   /// Creates a new IoException with an object for details.
   ///

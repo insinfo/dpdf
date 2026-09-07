@@ -1,8 +1,8 @@
 /// Helper class for internal usage only.
 library;
 
-class CraftDateTimeUtil {
-  CraftDateTimeUtil._();
+class DateTimeUtil {
+  DateTimeUtil._();
 
   static const String _defaultPattern = 'yyyy-MM-dd';
 

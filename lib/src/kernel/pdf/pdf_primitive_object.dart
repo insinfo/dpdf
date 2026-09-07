@@ -5,7 +5,7 @@ import 'pdf_object.dart';
 /// Abstract base class for PDF primitive objects.
 ///
 /// Primitive objects have raw byte content that can be generated lazily.
-abstract class CraftPdfPrimitiveObject extends CraftPdfObject {
+abstract class PdfPrimitiveObject extends PdfObject {
   /// The raw byte content of this object.
   Uint8List? _content;
 
@@ -13,15 +13,15 @@ abstract class CraftPdfPrimitiveObject extends CraftPdfObject {
   bool _directOnly = false;
 
   /// Creates an empty primitive object.
-  CraftPdfPrimitiveObject();
+  PdfPrimitiveObject();
 
   /// Creates a primitive object that can only be direct (not indirect).
-  CraftPdfPrimitiveObject.directOnly(bool directOnly) {
+  PdfPrimitiveObject.directOnly(bool directOnly) {
     _directOnly = directOnly;
   }
 
   /// Creates a primitive object with the given content.
-  CraftPdfPrimitiveObject.withContent(Uint8List content) {
+  PdfPrimitiveObject.withContent(Uint8List content) {
     _content = content;
   }
 
@@ -54,7 +54,7 @@ abstract class CraftPdfPrimitiveObject extends CraftPdfObject {
   /// Compares the content of two primitive objects.
   ///
   /// Returns negative if this < other, zero if equal, positive if this > other.
-  int compareContent(CraftPdfPrimitiveObject other) {
+  int compareContent(PdfPrimitiveObject other) {
     final myContent = getInternalContent();
     final otherContent = other.getInternalContent();
 
@@ -75,9 +75,9 @@ abstract class CraftPdfPrimitiveObject extends CraftPdfObject {
   }
 
   @override
-  void copyContent(CraftPdfObject from, [dynamic document]) {
+  void copyContent(PdfObject from, [dynamic document]) {
     super.copyContent(from, document);
-    if (from is CraftPdfPrimitiveObject && from._content != null) {
+    if (from is PdfPrimitiveObject && from._content != null) {
       _content = Uint8List.fromList(from._content!);
     }
   }

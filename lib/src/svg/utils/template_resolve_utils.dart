@@ -9,23 +9,22 @@ class TemplateResolveUtils {
   TemplateResolveUtils._();
 
   /// Resolve href to other object within svg and fills renderer with its properties and children if needed.
-  static void resolve(
-      CraftBranchSvgNodeRenderer renderer, CraftSvgDrawContext context) {
+  static void resolve(BranchSvgNodeRenderer renderer, SvgDrawContext context) {
     String? href = renderer.getAttribute(SvgAttributes.HREF);
     href ??= renderer.getAttribute(SvgAttributes.XLINK_HREF);
     if (href == null || href.isEmpty || href[0] != '#') {
       return;
     }
-    String normalizedName = CraftSvgTextUtil.filterReferenceValue(href);
-    CraftSvgNodeRenderer? template = context.getNamedObject(normalizedName);
-    if (template is! CraftBranchSvgNodeRenderer) {
+    String normalizedName = SvgTextUtil.filterReferenceValue(href);
+    SvgNodeRenderer? template = context.getNamedObject(normalizedName);
+    if (template is! BranchSvgNodeRenderer) {
       return;
     }
-    CraftBranchSvgNodeRenderer namedObject =
-        template.createDeepCopy() as CraftBranchSvgNodeRenderer;
+    BranchSvgNodeRenderer namedObject =
+        template.createDeepCopy() as BranchSvgNodeRenderer;
     resolve(namedObject, context);
     if (renderer.getChildren().isEmpty) {
-      for (CraftSvgNodeRenderer child in namedObject.getChildren()) {
+      for (SvgNodeRenderer child in namedObject.getChildren()) {
         renderer.addChild(child);
       }
     }

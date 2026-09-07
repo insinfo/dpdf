@@ -9,30 +9,30 @@ import 'pdf_document.dart';
 import 'pdf_name_tree_access.dart';
 
 /// Abstract representation of a name tree structure.
-class CraftGenericNameTree implements CraftPdfNameTreeAccess {
+class GenericNameTree implements PdfNameTreeAccess {
   static const int _nodeSize = 40;
 
   // Use SplayTreeMap or similar if we wanted auto-sort, but keys can change.
   // We use a Map and sort when building.
-  Map<CraftPdfString, CraftPdfObject> _items = {};
+  Map<PdfString, PdfObject> _items = {};
 
-  final CraftPdfDocument _pdfDoc;
+  final PdfDocument _pdfDoc;
   bool _modified = false;
 
-  CraftGenericNameTree(this._pdfDoc);
+  GenericNameTree(this._pdfDoc);
 
   /// Add an entry to the name tree.
-  void addEntry(CraftPdfString key, CraftPdfObject value) {
+  void addEntry(PdfString key, PdfObject value) {
     _addEntry(key, value, null);
   }
 
   /// Add an entry to the name tree.
-  void addEntryString(String key, CraftPdfObject value) {
-    addEntry(CraftPdfString(key), value);
+  void addEntryString(String key, PdfObject value) {
+    addEntry(PdfString(key), value);
   }
 
   /// Remove an entry from the name tree.
-  void removeEntry(CraftPdfString key) {
+  void removeEntry(PdfString key) {
     final existingVal = _items.remove(key);
     if (existingVal != null) {
       _modified = true;
@@ -40,17 +40,17 @@ class CraftGenericNameTree implements CraftPdfNameTreeAccess {
   }
 
   @override
-  Future<CraftPdfObject?> getEntry(CraftPdfString key) async {
+  Future<PdfObject?> getEntry(PdfString key) async {
     return _items[key];
   }
 
   @override
-  Future<CraftPdfObject?> getEntryAsString(String key) async {
-    return await getEntry(CraftPdfString(key));
+  Future<PdfObject?> getEntryAsString(String key) async {
+    return await getEntry(PdfString(key));
   }
 
   @override
-  Future<List<CraftPdfString>> getKeys() async {
+  Future<List<PdfString>> getKeys() async {
     return _items.keys.toList();
   }
 
@@ -61,13 +61,13 @@ class CraftGenericNameTree implements CraftPdfNameTreeAccess {
   }
 
   /// Build a PdfDictionary containing the name tree.
-  CraftPdfDictionary buildTree() {
+  PdfDictionary buildTree() {
     final names = _items.keys.toList();
     names.sort(_comparePdfStrings);
 
     if (names.length <= _nodeSize) {
-      final dic = CraftPdfDictionary();
-      final ar = CraftPdfArray();
+      final dic = PdfDictionary();
+      final ar = PdfArray();
       for (final name in names) {
         ar.add(name);
         final val = _items[name];
@@ -75,7 +75,7 @@ class CraftGenericNameTree implements CraftPdfNameTreeAccess {
           ar.add(val);
         }
       }
-      dic.put(CraftPdfName.names, ar);
+      dic.put(PdfName.names, ar);
       return dic;
     }
 
@@ -83,8 +83,8 @@ class CraftGenericNameTree implements CraftPdfNameTreeAccess {
     return _reduceTree(names, leaves, leaves.length, _nodeSize * _nodeSize);
   }
 
-  void _addEntry(CraftPdfString key, CraftPdfObject value,
-      Function(CraftPdfDocument)? onErrorAction) {
+  void _addEntry(
+      PdfString key, PdfObject value, Function(PdfDocument)? onErrorAction) {
     final existingVal = _items[key];
     if (existingVal != null) {
       final valueRef = value.indirectHandle();
@@ -101,23 +101,23 @@ class CraftGenericNameTree implements CraftPdfNameTreeAccess {
     _items[key] = value;
   }
 
-  void setItems(Map<CraftPdfString, CraftPdfObject> items) {
+  void setItems(Map<PdfString, PdfObject> items) {
     _items = items;
   }
 
-  Map<CraftPdfString, CraftPdfObject> getItems() => _items;
+  Map<PdfString, PdfObject> getItems() => _items;
 
   /// Read the entries in a name tree structure from a dictionary.
-  static Future<Map<CraftPdfString, CraftPdfObject>> readTree(
-      CraftPdfDictionary? dictionary) async {
-    final items = <CraftPdfString, CraftPdfObject>{};
+  static Future<Map<PdfString, PdfObject>> readTree(
+      PdfDictionary? dictionary) async {
+    final items = <PdfString, PdfObject>{};
     if (dictionary != null) {
       await _iterateItems(dictionary, items, null);
     }
     return items;
   }
 
-  static int _comparePdfStrings(CraftPdfString a, CraftPdfString b) {
+  static int _comparePdfStrings(PdfString a, PdfString b) {
     final bytesA = a.getValueBytes();
     final bytesB = b.getValueBytes();
     if (bytesA == null && bytesB == null) return 0;
@@ -132,77 +132,75 @@ class CraftGenericNameTree implements CraftPdfNameTreeAccess {
     return bytesA.length - bytesB.length;
   }
 
-  CraftPdfDictionary _formatNodeWithLimits(
-      List<CraftPdfString> names, int lower, int upper) {
-    final dic = CraftPdfDictionary();
+  PdfDictionary _formatNodeWithLimits(
+      List<PdfString> names, int lower, int upper) {
+    final dic = PdfDictionary();
     dic.attachToDocument(_pdfDoc);
-    final limitsArr = CraftPdfArray();
+    final limitsArr = PdfArray();
     limitsArr.add(names[lower]);
     limitsArr.add(names[upper]);
-    dic.put(CraftPdfName.limits, limitsArr);
+    dic.put(PdfName.limits, limitsArr);
     return dic;
   }
 
-  CraftPdfDictionary _reduceTree(List<CraftPdfString> names,
-      List<CraftPdfDictionary> topLayer, int topLayerLen, int curNodeSpan) {
+  PdfDictionary _reduceTree(List<PdfString> names, List<PdfDictionary> topLayer,
+      int topLayerLen, int curNodeSpan) {
     if (topLayerLen <= _nodeSize) {
-      final kidsArr = CraftPdfArray();
+      final kidsArr = PdfArray();
       for (int i = 0; i < topLayerLen; ++i) {
         kidsArr.add(topLayer[i]);
       }
-      final root = CraftPdfDictionary();
-      root.put(CraftPdfName.kids, kidsArr);
+      final root = PdfDictionary();
+      root.put(PdfName.kids, kidsArr);
       return root;
     }
 
     int nextLayerLen = (names.length + curNodeSpan - 1) ~/ curNodeSpan;
 
-    final newTopLayer = List<CraftPdfDictionary>.filled(
-        nextLayerLen, CraftPdfDictionary()); // placeholders
+    final newTopLayer = List<PdfDictionary>.filled(
+        nextLayerLen, PdfDictionary()); // placeholders
 
     for (int i = 0; i < nextLayerLen; ++i) {
       int lowerLimit = i * curNodeSpan;
       int upperLimit = min((i + 1) * curNodeSpan, names.length) - 1;
       final dic = _formatNodeWithLimits(names, lowerLimit, upperLimit);
-      final kidsArr = CraftPdfArray();
+      final kidsArr = PdfArray();
       int offset = i * _nodeSize;
       int end = min(offset + _nodeSize, topLayerLen);
       for (; offset < end; ++offset) {
         kidsArr.add(topLayer[offset]);
       }
-      dic.put(CraftPdfName.kids, kidsArr);
+      dic.put(PdfName.kids, kidsArr);
       newTopLayer[i] = dic;
     }
     return _reduceTree(
         names, newTopLayer, nextLayerLen, curNodeSpan * _nodeSize);
   }
 
-  List<CraftPdfDictionary> _constructLeafArr(List<CraftPdfString> names) {
+  List<PdfDictionary> _constructLeafArr(List<PdfString> names) {
     final len = (names.length + _nodeSize - 1) ~/ _nodeSize;
-    final leaves = <CraftPdfDictionary>[];
+    final leaves = <PdfDictionary>[];
 
     for (int k = 0; k < len; ++k) {
       int offset = k * _nodeSize;
       int end = min(offset + _nodeSize, names.length);
       final dic = _formatNodeWithLimits(names, offset, end - 1);
-      final namesArr = CraftPdfArray();
+      final namesArr = PdfArray();
       for (int j = offset; j < end; ++j) {
         namesArr.add(names[j]);
         namesArr.add(_items[names[j]]!);
       }
-      dic.put(CraftPdfName.names, namesArr);
+      dic.put(PdfName.names, namesArr);
       dic.attachToDocument(_pdfDoc);
       leaves.add(dic);
     }
     return leaves;
   }
 
-  static Future<CraftPdfString?> _iterateItems(
-      CraftPdfDictionary dictionary,
-      Map<CraftPdfString, CraftPdfObject> items,
-      CraftPdfString? leftOver) async {
-    final names = await dictionary.arrayEntry(CraftPdfName.names);
-    final kids = await dictionary.arrayEntry(CraftPdfName.kids);
+  static Future<PdfString?> _iterateItems(PdfDictionary dictionary,
+      Map<PdfString, PdfObject> items, PdfString? leftOver) async {
+    final names = await dictionary.arrayEntry(PdfName.names);
+    final kids = await dictionary.arrayEntry(PdfName.kids);
     bool isLeafNode = names != null && names.size() > 0;
     bool isIntermNode = kids != null && kids.size() > 0;
 
@@ -210,7 +208,7 @@ class CraftGenericNameTree implements CraftPdfNameTreeAccess {
       return await _iterateLeafNode(names, items, leftOver);
     } else {
       if (isIntermNode) {
-        CraftPdfString? curLeftOver = leftOver;
+        PdfString? curLeftOver = leftOver;
         for (int k = 0; k < kids.size(); k++) {
           final kid = await kids.dictionaryEntry(k);
           if (kid != null) {
@@ -224,10 +222,8 @@ class CraftGenericNameTree implements CraftPdfNameTreeAccess {
     }
   }
 
-  static Future<CraftPdfString?> _iterateLeafNode(
-      CraftPdfArray names,
-      Map<CraftPdfString, CraftPdfObject> items,
-      CraftPdfString? leftOver) async {
+  static Future<PdfString?> _iterateLeafNode(PdfArray names,
+      Map<PdfString, PdfObject> items, PdfString? leftOver) async {
     int k = 0;
     if (leftOver != null) {
       final val = await names.get(0);

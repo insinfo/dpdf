@@ -1,4 +1,4 @@
-class CraftStyledXMLParserException implements Exception {
+class StyledXMLParserException implements Exception {
   static const String INVALID_GRADIENT_FUNCTION_ARGUMENTS_LIST =
       "Cannot interpret these gradient arguments: {0}";
   static const String INVALID_GRADIENT_TO_SIDE_OR_CORNER_STRING =
@@ -12,7 +12,7 @@ class CraftStyledXMLParserException implements Exception {
       "The requested text encoding has no available implementation.";
 
   final String message;
-  CraftStyledXMLParserException(this.message);
+  StyledXMLParserException(this.message);
 
   @override
   String toString() => 'StyledXMLParserException: $message';

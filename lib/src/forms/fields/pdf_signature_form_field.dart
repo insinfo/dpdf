@@ -6,63 +6,59 @@ import '../../kernel/pdf/xobject/pdf_form_x_object.dart';
 import 'pdf_form_field.dart';
 import '../pdf_sig_field_lock.dart';
 
-class CraftPdfSignatureFormField extends CraftPdfFormField {
+class PdfSignatureFormField extends PdfFormField {
   bool reuseAppearance = false;
   bool ignorePageRotation = true;
-  CraftPdfFormXObject? n0;
-  CraftPdfFormXObject? n2;
+  PdfFormXObject? n0;
+  PdfFormXObject? n2;
 
-  CraftPdfSignatureFormField(super.pdfObject);
+  PdfSignatureFormField(super.pdfObject);
 
   /// Creates a signature form field for or a given document.
-  static CraftPdfSignatureFormField createFromDocument(
-      CraftPdfDocument document) {
-    CraftPdfDictionary dict = CraftPdfDictionary();
-    dict.put(CraftPdfName.ft, CraftPdfName.sig);
-    CraftPdfSignatureFormField field = CraftPdfSignatureFormField(dict);
+  static PdfSignatureFormField createFromDocument(PdfDocument document) {
+    PdfDictionary dict = PdfDictionary();
+    dict.put(PdfName.ft, PdfName.sig);
+    PdfSignatureFormField field = PdfSignatureFormField(dict);
     field.attachToDocument(document);
     return field;
   }
 
   @override
-  Future<CraftPdfName?> getFormType() async {
-    return CraftPdfName.sig;
+  Future<PdfName?> getFormType() async {
+    return PdfName.sig;
   }
 
   @override
   void setValue(Object value) {
-    if (value is CraftPdfObject) {
-      put(CraftPdfName.v, value);
+    if (value is PdfObject) {
+      put(PdfName.v, value);
     } else {
       super.setValue(value);
     }
   }
 
-  Future<CraftPdfSigFieldLock?> getSigFieldLockDictionary() async {
-    CraftPdfObject? sigLockDict =
-        await pdfRepresentation().get(CraftPdfName.lock, true);
-    return sigLockDict is CraftPdfDictionary
-        ? CraftPdfSigFieldLock(sigLockDict)
-        : null;
+  Future<PdfSigFieldLock?> getSigFieldLockDictionary() async {
+    PdfObject? sigLockDict = await pdfRepresentation().get(PdfName.lock, true);
+    return sigLockDict is PdfDictionary ? PdfSigFieldLock(sigLockDict) : null;
   }
 
   /// Assigns the signature field's background appearance layer.
-  void setBackgroundLayer(CraftPdfFormXObject n0) {
+  void setBackgroundLayer(PdfFormXObject n0) {
     this.n0 = n0;
     regenerateField();
   }
 
   /// Returns the configured background appearance, when present.
-  CraftPdfFormXObject? getBackgroundLayer() => n0;
+  PdfFormXObject? getBackgroundLayer() => n0;
 
   /// Sets the signature appearance layer that contains information about the signature.
-  void setSignatureAppearanceLayer(CraftPdfFormXObject n2) {
+  void setSignatureAppearanceLayer(PdfFormXObject n2) {
     this.n2 = n2;
     regenerateField();
   }
 
   /// Returns the configured signature information appearance, when present.
-  CraftPdfFormXObject? getSignatureAppearanceLayer() => n2;
+  PdfFormXObject? getSignatureAppearanceLayer() => n2;
 
   /// Controls reuse of the previous appearance as a background.
   void setReuseAppearance(bool reuseAppearance) {
@@ -82,26 +78,26 @@ class CraftPdfSignatureFormField extends CraftPdfFormField {
 
   @override
   Future<bool> regenerateField() async {
-    CraftPdfDictionary ap = CraftPdfDictionary();
+    PdfDictionary ap = PdfDictionary();
     if (n2 != null) {
       // Must use indirect reference for the appearance XObject
       final ref = n2!.pdfRepresentation().indirectHandle();
       if (ref != null) {
-        ap.put(CraftPdfName.n, ref);
+        ap.put(PdfName.n, ref);
       } else {
         // If no indirect reference, put directly (less ideal but functional)
-        ap.put(CraftPdfName.n, n2!.pdfRepresentation());
+        ap.put(PdfName.n, n2!.pdfRepresentation());
       }
     }
-    put(CraftPdfName.ap, ap);
+    put(PdfName.ap, ap);
     markChanged();
     return true;
   }
 
   /// Gets the signature value dictionary.
-  Future<CraftPdfDictionary?> getSignatureDictionary() async {
-    CraftPdfObject? v = await getValue();
-    if (v is CraftPdfDictionary) {
+  Future<PdfDictionary?> getSignatureDictionary() async {
+    PdfObject? v = await getValue();
+    if (v is PdfDictionary) {
       return v;
     }
     return null;

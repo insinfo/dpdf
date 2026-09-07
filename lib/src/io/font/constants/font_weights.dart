@@ -1,6 +1,6 @@
 import 'dart:math';
 
-class CraftFontWeights {
+class FontWeights {
   static const int THIN = 100;
   static const int EXTRA_LIGHT = 200;
   static const int LIGHT = 300;

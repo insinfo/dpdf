@@ -50,7 +50,7 @@ class PdfDecodedImage {
 abstract final class PdfImageDecoder {
   /// Decodes [image]. Returns null when the image uses something this decoder
   /// does not read, rather than throwing, so one image cannot fail a page.
-  static Future<PdfDecodedImage?> decode(CraftPdfStream image) async {
+  static Future<PdfDecodedImage?> decode(PdfStream image) async {
     try {
       return await _decode(image);
     } on Object {
@@ -58,15 +58,15 @@ abstract final class PdfImageDecoder {
     }
   }
 
-  static Future<PdfDecodedImage?> _decode(CraftPdfStream image) async {
-    final width = await image.integerEntry(CraftPdfName.width);
-    final height = await image.integerEntry(CraftPdfName.height);
+  static Future<PdfDecodedImage?> _decode(PdfStream image) async {
+    final width = await image.integerEntry(PdfName.width);
+    final height = await image.integerEntry(PdfName.height);
     if (width == null || height == null || width <= 0 || height <= 0) {
       return null;
     }
     if (width * height > _maxPixels) return null;
 
-    final isMask = await image.flagEntry(CraftPdfName('ImageMask')) ?? false;
+    final isMask = await image.flagEntry(PdfName('ImageMask')) ?? false;
     if (isMask) return _decodeStencil(image, width, height);
 
     final filters = await _filterNames(image);
@@ -81,11 +81,11 @@ abstract final class PdfImageDecoder {
       if (jpx != null) return await _withAlpha(image, jpx);
     }
 
-    final bits = await image.integerEntry(CraftPdfName('BitsPerComponent'));
+    final bits = await image.integerEntry(PdfName('BitsPerComponent'));
     if (bits == null || !const [1, 2, 4, 8, 16].contains(bits)) return null;
 
-    final space = await CraftPdfColorSpace.makeColorSpace(
-        await image.get(CraftPdfName('ColorSpace'), true));
+    final space = await PdfColorSpace.makeColorSpace(
+        await image.get(PdfName('ColorSpace'), true));
     if (space == null) return null;
     final channels = space.getNumberOfComponents();
     if (channels < 1 || channels > 4) return null;
@@ -116,17 +116,17 @@ abstract final class PdfImageDecoder {
   // --- stencil masks --------------------------------------------------------
 
   static Future<PdfDecodedImage?> _decodeStencil(
-      CraftPdfStream image, int width, int height) async {
+      PdfStream image, int width, int height) async {
     final samples = await image.getBytes();
     if (samples == null) return null;
 
     // The default for a stencil is [0 1]: a 0 bit paints. /Decode [1 0]
     // inverts that.
-    final decode = await image.arrayEntry(CraftPdfName('Decode'));
+    final decode = await image.arrayEntry(PdfName('Decode'));
     var paintsOnZero = true;
     if (decode != null && decode.size() >= 1) {
       final first = await decode.get(0);
-      if (first is CraftPdfNumber && first.doubleValue() == 1) {
+      if (first is PdfNumber && first.doubleValue() == 1) {
         paintsOnZero = false;
       }
     }
@@ -149,7 +149,7 @@ abstract final class PdfImageDecoder {
   // --- already-decoded codecs ----------------------------------------------
 
   static Future<PdfDecodedImage?> _decodeJpeg(
-      CraftPdfStream image, int width, int height) async {
+      PdfStream image, int width, int height) async {
     // `getBytes` e não `getRawBytes`: um `/Filter` pode ser uma cadeia, como
     // `[/FlateDecode /DCTDecode]`, e o codec de imagem é sempre o último. A
     // cadeia de filtros deixa DCT e JPX passarem intactos, então isto entrega
@@ -202,7 +202,7 @@ abstract final class PdfImageDecoder {
   }
 
   static Future<PdfDecodedImage?> _decodeJpx(
-      CraftPdfStream image, int width, int height) async {
+      PdfStream image, int width, int height) async {
     // Veja a nota em `_decodeJpeg`: o codec é o último filtro da cadeia.
     final raw = await image.getBytes();
     if (raw == null) return null;
@@ -248,8 +248,8 @@ abstract final class PdfImageDecoder {
 
   /// The `/Decode` array, defaulted per the colour space when absent.
   static Future<Float64List> _decodeArray(
-    CraftPdfStream image,
-    CraftPdfColorSpace space,
+    PdfStream image,
+    PdfColorSpace space,
     int channels,
     int bits,
   ) async {
@@ -267,11 +267,11 @@ abstract final class PdfImageDecoder {
       result[i * 2 + 1] = range[1];
     }
 
-    final declared = await image.arrayEntry(CraftPdfName('Decode'));
+    final declared = await image.arrayEntry(PdfName('Decode'));
     if (declared != null && declared.size() >= channels * 2) {
       for (var i = 0; i < channels * 2; i++) {
         final value = await declared.get(i);
-        if (value is CraftPdfNumber && value.doubleValue().isFinite) {
+        if (value is PdfNumber && value.doubleValue().isFinite) {
           result[i] = value.doubleValue();
         }
       }
@@ -285,7 +285,7 @@ abstract final class PdfImageDecoder {
     required int height,
     required int bits,
     required int channels,
-    required CraftPdfColorSpace space,
+    required PdfColorSpace space,
     required Float64List decode,
   }) {
     final stride = (width * channels * bits + 7) >> 3;
@@ -344,11 +344,11 @@ abstract final class PdfImageDecoder {
 
   /// Folds an `/SMask` or a stencil `/Mask` into the alpha channel.
   static Future<PdfDecodedImage> _withAlpha(
-      CraftPdfStream image, PdfDecodedImage decoded) async {
+      PdfStream image, PdfDecodedImage decoded) async {
     final rgba = decoded.rgba;
     if (rgba == null) return decoded;
 
-    final soft = await image.streamEntry(CraftPdfName('SMask'));
+    final soft = await image.streamEntry(PdfName('SMask'));
     if (soft != null) {
       final alpha = await _softMaskAlpha(soft);
       if (alpha != null) {
@@ -358,12 +358,12 @@ abstract final class PdfImageDecoder {
       return decoded;
     }
 
-    final mask = await image.get(CraftPdfName('Mask'), true);
-    if (mask is CraftPdfStream) {
+    final mask = await image.get(PdfName('Mask'), true);
+    if (mask is PdfStream) {
       final stencil = await _decodeStencil(
         mask,
-        await mask.integerEntry(CraftPdfName.width) ?? 0,
-        await mask.integerEntry(CraftPdfName.height) ?? 0,
+        await mask.integerEntry(PdfName.width) ?? 0,
+        await mask.integerEntry(PdfName.height) ?? 0,
       );
       final samples = stencil?.stencil;
       if (samples != null) {
@@ -381,9 +381,9 @@ abstract final class PdfImageDecoder {
   }
 
   static Future<({Uint8List samples, int width, int height})?> _softMaskAlpha(
-      CraftPdfStream mask) async {
-    final width = await mask.integerEntry(CraftPdfName.width);
-    final height = await mask.integerEntry(CraftPdfName.height);
+      PdfStream mask) async {
+    final width = await mask.integerEntry(PdfName.width);
+    final height = await mask.integerEntry(PdfName.height);
     if (width == null || height == null || width <= 0 || height <= 0) {
       return null;
     }
@@ -418,14 +418,14 @@ abstract final class PdfImageDecoder {
 
   // --- helpers --------------------------------------------------------------
 
-  static Future<Set<String>> _filterNames(CraftPdfStream stream) async {
-    final filter = await stream.get(CraftPdfName.filter);
+  static Future<Set<String>> _filterNames(PdfStream stream) async {
+    final filter = await stream.get(PdfName.filter);
     if (filter == null) return const {};
     if (filter.objectKind() == PdfObjectType.name) {
-      return {(filter as CraftPdfName).getValue()};
+      return {(filter as PdfName).getValue()};
     }
     if (filter.objectKind() == PdfObjectType.array) {
-      final array = filter as CraftPdfArray;
+      final array = filter as PdfArray;
       final names = <String>{};
       for (var i = 0; i < array.size(); i++) {
         final name = await array.nameEntry(i);
@@ -481,8 +481,7 @@ class _BitReader {
 /// The abbreviations exist because an inline image's dictionary is repeated in
 /// the content stream for every occurrence, so the format traded readability
 /// for bytes.
-CraftPdfStream inlineImageToStream(
-    CraftPdfDictionary dictionary, Uint8List data) {
+PdfStream inlineImageToStream(PdfDictionary dictionary, Uint8List data) {
   const expansions = {
     'BPC': 'BitsPerComponent',
     'CS': 'ColorSpace',
@@ -511,20 +510,20 @@ CraftPdfStream inlineImageToStream(
     'DCT': 'DCTDecode',
   };
 
-  CraftPdfObject expand(String key, CraftPdfObject value) {
-    if (value is CraftPdfName) {
+  PdfObject expand(String key, PdfObject value) {
+    if (value is PdfName) {
       if (key == 'CS' || key == 'ColorSpace') {
-        return CraftPdfName(colourSpaces[value.getValue()] ?? value.getValue());
+        return PdfName(colourSpaces[value.getValue()] ?? value.getValue());
       }
       if (key == 'F' || key == 'Filter') {
-        return CraftPdfName(filters[value.getValue()] ?? value.getValue());
+        return PdfName(filters[value.getValue()] ?? value.getValue());
       }
     }
-    if (value is CraftPdfArray && (key == 'F' || key == 'Filter')) {
-      final out = CraftPdfArray();
+    if (value is PdfArray && (key == 'F' || key == 'Filter')) {
+      final out = PdfArray();
       for (final item in value.subList(0, value.size())) {
-        out.add(item is CraftPdfName
-            ? CraftPdfName(filters[item.getValue()] ?? item.getValue())
+        out.add(item is PdfName
+            ? PdfName(filters[item.getValue()] ?? item.getValue())
             : item);
       }
       return out;
@@ -532,12 +531,12 @@ CraftPdfStream inlineImageToStream(
     return value;
   }
 
-  final stream = CraftPdfStream.withBytes(data, 0);
+  final stream = PdfStream.withBytes(data, 0);
   for (final entry in dictionary.getMap()?.entries ??
-      const <MapEntry<CraftPdfName, CraftPdfObject>>[]) {
+      const <MapEntry<PdfName, PdfObject>>[]) {
     final key = entry.key.getValue();
-    stream.put(CraftPdfName(expansions[key] ?? key), expand(key, entry.value));
+    stream.put(PdfName(expansions[key] ?? key), expand(key, entry.value));
   }
-  stream.put(CraftPdfName.subtype, CraftPdfName('Image'));
+  stream.put(PdfName.subtype, PdfName('Image'));
   return stream;
 }

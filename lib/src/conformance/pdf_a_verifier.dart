@@ -38,13 +38,13 @@ class PdfAVerifier {
     String? password,
   }) async {
     final findings = FindingSink();
-    final properties = CraftReaderProperties();
+    final properties = ReaderProperties();
     if (password != null) {
       properties.setPassword(Uint8List.fromList(utf8.encode(password)));
     }
 
-    final reader = CraftPdfReader.fromBytes(bytes, properties);
-    final document = await CraftPdfDocument.open(reader);
+    final reader = PdfReader.fromBytes(bytes, properties);
+    final document = await PdfDocument.open(reader);
     try {
       final catalog = document.rootCatalog().pdfRepresentation();
       final claim = await XmpIdentification.read(catalog);
@@ -122,11 +122,11 @@ class PdfAVerifier {
   // --- document wide --------------------------------------------------------
 
   static Future<void> _checkVersion(
-    CraftPdfDocument document,
+    PdfDocument document,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
-    final version = (document.formatVersion() ?? CraftPdfVersion.PDF_1_7)
+    final version = (document.formatVersion() ?? PdfVersion.PDF_1_7)
         .toString()
         .replaceFirst('PDF-', '');
     final maximum = level.maximumPdfVersion;
@@ -153,10 +153,10 @@ class PdfAVerifier {
   }
 
   static Future<void> _checkEncryption(
-    CraftPdfDocument document,
+    PdfDocument document,
     FindingSink findings,
   ) async {
-    if (document.fileTrailer().containsKey(CraftPdfName.encrypt)) {
+    if (document.fileTrailer().containsKey(PdfName.encrypt)) {
       findings.add(const PdfConformanceFinding(
         'encrypted',
         PdfConformanceSeverity.violation,
@@ -168,10 +168,10 @@ class PdfAVerifier {
   }
 
   static Future<void> _checkMetadata(
-    CraftPdfDictionary catalog,
+    PdfDictionary catalog,
     FindingSink findings,
   ) async {
-    if (!catalog.containsKey(CraftPdfName.metadata)) {
+    if (!catalog.containsKey(PdfName.metadata)) {
       findings.add(const PdfConformanceFinding(
         'missing-metadata',
         PdfConformanceSeverity.violation,
@@ -181,7 +181,7 @@ class PdfAVerifier {
       ));
       return;
     }
-    final stream = await catalog.streamEntry(CraftPdfName.metadata);
+    final stream = await catalog.streamEntry(PdfName.metadata);
     if (stream == null) {
       findings.add(const PdfConformanceFinding(
         'metadata-not-a-stream',
@@ -191,7 +191,7 @@ class PdfAVerifier {
       ));
       return;
     }
-    if (stream.containsKey(CraftPdfName.filter)) {
+    if (stream.containsKey(PdfName.filter)) {
       findings.add(const PdfConformanceFinding(
         'metadata-filtered',
         PdfConformanceSeverity.violation,
@@ -203,11 +203,11 @@ class PdfAVerifier {
   }
 
   static Future<void> _checkOutputIntents(
-    CraftPdfDictionary catalog,
+    PdfDictionary catalog,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
-    final intents = await catalog.arrayEntry(CraftPdfName('OutputIntents'));
+    final intents = await catalog.arrayEntry(PdfName('OutputIntents'));
     if (intents == null || intents.size() == 0) {
       findings.add(PdfConformanceFinding(
         'missing-output-intent',
@@ -220,14 +220,14 @@ class PdfAVerifier {
     }
 
     var seenPdfA = false;
-    CraftPdfObject? firstProfile;
+    PdfObject? firstProfile;
     for (var i = 0; i < intents.size(); i++) {
       final intent = await intents.dictionaryEntry(i);
       if (intent == null) continue;
-      final subtype = await intent.nameEntry(CraftPdfName('S'));
+      final subtype = await intent.nameEntry(PdfName('S'));
       if (subtype?.getValue() == 'GTS_PDFA1') {
         seenPdfA = true;
-        final profile = await intent.get(CraftPdfName('DestOutputProfile'));
+        final profile = await intent.get(PdfName('DestOutputProfile'));
         if (profile == null) {
           findings.add(PdfConformanceFinding(
             'output-intent-without-profile',
@@ -248,7 +248,7 @@ class PdfAVerifier {
             ));
           }
         }
-        if (!intent.containsKey(CraftPdfName('OutputConditionIdentifier'))) {
+        if (!intent.containsKey(PdfName('OutputConditionIdentifier'))) {
           findings.add(PdfConformanceFinding(
             'output-intent-unidentified',
             PdfConformanceSeverity.violation,
@@ -275,14 +275,14 @@ class PdfAVerifier {
   };
 
   static Future<void> _checkCatalogEntries(
-    CraftPdfDictionary catalog,
+    PdfDictionary catalog,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
     for (final entry in _forbiddenCatalogEntries.entries) {
       // Optional content arrived with PDF 1.5 and is allowed from PDF/A-2 on.
       if (entry.key == 'OCProperties' && level.part != '1') continue;
-      if (catalog.containsKey(CraftPdfName(entry.key))) {
+      if (catalog.containsKey(PdfName(entry.key))) {
         findings.add(PdfConformanceFinding(
           'catalog-${entry.key.toLowerCase()}',
           PdfConformanceSeverity.violation,
@@ -292,9 +292,9 @@ class PdfAVerifier {
       }
     }
 
-    final names = await catalog.dictionaryEntry(CraftPdfName('Names'));
+    final names = await catalog.dictionaryEntry(PdfName('Names'));
     if (names != null) {
-      if (names.containsKey(CraftPdfName('JavaScript'))) {
+      if (names.containsKey(PdfName('JavaScript'))) {
         findings.add(PdfConformanceFinding(
           'catalog-javascript',
           PdfConformanceSeverity.violation,
@@ -304,7 +304,7 @@ class PdfAVerifier {
         ));
       }
       if (!level.allowsEmbeddedFiles &&
-          names.containsKey(CraftPdfName('EmbeddedFiles'))) {
+          names.containsKey(PdfName('EmbeddedFiles'))) {
         findings.add(PdfConformanceFinding(
           'catalog-embedded-files',
           PdfConformanceSeverity.violation,
@@ -315,22 +315,22 @@ class PdfAVerifier {
       }
     }
 
-    final openAction = await catalog.get(CraftPdfName('OpenAction'));
+    final openAction = await catalog.get(PdfName('OpenAction'));
     if (openAction != null &&
         openAction.objectKind() == PdfObjectType.dictionary) {
-      await _checkAction(openAction as CraftPdfDictionary, level, findings);
+      await _checkAction(openAction as PdfDictionary, level, findings);
     }
   }
 
   static Future<void> _checkTagging(
-    CraftPdfDictionary catalog,
+    PdfDictionary catalog,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
     if (!level.requiresTagging) return;
 
-    final markInfo = await catalog.dictionaryEntry(CraftPdfName.markInfo);
-    final marked = await markInfo?.flagEntry(CraftPdfName('Marked'));
+    final markInfo = await catalog.dictionaryEntry(PdfName.markInfo);
+    final marked = await markInfo?.flagEntry(PdfName('Marked'));
     if (marked != true) {
       findings.add(PdfConformanceFinding(
         'not-marked',
@@ -339,7 +339,7 @@ class PdfAVerifier {
         clause: 'ISO 19005-${level.part}:6.8.2',
       ));
     }
-    if (!catalog.containsKey(CraftPdfName.structTreeRoot)) {
+    if (!catalog.containsKey(PdfName.structTreeRoot)) {
       findings.add(PdfConformanceFinding(
         'missing-structure-tree',
         PdfConformanceSeverity.violation,
@@ -348,7 +348,7 @@ class PdfAVerifier {
         clause: 'ISO 19005-${level.part}:6.8.2',
       ));
     }
-    final lang = await catalog.stringEntry(CraftPdfName('Lang'));
+    final lang = await catalog.stringEntry(PdfName('Lang'));
     if (lang == null) {
       findings.add(PdfConformanceFinding(
         'missing-lang',
@@ -387,7 +387,7 @@ class PdfAVerifier {
   };
 
   static Future<void> _checkPages(
-    CraftPdfDocument document,
+    PdfDocument document,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
@@ -397,7 +397,7 @@ class PdfAVerifier {
       if (page == null) continue;
       final dictionary = page.pdfRepresentation();
 
-      if (dictionary.containsKey(CraftPdfName('AA'))) {
+      if (dictionary.containsKey(PdfName('AA'))) {
         findings.add(PdfConformanceFinding(
           'page-additional-actions',
           PdfConformanceSeverity.violation,
@@ -408,8 +408,8 @@ class PdfAVerifier {
       }
 
       if (level.forbidsTransparency) {
-        final group = await dictionary.dictionaryEntry(CraftPdfName('Group'));
-        final subtype = await group?.nameEntry(CraftPdfName('S'));
+        final group = await dictionary.dictionaryEntry(PdfName('Group'));
+        final subtype = await group?.nameEntry(PdfName('S'));
         if (subtype?.getValue() == 'Transparency') {
           findings.add(PdfConformanceFinding(
             'page-transparency-group',
@@ -428,20 +428,19 @@ class PdfAVerifier {
   }
 
   static Future<void> _checkAnnotations(
-    CraftPdfPage page,
+    PdfPage page,
     int number,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
     final annotations =
-        await page.pdfRepresentation().arrayEntry(CraftPdfName.annots);
+        await page.pdfRepresentation().arrayEntry(PdfName.annots);
     if (annotations == null) return;
 
     for (var i = 0; i < annotations.size(); i++) {
       final annotation = await annotations.dictionaryEntry(i);
       if (annotation == null) continue;
-      final subtype =
-          (await annotation.nameEntry(CraftPdfName.subtype))?.getValue();
+      final subtype = (await annotation.nameEntry(PdfName.subtype))?.getValue();
 
       if (subtype != null && _forbiddenAnnotations.contains(subtype)) {
         findings.add(PdfConformanceFinding(
@@ -454,7 +453,7 @@ class PdfAVerifier {
         ));
       }
 
-      final flags = await annotation.integerEntry(CraftPdfName('F')) ?? 0;
+      final flags = await annotation.integerEntry(PdfName('F')) ?? 0;
       const printFlag = 4, hiddenFlag = 2, noViewFlag = 32;
       if (flags & printFlag == 0) {
         findings.add(PdfConformanceFinding(
@@ -477,7 +476,7 @@ class PdfAVerifier {
       }
 
       if (level.forbidsTransparency) {
-        final opacity = await annotation.decimalEntry(CraftPdfName('CA'));
+        final opacity = await annotation.decimalEntry(PdfName('CA'));
         if (opacity != null && opacity != 1.0) {
           findings.add(PdfConformanceFinding(
             'annotation-transparent',
@@ -490,8 +489,8 @@ class PdfAVerifier {
       }
 
       if (subtype != 'Popup' && subtype != 'Link') {
-        final appearance = await annotation.dictionaryEntry(CraftPdfName('AP'));
-        if (appearance == null || !appearance.containsKey(CraftPdfName('N'))) {
+        final appearance = await annotation.dictionaryEntry(PdfName('AP'));
+        if (appearance == null || !appearance.containsKey(PdfName('N'))) {
           findings.add(PdfConformanceFinding(
             'annotation-without-appearance',
             PdfConformanceSeverity.violation,
@@ -503,7 +502,7 @@ class PdfAVerifier {
         }
       }
 
-      final action = await annotation.dictionaryEntry(CraftPdfName('A'));
+      final action = await annotation.dictionaryEntry(PdfName('A'));
       if (action != null) {
         await _checkAction(action, level, findings, page: number);
       }
@@ -511,12 +510,12 @@ class PdfAVerifier {
   }
 
   static Future<void> _checkAction(
-    CraftPdfDictionary action,
+    PdfDictionary action,
     PdfAConformanceLevel level,
     FindingSink findings, {
     int? page,
   }) async {
-    final type = (await action.nameEntry(CraftPdfName('S')))?.getValue();
+    final type = (await action.nameEntry(PdfName('S')))?.getValue();
     if (type != null && _forbiddenActions.contains(type)) {
       findings.add(PdfConformanceFinding(
         'forbidden-action',
@@ -529,16 +528,16 @@ class PdfAVerifier {
   }
 
   static Future<void> _checkPageResources(
-    CraftPdfPage page,
+    PdfPage page,
     int number,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
     final resources =
-        await page.pdfRepresentation().dictionaryEntry(CraftPdfName.resources);
+        await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
     if (resources == null) return;
 
-    final fonts = await resources.dictionaryEntry(CraftPdfName.font);
+    final fonts = await resources.dictionaryEntry(PdfName.font);
     if (fonts != null) {
       for (final key in fonts.keySet()) {
         final font = await fonts.dictionaryEntry(key);
@@ -548,7 +547,7 @@ class PdfAVerifier {
       }
     }
 
-    final states = await resources.dictionaryEntry(CraftPdfName.extGState);
+    final states = await resources.dictionaryEntry(PdfName.extGState);
     if (states != null) {
       for (final key in states.keySet()) {
         final state = await states.dictionaryEntry(key);
@@ -558,7 +557,7 @@ class PdfAVerifier {
       }
     }
 
-    final xobjects = await resources.dictionaryEntry(CraftPdfName.xObject);
+    final xobjects = await resources.dictionaryEntry(PdfName.xObject);
     if (xobjects != null) {
       for (final key in xobjects.keySet()) {
         final xobject = await xobjects.streamEntry(key);
@@ -574,14 +573,14 @@ class PdfAVerifier {
   static const Set<String> _compositeFonts = {'Type0'};
 
   static Future<void> _checkFont(
-    CraftPdfDictionary font,
+    PdfDictionary font,
     int page,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
-    final subtype = (await font.nameEntry(CraftPdfName.subtype))?.getValue();
+    final subtype = (await font.nameEntry(PdfName.subtype))?.getValue();
     final baseFont =
-        (await font.nameEntry(CraftPdfName.baseFont))?.getValue() ?? 'unnamed';
+        (await font.nameEntry(PdfName.baseFont))?.getValue() ?? 'unnamed';
 
     if (subtype == 'Type3') {
       // A Type 3 font carries its glyphs as content streams, so there is
@@ -591,8 +590,7 @@ class PdfAVerifier {
     }
 
     if (_compositeFonts.contains(subtype)) {
-      final descendants =
-          await font.arrayEntry(CraftPdfName('DescendantFonts'));
+      final descendants = await font.arrayEntry(PdfName('DescendantFonts'));
       final descendant = await descendants?.dictionaryEntry(0);
       if (descendant == null) {
         findings.add(PdfConformanceFinding(
@@ -606,9 +604,8 @@ class PdfAVerifier {
       }
       await _checkFontDescriptor(descendant, baseFont, page, level, findings);
       if (level.requiresUnicodeMapping &&
-          !font.containsKey(CraftPdfName('ToUnicode'))) {
-        final encoding =
-            (await font.nameEntry(CraftPdfName.encoding))?.getValue();
+          !font.containsKey(PdfName('ToUnicode'))) {
+        final encoding = (await font.nameEntry(PdfName.encoding))?.getValue();
         // The two identity encodings carry no implicit Unicode mapping.
         if (encoding == null || encoding.startsWith('Identity')) {
           findings.add(PdfConformanceFinding(
@@ -626,7 +623,7 @@ class PdfAVerifier {
 
     await _checkFontDescriptor(font, baseFont, page, level, findings);
 
-    if (!font.containsKey(CraftPdfName.widths)) {
+    if (!font.containsKey(PdfName.widths)) {
       findings.add(PdfConformanceFinding(
         'font-without-widths',
         PdfConformanceSeverity.violation,
@@ -639,13 +636,13 @@ class PdfAVerifier {
   }
 
   static Future<void> _checkFontDescriptor(
-    CraftPdfDictionary font,
+    PdfDictionary font,
     String baseFont,
     int page,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
-    final descriptor = await font.dictionaryEntry(CraftPdfName.fontDescriptor);
+    final descriptor = await font.dictionaryEntry(PdfName.fontDescriptor);
     if (descriptor == null) {
       findings.add(PdfConformanceFinding(
         'font-without-descriptor',
@@ -658,9 +655,9 @@ class PdfAVerifier {
       ));
       return;
     }
-    final embedded = descriptor.containsKey(CraftPdfName.fontFile) ||
-        descriptor.containsKey(CraftPdfName.fontFile2) ||
-        descriptor.containsKey(CraftPdfName.fontFile3);
+    final embedded = descriptor.containsKey(PdfName.fontFile) ||
+        descriptor.containsKey(PdfName.fontFile2) ||
+        descriptor.containsKey(PdfName.fontFile3);
     if (!embedded) {
       findings.add(PdfConformanceFinding(
         'font-not-embedded',
@@ -674,14 +671,14 @@ class PdfAVerifier {
   }
 
   static Future<void> _checkExtGState(
-    CraftPdfDictionary state,
+    PdfDictionary state,
     int page,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
     for (final key in const ['TR', 'TR2']) {
-      if (state.containsKey(CraftPdfName(key))) {
-        final value = await state.nameEntry(CraftPdfName(key));
+      if (state.containsKey(PdfName(key))) {
+        final value = await state.nameEntry(PdfName(key));
         if (value?.getValue() != 'Default') {
           findings.add(PdfConformanceFinding(
             'transfer-function',
@@ -697,10 +694,10 @@ class PdfAVerifier {
 
     if (!level.forbidsTransparency) return;
 
-    final softMask = await state.get(CraftPdfName('SMask'));
+    final softMask = await state.get(PdfName('SMask'));
     if (softMask != null &&
         !(softMask.objectKind() == PdfObjectType.name &&
-            (softMask as CraftPdfName).getValue() == 'None')) {
+            (softMask as PdfName).getValue() == 'None')) {
       findings.add(PdfConformanceFinding(
         'soft-mask',
         PdfConformanceSeverity.violation,
@@ -711,7 +708,7 @@ class PdfAVerifier {
       ));
     }
     for (final key in const ['CA', 'ca']) {
-      final alpha = await state.decimalEntry(CraftPdfName(key));
+      final alpha = await state.decimalEntry(PdfName(key));
       if (alpha != null && alpha != 1.0) {
         findings.add(PdfConformanceFinding(
           'constant-alpha',
@@ -722,7 +719,7 @@ class PdfAVerifier {
         ));
       }
     }
-    final blend = await state.nameEntry(CraftPdfName('BM'));
+    final blend = await state.nameEntry(PdfName('BM'));
     final blendValue = blend?.getValue();
     if (blendValue != null &&
         blendValue != 'Normal' &&
@@ -739,15 +736,15 @@ class PdfAVerifier {
   }
 
   static Future<void> _checkXObject(
-    CraftPdfStream xobject,
+    PdfStream xobject,
     int page,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
-    final subtype = (await xobject.nameEntry(CraftPdfName.subtype))?.getValue();
+    final subtype = (await xobject.nameEntry(PdfName.subtype))?.getValue();
 
     if (subtype == 'Image') {
-      final interpolate = await xobject.flagEntry(CraftPdfName('Interpolate'));
+      final interpolate = await xobject.flagEntry(PdfName('Interpolate'));
       if (interpolate == true) {
         findings.add(PdfConformanceFinding(
           'image-interpolate',
@@ -758,9 +755,8 @@ class PdfAVerifier {
           page: page,
         ));
       }
-      if (level.forbidsTransparency &&
-          xobject.containsKey(CraftPdfName('SMask'))) {
-        final mask = await xobject.nameEntry(CraftPdfName('SMask'));
+      if (level.forbidsTransparency && xobject.containsKey(PdfName('SMask'))) {
+        final mask = await xobject.nameEntry(PdfName('SMask'));
         if (mask?.getValue() != 'None') {
           findings.add(PdfConformanceFinding(
             'image-soft-mask',
@@ -775,8 +771,8 @@ class PdfAVerifier {
     }
 
     if (subtype == 'Form' && level.forbidsTransparency) {
-      final group = await xobject.dictionaryEntry(CraftPdfName('Group'));
-      final groupType = await group?.nameEntry(CraftPdfName('S'));
+      final group = await xobject.dictionaryEntry(PdfName('Group'));
+      final groupType = await group?.nameEntry(PdfName('S'));
       if (groupType?.getValue() == 'Transparency') {
         findings.add(PdfConformanceFinding(
           'form-transparency-group',
@@ -789,7 +785,7 @@ class PdfAVerifier {
       }
     }
 
-    if (xobject.containsKey(CraftPdfName('PS')) || (subtype == 'PS')) {
+    if (xobject.containsKey(PdfName('PS')) || (subtype == 'PS')) {
       findings.add(PdfConformanceFinding(
         'postscript-xobject',
         PdfConformanceSeverity.violation,
@@ -804,7 +800,7 @@ class PdfAVerifier {
   // --- object graph ---------------------------------------------------------
 
   static Future<void> _checkObjects(
-    CraftPdfDocument document,
+    PdfDocument document,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
@@ -815,7 +811,7 @@ class PdfAVerifier {
     for (var number = 1; number < xref.size() && reported < 10; number++) {
       final reference = xref.get(number);
       if (reference == null || reference.isFree()) continue;
-      CraftPdfObject? object;
+      PdfObject? object;
       try {
         object = await reference.targetObject(true);
       } on Object {
@@ -824,7 +820,7 @@ class PdfAVerifier {
       if (object == null || object.objectKind() != PdfObjectType.stream) {
         continue;
       }
-      final stream = object as CraftPdfStream;
+      final stream = object as PdfStream;
       if (await _usesFilter(stream, 'LZWDecode')) {
         findings.add(PdfConformanceFinding(
           'lzw-filter',
@@ -836,7 +832,7 @@ class PdfAVerifier {
         ));
         reported++;
       }
-      if (stream.containsKey(CraftPdfName('F'))) {
+      if (stream.containsKey(PdfName('F'))) {
         findings.add(PdfConformanceFinding(
           'external-stream',
           PdfConformanceSeverity.violation,
@@ -850,14 +846,14 @@ class PdfAVerifier {
     }
   }
 
-  static Future<bool> _usesFilter(CraftPdfStream stream, String name) async {
-    final filter = await stream.get(CraftPdfName.filter);
+  static Future<bool> _usesFilter(PdfStream stream, String name) async {
+    final filter = await stream.get(PdfName.filter);
     if (filter == null) return false;
     if (filter.objectKind() == PdfObjectType.name) {
-      return (filter as CraftPdfName).getValue() == name;
+      return (filter as PdfName).getValue() == name;
     }
     if (filter.objectKind() == PdfObjectType.array) {
-      final array = filter as CraftPdfArray;
+      final array = filter as PdfArray;
       for (var i = 0; i < array.size(); i++) {
         if ((await array.nameEntry(i))?.getValue() == name) return true;
       }

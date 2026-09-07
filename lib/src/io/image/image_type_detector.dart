@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:dpdf/src/layout/properties/image_type.dart';
 
-class CraftImageTypeDetector {
+class ImageTypeDetector {
   static const List<int> _gif = [71, 73, 70]; // GIF
   static const List<int> _jpeg = [0xFF, 0xD8];
   static const List<int> _jpeg2000_1 = [0x00, 0x00, 0x00, 0x0c];
@@ -13,29 +13,29 @@ class CraftImageTypeDetector {
   static const List<int> _tiff_2 = [73, 73, 42, 0]; // II
   static const List<int> _jbig2 = [0x97, 74, 66, 50, 13, 10, 0x1a, 10];
 
-  CraftImageTypeDetector._();
+  ImageTypeDetector._();
 
-  static CraftImageType detectImageType(Uint8List source) {
-    if (source.length < 8) return CraftImageType.NONE;
+  static ImageType detectImageType(Uint8List source) {
+    if (source.length < 8) return ImageType.NONE;
     return _detectImageTypeByHeader(source);
   }
 
-  static CraftImageType _detectImageTypeByHeader(Uint8List header) {
-    if (_imageTypeIs(header, _gif)) return CraftImageType.GIF;
-    if (_imageTypeIs(header, _jpeg)) return CraftImageType.JPEG;
+  static ImageType _detectImageTypeByHeader(Uint8List header) {
+    if (_imageTypeIs(header, _gif)) return ImageType.GIF;
+    if (_imageTypeIs(header, _jpeg)) return ImageType.JPEG;
     if (_imageTypeIs(header, _jpeg2000_1) ||
         _imageTypeIs(header, _jpeg2000_2)) {
-      return CraftImageType.JPEG2000;
+      return ImageType.JPEG2000;
     }
-    if (_imageTypeIs(header, _png)) return CraftImageType.PNG;
-    if (_imageTypeIs(header, _bmp)) return CraftImageType.BMP;
+    if (_imageTypeIs(header, _png)) return ImageType.PNG;
+    if (_imageTypeIs(header, _bmp)) return ImageType.BMP;
     if (_imageTypeIs(header, _tiff_1) || _imageTypeIs(header, _tiff_2)) {
-      return CraftImageType.TIFF;
+      return ImageType.TIFF;
     }
-    if (_imageTypeIs(header, _jbig2)) return CraftImageType.JBIG2;
-    if (_imageTypeIs(header, _wmf)) return CraftImageType.WMF;
+    if (_imageTypeIs(header, _jbig2)) return ImageType.JBIG2;
+    if (_imageTypeIs(header, _wmf)) return ImageType.WMF;
 
-    return CraftImageType.NONE;
+    return ImageType.NONE;
   }
 
   static bool _imageTypeIs(Uint8List header, List<int> compareWith) {

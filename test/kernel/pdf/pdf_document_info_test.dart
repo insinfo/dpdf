@@ -14,19 +14,17 @@ void main() {
       }
       final outPath = 'test/tmp/pdf_document_info_test.pdf';
 
-      final writer = CraftPdfWriter.toFile(outPath);
-      final doc = CraftPdfDocument(writer: writer);
+      final writer = PdfWriter.toFile(outPath);
+      final doc = PdfDocument(writer: writer);
 
       final info = await doc.documentDetails();
       info.setTitle('Test Title');
       info.setAuthor('Test Author');
 
-      final title =
-          await info.pdfRepresentation().stringEntry(CraftPdfName.title);
+      final title = await info.pdfRepresentation().stringEntry(PdfName.title);
       expect(title?.decodeMappingText(), 'Test Title');
 
-      final author =
-          await info.pdfRepresentation().stringEntry(CraftPdfName.author);
+      final author = await info.pdfRepresentation().stringEntry(PdfName.author);
       expect(author?.decodeMappingText(), 'Test Author');
 
       await doc.close();
@@ -38,8 +36,8 @@ void main() {
         outDir.createSync(recursive: true);
       }
       final outPath = 'test/tmp/pdf_document_id_test.pdf';
-      final writer = CraftPdfWriter.toFile(outPath);
-      final doc = CraftPdfDocument(writer: writer);
+      final writer = PdfWriter.toFile(outPath);
+      final doc = PdfDocument(writer: writer);
 
       // IDs should be generated
       final originalId = doc.initialDocumentIdentifier();
@@ -52,8 +50,8 @@ void main() {
       await doc.close();
 
       // Read back
-      final reader = await CraftPdfReader.fromFile(outPath);
-      final docRead = await CraftPdfDocument.open(reader);
+      final reader = await PdfReader.fromFile(outPath);
+      final docRead = await PdfDocument.open(reader);
 
       final readOriginalId = docRead.initialDocumentIdentifier();
       final readModifiedId = docRead.revisionIdentifier();

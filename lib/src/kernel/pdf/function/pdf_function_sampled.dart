@@ -9,7 +9,7 @@ import 'package:dpdf/src/kernel/pdf/function/pdf_function.dart';
 /// carrying [outputCount] values of `/BitsPerSample` bits, packed as one
 /// continuous big-endian bit stream. Values between samples are reconstructed
 /// by multilinear interpolation.
-class CraftPdfFunctionSampled extends CraftPdfFunction {
+class PdfFunctionSampled extends PdfFunction {
   /// Bit widths clause 7.10.2 permits for `/BitsPerSample`.
   static const Set<int> allowedBitsPerSample = {1, 2, 4, 8, 12, 16, 24, 32};
 
@@ -41,7 +41,7 @@ class CraftPdfFunctionSampled extends CraftPdfFunction {
 
   final int _outputCount;
 
-  CraftPdfFunctionSampled(super.domain, List<double> super.range, this.size,
+  PdfFunctionSampled(super.domain, List<double> super.range, this.size,
       this.bitsPerSample, this.encode, this.decode, this.order, this._samples)
       : _outputCount = range.length ~/ 2,
         _strides = _computeStrides(size);
@@ -57,12 +57,12 @@ class CraftPdfFunctionSampled extends CraftPdfFunction {
     return strides;
   }
 
-  static Future<CraftPdfFunctionSampled?> parseStream(
-      CraftPdfStream stream, List<double> domain, List<double>? range) async {
+  static Future<PdfFunctionSampled?> parseStream(
+      PdfStream stream, List<double> domain, List<double>? range) async {
     if (range == null || range.length < 2) return null;
 
-    final sizeArray = await stream.arrayEntry(CraftPdfFunctionName.size);
-    final bits = await stream.integerEntry(CraftPdfFunctionName.bitsPerSample);
+    final sizeArray = await stream.arrayEntry(PdfFunctionName.size);
+    final bits = await stream.integerEntry(PdfFunctionName.bitsPerSample);
     if (sizeArray == null || bits == null) return null;
     if (!allowedBitsPerSample.contains(bits)) return null;
 
@@ -74,8 +74,8 @@ class CraftPdfFunctionSampled extends CraftPdfFunction {
       if (s < 1) return null;
     }
 
-    final encodeArray = await stream.arrayEntry(CraftPdfFunctionName.encode);
-    final decodeArray = await stream.arrayEntry(CraftPdfFunctionName.decode);
+    final encodeArray = await stream.arrayEntry(PdfFunctionName.encode);
+    final decodeArray = await stream.arrayEntry(PdfFunctionName.decode);
     List<double> encode;
     if (encodeArray != null) {
       encode = await encodeArray.toDoubleArray();
@@ -94,12 +94,12 @@ class CraftPdfFunctionSampled extends CraftPdfFunction {
         : List<double>.from(range);
     if (decode.length < range.length) return null;
 
-    final order = await stream.integerEntry(CraftPdfFunctionName.order) ?? 1;
+    final order = await stream.integerEntry(PdfFunctionName.order) ?? 1;
 
     final bytes = await stream.getBytes();
     if (bytes == null) return null;
 
-    return CraftPdfFunctionSampled(
+    return PdfFunctionSampled(
         domain, range, size, bits, encode, decode, order, bytes);
   }
 
@@ -134,9 +134,9 @@ class CraftPdfFunctionSampled extends CraftPdfFunction {
     final base = List<int>.filled(m, 0);
     final frac = List<double>.filled(m, 0.0);
     for (var i = 0; i < m; i++) {
-      var e = CraftPdfFunction.interpolate(inputs[i], domain[2 * i],
+      var e = PdfFunction.interpolate(inputs[i], domain[2 * i],
           domain[2 * i + 1], encode[2 * i], encode[2 * i + 1]);
-      e = CraftPdfFunction.clip(e, 0.0, (size[i] - 1).toDouble());
+      e = PdfFunction.clip(e, 0.0, (size[i] - 1).toDouble());
       final floor = e.floor();
       // The top sample has no successor, so anchor on the one below it and let
       // the fraction reach 1 instead of indexing past the end of the table.
@@ -169,7 +169,7 @@ class CraftPdfFunctionSampled extends CraftPdfFunction {
 
     final max = maxSampleValue.toDouble();
     for (var j = 0; j < _outputCount; j++) {
-      outputs[j] = CraftPdfFunction.interpolate(
+      outputs[j] = PdfFunction.interpolate(
           outputs[j], 0.0, max, decode[2 * j], decode[2 * j + 1]);
     }
     return outputs;

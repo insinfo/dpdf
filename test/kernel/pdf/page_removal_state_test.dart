@@ -6,26 +6,25 @@ import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
 import 'package:test/test.dart';
 
-class _Observer implements CraftEventHandler {
-  final void Function(CraftEvent) inspect;
+class _Observer implements EventHandler {
+  final void Function(Event) inspect;
   _Observer(this.inspect);
   @override
-  void onEvent(CraftEvent event) => inspect(event);
+  void onEvent(Event event) => inspect(event);
 }
 
 void main() {
   test('Removal notification sees the committed page collection', () async {
-    final doc = CraftPdfDocument.create(
-        CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
+    final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(BytesBuilder()));
     final removed = await doc.appendBlankPage();
     final survivor = await doc.appendBlankPage();
     final dictionary = removed.pdfRepresentation();
     var notifications = 0;
-    doc.subscribeEvent(CraftPdfDocumentEvent.detachPage, _Observer((event) {
+    doc.subscribeEvent(PdfDocumentEvent.detachPage, _Observer((event) {
       notifications++;
       expect(doc.pageTotal(), 1);
-      expect((event as CraftPdfDocumentEvent).pageAt(), same(dictionary));
-      expect(dictionary.containsKey(CraftPdfName.parent), isFalse);
+      expect((event as PdfDocumentEvent).pageAt(), same(dictionary));
+      expect(dictionary.containsKey(PdfName.parent), isFalse);
       expect(removed.parentPages, isNull);
       expect(dictionary.indirectHandle()!.isFree(), isTrue);
     }));
@@ -36,19 +35,18 @@ void main() {
   });
 
   test('Invalid page ordinals leave all page state intact', () async {
-    final doc = CraftPdfDocument.create(
-        CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
+    final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(BytesBuilder()));
     final page = await doc.appendBlankPage();
     final dictionary = page.pdfRepresentation();
-    final parent = await dictionary.get(CraftPdfName.parent);
+    final parent = await dictionary.get(PdfName.parent);
     var notifications = 0;
     doc.subscribeEvent(
-        CraftPdfDocumentEvent.detachPage, _Observer((_) => notifications++));
+        PdfDocumentEvent.detachPage, _Observer((_) => notifications++));
     for (final ordinal in [-1, 0, 2]) {
       await expectLater(doc.deletePageAt(ordinal), throwsRangeError);
       expect(doc.pageTotal(), 1);
       expect(await doc.pageAt(1), same(page));
-      expect(await dictionary.get(CraftPdfName.parent), same(parent));
+      expect(await dictionary.get(PdfName.parent), same(parent));
       expect(dictionary.indirectHandle()!.isFree(), isFalse);
     }
     expect(notifications, 0);

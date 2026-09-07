@@ -39,11 +39,11 @@ void main() {
     if (wrongContent) content[0] ^= 1;
     final signedAttributes = ASN1Set(elements: [
       ASN1Sequence(elements: [
-        oid(CraftOID.contentType),
-        ASN1Set(elements: [oid(CraftOID.data)])
+        oid(OID.contentType),
+        ASN1Set(elements: [oid(OID.data)])
       ]),
       ASN1Sequence(elements: [
-        oid(CraftOID.messageDigest),
+        oid(OID.messageDigest),
         ASN1Set(elements: [
           ASN1OctetString(
               octets: DigestBytes.compute(
@@ -61,7 +61,7 @@ void main() {
         ASN1Parser(certificate.getIssuerX500Name()).readSingle(),
         ASN1Integer(BigInt.from(12))
       ]),
-      algorithm(CraftOID.sha256),
+      algorithm(OID.sha256),
       if (attributes)
         ASN1Object(0xa0, ASN1Utils.parse(signedAttributes).content),
       algorithm('1.2.840.113549.1.1.11'),
@@ -69,9 +69,9 @@ void main() {
     ]);
     final body = ASN1Sequence(elements: [
       ASN1Integer(BigInt.one),
-      ASN1Set(elements: [algorithm(CraftOID.sha256)]),
+      ASN1Set(elements: [algorithm(OID.sha256)]),
       ASN1Sequence(elements: [
-        oid(CraftOID.data),
+        oid(OID.data),
         if (!omitContent)
           ASN1Sequence(tag: 0xa0, elements: [ASN1OctetString(octets: content)])
       ]),
@@ -81,7 +81,7 @@ void main() {
       ASN1Set(elements: [signer])
     ]);
     return ASN1Sequence(elements: [
-      oid(CraftOID.signedData),
+      oid(OID.signedData),
       ASN1Sequence(tag: 0xa0, elements: [body])
     ]).encode();
   }
@@ -90,9 +90,8 @@ void main() {
       'legacy SHA1 content and CMS SHA256 attributes verify in either call order',
       () {
     for (final firstDigest in [false, true]) {
-      final check =
-          CraftPdfPKCS7.forVerifying(build(), CraftPdfName.adbePkcs7Sha1)
-            ..update(document);
+      final check = PdfPKCS7.forVerifying(build(), PdfName.adbePkcs7Sha1)
+        ..update(document);
       if (firstDigest) expect(check.verifyDigest(), isTrue);
       expect(check.verify(), isTrue);
       expect(check.verifyDigest(), isTrue);
@@ -101,9 +100,9 @@ void main() {
   test(
       'legacy content without attributes verifies signature over encapsulated hash',
       () {
-    final check = CraftPdfPKCS7.forVerifying(
-        build(attributes: false), CraftPdfName.adbePkcs7Sha1)
-      ..update(document);
+    final check =
+        PdfPKCS7.forVerifying(build(attributes: false), PdfName.adbePkcs7Sha1)
+          ..update(document);
     expect(check.verify(), isTrue);
   });
   test(
@@ -115,17 +114,16 @@ void main() {
       build(omitContent: true),
       build(omitContent: true, wrongDigest: true)
     ]) {
-      final check =
-          CraftPdfPKCS7.forVerifying(bytes, CraftPdfName.adbePkcs7Sha1)
-            ..update(document);
+      final check = PdfPKCS7.forVerifying(bytes, PdfName.adbePkcs7Sha1)
+        ..update(document);
       expect(check.verifyDigest(), isFalse);
       expect(check.verify(), isFalse);
     }
     final altered = Uint8List.fromList(document)..[0] ^= 1;
     for (final attrs in [false, true]) {
-      final check = CraftPdfPKCS7.forVerifying(
-          build(attributes: attrs), CraftPdfName.adbePkcs7Sha1)
-        ..update(altered);
+      final check =
+          PdfPKCS7.forVerifying(build(attributes: attrs), PdfName.adbePkcs7Sha1)
+            ..update(altered);
       expect(check.verify(), isFalse);
     }
   });

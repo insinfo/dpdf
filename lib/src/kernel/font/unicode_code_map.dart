@@ -7,7 +7,7 @@ import '../pdf/pdf_stream.dart';
 
 /// Character-code mappings with validated Unicode values and exact replacement.
 /// A source code is unsigned and contains at most four bytes.
-class UnicodeCodeMap extends CraftAbstractCMap {
+class UnicodeCodeMap extends AbstractCMap {
   final Map<int, String> _text = {};
 
   Map<int, String> get mappings => Map.unmodifiable(_text);
@@ -50,7 +50,7 @@ class UnicodeCodeMap extends CraftAbstractCMap {
   }
 
   @override
-  void registerMappedCode(String mark, CraftCMapObject destination) {
+  void registerMappedCode(String mark, CMapObject destination) {
     final source = mark.codeUnits;
     if (source.isEmpty || source.length > 4 || source.any((v) => v > 255)) {
       throw FormatException('Mapping source must contain one to four bytes.');
@@ -88,21 +88,19 @@ class UnicodeCodeMap extends CraftAbstractCMap {
     setMapping(code, String.fromCharCodes(units));
   }
 
-  static Future<UnicodeCodeMap> fromStream(CraftPdfStream stream) async {
+  static Future<UnicodeCodeMap> fromStream(PdfStream stream) async {
     final bytes = await stream.getBytes();
     if (bytes == null) {
       throw FormatException('Unicode mapping stream has no data.');
     }
     final map = UnicodeCodeMap();
-    await CraftCMapParser.loadCidMappings(
-        '', map, CraftCMapLocationFromBytes(bytes));
+    await CMapParser.loadCidMappings('', map, CMapLocationFromBytes(bytes));
     return map;
   }
 
   static UnicodeCodeMap fromBytes(Uint8List bytes) {
     final map = UnicodeCodeMap();
-    CraftCMapParser.loadCidMappingsSync(
-        '', map, CraftCMapLocationFromBytes(bytes));
+    CMapParser.loadCidMappingsSync('', map, CMapLocationFromBytes(bytes));
     return map;
   }
 

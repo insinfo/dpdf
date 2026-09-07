@@ -42,12 +42,12 @@ void main() {
     final attrs = <ASN1Object>[];
     if (!omitContentType) {
       attrs.add(ASN1Sequence(elements: [
-        oid(CraftOID.contentType),
-        ASN1Set(elements: [oid(CraftOID.data)])
+        oid(OID.contentType),
+        ASN1Set(elements: [oid(OID.data)])
       ]));
     }
     final digestAttr = ASN1Sequence(elements: [
-      oid(CraftOID.messageDigest),
+      oid(OID.messageDigest),
       ASN1Set(elements: [
         ASN1OctetString(octets: DigestBytes.compute('SHA256', message))
       ])
@@ -64,16 +64,16 @@ void main() {
         ASN1Parser(certificate.getIssuerX500Name()).readSingle(),
         ASN1Integer(claimedSerial ?? serial)
       ]),
-      algorithm(CraftOID.sha256),
+      algorithm(OID.sha256),
       ASN1Object(0xa0, ASN1Utils.parse(attributes).content),
       algorithm(mechanism),
       ASN1OctetString(octets: signature),
     ]);
     final signedData = ASN1Sequence(elements: [
       ASN1Integer(BigInt.one),
-      ASN1Set(elements: [algorithm(CraftOID.sha256)]),
+      ASN1Set(elements: [algorithm(OID.sha256)]),
       ASN1Sequence(elements: [
-        oid(CraftOID.data),
+        oid(OID.data),
         if (encapsulated)
           ASN1Sequence(tag: 0xa0, elements: [ASN1OctetString(octets: message)])
       ]),
@@ -83,15 +83,15 @@ void main() {
       ASN1Set(elements: [signer]),
     ]);
     return ASN1Sequence(elements: [
-      oid(CraftOID.signedData),
+      oid(OID.signedData),
       ASN1Sequence(tag: 0xa0, elements: [signedData])
     ]).encode();
   }
 
   test('Valid detached CMS with 101-bit serial and zero padding verifies', () {
     final encoded = cms();
-    final check = CraftPdfPKCS7.forVerifying(
-        Uint8List.fromList([...encoded, 0, 0]), CraftPdfName.adbePkcs7Detached)
+    final check = PdfPKCS7.forVerifying(
+        Uint8List.fromList([...encoded, 0, 0]), PdfName.adbePkcs7Detached)
       ..update(message);
     expect(check.verify(), isTrue);
   });
@@ -107,21 +107,19 @@ void main() {
       cms(omitContentType: true),
       Uint8List.fromList([...cms(), 1]),
     ]) {
-      final check =
-          CraftPdfPKCS7.forVerifying(encoded, CraftPdfName.adbePkcs7Detached)
-            ..update(message);
+      final check = PdfPKCS7.forVerifying(encoded, PdfName.adbePkcs7Detached)
+        ..update(message);
       expect(check.verify(), isFalse);
     }
   });
   test('Encapsulated CMS cannot authenticate an unrelated PDF', () {
-    final check = CraftPdfPKCS7.forVerifying(
-        cms(encapsulated: true), CraftPdfName.adbePkcs7Detached)
+    final check = PdfPKCS7.forVerifying(
+        cms(encapsulated: true), PdfName.adbePkcs7Detached)
       ..update(Uint8List.fromList(ascii.encode('different document')));
     expect(check.verify(), isFalse);
   });
   test('Verification before completion does not consume prior updates', () {
-    final check =
-        CraftPdfPKCS7.forVerifying(cms(), CraftPdfName.adbePkcs7Detached);
+    final check = PdfPKCS7.forVerifying(cms(), PdfName.adbePkcs7Detached);
     expect(check.verify(), isFalse);
     check.update(message, 0, 3);
     expect(check.verify(), isFalse);
@@ -169,7 +167,7 @@ void main() {
     expect(() => RSAPublicKey(BigInt.from(3232), BigInt.from(17)),
         throwsArgumentError);
     expect(() => RsaMath.randomBelow(BigInt.zero), throwsArgumentError);
-    final cipher = CraftAESCipher(true, Uint8List(16), Uint8List(16));
+    final cipher = AESCipher(true, Uint8List(16), Uint8List(16));
     expect(() => cipher.processBlock(Uint8List(16), 17, 0), throwsRangeError);
     expect(() => cipher.processBlock(Uint8List(16), -1, 0), throwsRangeError);
   });

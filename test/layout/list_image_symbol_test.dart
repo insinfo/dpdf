@@ -21,30 +21,30 @@ void main() {
       return;
     }
     final bytes = await File(imagePath).readAsBytes();
-    final imageData = CraftImageDataFactory.create(bytes);
-    final image = CraftImage(imageData).setWidth(10).setHeight(10);
+    final imageData = ImageDataFactory.create(bytes);
+    final image = Image(imageData).setWidth(10).setHeight(10);
 
     final ttfPath = r'test/assets/ABeeZee-Regular.ttf';
-    final ttf = CraftTrueTypeFont.fromFile(ttfPath);
-    final font = CraftPdfTrueTypeFont(ttf);
+    final ttf = TrueTypeFont.fromFile(ttfPath);
+    final font = PdfTrueTypeFont(ttf);
 
-    final list = dpdf.CraftList()
+    final list = dpdf.PdfList()
         .setListSymbol(image)
         .setFont(font)
         .add("Item 1")
         .add("Item 2");
 
-    final listRenderer = list.createRendererSubTree() as CraftListRenderer;
+    final listRenderer = list.createRendererSubTree() as ListRenderer;
     final layoutContext =
-        CraftLayoutContext(CraftLayoutArea(1, CraftRectangle(0, 0, 500, 500)));
+        LayoutContext(LayoutArea(1, Rectangle(0, 0, 500, 500)));
     final result = listRenderer.layout(layoutContext);
 
     expect(result, isNotNull);
-    expect(result!.getStatus(), CraftLayoutResult.FULL);
+    expect(result!.getStatus(), LayoutResult.FULL);
 
     // Check if symbol renderers are added to items
     for (var child in listRenderer.getChildRenderers()) {
-      if (child is CraftListItemRenderer) {
+      if (child is ListItemRenderer) {
         // The symbol renderer itself is stored in the ListItemRenderer
       }
     }

@@ -8,32 +8,30 @@ import 'package:test/test.dart';
 /// rectangle can single out a line without touching its neighbours.
 Future<Uint8List> _threeLines() async {
   final output = BytesBuilder(copy: false);
-  final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await document.appendBlankPage();
-  final font = CraftPdfDictionary()
-    ..put(CraftPdfName.type, CraftPdfName.font)
-    ..put(CraftPdfName.subtype, CraftPdfName('Type1'))
-    ..put(CraftPdfName.baseFont, CraftPdfName('Helvetica'))
-    ..put(CraftPdfName.encoding, CraftPdfName('WinAnsiEncoding'));
+  final font = PdfDictionary()
+    ..put(PdfName.type, PdfName.font)
+    ..put(PdfName.subtype, PdfName('Type1'))
+    ..put(PdfName.baseFont, PdfName('Helvetica'))
+    ..put(PdfName.encoding, PdfName('WinAnsiEncoding'));
   page.pdfRepresentation().put(
-      CraftPdfName.resources,
-      CraftPdfDictionary()
-        ..put(CraftPdfName.font,
-            CraftPdfDictionary()..put(CraftPdfName('F1'), font)));
+      PdfName.resources,
+      PdfDictionary()
+        ..put(PdfName.font, PdfDictionary()..put(PdfName('F1'), font)));
 
   const content = 'BT /F1 12 Tf 72 700 Td (PUBLIC HEADING) Tj ET\n'
       'BT /F1 12 Tf 72 660 Td (SECRET ACCOUNT 12345) Tj ET\n'
       'BT /F1 12 Tf 72 620 Td (PUBLIC FOOTER) Tj ET\n';
-  page.pdfRepresentation().put(CraftPdfName.contents,
-      CraftPdfStream.withBytes(Uint8List.fromList(ascii.encode(content)), 0));
+  page.pdfRepresentation().put(PdfName.contents,
+      PdfStream.withBytes(Uint8List.fromList(ascii.encode(content)), 0));
   await document.close();
   return output.takeBytes();
 }
 
 Future<String> _textOf(Uint8List bytes, [int page = 1]) async {
-  final reader = CraftPdfReader.fromBytes(bytes);
-  final document = await CraftPdfDocument.open(reader);
+  final reader = PdfReader.fromBytes(bytes);
+  final document = await PdfDocument.open(reader);
   try {
     return await PdfTextExtraction.fromPage((await document.pageAt(page))!);
   } finally {
@@ -157,11 +155,10 @@ void main() {
         options: const PdfAreaRedactionOptions(clearDocumentInfo: true),
       );
 
-      final reader = CraftPdfReader.fromBytes(redacted);
-      final document = await CraftPdfDocument.open(reader);
+      final reader = PdfReader.fromBytes(redacted);
+      final document = await PdfDocument.open(reader);
       try {
-        final info =
-            await document.fileTrailer().dictionaryEntry(CraftPdfName.info);
+        final info = await document.fileTrailer().dictionaryEntry(PdfName.info);
         expect(info == null || info.size() == 0, isTrue);
       } finally {
         await document.close();

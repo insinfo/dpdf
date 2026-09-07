@@ -5,7 +5,7 @@ import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 import 'raw_image_data.dart';
 
 /// TIFF image data class.
-class CraftTiffImageData extends CraftRawImageData {
+class TiffImageData extends RawImageData {
   /// Whether to try to recover from image processing errors.
   final bool recoverFromImageError;
 
@@ -16,20 +16,20 @@ class CraftTiffImageData extends CraftRawImageData {
   final bool direct;
 
   /// Creates a TiffImageData from a URL.
-  CraftTiffImageData.fromUrl(
+  TiffImageData.fromUrl(
     Uri url, {
     this.recoverFromImageError = false,
     this.page = 1,
     this.direct = false,
-  }) : super.fromUrl(url, CraftImageType.TIFF);
+  }) : super.fromUrl(url, ImageType.TIFF);
 
   /// Creates a TiffImageData from bytes.
-  CraftTiffImageData.fromBytes(
+  TiffImageData.fromBytes(
     Uint8List data, {
     this.recoverFromImageError = false,
     this.page = 1,
     this.direct = false,
-  }) : super.fromBytes(data, CraftImageType.TIFF);
+  }) : super.fromBytes(data, ImageType.TIFF);
 
   /// Returns whether to recover from image errors.
   bool isRecoverFromImageError() => recoverFromImageError;
@@ -41,12 +41,12 @@ class CraftTiffImageData extends CraftRawImageData {
   bool isDirect() => direct;
 
   /// Sets the original type of the image.
-  void setOriginalType(CraftImageType type) {
+  void setOriginalType(ImageType type) {
     originalType = type;
   }
 
   /// Gets the number of pages in the TIFF file.
-  static int pageTotal(CraftRandomAccessFileOrArray raf) {
+  static int pageTotal(RandomAccessFileOrArray raf) {
     return TiffDirectory.getNumDirectories(raf);
   }
 }

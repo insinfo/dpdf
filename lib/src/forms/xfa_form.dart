@@ -13,7 +13,7 @@ import '../kernel/pdf/pdf_string.dart';
 import 'pdf_acro_form.dart';
 
 /// Processes XFA forms.
-class CraftXfaForm {
+class XfaForm {
   XmlElement? _templateNode;
   XmlElement? _datasetsNode; // Represents xfa:datasets
   XmlDocument? _domDocument;
@@ -24,11 +24,11 @@ class CraftXfaForm {
       "http://www.xfa.org/schema/xfa-data/1.0/";
 
   /// Private constructor. Use static create methods.
-  CraftXfaForm._();
+  XfaForm._();
 
   /// Creates a new empty XfaForm.
-  static CraftXfaForm create() {
-    CraftXfaForm form = CraftXfaForm._();
+  static XfaForm create() {
+    XfaForm form = XfaForm._();
     form._domDocument = XmlDocument.parse(
         '<?xml version="1.0" encoding="UTF-8"?><xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/"><template xmlns="http://www.xfa.org/schema/xfa-template/3.3/"></template><xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><xfa:data></xfa:data></xfa:datasets></xdp:xdp>');
     form._extractNodes();
@@ -37,17 +37,17 @@ class CraftXfaForm {
   }
 
   /// Creates an XFA form from an XmlDocument.
-  static CraftXfaForm createFromXml(XmlDocument domDocument) {
-    CraftXfaForm form = CraftXfaForm._();
+  static XfaForm createFromXml(XmlDocument domDocument) {
+    XfaForm form = XfaForm._();
     form.setDomDocument(domDocument);
     return form;
   }
 
   /// Creates an XFA form from a [PdfDictionary] (AcroForm dictionary).
-  static Future<CraftXfaForm> createFromPdfDictionary(
-      CraftPdfDictionary acroFormDictionary) async {
-    CraftXfaForm form = CraftXfaForm._();
-    CraftPdfObject? xfa = await acroFormDictionary.get(CraftPdfName.xfa);
+  static Future<XfaForm> createFromPdfDictionary(
+      PdfDictionary acroFormDictionary) async {
+    XfaForm form = XfaForm._();
+    PdfObject? xfa = await acroFormDictionary.get(PdfName.xfa);
     if (xfa != null) {
       await form._initXfaForm(xfa);
     }
@@ -55,10 +55,9 @@ class CraftXfaForm {
   }
 
   /// Creates an XFA form from a [PdfDocument].
-  static Future<CraftXfaForm> createFromDocument(
-      CraftPdfDocument pdfDocument) async {
-    CraftXfaForm form = CraftXfaForm._();
-    CraftPdfObject? xfa = await _getXfaObject(pdfDocument);
+  static Future<XfaForm> createFromDocument(PdfDocument pdfDocument) async {
+    XfaForm form = XfaForm._();
+    PdfObject? xfa = await _getXfaObject(pdfDocument);
     if (xfa != null) {
       await form._initXfaForm(xfa);
     }
@@ -67,17 +66,17 @@ class CraftXfaForm {
 
   /// Sets the XFA data to the AcroForm.
   static Future<void> setXfaFormWithAcroForm(
-      CraftXfaForm form, CraftPdfAcroForm acroForm) async {
-    CraftPdfDocument document = acroForm.getPdfDocument(); // access via getter
-    CraftPdfObject? xfa = await _getXfaObjectFromAcroForm(acroForm);
+      XfaForm form, PdfAcroForm acroForm) async {
+    PdfDocument document = acroForm.getPdfDocument(); // access via getter
+    PdfObject? xfa = await _getXfaObjectFromAcroForm(acroForm);
 
     // Logic to update XFA in PDF
-    if (xfa != null && xfa is CraftPdfArray) {
-      CraftPdfArray ar = xfa;
+    if (xfa != null && xfa is PdfArray) {
+      PdfArray ar = xfa;
       int t = -1;
       int d = -1;
       for (int k = 0; k < ar.size(); k += 2) {
-        CraftPdfString? s = await ar.stringEntry(k);
+        PdfString? s = await ar.stringEntry(k);
         if (s != null) {
           if ("template" == s.decodeMappingText()) {
             t = k + 1;
@@ -92,18 +91,18 @@ class CraftXfaForm {
           d > -1 &&
           form._templateNode != null &&
           form._datasetsNode != null) {
-        CraftPdfStream tStream = CraftPdfStream.withBytes(
+        PdfStream tStream = PdfStream.withBytes(
             Uint8List.fromList(_serializeNode(form._templateNode!)));
         // tStream.setCompressionLevel(document.getWriter().getCompressionLevel()); // TODO: Implement getWriter/Compression if available
         ar.set(t, tStream);
 
-        CraftPdfStream dStream = CraftPdfStream.withBytes(
+        PdfStream dStream = PdfStream.withBytes(
             Uint8List.fromList(_serializeNode(form._datasetsNode!)));
         // dStream.setCompressionLevel(document.getWriter().getCompressionLevel());
         ar.set(d, dStream);
 
         ar.markChanged();
-        acroForm.pdfRepresentation().put(CraftPdfName.xfa, ar);
+        acroForm.pdfRepresentation().put(PdfName.xfa, ar);
         acroForm.pdfRepresentation().markChanged();
         if (!acroForm.pdfRepresentation().usesIndirectStorage()) {
           document.rootCatalog().markChanged();
@@ -114,10 +113,10 @@ class CraftXfaForm {
 
     // Default case: simple XFA stream (full DOM)
     if (form._domDocument != null) {
-      CraftPdfStream stream = CraftPdfStream.withBytes(
+      PdfStream stream = PdfStream.withBytes(
           Uint8List.fromList(_serializeDocument(form._domDocument!)));
       // stream.setCompressionLevel(document.getWriter().getCompressionLevel());
-      acroForm.pdfRepresentation().put(CraftPdfName.xfa, stream);
+      acroForm.pdfRepresentation().put(PdfName.xfa, stream);
       acroForm.pdfRepresentation().markChanged();
       if (!acroForm.pdfRepresentation().usesIndirectStorage()) {
         document.rootCatalog().markChanged();
@@ -142,21 +141,21 @@ class CraftXfaForm {
     return _xfaPresent;
   }
 
-  Future<void> _initXfaForm(CraftPdfObject xfa) async {
+  Future<void> _initXfaForm(PdfObject xfa) async {
     List<int> bytes = [];
 
-    if (xfa is CraftPdfArray) {
-      CraftPdfArray ar = xfa;
+    if (xfa is PdfArray) {
+      PdfArray ar = xfa;
       for (int k = 1; k < ar.size(); k += 2) {
-        CraftPdfObject? ob = await ar.get(k);
-        if (ob is CraftPdfStream) {
+        PdfObject? ob = await ar.get(k);
+        if (ob is PdfStream) {
           Uint8List? streamBytes = await ob.getBytes();
           if (streamBytes != null) {
             bytes.addAll(streamBytes);
           }
         }
       }
-    } else if (xfa is CraftPdfStream) {
+    } else if (xfa is PdfStream) {
       Uint8List? streamBytes = await xfa.getBytes();
       if (streamBytes != null) {
         bytes.addAll(streamBytes);
@@ -209,18 +208,17 @@ class CraftXfaForm {
     return xfaNodes;
   }
 
-  static Future<CraftPdfObject?> _getXfaObject(
-      CraftPdfDocument pdfDocument) async {
-    CraftPdfDictionary? af = await pdfDocument
+  static Future<PdfObject?> _getXfaObject(PdfDocument pdfDocument) async {
+    PdfDictionary? af = await pdfDocument
         .rootCatalog()
         .pdfRepresentation()
-        .dictionaryEntry(CraftPdfName.acroForm);
-    return af?.get(CraftPdfName.xfa);
+        .dictionaryEntry(PdfName.acroForm);
+    return af?.get(PdfName.xfa);
   }
 
-  static Future<CraftPdfObject?> _getXfaObjectFromAcroForm(
-      CraftPdfAcroForm acroForm) async {
-    return await acroForm.pdfRepresentation().get(CraftPdfName.xfa);
+  static Future<PdfObject?> _getXfaObjectFromAcroForm(
+      PdfAcroForm acroForm) async {
+    return await acroForm.pdfRepresentation().get(PdfName.xfa);
   }
 
   static List<int> _serializeDocument(XmlDocument doc) {

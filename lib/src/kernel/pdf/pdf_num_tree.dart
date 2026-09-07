@@ -7,33 +7,32 @@ import 'pdf_object.dart';
 import 'pdf_array.dart';
 import 'pdf_number.dart';
 
-class CraftPdfNumTree {
+class PdfNumTree {
   static const int _nodeSize = 40;
 
-  final CraftPdfCatalog _catalog;
-  final Map<int, CraftPdfObject> _items = {};
-  final CraftPdfName _treeType;
+  final PdfCatalog _catalog;
+  final Map<int, PdfObject> _items = {};
+  final PdfName _treeType;
 
   /// Creates the NumberTree of current Document
-  CraftPdfNumTree(this._catalog, this._treeType);
+  PdfNumTree(this._catalog, this._treeType);
 
-  Future<Map<int, CraftPdfObject>> getNumbers() async {
+  Future<Map<int, PdfObject>> getNumbers() async {
     if (_items.isNotEmpty) {
       return _items;
     }
-    CraftPdfDictionary? numbers;
-    if (_treeType == CraftPdfName.pageLabels) {
+    PdfDictionary? numbers;
+    if (_treeType == PdfName.pageLabels) {
       numbers = await _catalog
           .pdfRepresentation()
-          .dictionaryEntry(CraftPdfName.pageLabels);
+          .dictionaryEntry(PdfName.pageLabels);
     } else {
-      if (_treeType == CraftPdfName.parentTree) {
+      if (_treeType == PdfName.parentTree) {
         final structTreeRoot = await _catalog
             .pdfRepresentation()
-            .dictionaryEntry(CraftPdfName.structTreeRoot);
+            .dictionaryEntry(PdfName.structTreeRoot);
         if (structTreeRoot != null) {
-          numbers =
-              await structTreeRoot.dictionaryEntry(CraftPdfName.parentTree);
+          numbers = await structTreeRoot.dictionaryEntry(PdfName.parentTree);
         }
       }
     }
@@ -44,46 +43,46 @@ class CraftPdfNumTree {
     return _items;
   }
 
-  Future<CraftPdfObject?> get(int key) async {
+  Future<PdfObject?> get(int key) async {
     final numbers = await getNumbers();
     return numbers[key];
   }
 
-  void addEntry(int key, CraftPdfObject value) {
+  void addEntry(int key, PdfObject value) {
     _items[key] = value;
   }
 
-  Future<CraftPdfDictionary> buildTree() async {
+  Future<PdfDictionary> buildTree() async {
     final numbers = _items.keys.toList()..sort();
     if (numbers.length <= _nodeSize) {
-      final dic = CraftPdfDictionary();
-      final ar = CraftPdfArray();
+      final dic = PdfDictionary();
+      final ar = PdfArray();
       for (final number in numbers) {
-        ar.add(CraftPdfNumber.fromInt(number));
+        ar.add(PdfNumber.fromInt(number));
         ar.add(_items[number]!);
       }
-      dic.put(CraftPdfName.nums, ar);
+      dic.put(PdfName.nums, ar);
       return dic;
     }
 
     var skip = _nodeSize;
-    final kids = List<CraftPdfDictionary?>.filled(
+    final kids = List<PdfDictionary?>.filled(
         (numbers.length + _nodeSize - 1) ~/ _nodeSize, null);
 
     for (var i = 0; i < kids.length; ++i) {
       var offset = i * _nodeSize;
       final end = min(offset + _nodeSize, numbers.length);
-      final dic = CraftPdfDictionary();
-      var arr = CraftPdfArray();
-      arr.add(CraftPdfNumber.fromInt(numbers[offset]));
-      arr.add(CraftPdfNumber.fromInt(numbers[end - 1]));
-      dic.put(CraftPdfName.limits, arr);
-      arr = CraftPdfArray();
+      final dic = PdfDictionary();
+      var arr = PdfArray();
+      arr.add(PdfNumber.fromInt(numbers[offset]));
+      arr.add(PdfNumber.fromInt(numbers[end - 1]));
+      dic.put(PdfName.limits, arr);
+      arr = PdfArray();
       for (; offset < end; ++offset) {
-        arr.add(CraftPdfNumber.fromInt(numbers[offset]));
+        arr.add(PdfNumber.fromInt(numbers[offset]));
         arr.add(_items[numbers[offset]]!);
       }
-      dic.put(CraftPdfName.nums, arr);
+      dic.put(PdfName.nums, arr);
       dic.attachToDocument(_catalog.getDocument()!);
       kids[i] = dic;
     }
@@ -91,14 +90,14 @@ class CraftPdfNumTree {
     var top = kids.length;
     while (true) {
       if (top <= _nodeSize) {
-        final arr = CraftPdfArray();
+        final arr = PdfArray();
         for (var k = 0; k < top; ++k) {
           if (kids[k] != null) {
             arr.add(kids[k]!);
           }
         }
-        final dic = CraftPdfDictionary();
-        dic.put(CraftPdfName.kids, arr);
+        final dic = PdfDictionary();
+        dic.put(PdfName.kids, arr);
         return dic;
       }
       skip *= _nodeSize;
@@ -106,36 +105,36 @@ class CraftPdfNumTree {
       for (var k = 0; k < tt; ++k) {
         var offset = k * _nodeSize;
         final end = min(offset + _nodeSize, top);
-        final dic = CraftPdfDictionary();
+        final dic = PdfDictionary();
         dic.attachToDocument(_catalog.getDocument()!);
-        var arr = CraftPdfArray();
-        arr.add(CraftPdfNumber.fromInt(numbers[k * skip]));
-        arr.add(CraftPdfNumber.fromInt(
+        var arr = PdfArray();
+        arr.add(PdfNumber.fromInt(numbers[k * skip]));
+        arr.add(PdfNumber.fromInt(
             numbers[min((k + 1) * skip, numbers.length) - 1]));
-        dic.put(CraftPdfName.limits, arr);
-        arr = CraftPdfArray();
+        dic.put(PdfName.limits, arr);
+        arr = PdfArray();
         for (; offset < end; ++offset) {
           if (kids[offset] != null) {
             arr.add(kids[offset]!);
           }
         }
-        dic.put(CraftPdfName.kids, arr);
+        dic.put(PdfName.kids, arr);
         kids[k] = dic;
       }
       top = tt;
     }
   }
 
-  Future<void> _readTree(CraftPdfDictionary dictionary) async {
+  Future<void> _readTree(PdfDictionary dictionary) async {
     await _iterateItems(dictionary, null);
   }
 
-  Future<CraftPdfNumber?> _iterateItems(
-      CraftPdfDictionary dictionary, CraftPdfNumber? leftOver) async {
-    var nums = await dictionary.arrayEntry(CraftPdfName.nums);
+  Future<PdfNumber?> _iterateItems(
+      PdfDictionary dictionary, PdfNumber? leftOver) async {
+    var nums = await dictionary.arrayEntry(PdfName.nums);
     if (nums != null) {
       for (var k = 0; k < nums.size(); k++) {
-        CraftPdfNumber? number;
+        PdfNumber? number;
         if (leftOver == null) {
           number = await nums.numberEntry(k++);
         } else {
@@ -155,7 +154,7 @@ class CraftPdfNumTree {
         }
       }
     } else {
-      final kids = await dictionary.arrayEntry(CraftPdfName.kids);
+      final kids = await dictionary.arrayEntry(PdfName.kids);
       if (kids != null) {
         for (var k = 0; k < kids.size(); k++) {
           final kid = await kids.dictionaryEntry(k);

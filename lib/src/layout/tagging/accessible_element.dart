@@ -1,5 +1,5 @@
 import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
 
-abstract class CraftAccessibleElement {
-  CraftAccessibilityProperties getAccessibilityProperties();
+abstract class AccessibleElement {
+  AccessibilityProperties getAccessibilityProperties();
 }

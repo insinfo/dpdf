@@ -5,12 +5,11 @@ import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
 
 /// The content stream a canvas produced, as text.
-Future<String> _content(void Function(CraftPdfCanvas canvas) draw) async {
+Future<String> _content(void Function(PdfCanvas canvas) draw) async {
   final output = BytesBuilder(copy: false);
-  final document =
-      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final document = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await document.appendBlankPage();
-  final canvas = await CraftPdfCanvas.fromPage(page);
+  final canvas = await PdfCanvas.fromPage(page);
   draw(canvas);
   final stream = canvas.contentStream!;
   final bytes = await stream.getBytes();
@@ -23,7 +22,7 @@ void main() {
     test('emits the array, the phase and the operator, in that order',
         () async {
       final text = await _content((canvas) {
-        canvas.setDashPattern(CraftPdfArray.fromDoubles([3, 2]), 1);
+        canvas.setDashPattern(PdfArray.fromDoubles([3, 2]), 1);
       });
 
       // Regressão: `writePdfObject` devolve um Future e era chamado dentro de
@@ -37,7 +36,7 @@ void main() {
     test('does not disturb the operators that follow it', () async {
       final text = await _content((canvas) {
         canvas
-          ..setDashPattern(CraftPdfArray.fromDoubles([3, 2]), 0)
+          ..setDashPattern(PdfArray.fromDoubles([3, 2]), 0)
           ..setLineWidth(1.5)
           ..moveTo(10, 10)
           ..lineTo(90, 90)
@@ -60,7 +59,7 @@ void main() {
 
     test('an empty array turns dashing off', () async {
       final text = await _content((canvas) {
-        canvas.setDashPattern(CraftPdfArray(), 0);
+        canvas.setDashPattern(PdfArray(), 0);
       });
 
       expect(text, contains('[] 0 d'));

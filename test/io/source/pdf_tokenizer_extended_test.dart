@@ -6,9 +6,9 @@ import 'package:test/test.dart';
 import 'package:dpdf/dpdf.dart';
 
 /// Helper to create tokenizer from string
-CraftPdfTokenizer tokenizerFromString(String content) {
+PdfTokenizer tokenizerFromString(String content) {
   final bytes = Uint8List.fromList(latin1.encode(content));
-  return CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
+  return PdfTokenizer(RandomAccessFileOrArray(bytes));
 }
 
 void main() {
@@ -324,7 +324,7 @@ void main() {
         final file = File('test/assets/test.pdf');
         if (await file.exists()) {
           final bytes = await file.readAsBytes();
-          final tok = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
+          final tok = PdfTokenizer(RandomAccessFileOrArray(bytes));
           final version = tok.checkPdfHeader();
           expect(version, contains('1.7'));
         }
@@ -443,42 +443,42 @@ void main() {
       test('octalNumberLong1Test', () {
         // 49 equal to string "1", octal 1 equals to 1 in decimal
         final bytes = Uint8List.fromList([92, 49]);
-        final result = CraftPdfTokenizer.decodeStringContent2(bytes, false);
+        final result = PdfTokenizer.decodeStringContent2(bytes, false);
         expect(result, equals([1]));
       });
 
       test('octalNumberLong2Test', () {
         // 49 50 equal to string "12", octal 12 equals to 10 in decimal
         final bytes = Uint8List.fromList([92, 49, 50]);
-        final result = CraftPdfTokenizer.decodeStringContent2(bytes, false);
+        final result = PdfTokenizer.decodeStringContent2(bytes, false);
         expect(result, equals([10]));
       });
 
       test('octalNumberLong3Test', () {
         // 49 50 51 equal to string "123", octal 123 equals to 83 in decimal
         final bytes = Uint8List.fromList([92, 49, 50, 51]);
-        final result = CraftPdfTokenizer.decodeStringContent2(bytes, false);
+        final result = PdfTokenizer.decodeStringContent2(bytes, false);
         expect(result, equals([83]));
       });
 
       test('slashAfterShortOctalTest', () {
         // \0\(
         final bytes = Uint8List.fromList([92, 48, 92, 40]);
-        final result = CraftPdfTokenizer.decodeStringContent2(bytes, false);
+        final result = PdfTokenizer.decodeStringContent2(bytes, false);
         expect(result, equals([0, 40]));
       });
 
       test('notOctalAfterShortOctalTest', () {
         // \0 followed by char 26
         final bytes = Uint8List.fromList([92, 48, 26]);
-        final result = CraftPdfTokenizer.decodeStringContent2(bytes, false);
+        final result = PdfTokenizer.decodeStringContent2(bytes, false);
         expect(result, equals([0, 26]));
       });
 
       test('notOctalAfterShortOctalTest2', () {
         // \12 followed by char 26
         final bytes = Uint8List.fromList([92, 49, 50, 26]);
-        final result = CraftPdfTokenizer.decodeStringContent2(bytes, false);
+        final result = PdfTokenizer.decodeStringContent2(bytes, false);
         expect(result, equals([10, 26]));
       });
 
@@ -489,8 +489,7 @@ void main() {
         final bytes = Uint8List.fromList([92, 48, 92, 50, 51, 52]);
         // Use decodeStringContent directly with proper range (0 to 4, inclusive)
         // This decodes bytes 0,1,2,3,4 = \0\23
-        final result =
-            CraftPdfTokenizer.decodeStringContent(bytes, 0, 4, false);
+        final result = PdfTokenizer.decodeStringContent(bytes, 0, 4, false);
         expect(result, equals([0, 19]));
       });
     });

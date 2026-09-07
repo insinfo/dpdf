@@ -3,17 +3,17 @@ import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
 import 'pdf_action.dart';
 
-class PdfActionGoTo extends CraftPdfAction {
+class PdfActionGoTo extends PdfAction {
   PdfActionGoTo(super.pdfObject);
 
-  static PdfActionGoTo createGoTo(CraftPdfObject destination) {
-    CraftPdfDictionary dict = CraftPdfDictionary();
-    dict.put(CraftPdfName.s, CraftPdfName.goTo);
-    dict.put(CraftPdfName.d, destination);
+  static PdfActionGoTo createGoTo(PdfObject destination) {
+    PdfDictionary dict = PdfDictionary();
+    dict.put(PdfName.s, PdfName.goTo);
+    dict.put(PdfName.d, destination);
     return PdfActionGoTo(dict);
   }
 
-  Future<CraftPdfObject?> getDestination() async {
-    return pdfRepresentation().get(CraftPdfName.d);
+  Future<PdfObject?> getDestination() async {
+    return pdfRepresentation().get(PdfName.d);
   }
 }

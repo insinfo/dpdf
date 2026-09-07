@@ -19,62 +19,60 @@ import 'unicode_code_map.dart';
 import 'cid_unicode_repository.dart';
 import 'cid_unicode_table.dart';
 
-class CraftPdfType0Font extends CraftPdfFont {
-  late CraftCMapEncoding cmapEncoding;
+class PdfType0Font extends PdfFont {
+  late CMapEncoding cmapEncoding;
   bool vertical = false;
-  Map<int, CraftGlyph> utilizedGlyphs = {};
+  Map<int, Glyph> utilizedGlyphs = {};
   UnicodeCodeMap? toUnicode;
   CidUnicodeTable? cid2unicode;
 
-  CraftPdfType0Font(CraftFontProgram fontProgram, [String cmap = "Identity-H"])
+  PdfType0Font(FontProgram fontProgram, [String cmap = "Identity-H"])
       : super() {
     this.fontProgram = fontProgram;
     embedded = true;
     vertical = cmap.endsWith("V");
-    cmapEncoding = CraftCMapEncoding(cmap);
+    cmapEncoding = CMapEncoding(cmap);
   }
 
-  CraftPdfType0Font.fromDictionary(CraftPdfDictionary super.fontDictionary) {
+  PdfType0Font.fromDictionary(PdfDictionary super.fontDictionary) {
     newFont = false;
   }
 
   @override
-  Future<void> initFromDictionary(CraftPdfDictionary fontDictionary) async {
-    CraftPdfObject? encoding =
-        await fontDictionary.get(CraftPdfName.encoding, true);
-    if (encoding is CraftPdfName) {
-      cmapEncoding = CraftCMapEncoding(encoding.getValue());
-    } else if (encoding is CraftPdfStream) {
+  Future<void> initFromDictionary(PdfDictionary fontDictionary) async {
+    PdfObject? encoding = await fontDictionary.get(PdfName.encoding, true);
+    if (encoding is PdfName) {
+      cmapEncoding = CMapEncoding(encoding.getValue());
+    } else if (encoding is PdfStream) {
       Uint8List? bytes = await encoding.getBytes();
       if (bytes != null) {
-        cmapEncoding = CraftCMapEncoding.fromBytes("", bytes);
+        cmapEncoding = CMapEncoding.fromBytes("", bytes);
       } else {
-        cmapEncoding = CraftCMapEncoding("Identity-H");
+        cmapEncoding = CMapEncoding("Identity-H");
       }
     } else {
-      cmapEncoding = CraftCMapEncoding("Identity-H");
+      cmapEncoding = CMapEncoding("Identity-H");
     }
 
-    CraftPdfObject? toUni =
-        await fontDictionary.get(CraftPdfName.toUnicode, true);
-    if (toUni is CraftPdfStream) {
+    PdfObject? toUni = await fontDictionary.get(PdfName.toUnicode, true);
+    if (toUni is PdfStream) {
       toUnicode = await UnicodeCodeMap.fromStream(toUni);
     }
 
     if (toUnicode == null) {
-      CraftPdfArray? descendantFonts =
-          await fontDictionary.arrayEntry(CraftPdfName.descendantFonts);
+      PdfArray? descendantFonts =
+          await fontDictionary.arrayEntry(PdfName.descendantFonts);
       if (descendantFonts != null && descendantFonts.size() > 0) {
-        CraftPdfDictionary? cidFont = await descendantFonts.dictionaryEntry(0);
+        PdfDictionary? cidFont = await descendantFonts.dictionaryEntry(0);
         if (cidFont != null) {
-          CraftPdfDictionary? cidSystemInfo =
-              await cidFont.dictionaryEntry(CraftPdfName.cidSystemInfo);
+          PdfDictionary? cidSystemInfo =
+              await cidFont.dictionaryEntry(PdfName.cidSystemInfo);
           if (cidSystemInfo != null) {
             String? registry =
-                (await cidSystemInfo.stringEntry(CraftPdfName("Registry")))
+                (await cidSystemInfo.stringEntry(PdfName("Registry")))
                     ?.getValue();
             String? ordering =
-                (await cidSystemInfo.stringEntry(CraftPdfName("Ordering")))
+                (await cidSystemInfo.stringEntry(PdfName("Ordering")))
                     ?.getValue();
             if (registry != null && ordering != null) {
               cid2unicode = await CidUnicodeRepository.shared
@@ -87,7 +85,7 @@ class CraftPdfType0Font extends CraftPdfFont {
   }
 
   @override
-  CraftGlyph? getGlyph(int unicode) {
+  Glyph? getGlyph(int unicode) {
     return getFontProgram()?.getGlyph(unicode);
   }
 
@@ -98,20 +96,19 @@ class CraftPdfType0Font extends CraftPdfFont {
 
   @override
   void writeText(dynamic text, dynamic stream, [int? from, int? to]) {
-    if (text is CraftGlyphLine && stream is CraftPdfOutputStream) {
+    if (text is GlyphLine && stream is PdfOutputStream) {
       int start = from ?? text.getStart();
       int end = to ?? text.getEnd();
       if (end > start) {
-        Uint8List bytes =
-            convertToBytes(CraftGlyphLine.copySlice(text, start, end));
+        Uint8List bytes = convertToBytes(GlyphLine.copySlice(text, start, end));
         _writeHexedString(stream, bytes);
       }
-    } else if (text is String && stream is CraftPdfOutputStream) {
+    } else if (text is String && stream is PdfOutputStream) {
       writeTextString(text, stream);
     }
   }
 
-  void writeTextString(String text, CraftPdfOutputStream stream) {
+  void writeTextString(String text, PdfOutputStream stream) {
     _writeHexedString(stream, convertToBytes(text));
   }
 
@@ -121,13 +118,13 @@ class CraftPdfType0Font extends CraftPdfFont {
       BytesBuilder builder = BytesBuilder();
       for (int i = 0; i < text.length; i++) {
         int charCode;
-        if (CraftTextUtil.isSurrogatePair(text, i)) {
-          charCode = CraftTextUtil.convertToUtf32(text, i);
+        if (TextUtil.isSurrogatePair(text, i)) {
+          charCode = TextUtil.convertToUtf32(text, i);
           i++;
         } else {
           charCode = text.codeUnitAt(i);
         }
-        CraftGlyph? g = getGlyph(charCode);
+        Glyph? g = getGlyph(charCode);
         if (g != null) {
           utilizedGlyphs[g.getCode()] = g;
           builder.add(cmapEncoding.getCmapBytes(g.getCode()));
@@ -136,19 +133,19 @@ class CraftPdfType0Font extends CraftPdfFont {
         }
       }
       return builder.toBytes();
-    } else if (text is CraftGlyphLine) {
+    } else if (text is GlyphLine) {
       BytesBuilder builder = BytesBuilder();
       for (int i = text.getStart(); i < text.getEnd(); i++) {
-        CraftGlyph g = text.get(i);
+        Glyph g = text.get(i);
         utilizedGlyphs[g.getCode()] = g;
         builder.add(cmapEncoding.getCmapBytes(g.getCode()));
       }
       return builder.toBytes();
     }
-    return CraftPdfFont.EMPTY_BYTES;
+    return PdfFont.EMPTY_BYTES;
   }
 
-  void _writeHexedString(CraftPdfOutputStream stream, Uint8List bytes) {
+  void _writeHexedString(PdfOutputStream stream, Uint8List bytes) {
     stream.writeByte(60); // <
     for (int b in bytes) {
       String hex = b.toRadixString(16).padLeft(2, '0').toUpperCase();
@@ -168,78 +165,77 @@ class CraftPdfType0Font extends CraftPdfFont {
   }
 
   void flushFontData() {
-    CraftPdfDictionary fontDict = pdfRepresentation();
-    fontDict.put(CraftPdfName.type, CraftPdfName.font);
-    fontDict.put(CraftPdfName.subtype, CraftPdfName.type0);
+    PdfDictionary fontDict = pdfRepresentation();
+    fontDict.put(PdfName.type, PdfName.font);
+    fontDict.put(PdfName.subtype, PdfName.type0);
 
     String baseFontName = getFontProgram()!.getFontNames().getFontName()!;
-    fontDict.put(CraftPdfName.baseFont,
-        CraftPdfName("$baseFontName-${cmapEncoding.cmap}"));
-    fontDict.put(CraftPdfName.encoding, CraftPdfName(cmapEncoding.cmap));
+    fontDict.put(
+        PdfName.baseFont, PdfName("$baseFontName-${cmapEncoding.cmap}"));
+    fontDict.put(PdfName.encoding, PdfName(cmapEncoding.cmap));
 
-    CraftPdfDictionary fontDescriptor = getFontDescriptor(baseFontName);
-    CraftPdfDictionary cidFont = getCidFont(fontDescriptor, baseFontName);
+    PdfDictionary fontDescriptor = getFontDescriptor(baseFontName);
+    PdfDictionary cidFont = getCidFont(fontDescriptor, baseFontName);
 
-    fontDict.put(CraftPdfName.descendantFonts, CraftPdfArray()..add(cidFont));
+    fontDict.put(PdfName.descendantFonts, PdfArray()..add(cidFont));
 
-    CraftPdfStream? toUnicode = getToUnicode();
+    PdfStream? toUnicode = getToUnicode();
     if (toUnicode != null) {
-      fontDict.put(CraftPdfName.toUnicode, toUnicode);
+      fontDict.put(PdfName.toUnicode, toUnicode);
     }
   }
 
-  CraftPdfDictionary getCidFont(
-      CraftPdfDictionary fontDescriptor, String fontName) {
-    CraftPdfDictionary cidFont = CraftPdfDictionary();
-    cidFont.put(CraftPdfName.type, CraftPdfName.font);
-    cidFont.put(CraftPdfName.subtype, CraftPdfName.cidFontType2);
-    cidFont.put(CraftPdfName.baseFont, CraftPdfName(fontName));
-    cidFont.put(CraftPdfName.fontDescriptor, fontDescriptor);
-    cidFont.put(CraftPdfName.cidToGIDMap, CraftPdfName.identity);
+  PdfDictionary getCidFont(PdfDictionary fontDescriptor, String fontName) {
+    PdfDictionary cidFont = PdfDictionary();
+    cidFont.put(PdfName.type, PdfName.font);
+    cidFont.put(PdfName.subtype, PdfName.cidFontType2);
+    cidFont.put(PdfName.baseFont, PdfName(fontName));
+    cidFont.put(PdfName.fontDescriptor, fontDescriptor);
+    cidFont.put(PdfName.cidToGIDMap, PdfName.identity);
 
-    CraftPdfDictionary cidInfo = CraftPdfDictionary();
-    cidInfo.put(CraftPdfName.intern("Registry"),
-        CraftPdfString(cmapEncoding.characterRegistry()));
-    cidInfo.put(CraftPdfName.intern("Ordering"),
-        CraftPdfString(cmapEncoding.characterCollection()));
-    cidInfo.put(CraftPdfName.intern("Supplement"),
-        CraftPdfNumber(cmapEncoding.collectionSupplement().toDouble()));
-    cidFont.put(CraftPdfName.cidSystemInfo, cidInfo);
+    PdfDictionary cidInfo = PdfDictionary();
+    cidInfo.put(PdfName.intern("Registry"),
+        PdfString(cmapEncoding.characterRegistry()));
+    cidInfo.put(PdfName.intern("Ordering"),
+        PdfString(cmapEncoding.characterCollection()));
+    cidInfo.put(PdfName.intern("Supplement"),
+        PdfNumber(cmapEncoding.collectionSupplement().toDouble()));
+    cidFont.put(PdfName.cidSystemInfo, cidInfo);
 
     if (!vertical) {
-      cidFont.put(CraftPdfName.dw, CraftPdfNumber(1000)); // Default width
-      CraftPdfArray? widthsArray = generateWidthsArray();
+      cidFont.put(PdfName.dw, PdfNumber(1000)); // Default width
+      PdfArray? widthsArray = generateWidthsArray();
       if (widthsArray != null) {
-        cidFont.put(CraftPdfName.w, widthsArray);
+        cidFont.put(PdfName.w, widthsArray);
       }
     }
 
     return cidFont;
   }
 
-  CraftPdfArray? generateWidthsArray() {
+  PdfArray? generateWidthsArray() {
     if (utilizedGlyphs.isEmpty) return null;
 
     // Simple implementation for now: [cid [w1 w2 ...]]
     //  uses more optimized format, but let's start with this.
     List<int> sortedCids = utilizedGlyphs.keys.toList()..sort();
 
-    CraftPdfArray res = CraftPdfArray();
+    PdfArray res = PdfArray();
     if (sortedCids.isEmpty) return null;
 
     int lastCid = -10;
-    CraftPdfArray? currentGroup;
+    PdfArray? currentGroup;
 
     for (int cid in sortedCids) {
-      CraftGlyph? g = utilizedGlyphs[cid];
+      Glyph? g = utilizedGlyphs[cid];
       if (g == null || g.getWidth() == 1000) continue;
 
       if (cid == lastCid + 1 && currentGroup != null) {
-        currentGroup.add(CraftPdfNumber(g.getWidth().toDouble()));
+        currentGroup.add(PdfNumber(g.getWidth().toDouble()));
       } else {
-        currentGroup = CraftPdfArray();
-        currentGroup.add(CraftPdfNumber(g.getWidth().toDouble()));
-        res.add(CraftPdfNumber(cid.toDouble()));
+        currentGroup = PdfArray();
+        currentGroup.add(PdfNumber(g.getWidth().toDouble()));
+        res.add(PdfNumber(cid.toDouble()));
         res.add(currentGroup);
       }
       lastCid = cid;
@@ -248,62 +244,59 @@ class CraftPdfType0Font extends CraftPdfFont {
     return res.size() == 0 ? null : res;
   }
 
-  CraftPdfStream? getToUnicode() {
-    List<CraftGlyph> toUnicodeGlyphs = [];
+  PdfStream? getToUnicode() {
+    List<Glyph> toUnicodeGlyphs = [];
     for (var entry in utilizedGlyphs.entries) {
       if (entry.key > 0) {
         toUnicodeGlyphs.add(entry.value);
       }
     }
     if (toUnicodeGlyphs.isEmpty) return null;
-    return CraftFontUtil.getToUnicodeStream(toUnicodeGlyphs);
+    return FontUtil.getToUnicodeStream(toUnicodeGlyphs);
   }
 
   @override
-  CraftPdfDictionary getFontDescriptor(String fontName) {
-    CraftPdfDictionary fd = CraftPdfDictionary();
-    fd.put(CraftPdfName.type, CraftPdfName.fontDescriptor);
-    fd.put(CraftPdfName.fontName, CraftPdfName(fontName));
+  PdfDictionary getFontDescriptor(String fontName) {
+    PdfDictionary fd = PdfDictionary();
+    fd.put(PdfName.type, PdfName.fontDescriptor);
+    fd.put(PdfName.fontName, PdfName(fontName));
 
     final metrics = getFontProgram()!.getFontMetrics();
     fd.put(
-        CraftPdfName.fontBBox,
-        CraftPdfArray.fromDoubles(
+        PdfName.fontBBox,
+        PdfArray.fromDoubles(
             metrics.getBbox().map((e) => e.toDouble()).toList()));
-    fd.put(CraftPdfName.ascent,
-        CraftPdfNumber(metrics.getTypoAscender().toDouble()));
-    fd.put(CraftPdfName.descent,
-        CraftPdfNumber(metrics.getTypoDescender().toDouble()));
-    fd.put(CraftPdfName.capHeight,
-        CraftPdfNumber(metrics.getCapHeight().toDouble()));
-    fd.put(CraftPdfName.italicAngle, CraftPdfNumber(metrics.getItalicAngle()));
-    fd.put(CraftPdfName.stemV, CraftPdfNumber(80));
-    fd.put(CraftPdfName.flags,
-        CraftPdfNumber(getFontProgram()!.getPdfFontFlags().toDouble()));
+    fd.put(PdfName.ascent, PdfNumber(metrics.getTypoAscender().toDouble()));
+    fd.put(PdfName.descent, PdfNumber(metrics.getTypoDescender().toDouble()));
+    fd.put(PdfName.capHeight, PdfNumber(metrics.getCapHeight().toDouble()));
+    fd.put(PdfName.italicAngle, PdfNumber(metrics.getItalicAngle()));
+    fd.put(PdfName.stemV, PdfNumber(80));
+    fd.put(PdfName.flags,
+        PdfNumber(getFontProgram()!.getPdfFontFlags().toDouble()));
 
     addFontStream(fd);
 
     return fd;
   }
 
-  void addFontStream(CraftPdfDictionary fd) {
+  void addFontStream(PdfDictionary fd) {
     if (embedded) {
-      CraftTrueTypeFont ttf = getFontProgram() as CraftTrueTypeFont;
+      TrueTypeFont ttf = getFontProgram() as TrueTypeFont;
       Uint8List? fontBytes;
-      CraftPdfName fontFileKey;
+      PdfName fontFileKey;
 
       if (ttf.isCff()) {
         fontBytes = ttf.readCffFont();
-        fontFileKey = CraftPdfName.fontFile3;
+        fontFileKey = PdfName.fontFile3;
       } else {
         fontBytes = ttf.getFontStreamBytes();
-        fontFileKey = CraftPdfName.fontFile2;
+        fontFileKey = PdfName.fontFile2;
       }
 
       if (fontBytes != null) {
-        CraftPdfStream stream = CraftPdfStream.withBytes(fontBytes);
+        PdfStream stream = PdfStream.withBytes(fontBytes);
         if (ttf.isCff()) {
-          stream.put(CraftPdfName.subtype, CraftPdfName("Type1C"));
+          stream.put(PdfName.subtype, PdfName("Type1C"));
         }
         fd.put(fontFileKey, stream);
       }
@@ -311,19 +304,19 @@ class CraftPdfType0Font extends CraftPdfFont {
   }
 
   @override
-  CraftGlyphLine createGlyphLine(String content) {
-    List<CraftGlyph> glyphs = [];
+  GlyphLine createGlyphLine(String content) {
+    List<Glyph> glyphs = [];
     for (int i = 0; i < content.length; i++) {
-      glyphs.add(getGlyph(content.codeUnitAt(i)) ?? CraftGlyph(-1, 0, 0));
+      glyphs.add(getGlyph(content.codeUnitAt(i)) ?? Glyph(-1, 0, 0));
     }
-    return CraftGlyphLine(glyphs);
+    return GlyphLine(glyphs);
   }
 
   @override
-  int appendGlyphs(String text, int from, int to, List<CraftGlyph> glyphs) {
+  int appendGlyphs(String text, int from, int to, List<Glyph> glyphs) {
     int processed = 0;
     for (int i = from; i <= to; i++) {
-      CraftGlyph? g = getGlyph(text.codeUnitAt(i));
+      Glyph? g = getGlyph(text.codeUnitAt(i));
       if (g != null) {
         glyphs.add(g);
         processed++;
@@ -335,8 +328,8 @@ class CraftPdfType0Font extends CraftPdfFont {
   }
 
   @override
-  int appendAnyGlyph(String text, int from, List<CraftGlyph> glyphs) {
-    CraftGlyph? g = getGlyph(text.codeUnitAt(from));
+  int appendAnyGlyph(String text, int from, List<Glyph> glyphs) {
+    Glyph? g = getGlyph(text.codeUnitAt(from));
     if (g != null) {
       glyphs.add(g);
       return 1;
@@ -345,7 +338,7 @@ class CraftPdfType0Font extends CraftPdfFont {
   }
 
   @override
-  String decode(CraftPdfString content) {
+  String decode(PdfString content) {
     if (toUnicode != null || cid2unicode != null) {
       Uint8List? bytes = content.getValueBytes();
       if (bytes == null) return "";
@@ -376,25 +369,24 @@ class CraftPdfType0Font extends CraftPdfFont {
   }
 
   @override
-  CraftGlyphLine decodeIntoGlyphLine(CraftPdfString content) {
-    List<CraftGlyph> glyphs = [];
+  GlyphLine decodeIntoGlyphLine(PdfString content) {
+    List<Glyph> glyphs = [];
     Uint8List? bytes = content.getValueBytes();
-    if (bytes == null) return CraftGlyphLine([]);
+    if (bytes == null) return GlyphLine([]);
     int i = 0;
     while (i < bytes.length) {
       int code = cmapEncoding.getCidCodeFromBytes(bytes, i);
       int len = cmapEncoding.getCidCodeLengthFromBytes(bytes, i);
       i += len;
-      glyphs.add(
-          getFontProgram()?.getGlyphByCode(code) ?? CraftGlyph(code, 0, 0));
+      glyphs.add(getFontProgram()?.getGlyphByCode(code) ?? Glyph(code, 0, 0));
     }
-    return CraftGlyphLine(glyphs);
+    return GlyphLine(glyphs);
   }
 
   @override
-  double getContentWidth(CraftPdfString content) {
+  double getContentWidth(PdfString content) {
     double total = 0;
-    CraftGlyphLine line = decodeIntoGlyphLine(content);
+    GlyphLine line = decodeIntoGlyphLine(content);
     for (int i = line.getStart(); i < line.getEnd(); i++) {
       total += line.get(i).getWidth();
     }

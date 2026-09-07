@@ -1,4 +1,4 @@
-class CraftPdfConst {
+class PdfConst {
   /// External Contributors to the resource (other than the authors).
   static const String Contributor = "contributor";
 
@@ -48,7 +48,7 @@ class CraftPdfConst {
   static const String Keywords = "Keywords";
 
   /// The PDF file version (for example: 1.0, 1.3, and so on).
-  static const String CraftVersion = "PDFVersion";
+  static const String Version = "PDFVersion";
 
   /// The Producer.
   static const String Producer = "Producer";

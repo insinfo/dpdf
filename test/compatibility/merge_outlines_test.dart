@@ -2,64 +2,56 @@ import 'dart:typed_data';
 import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
 
-typedef MutateOutline = void Function(List<CraftPdfDictionary> nodes);
+typedef MutateOutline = void Function(List<PdfDictionary> nodes);
 Future<Uint8List> outlineSource({MutateOutline? mutate}) async {
   final bytes = BytesBuilder();
-  final document =
-      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+  final document = PdfDocument.create(PdfWriter.fromBytesBuilder(bytes));
   final pages = [
     await document.appendBlankPage(),
     await document.appendBlankPage()
   ];
-  CraftPdfDictionary node(String title, CraftPdfPage page) =>
-      CraftPdfDictionary()
-        ..attachToDocument(document)
-        ..put(CraftPdfName('Title'), CraftPdfString(title))
-        ..put(
-            CraftPdfName('Dest'),
-            CraftPdfArray.fromList(
-                [page.pdfRepresentation(), CraftPdfName('Fit')]));
-  final root = CraftPdfDictionary()
+  PdfDictionary node(String title, PdfPage page) => PdfDictionary()
     ..attachToDocument(document)
-    ..put(CraftPdfName.type, CraftPdfName('Outlines'));
+    ..put(PdfName('Title'), PdfString(title))
+    ..put(PdfName('Dest'),
+        PdfArray.fromList([page.pdfRepresentation(), PdfName('Fit')]));
+  final root = PdfDictionary()
+    ..attachToDocument(document)
+    ..put(PdfName.type, PdfName('Outlines'));
   final first = node('Alpha', pages[0]);
   final last = node('Beta', pages[1]);
   final child = node('Detail', pages[1]);
   root
-    ..put(CraftPdfName('First'), first)
-    ..put(CraftPdfName('Last'), last)
-    ..put(CraftPdfName('Count'), CraftPdfNumber.fromInt(2));
+    ..put(PdfName('First'), first)
+    ..put(PdfName('Last'), last)
+    ..put(PdfName('Count'), PdfNumber.fromInt(2));
   first
-    ..put(CraftPdfName.parent, root)
-    ..put(CraftPdfName('Next'), last)
-    ..put(CraftPdfName('First'), child)
-    ..put(CraftPdfName('Last'), child)
-    ..put(CraftPdfName('Count'), CraftPdfNumber.fromInt(-1))
-    ..put(CraftPdfName('C'), CraftPdfArray.fromDoubles([0.2, 0.4, 0.6]))
-    ..put(CraftPdfName('F'), CraftPdfNumber.fromInt(2));
+    ..put(PdfName.parent, root)
+    ..put(PdfName('Next'), last)
+    ..put(PdfName('First'), child)
+    ..put(PdfName('Last'), child)
+    ..put(PdfName('Count'), PdfNumber.fromInt(-1))
+    ..put(PdfName('C'), PdfArray.fromDoubles([0.2, 0.4, 0.6]))
+    ..put(PdfName('F'), PdfNumber.fromInt(2));
   last
-    ..put(CraftPdfName.parent, root)
-    ..put(CraftPdfName('Prev'), first);
-  child.put(CraftPdfName.parent, first);
+    ..put(PdfName.parent, root)
+    ..put(PdfName('Prev'), first);
+  child.put(PdfName.parent, first);
   mutate?.call([first, last, child]);
-  document
-      .rootCatalog()
-      .pdfRepresentation()
-      .put(CraftPdfName('Outlines'), root);
+  document.rootCatalog().pdfRepresentation().put(PdfName('Outlines'), root);
   await document.close();
   return bytes.takeBytes();
 }
 
-Future<CraftPdfDocument> assemble(List<PdfPageSelection> sources) async =>
-    CraftPdfDocument.open(CraftPdfReader.fromBytes(
+Future<PdfDocument> assemble(List<PdfPageSelection> sources) async =>
+    PdfDocument.open(PdfReader.fromBytes(
         await PdfPageAssembly.merge(sources, preserveOutlines: true)));
-Future<CraftPdfDictionary> outlineRoot(CraftPdfDocument document) async =>
-    (await document
-        .rootCatalog()
-        .pdfRepresentation()
-        .dictionaryEntry(CraftPdfName('Outlines')))!;
-Future<CraftPdfDictionary> target(CraftPdfDictionary node) async =>
-    (await (await node.arrayEntry(CraftPdfName('Dest')))!.dictionaryEntry(0))!;
+Future<PdfDictionary> outlineRoot(PdfDocument document) async => (await document
+    .rootCatalog()
+    .pdfRepresentation()
+    .dictionaryEntry(PdfName('Outlines')))!;
+Future<PdfDictionary> target(PdfDictionary node) async =>
+    (await (await node.arrayEntry(PdfName('Dest')))!.dictionaryEntry(0))!;
 
 void main() {
   test('Outline opt-in preserves hierarchy, titles, styles and closed state',
@@ -70,27 +62,25 @@ void main() {
     final result = await assemble([PdfPageSelection(bytes)]);
     addTearDown(result.close);
     final root = await outlineRoot(result);
-    final first = (await root.dictionaryEntry(CraftPdfName('First')))!;
-    final child = (await first.dictionaryEntry(CraftPdfName('First')))!;
+    final first = (await root.dictionaryEntry(PdfName('First')))!;
+    final child = (await first.dictionaryEntry(PdfName('First')))!;
+    expect((await first.stringEntry(PdfName('Title')))!.getValue(), 'Alpha');
+    expect((await child.stringEntry(PdfName('Title')))!.getValue(), 'Detail');
     expect(
-        (await first.stringEntry(CraftPdfName('Title')))!.getValue(), 'Alpha');
-    expect(
-        (await child.stringEntry(CraftPdfName('Title')))!.getValue(), 'Detail');
-    expect(identical(await child.dictionaryEntry(CraftPdfName.parent), first),
-        isTrue);
-    expect((await first.numberEntry(CraftPdfName('Count')))!.intValue(), -1);
-    expect((await root.numberEntry(CraftPdfName('Count')))!.intValue(), 2);
-    expect((await first.numberEntry(CraftPdfName('F')))!.intValue(), 2);
-    expect((await first.arrayEntry(CraftPdfName('C')))!.size(), 3);
+        identical(await child.dictionaryEntry(PdfName.parent), first), isTrue);
+    expect((await first.numberEntry(PdfName('Count')))!.intValue(), -1);
+    expect((await root.numberEntry(PdfName('Count')))!.intValue(), 2);
+    expect((await first.numberEntry(PdfName('F')))!.intValue(), 2);
+    expect((await first.arrayEntry(PdfName('C')))!.size(), 3);
   });
   test('Reordered pages retarget explicit destinations', () async {
     final result = await assemble([
       PdfPageSelection(await outlineSource(), pages: [2, 1])
     ]);
     addTearDown(result.close);
-    final first = (await (await outlineRoot(result))
-        .dictionaryEntry(CraftPdfName('First')))!;
-    final last = (await first.dictionaryEntry(CraftPdfName('Next')))!;
+    final first =
+        (await (await outlineRoot(result)).dictionaryEntry(PdfName('First')))!;
+    final last = (await first.dictionaryEntry(PdfName('Next')))!;
     expect(
         identical(
             await target(first), (await result.pageAt(2))!.pdfRepresentation()),
@@ -105,15 +95,15 @@ void main() {
     final result =
         await assemble([PdfPageSelection(bytes), PdfPageSelection(bytes)]);
     addTearDown(result.close);
-    var current = (await (await outlineRoot(result))
-        .dictionaryEntry(CraftPdfName('First')))!;
+    var current =
+        (await (await outlineRoot(result)).dictionaryEntry(PdfName('First')))!;
     for (var index = 1; index <= 4; index++) {
       expect(
           identical(await target(current),
               (await result.pageAt(index))!.pdfRepresentation()),
           isTrue);
       if (index < 4) {
-        current = (await current.dictionaryEntry(CraftPdfName('Next')))!;
+        current = (await current.dictionaryEntry(PdfName('Next')))!;
       }
     }
   });
@@ -124,8 +114,8 @@ void main() {
       PdfPageSelection(bytes, pages: [1, 1, 2])
     ]);
     addTearDown(result.close);
-    final first = (await (await outlineRoot(result))
-        .dictionaryEntry(CraftPdfName('First')))!;
+    final first =
+        (await (await outlineRoot(result)).dictionaryEntry(PdfName('First')))!;
     expect(
         identical(
             await target(first), (await result.pageAt(1))!.pdfRepresentation()),
@@ -138,17 +128,17 @@ void main() {
   });
   test('Local GoTo action becomes a remapped explicit destination', () async {
     final bytes = await outlineSource(mutate: (nodes) {
-      final destination = nodes.first.remove(CraftPdfName('Dest'));
+      final destination = nodes.first.remove(PdfName('Dest'));
       nodes.first.put(
-          CraftPdfName('A'),
-          CraftPdfDictionary()
-            ..put(CraftPdfName('S'), CraftPdfName('GoTo'))
-            ..put(CraftPdfName('D'), destination!));
+          PdfName('A'),
+          PdfDictionary()
+            ..put(PdfName('S'), PdfName('GoTo'))
+            ..put(PdfName('D'), destination!));
     });
     final result = await assemble([PdfPageSelection(bytes)]);
     addTearDown(result.close);
-    final first = (await (await outlineRoot(result))
-        .dictionaryEntry(CraftPdfName('First')))!;
+    final first =
+        (await (await outlineRoot(result)).dictionaryEntry(PdfName('First')))!;
     expect(
         identical(
             await target(first), (await result.pageAt(1))!.pdfRepresentation()),
@@ -158,11 +148,11 @@ void main() {
       () async {
     final named = await outlineSource(
         mutate: (nodes) =>
-            nodes.first.put(CraftPdfName('Dest'), CraftPdfString('named')));
+            nodes.first.put(PdfName('Dest'), PdfString('named')));
     await expectLater(
         assemble([PdfPageSelection(named)]), throwsUnsupportedError);
     final cycle = await outlineSource(
-        mutate: (nodes) => nodes.first.put(CraftPdfName('Next'), nodes.first));
+        mutate: (nodes) => nodes.first.put(PdfName('Next'), nodes.first));
     await expectLater(
         assemble([PdfPageSelection(cycle)]), throwsFormatException);
   });

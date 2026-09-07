@@ -6,7 +6,7 @@ import 'signature_mechanism_params.dart';
 ///
 /// Implementations may, for example, need
 /// to sign a PDF using a smart card.
-abstract class CraftExternalSignature {
+abstract class ExternalSignature {
   /// Returns the digest algorithm.
   ///
   /// @return The digest algorithm (e.g. "SHA-1", "SHA-256",...).
@@ -25,7 +25,7 @@ abstract class CraftExternalSignature {
   /// A non-null value is required for RSASSA-PSS.
   ///
   /// @return algorithm parameters or null
-  CraftSignatureMechanismParams? getSignatureMechanismParameters();
+  SignatureMechanismParams? getSignatureMechanismParameters();
 
   /// Combines the configured signing and digest algorithms to sign
   /// with the hash algorithm.

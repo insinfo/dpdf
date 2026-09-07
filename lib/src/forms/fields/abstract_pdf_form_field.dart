@@ -15,8 +15,7 @@ import '../../commons/utils/encoding_util.dart';
 
 import 'pdf_form_field.dart';
 
-abstract class CraftAbstractPdfFormField
-    extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+abstract class AbstractPdfFormField extends PdfObjectWrapper<PdfDictionary> {
   static const int defaultFontSize = 12;
   static const int minFontSize = 4;
 
@@ -24,15 +23,15 @@ abstract class CraftAbstractPdfFormField
   static const int _daSize = 1;
   static const int _daColor = 2;
 
-  CraftPdfFont? _font;
+  PdfFont? _font;
   double _fontSize = -1;
-  CraftColor? _color;
-  CraftPdfFormField? _parent;
+  Color? _color;
+  PdfFormField? _parent;
   Future<void>? _styleLoading;
 
-  CraftAbstractPdfFormField(CraftPdfDictionary pdfObject) : super(pdfObject) {
+  AbstractPdfFormField(PdfDictionary pdfObject) : super(pdfObject) {
     if (requiresIndirectStorage()) {
-      CraftPdfObjectWrapper.markObjectAsIndirect(pdfObject);
+      PdfObjectWrapper.markObjectAsIndirect(pdfObject);
     }
     setForbidRelease();
   }
@@ -40,35 +39,35 @@ abstract class CraftAbstractPdfFormField
   @override
   bool requiresIndirectStorage() => true;
 
-  void setParent(CraftPdfFormField parent) {
-    put(CraftPdfName.parent, parent.pdfRepresentation());
+  void setParent(PdfFormField parent) {
+    put(PdfName.parent, parent.pdfRepresentation());
     _parent = parent;
   }
 
-  Future<CraftPdfDictionary?> getParent() async {
-    final p = await pdfRepresentation().dictionaryEntry(CraftPdfName.parent);
+  Future<PdfDictionary?> getParent() async {
+    final p = await pdfRepresentation().dictionaryEntry(PdfName.parent);
     if (p != null) return p;
     return _parent?.pdfRepresentation();
   }
 
-  CraftPdfFormField? getParentField() => _parent;
+  PdfFormField? getParentField() => _parent;
 
-  Future<CraftPdfString?> getFieldName() async {
-    return pdfRepresentation().stringEntry(CraftPdfName.t); // T = Terminal Name
+  Future<PdfString?> getFieldName() async {
+    return pdfRepresentation().stringEntry(PdfName.t); // T = Terminal Name
   }
 
-  Future<CraftPdfString?> getDefaultAppearance() async {
+  Future<PdfString?> getDefaultAppearance() async {
     // Inheritable
-    CraftPdfString? da = await pdfRepresentation().stringEntry(CraftPdfName.da);
+    PdfString? da = await pdfRepresentation().stringEntry(PdfName.da);
     if (da == null && _parent != null) {
       return await _parent!.getDefaultAppearance();
     }
     return da;
   }
 
-  CraftPdfFont? resolveTypeface() => _font;
+  PdfFont? resolveTypeface() => _font;
   double getFontSize() => _fontSize;
-  CraftColor? getColor() => _color;
+  Color? getColor() => _color;
 
   /// Loads appearance attributes explicitly, without starting background reads
   /// from a synchronous constructor. Async field factories await this method.
@@ -80,7 +79,7 @@ abstract class CraftAbstractPdfFormField
       final fontData = _splitDAelements(da.getValue());
       if (fontData[_daSize] != null && fontData[_daFont] != null) {
         _fontSize = (fontData[_daSize] as num).toDouble();
-        _color = fontData[_daColor] as CraftColor?;
+        _color = fontData[_daColor] as Color?;
         final fontName = fontData[_daFont] as String;
         _font = await resolveFontName(fontName);
       }
@@ -88,8 +87,8 @@ abstract class CraftAbstractPdfFormField
   }
 
   static List<Object?> _splitDAelements(String da) {
-    final bytes = CraftEncodingUtil.convertToBytes(da, "Latin1");
-    final tokenizer = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
+    final bytes = EncodingUtil.convertToBytes(da, "Latin1");
+    final tokenizer = PdfTokenizer(RandomAccessFileOrArray(bytes));
     final stack = <String>[];
     final ret = List<Object?>.filled(3, null);
 
@@ -109,7 +108,7 @@ abstract class CraftAbstractPdfFormField
               if (stack.isNotEmpty) {
                 final gray = double.tryParse(stack.last) ?? 0.0;
                 if (gray != 0) {
-                  ret[_daColor] = CraftDeviceGray(gray);
+                  ret[_daColor] = DeviceGray(gray);
                 }
               }
               break;
@@ -118,7 +117,7 @@ abstract class CraftAbstractPdfFormField
                 final r = double.tryParse(stack[stack.length - 3]) ?? 0.0;
                 final g = double.tryParse(stack[stack.length - 2]) ?? 0.0;
                 final b = double.tryParse(stack.last) ?? 0.0;
-                ret[_daColor] = CraftDeviceRgb(r, g, b);
+                ret[_daColor] = DeviceRgb(r, g, b);
               }
               break;
             case "k":
@@ -127,7 +126,7 @@ abstract class CraftAbstractPdfFormField
                 final m = double.tryParse(stack[stack.length - 3]) ?? 0.0;
                 final y = double.tryParse(stack[stack.length - 2]) ?? 0.0;
                 final k = double.tryParse(stack.last) ?? 0.0;
-                ret[_daColor] = CraftDeviceCmyk(c, m, y, k);
+                ret[_daColor] = DeviceCmyk(c, m, y, k);
               }
               break;
             default:
@@ -144,23 +143,22 @@ abstract class CraftAbstractPdfFormField
     return ret;
   }
 
-  Future<CraftPdfFont?> resolveFontName(String fontName) async {
+  Future<PdfFont?> resolveFontName(String fontName) async {
     final doc = getDocument();
     if (doc == null) return null;
 
     final catalog = doc.rootCatalog();
-    final acroFormDict = await catalog
-        .pdfRepresentation()
-        .dictionaryEntry(CraftPdfName.acroForm);
+    final acroFormDict =
+        await catalog.pdfRepresentation().dictionaryEntry(PdfName.acroForm);
     if (acroFormDict == null) return null;
 
-    final dr = await acroFormDict.dictionaryEntry(CraftPdfName.dr);
+    final dr = await acroFormDict.dictionaryEntry(PdfName.dr);
     if (dr == null) return null;
 
-    final fontDict = await dr.dictionaryEntry(CraftPdfName.font);
+    final fontDict = await dr.dictionaryEntry(PdfName.font);
     if (fontDict == null) return null;
 
-    final daFontDict = await fontDict.dictionaryEntry(CraftPdfName(fontName));
+    final daFontDict = await fontDict.dictionaryEntry(PdfName(fontName));
     if (daFontDict != null) {
       return await doc.resolveTypeface(daFontDict);
     }
@@ -168,12 +166,12 @@ abstract class CraftAbstractPdfFormField
   }
 
   @override
-  CraftPdfDocument? getDocument() {
+  PdfDocument? getDocument() {
     final ref = pdfRepresentation().indirectHandle();
     return ref?.getDocument();
   }
 
-  CraftPdfObject put(CraftPdfName key, CraftPdfObject value) {
+  PdfObject put(PdfName key, PdfObject value) {
     pdfRepresentation().put(key, value);
     markChanged();
     return pdfRepresentation();

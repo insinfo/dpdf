@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import '../pdf_encodings.dart';
 import 'cmap_object.dart';
 
-abstract class CraftAbstractCMap {
+abstract class AbstractCMap {
   String? cmapName;
   String? registry;
   String? ordering;
@@ -32,12 +32,12 @@ abstract class CraftAbstractCMap {
     this.supplement = supplement;
   }
 
-  void registerMappedCode(String mark, CraftCMapObject code);
+  void registerMappedCode(String mark, CMapObject code);
 
   void registerCodeInterval(Uint8List low, Uint8List high) {}
 
   /// Expands a byte-code interval after validating its destination payload.
-  void expandMappingInterval(String from, String to, CraftCMapObject code) {
+  void expandMappingInterval(String from, String to, CMapObject code) {
     if (from.isEmpty ||
         from.length != to.length ||
         from.codeUnits.any((unit) => unit > 255) ||
@@ -55,12 +55,11 @@ abstract class CraftAbstractCMap {
     }
 
     final payload = code.getValue();
-    List<CraftCMapObject>? entries;
+    List<CMapObject>? entries;
     Uint8List? destination;
     int? firstNumber;
     if (code.isArray()) {
-      if (payload is! List<CraftCMapObject> ||
-          BigInt.from(payload.length) < span) {
+      if (payload is! List<CMapObject> || BigInt.from(payload.length) < span) {
         throw ArgumentError(
             'Mapping interval requires a destination for every code.');
       }
@@ -82,9 +81,9 @@ abstract class CraftAbstractCMap {
       final mapped = entries != null
           ? entries[offset]
           : destination != null
-              ? CraftCMapObject(
-                  CraftCMapObject.hexString, Uint8List.fromList(destination))
-              : CraftCMapObject(CraftCMapObject.number, firstNumber! + offset);
+              ? CMapObject(
+                  CMapObject.hexString, Uint8List.fromList(destination))
+              : CMapObject(CMapObject.number, firstNumber! + offset);
       registerMappedCode(String.fromCharCodes(cursor), mapped);
       if (_sameBytes(cursor, last)) break;
       _advanceBytes(cursor);
@@ -123,13 +122,13 @@ abstract class CraftAbstractCMap {
         String.fromCharCodes(bytes.take(2)) == '\u00fe\u00ff';
     final String encoding;
     if (isHexWriting) {
-      encoding = CraftPdfEncodings.UNICODE_BIG_UNMARKED;
+      encoding = PdfEncodings.UNICODE_BIG_UNMARKED;
     } else if (hasBigEndianMarker) {
-      encoding = CraftPdfEncodings.UNICODE_BIG;
+      encoding = PdfEncodings.UNICODE_BIG;
     } else {
-      encoding = CraftPdfEncodings.PDF_DOC_ENCODING;
+      encoding = PdfEncodings.PDF_DOC_ENCODING;
     }
-    return CraftPdfEncodings.convertToString(bytes, encoding);
+    return PdfEncodings.convertToString(bytes, encoding);
   }
 
   static void writeMappingInteger(int n, Uint8List b) {

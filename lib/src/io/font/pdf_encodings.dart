@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-abstract class CraftExtraEncoding {
+abstract class ExtraEncoding {
   Uint8List charToByte(String text, String encoding);
   Uint8List charToByteChar(int char1, String encoding);
   String? byteToChar(Uint8List b, String encoding);
 }
 
-class CraftPdfEncodings {
+class PdfEncodings {
   static const String IDENTITY_H = "Identity-H";
   static const String IDENTITY_V = "Identity-V";
   static const String CP1250 = "Windows-1250";
@@ -609,7 +609,7 @@ class CraftPdfEncodings {
   ];
 
   static final Map<int, int> winansi = {};
-  static final Map<String, CraftExtraEncoding> extraEncodings = {};
+  static final Map<String, ExtraEncoding> extraEncodings = {};
 
   static void init() {
     if (winansi.isNotEmpty) return;

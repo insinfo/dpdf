@@ -5,7 +5,7 @@ import '../../kernel/pdf/pdf_document.dart';
 import '../../kernel/pdf/annot/pdf_widget_annotation.dart';
 import 'pdf_form_field.dart';
 
-class CraftPdfTextFormField extends CraftPdfFormField {
+class PdfTextFormField extends PdfFormField {
   static const int ffMultiline = 1 << 12; // Bit 13
   static const int ffPassword = 1 << 13; // Bit 14
   static const int ffFileSelect = 1 << 20; // Bit 21
@@ -14,21 +14,19 @@ class CraftPdfTextFormField extends CraftPdfFormField {
   static const int ffComb = 1 << 24; // Bit 25
   static const int ffRichText = 1 << 25; // Bit 26
 
-  CraftPdfTextFormField(super.pdfObject);
+  PdfTextFormField(super.pdfObject);
 
   @override
-  Future<CraftPdfName?> getFormType() async {
-    return CraftPdfName.tx;
+  Future<PdfName?> getFormType() async {
+    return PdfName.tx;
   }
 
-  static Future<CraftPdfTextFormField> createText(CraftPdfDocument doc,
-      [String? fieldName,
-      String? value,
-      CraftPdfWidgetAnnotation? widget]) async {
-    CraftPdfDictionary dict = CraftPdfDictionary();
-    dict.put(CraftPdfName.ft, CraftPdfName.tx);
+  static Future<PdfTextFormField> createText(PdfDocument doc,
+      [String? fieldName, String? value, PdfWidgetAnnotation? widget]) async {
+    PdfDictionary dict = PdfDictionary();
+    dict.put(PdfName.ft, PdfName.tx);
 
-    CraftPdfTextFormField field = CraftPdfTextFormField(dict);
+    PdfTextFormField field = PdfTextFormField(dict);
     field.attachToDocument(doc);
 
     if (fieldName != null) {
@@ -44,12 +42,9 @@ class CraftPdfTextFormField extends CraftPdfFormField {
     return field;
   }
 
-  static Future<CraftPdfTextFormField> createMultilineText(CraftPdfDocument doc,
-      [String? fieldName,
-      String? value,
-      CraftPdfWidgetAnnotation? widget]) async {
-    CraftPdfTextFormField field =
-        await createText(doc, fieldName, value, widget);
+  static Future<PdfTextFormField> createMultilineText(PdfDocument doc,
+      [String? fieldName, String? value, PdfWidgetAnnotation? widget]) async {
+    PdfTextFormField field = await createText(doc, fieldName, value, widget);
     await field.setMultiline(true);
     return field;
   }
@@ -115,12 +110,11 @@ class CraftPdfTextFormField extends CraftPdfFormField {
   }
 
   Future<int?> getMaxLen() async {
-    CraftPdfNumber? num =
-        await pdfRepresentation().numberEntry(CraftPdfName.maxLen);
+    PdfNumber? num = await pdfRepresentation().numberEntry(PdfName.maxLen);
     return num?.intValue();
   }
 
   void setMaxLen(int maxLen) {
-    put(CraftPdfName.maxLen, CraftPdfNumber(maxLen.toDouble()));
+    put(PdfName.maxLen, PdfNumber(maxLen.toDouble()));
   }
 }

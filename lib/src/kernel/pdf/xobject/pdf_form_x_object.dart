@@ -8,43 +8,43 @@ import '../pdf_resources.dart';
 import '../../geom/rectangle.dart';
 import 'pdf_x_object.dart';
 
-class CraftPdfFormXObject extends CraftPdfXObject {
-  CraftPdfResources? _resources;
-  CraftRectangle? _bBoxCache;
+class PdfFormXObject extends PdfXObject {
+  PdfResources? _resources;
+  Rectangle? _bBoxCache;
 
-  CraftPdfFormXObject(CraftRectangle bBox) : super(CraftPdfStream()) {
-    pdfRepresentation().put(CraftPdfName.type, CraftPdfName.xObject);
-    pdfRepresentation().put(CraftPdfName.subtype, CraftPdfName.form);
-    pdfRepresentation().put(CraftPdfName.bBox, bBox.toPdfArray());
+  PdfFormXObject(Rectangle bBox) : super(PdfStream()) {
+    pdfRepresentation().put(PdfName.type, PdfName.xObject);
+    pdfRepresentation().put(PdfName.subtype, PdfName.form);
+    pdfRepresentation().put(PdfName.bBox, bBox.toPdfArray());
     _bBoxCache = bBox;
   }
 
-  CraftPdfFormXObject.fromStream(super.pdfStream) {
-    if (!pdfRepresentation().containsKey(CraftPdfName.subtype)) {
-      pdfRepresentation().put(CraftPdfName.subtype, CraftPdfName.form);
+  PdfFormXObject.fromStream(super.pdfStream) {
+    if (!pdfRepresentation().containsKey(PdfName.subtype)) {
+      pdfRepresentation().put(PdfName.subtype, PdfName.form);
     }
   }
 
-  Future<CraftPdfResources> resourceDirectory() async {
+  Future<PdfResources> resourceDirectory() async {
     if (_resources == null) {
-      CraftPdfDictionary? resourcesDict =
-          await pdfRepresentation().dictionaryEntry(CraftPdfName.resources);
+      PdfDictionary? resourcesDict =
+          await pdfRepresentation().dictionaryEntry(PdfName.resources);
       if (resourcesDict == null) {
-        resourcesDict = CraftPdfDictionary();
-        pdfRepresentation().put(CraftPdfName.resources, resourcesDict);
+        resourcesDict = PdfDictionary();
+        pdfRepresentation().put(PdfName.resources, resourcesDict);
       }
-      _resources = CraftPdfResources(resourcesDict);
+      _resources = PdfResources(resourcesDict);
     }
     return _resources!;
   }
 
   /// Gets the BBox rectangle.
-  Future<CraftRectangle?> getBBox() async {
+  Future<Rectangle?> getBBox() async {
     if (_bBoxCache != null) {
       return _bBoxCache;
     }
 
-    final bBoxArray = await pdfRepresentation().arrayEntry(CraftPdfName.bBox);
+    final bBoxArray = await pdfRepresentation().arrayEntry(PdfName.bBox);
     if (bBoxArray == null || bBoxArray.size() < 4) {
       return null;
     }
@@ -63,7 +63,7 @@ class CraftPdfFormXObject extends CraftPdfXObject {
     final width = x2.doubleValue() - x;
     final height = y2.doubleValue() - y;
 
-    _bBoxCache = CraftRectangle(x, y, width, height);
+    _bBoxCache = Rectangle(x, y, width, height);
     return _bBoxCache;
   }
 
@@ -94,20 +94,19 @@ class CraftPdfFormXObject extends CraftPdfXObject {
   }
 
   /// Sets the BBox for the form XObject.
-  void setBBox(CraftRectangle rectangle) {
-    pdfRepresentation().put(CraftPdfName.bBox, rectangle.toPdfArray());
+  void setBBox(Rectangle rectangle) {
+    pdfRepresentation().put(PdfName.bBox, rectangle.toPdfArray());
     _bBoxCache = rectangle;
   }
 
   /// Calculates an [AffineTransform] that maps the coordinate system of a given
   /// [PdfFormXObject] to fit within a specified annotation bounding box.
-  static Future<CraftAffineTransform> calcAppearanceTransformToAnnotRect(
-      CraftPdfFormXObject xObject, CraftRectangle annotBBox) async {
-    CraftPdfArray? bBox =
-        await xObject.pdfRepresentation().arrayEntry(CraftPdfName.bBox);
+  static Future<AffineTransform> calcAppearanceTransformToAnnotRect(
+      PdfFormXObject xObject, Rectangle annotBBox) async {
+    PdfArray? bBox = await xObject.pdfRepresentation().arrayEntry(PdfName.bBox);
     if (bBox == null || bBox.size() != 4) {
-      bBox = CraftRectangle(0, 0, 0, 0).toPdfArray();
-      xObject.setBBox(CraftRectangle(0, 0, 0, 0));
+      bBox = Rectangle(0, 0, 0, 0).toPdfArray();
+      xObject.setBBox(Rectangle(0, 0, 0, 0));
     }
 
     // We need to await float values
@@ -115,10 +114,10 @@ class CraftPdfFormXObject extends CraftPdfXObject {
     List<double> xObjBBox = await bBox.toDoubleArray();
     if (xObjBBox.length < 4) xObjBBox = [0, 0, 0, 0];
 
-    CraftPdfArray? xObjMatrix =
-        await xObject.pdfRepresentation().arrayEntry(CraftPdfName.matrix);
+    PdfArray? xObjMatrix =
+        await xObject.pdfRepresentation().arrayEntry(PdfName.matrix);
 
-    CraftRectangle transformedRect;
+    Rectangle transformedRect;
     if (xObjMatrix != null && xObjMatrix.size() == 6) {
       List<double> matrixArr = await xObjMatrix.toDoubleArray();
 
@@ -135,7 +134,7 @@ class CraftPdfFormXObject extends CraftPdfXObject {
         xObjBBox[3]
       ];
 
-      CraftAffineTransform t = CraftAffineTransform.fromList(matrixArr);
+      AffineTransform t = AffineTransform.fromList(matrixArr);
       List<double> transformedPoints = t.transformPoints(points);
 
       double minX = double.maxFinite;
@@ -150,13 +149,13 @@ class CraftPdfFormXObject extends CraftPdfXObject {
         maxY = math.max(maxY, transformedPoints[i + 1]);
       }
 
-      transformedRect = CraftRectangle(minX, minY, maxX - minX, maxY - minY);
+      transformedRect = Rectangle(minX, minY, maxX - minX, maxY - minY);
     } else {
-      transformedRect = CraftRectangle(xObjBBox[0], xObjBBox[1],
+      transformedRect = Rectangle(xObjBBox[0], xObjBBox[1],
           xObjBBox[2] - xObjBBox[0], xObjBBox[3] - xObjBBox[1]);
     }
 
-    CraftAffineTransform at = CraftAffineTransform.getTranslateInstance(
+    AffineTransform at = AffineTransform.getTranslateInstance(
         -transformedRect.getX(), -transformedRect.getY());
 
     double scaleX = transformedRect.getWidth() == 0
@@ -166,8 +165,8 @@ class CraftPdfFormXObject extends CraftPdfXObject {
         ? 1
         : annotBBox.getHeight() / transformedRect.getHeight();
 
-    at.preConcatenate(CraftAffineTransform.getScaleInstance(scaleX, scaleY));
-    at.preConcatenate(CraftAffineTransform.getTranslateInstance(
+    at.preConcatenate(AffineTransform.getScaleInstance(scaleX, scaleY));
+    at.preConcatenate(AffineTransform.getTranslateInstance(
         annotBBox.getX(), annotBBox.getY()));
 
     return at;
@@ -176,8 +175,8 @@ class CraftPdfFormXObject extends CraftPdfXObject {
   /// Sets the form matrix.
   void setFormMatrix(List<double> matrix) {
     if (matrix.length >= 6) {
-      final arr = CraftPdfArray.fromDoubles(matrix);
-      pdfRepresentation().put(CraftPdfName.matrix, arr);
+      final arr = PdfArray.fromDoubles(matrix);
+      pdfRepresentation().put(PdfName.matrix, arr);
     }
   }
 }

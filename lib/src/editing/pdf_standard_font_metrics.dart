@@ -143,8 +143,7 @@ abstract final class PdfStandardFontMetrics {
       if (code >= 0) byCode[code] = advance;
       // The local legacy AGL assigns mu to Greek U+03BC; PDF WinAnsi uses
       // the micro sign U+00B5. Bind the AFM glyph directly for this alias.
-      final scalar =
-          name == 'mu' ? 0xb5 : CraftAdobeGlyphList.nameToUnicode(name);
+      final scalar = name == 'mu' ? 0xb5 : AdobeGlyphList.nameToUnicode(name);
       if (scalar >= 0) {
         final previous = byScalar[scalar];
         if (previous != null && previous != advance) {

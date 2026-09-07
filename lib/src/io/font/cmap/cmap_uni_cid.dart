@@ -4,11 +4,11 @@ import 'abstract_cmap.dart';
 import 'cmap_object.dart';
 import 'cmap_to_unicode.dart';
 
-class CraftCMapUniCid extends CraftAbstractCMap {
-  final CraftIntHashtable map = CraftIntHashtable.withInitialCapacity(65537);
+class CMapUniCid extends AbstractCMap {
+  final IntHashtable map = IntHashtable.withInitialCapacity(65537);
 
   @override
-  void registerMappedCode(String mark, CraftCMapObject code) {
+  void registerMappedCode(String mark, CMapObject code) {
     if (!code.isNumber()) return;
     final cid = code.getValue();
     if (cid is! int || cid < 0 || cid > 0xffff) {
@@ -23,8 +23,8 @@ class CraftCMapUniCid extends CraftAbstractCMap {
     return map.get(character);
   }
 
-  CraftCMapToUnicode exportToUnicode() {
-    CraftCMapToUnicode uni = CraftCMapToUnicode();
+  CMapToUnicode exportToUnicode() {
+    CMapToUnicode uni = CMapToUnicode();
     List<int> keys = map.toOrderedKeys();
     for (int key in keys) {
       uni.addCharInt(map.get(key), String.fromCharCode(key));

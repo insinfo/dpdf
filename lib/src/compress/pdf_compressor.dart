@@ -49,19 +49,18 @@ class PdfCompressor {
           'must be between 0 and 9, or -1 for the deflate default');
     }
 
-    final readerProperties = CraftReaderProperties();
+    final readerProperties = ReaderProperties();
     if (password != null) {
       readerProperties.setPasswordFromString(password);
     }
-    final writerProperties = CraftWriterProperties()
+    final writerProperties = WriterProperties()
       ..setFullCompressionMode(options.objectStreams)
       ..setCompressionLevel(options.compressionLevel);
 
     final output = BytesBuilder();
-    final document = CraftPdfDocument(
-      reader: CraftPdfReader.fromBytes(source, readerProperties),
-      writer:
-          CraftPdfWriter.fromBytesBuilder(output, properties: writerProperties),
+    final document = PdfDocument(
+      reader: PdfReader.fromBytes(source, readerProperties),
+      writer: PdfWriter.fromBytesBuilder(output, properties: writerProperties),
     );
     await document.load();
 
@@ -136,15 +135,14 @@ class PdfCompressor {
   /// Walking from the trailer rather than over the cross-reference table is
   /// what separates the objects the document needs from the ones an
   /// incremental update left behind.
-  static Future<List<CraftPdfObject>> _liveObjects(
-      CraftPdfDocument document) async {
-    final seen = <CraftPdfObject>{};
-    final ordered = <CraftPdfObject>[];
-    final queue = <CraftPdfObject>[];
+  static Future<List<PdfObject>> _liveObjects(PdfDocument document) async {
+    final seen = <PdfObject>{};
+    final ordered = <PdfObject>[];
+    final queue = <PdfObject>[];
 
     final trailer = document.fileTrailer();
     for (final key in const ['Root', 'Info']) {
-      final value = trailer.getMap()?[CraftPdfName(key)];
+      final value = trailer.getMap()?[PdfName(key)];
       if (value != null) queue.add(value);
     }
 
@@ -154,11 +152,11 @@ class PdfCompressor {
       if (resolved == null || !seen.add(resolved)) continue;
       ordered.add(resolved);
 
-      if (resolved is CraftPdfDictionary) {
+      if (resolved is PdfDictionary) {
         // A stream is a dictionary too, so this covers both.
         final map = resolved.getMap();
         if (map != null) queue.addAll(map.values);
-      } else if (resolved is CraftPdfArray) {
+      } else if (resolved is PdfArray) {
         for (var i = 0; i < resolved.size(); i++) {
           final item = await resolved.get(i, false);
           if (item != null) queue.add(item);
@@ -168,10 +166,10 @@ class PdfCompressor {
     return ordered;
   }
 
-  static Future<CraftPdfObject?> _resolve(CraftPdfObject object) async {
+  static Future<PdfObject?> _resolve(PdfObject object) async {
     if (object.objectKind() != PdfObjectType.indirectReference) return object;
     try {
-      return await (object as CraftPdfIndirectReference).targetObject(true);
+      return await (object as PdfIndirectReference).targetObject(true);
     } on Object {
       // A reference into a damaged region resolves to nothing; the rewrite
       // simply carries the dangling reference over, as a reader would.
@@ -182,13 +180,13 @@ class PdfCompressor {
   // --- pruning --------------------------------------------------------------
 
   static void _removeCatalogEntries(
-    CraftPdfDocument document,
+    PdfDocument document,
     List<String> keys,
     Map<String, int> removed,
   ) {
     final catalog = document.rootCatalog().pdfRepresentation();
     for (final key in keys) {
-      if (catalog.remove(CraftPdfName(key)) != null) {
+      if (catalog.remove(PdfName(key)) != null) {
         removed[key] = (removed[key] ?? 0) + 1;
         catalog.markChanged();
       }
@@ -196,7 +194,7 @@ class PdfCompressor {
   }
 
   static Future<void> _pruneDictionaries(
-    List<CraftPdfObject> live,
+    List<PdfObject> live,
     PdfCompressionOptions options,
     Map<String, int> removed,
   ) async {
@@ -208,9 +206,9 @@ class PdfCompressor {
     if (keys.isEmpty) return;
 
     for (final object in live) {
-      if (object is! CraftPdfDictionary) continue;
+      if (object is! PdfDictionary) continue;
       for (final key in keys) {
-        if (object.remove(CraftPdfName(key)) != null) {
+        if (object.remove(PdfName(key)) != null) {
           removed[key] = (removed[key] ?? 0) + 1;
           object.markChanged();
         }
@@ -232,17 +230,17 @@ class PdfCompressor {
   };
 
   static Future<({int count, int bytes})> _recompressStreams(
-    List<CraftPdfObject> live,
+    List<PdfObject> live,
     int level,
   ) async {
     var count = 0;
     var saved = 0;
 
     for (final object in live) {
-      if (object is! CraftPdfStream) continue;
+      if (object is! PdfStream) continue;
       if (await _usesImageCodec(object)) continue;
       // A stream that carries its data outside the file is not ours to touch.
-      if (object.containsKey(CraftPdfName('F'))) continue;
+      if (object.containsKey(PdfName('F'))) continue;
 
       Uint8List? raw;
       Uint8List? decoded;
@@ -266,8 +264,8 @@ class PdfCompressor {
       if (candidate.length >= raw.length) continue;
 
       object.setData(candidate);
-      object.put(CraftPdfName.filter, CraftPdfName('FlateDecode'));
-      object.remove(CraftPdfName('DecodeParms'));
+      object.put(PdfName.filter, PdfName('FlateDecode'));
+      object.remove(PdfName('DecodeParms'));
       object.markChanged();
       count++;
       saved += raw.length - candidate.length;
@@ -275,14 +273,14 @@ class PdfCompressor {
     return (count: count, bytes: saved);
   }
 
-  static Future<bool> _usesImageCodec(CraftPdfStream stream) async {
-    final filter = await stream.get(CraftPdfName.filter);
+  static Future<bool> _usesImageCodec(PdfStream stream) async {
+    final filter = await stream.get(PdfName.filter);
     if (filter == null) return false;
     if (filter.objectKind() == PdfObjectType.name) {
-      return _imageCodecs.contains((filter as CraftPdfName).getValue());
+      return _imageCodecs.contains((filter as PdfName).getValue());
     }
     if (filter.objectKind() == PdfObjectType.array) {
-      final array = filter as CraftPdfArray;
+      final array = filter as PdfArray;
       for (var i = 0; i < array.size(); i++) {
         final name = await array.nameEntry(i);
         if (name != null && _imageCodecs.contains(name.getValue())) return true;
@@ -299,16 +297,16 @@ class PdfCompressor {
   /// its raw payload plus its dictionary, a dictionary by its sorted entries.
   /// Only indirect objects can be shared, so a direct value is left alone.
   static Future<int> _deduplicate(
-    CraftPdfDocument document,
-    List<CraftPdfObject> live,
+    PdfDocument document,
+    List<PdfObject> live,
   ) async {
-    final canonical = <String, CraftPdfIndirectReference>{};
-    final replacement = <int, CraftPdfIndirectReference>{};
+    final canonical = <String, PdfIndirectReference>{};
+    final replacement = <int, PdfIndirectReference>{};
 
     for (final object in live) {
       final handle = object.indirectHandle();
       if (handle == null) continue;
-      if (object is! CraftPdfDictionary && object is! CraftPdfArray) continue;
+      if (object is! PdfDictionary && object is! PdfArray) continue;
 
       final String key;
       try {
@@ -330,9 +328,9 @@ class PdfCompressor {
     // ones in the trailer.
     _rewrite(document.fileTrailer(), replacement);
     for (final object in live) {
-      if (object is CraftPdfDictionary) {
+      if (object is PdfDictionary) {
         _rewrite(object, replacement);
-      } else if (object is CraftPdfArray) {
+      } else if (object is PdfArray) {
         await _rewriteArray(object, replacement);
       }
     }
@@ -340,8 +338,8 @@ class PdfCompressor {
   }
 
   static void _rewrite(
-    CraftPdfDictionary dictionary,
-    Map<int, CraftPdfIndirectReference> replacement,
+    PdfDictionary dictionary,
+    Map<int, PdfIndirectReference> replacement,
   ) {
     final map = dictionary.getMap();
     if (map == null) return;
@@ -349,7 +347,7 @@ class PdfCompressor {
       final value = entry.value;
       if (value.objectKind() != PdfObjectType.indirectReference) continue;
       final target =
-          replacement[(value as CraftPdfIndirectReference).objectNumber()];
+          replacement[(value as PdfIndirectReference).objectNumber()];
       if (target != null) {
         dictionary.put(entry.key, target);
         dictionary.markChanged();
@@ -358,8 +356,8 @@ class PdfCompressor {
   }
 
   static Future<void> _rewriteArray(
-    CraftPdfArray array,
-    Map<int, CraftPdfIndirectReference> replacement,
+    PdfArray array,
+    Map<int, PdfIndirectReference> replacement,
   ) async {
     for (var i = 0; i < array.size(); i++) {
       final value = await array.get(i, false);
@@ -368,7 +366,7 @@ class PdfCompressor {
         continue;
       }
       final target =
-          replacement[(value as CraftPdfIndirectReference).objectNumber()];
+          replacement[(value as PdfIndirectReference).objectNumber()];
       if (target != null) {
         array.set(i, target);
         array.markChanged();
@@ -379,9 +377,9 @@ class PdfCompressor {
   /// A canonical string for [object], deep enough to be safe and shallow
   /// enough to be cheap: nested indirect references contribute their object
   /// number rather than their content.
-  static Future<String> _fingerprint(CraftPdfObject object) async {
+  static Future<String> _fingerprint(PdfObject object) async {
     final buffer = StringBuffer();
-    if (object is CraftPdfStream) {
+    if (object is PdfStream) {
       final raw = await object.getRawBytes();
       buffer
         ..write('stream:')
@@ -390,7 +388,7 @@ class PdfCompressor {
         ..write(raw == null ? '' : _digest(raw))
         ..write(':');
     }
-    if (object is CraftPdfDictionary) {
+    if (object is PdfDictionary) {
       final map = object.getMap() ?? const {};
       final keys = map.keys.map((k) => k.getValue()).toList()..sort();
       buffer.write('dict{');
@@ -398,11 +396,11 @@ class PdfCompressor {
         buffer
           ..write(key)
           ..write('=')
-          ..write(_shallow(map[CraftPdfName(key)]!))
+          ..write(_shallow(map[PdfName(key)]!))
           ..write(',');
       }
       buffer.write('}');
-    } else if (object is CraftPdfArray) {
+    } else if (object is PdfArray) {
       buffer.write('array[');
       for (var i = 0; i < object.size(); i++) {
         buffer
@@ -414,14 +412,14 @@ class PdfCompressor {
     return buffer.toString();
   }
 
-  static String _shallow(CraftPdfObject? value) {
+  static String _shallow(PdfObject? value) {
     if (value == null) return 'null';
     switch (value.objectKind()) {
       case PdfObjectType.indirectReference:
-        final reference = value as CraftPdfIndirectReference;
+        final reference = value as PdfIndirectReference;
         return 'R${reference.objectNumber()}_${reference.generationNumber()}';
       case PdfObjectType.name:
-        return '/${(value as CraftPdfName).getValue()}';
+        return '/${(value as PdfName).getValue()}';
       case PdfObjectType.dictionary:
       case PdfObjectType.stream:
       case PdfObjectType.array:
@@ -452,7 +450,7 @@ class PdfCompressor {
 
   // --- orphan removal -------------------------------------------------------
 
-  static Future<int> _removeOrphans(CraftPdfDocument document) async {
+  static Future<int> _removeOrphans(PdfDocument document) async {
     // Recompute reachability: deduplication just changed which objects are
     // referenced, and the merged ones are now orphans themselves.
     final live = await _liveObjects(document);

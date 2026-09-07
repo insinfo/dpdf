@@ -10,33 +10,32 @@ import 'dom/html_box_builder.dart';
 import 'layout/html_layout_engine.dart';
 import 'paint/html_pdf_painter.dart';
 
-/// Page and typography settings for [CraftHtmlConverter].
-class CraftHtmlConverterProperties {
-  final CraftPageSize? pageSize;
+/// Page and typography settings for [HtmlConverter].
+class HtmlConverterProperties {
+  final PageSize? pageSize;
   final double margin;
   final double baseFontSize;
 
-  const CraftHtmlConverterProperties({
+  const HtmlConverterProperties({
     this.pageSize,
     this.margin = 36,
     this.baseFontSize = 12,
   })  : assert(margin >= 0),
         assert(baseFontSize > 0);
 
-  CraftPageSize get resolvedPageSize => pageSize ?? CraftPageSize.defaultSize;
+  PageSize get resolvedPageSize => pageSize ?? PageSize.defaultSize;
 }
 
 /// Converts HTML into a new PDF through independent DOM, CSS, layout and
 /// paint stages. Markup is parsed only; executable elements are never run.
-class CraftHtmlConverter {
-  CraftHtmlConverter._();
+class HtmlConverter {
+  HtmlConverter._();
 
   static Future<Uint8List> convertToBytes(String html,
-      {CraftHtmlConverterProperties? properties}) async {
-    final options = properties ?? const CraftHtmlConverterProperties();
+      {HtmlConverterProperties? properties}) async {
+    final options = properties ?? const HtmlConverterProperties();
     final output = BytesBuilder(copy: false);
-    final document =
-        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+    final document = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
     try {
       await convertInto(html, document, properties: options);
     } finally {
@@ -45,21 +44,20 @@ class CraftHtmlConverter {
     return output.takeBytes();
   }
 
-  static Future<void> convertInto(String html, CraftPdfDocument document,
-      {CraftHtmlConverterProperties? properties}) async {
-    final options = properties ?? const CraftHtmlConverterProperties();
+  static Future<void> convertInto(String html, PdfDocument document,
+      {HtmlConverterProperties? properties}) async {
+    final options = properties ?? const HtmlConverterProperties();
     final parsed = parse(html);
     final body = parsed.body;
     if (body == null) return;
 
-    final boxes = CraftHtmlBoxBuilder(
-      CraftHtmlStyleSheet.fromDocument(parsed),
+    final boxes = HtmlBoxBuilder(
+      HtmlStyleSheet.fromDocument(parsed),
       options.baseFontSize,
     ).build(body.nodes);
     final pageSize = options.resolvedPageSize;
-    final fragments = CraftHtmlLayoutEngine(pageSize.width - options.margin * 2)
+    final fragments = HtmlLayoutEngine(pageSize.width - options.margin * 2)
         .layoutDisplayList(boxes);
-    await CraftHtmlPdfPainter(document, pageSize, options.margin)
-        .paint(fragments);
+    await HtmlPdfPainter(document, pageSize, options.margin).paint(fragments);
   }
 }

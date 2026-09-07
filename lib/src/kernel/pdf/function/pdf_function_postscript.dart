@@ -5,27 +5,27 @@ import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'package:dpdf/src/kernel/pdf/function/pdf_function.dart';
 
 /// Thrown when a type 4 program is malformed or exceeds an execution guard.
-class CraftPdfFunctionPostScriptException implements Exception {
+class PdfFunctionPostScriptException implements Exception {
   final String message;
 
-  CraftPdfFunctionPostScriptException(this.message);
+  PdfFunctionPostScriptException(this.message);
 
   @override
-  String toString() => 'CraftPdfFunctionPostScriptException: $message';
+  String toString() => 'PdfFunctionPostScriptException: $message';
 }
 
 /// A parsed `{ ... }` procedure of a type 4 function.
 ///
 /// Elements are [double] literals, [String] operator names or nested
-/// [CraftPdfPostScriptProcedure]s.
-class CraftPdfPostScriptProcedure {
+/// [PdfPostScriptProcedure]s.
+class PdfPostScriptProcedure {
   final List<Object> body;
 
-  CraftPdfPostScriptProcedure(this.body);
+  PdfPostScriptProcedure(this.body);
 }
 
 /// A type 4 (PostScript calculator) function, ISO 32000-1, clause 7.10.5.
-class CraftPdfFunctionPostScript extends CraftPdfFunction {
+class PdfFunctionPostScript extends PdfFunction {
   /// Operand stack limit imposed by clause 7.10.5.
   static const int maxStackSize = 100;
 
@@ -39,28 +39,27 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
   /// Maximum `{ }` nesting depth accepted while parsing.
   static const int maxNestingDepth = 100;
 
-  final CraftPdfPostScriptProcedure program;
+  final PdfPostScriptProcedure program;
 
   final int _outputCount;
 
-  CraftPdfFunctionPostScript(
-      super.domain, List<double> super.range, this.program)
+  PdfFunctionPostScript(super.domain, List<double> super.range, this.program)
       : _outputCount = range.length ~/ 2;
 
-  static Future<CraftPdfFunctionPostScript?> parseStream(
-      CraftPdfStream stream, List<double> domain, List<double> range) async {
+  static Future<PdfFunctionPostScript?> parseStream(
+      PdfStream stream, List<double> domain, List<double> range) async {
     final bytes = await stream.getBytes();
     if (bytes == null) return null;
     // The calculator language is ASCII; latin1 never throws on stray bytes.
     final program = parseProgram(latin1.decode(bytes, allowInvalid: true));
     if (program == null) return null;
-    return CraftPdfFunctionPostScript(domain, range, program);
+    return PdfFunctionPostScript(domain, range, program);
   }
 
   /// Parses the outermost `{ ... }` procedure of a calculator program.
   ///
   /// Returns null when no balanced procedure can be found.
-  static CraftPdfPostScriptProcedure? parseProgram(String source) {
+  static PdfPostScriptProcedure? parseProgram(String source) {
     final tokens = _tokenize(source);
     var index = 0;
     while (index < tokens.length && tokens[index] != '{') {
@@ -71,7 +70,7 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
     try {
       final result = _parseBody(tokens, index, 1);
       return result.procedure;
-    } on CraftPdfFunctionPostScriptException {
+    } on PdfFunctionPostScriptException {
       return null;
     }
   }
@@ -123,16 +122,16 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
 
   static _ParseResult _parseBody(List<String> tokens, int index, int depth) {
     if (depth > maxNestingDepth) {
-      throw CraftPdfFunctionPostScriptException('procedure nesting too deep');
+      throw PdfFunctionPostScriptException('procedure nesting too deep');
     }
     final body = <Object>[];
     while (true) {
       if (index >= tokens.length) {
-        throw CraftPdfFunctionPostScriptException('unterminated procedure');
+        throw PdfFunctionPostScriptException('unterminated procedure');
       }
       final token = tokens[index++];
       if (token == '}') {
-        return _ParseResult(CraftPdfPostScriptProcedure(body), index);
+        return _ParseResult(PdfPostScriptProcedure(body), index);
       }
       if (token == '{') {
         final nested = _parseBody(tokens, index, depth + 1);
@@ -158,7 +157,7 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
     final budget = _Budget(maxSteps);
     try {
       _run(program, stack, budget);
-    } on CraftPdfFunctionPostScriptException {
+    } on PdfFunctionPostScriptException {
       // A broken program yields black rather than aborting a page render.
       return List<double>.filled(_outputCount, 0.0);
     }
@@ -175,13 +174,13 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
     return outputs;
   }
 
-  static void _run(CraftPdfPostScriptProcedure procedure, List<Object> stack,
-      _Budget budget) {
+  static void _run(
+      PdfPostScriptProcedure procedure, List<Object> stack, _Budget budget) {
     for (final token in procedure.body) {
       budget.step();
       if (token is double) {
         _push(stack, token);
-      } else if (token is CraftPdfPostScriptProcedure) {
+      } else if (token is PdfPostScriptProcedure) {
         // Procedures are only ever operands of if/ifelse; push them and let
         // those operators consume them.
         _push(stack, token);
@@ -193,14 +192,14 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
 
   static void _push(List<Object> stack, Object value) {
     if (stack.length >= maxStackSize) {
-      throw CraftPdfFunctionPostScriptException('operand stack overflow');
+      throw PdfFunctionPostScriptException('operand stack overflow');
     }
     stack.add(value);
   }
 
   static Object _pop(List<Object> stack) {
     if (stack.isEmpty) {
-      throw CraftPdfFunctionPostScriptException('operand stack underflow');
+      throw PdfFunctionPostScriptException('operand stack underflow');
     }
     return stack.removeLast();
   }
@@ -208,13 +207,13 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
   static double _popNumber(List<Object> stack) {
     final value = _pop(stack);
     if (value is num) return value.toDouble();
-    throw CraftPdfFunctionPostScriptException('expected a number');
+    throw PdfFunctionPostScriptException('expected a number');
   }
 
   static int _popInt(List<Object> stack) {
     final value = _popNumber(stack);
     if (value.isNaN || value.isInfinite) {
-      throw CraftPdfFunctionPostScriptException('expected an integer');
+      throw PdfFunctionPostScriptException('expected an integer');
     }
     return value.truncate();
   }
@@ -222,13 +221,13 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
   static bool _popBool(List<Object> stack) {
     final value = _pop(stack);
     if (value is bool) return value;
-    throw CraftPdfFunctionPostScriptException('expected a boolean');
+    throw PdfFunctionPostScriptException('expected a boolean');
   }
 
-  static CraftPdfPostScriptProcedure _popProcedure(List<Object> stack) {
+  static PdfPostScriptProcedure _popProcedure(List<Object> stack) {
     final value = _pop(stack);
-    if (value is CraftPdfPostScriptProcedure) return value;
-    throw CraftPdfFunctionPostScriptException('expected a procedure');
+    if (value is PdfPostScriptProcedure) return value;
+    throw PdfFunctionPostScriptException('expected a procedure');
   }
 
   static void _apply(String op, List<Object> stack, _Budget budget) {
@@ -330,7 +329,7 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
           // On integers `not` is a bitwise complement, not a logical one.
           _push(stack, (~value.truncate()).toDouble());
         } else {
-          throw CraftPdfFunctionPostScriptException('not expects bool or int');
+          throw PdfFunctionPostScriptException('not expects bool or int');
         }
       case 'bitshift':
         final shift = _popInt(stack);
@@ -370,7 +369,7 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
       case 'copy':
         final count = _popInt(stack);
         if (count < 0 || count > stack.length) {
-          throw CraftPdfFunctionPostScriptException('copy out of range');
+          throw PdfFunctionPostScriptException('copy out of range');
         }
         final start = stack.length - count;
         for (var i = 0; i < count; i++) {
@@ -379,14 +378,14 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
       case 'index':
         final offset = _popInt(stack);
         if (offset < 0 || offset >= stack.length) {
-          throw CraftPdfFunctionPostScriptException('index out of range');
+          throw PdfFunctionPostScriptException('index out of range');
         }
         _push(stack, stack[stack.length - 1 - offset]);
       case 'roll':
         final shift = _popInt(stack);
         final count = _popInt(stack);
         if (count < 0 || count > stack.length) {
-          throw CraftPdfFunctionPostScriptException('roll out of range');
+          throw PdfFunctionPostScriptException('roll out of range');
         }
         if (count > 0 && shift != 0) {
           final start = stack.length - count;
@@ -399,7 +398,7 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
         }
 
       default:
-        throw CraftPdfFunctionPostScriptException('unknown operator $op');
+        throw PdfFunctionPostScriptException('unknown operator $op');
     }
   }
 
@@ -413,7 +412,7 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
     } else if (a is num && b is num) {
       _push(stack, onInt(a.truncate(), b.truncate()).toDouble());
     } else {
-      throw CraftPdfFunctionPostScriptException('type mismatch');
+      throw PdfFunctionPostScriptException('type mismatch');
     }
   }
 
@@ -425,7 +424,7 @@ class CraftPdfFunctionPostScript extends CraftPdfFunction {
 }
 
 class _ParseResult {
-  final CraftPdfPostScriptProcedure procedure;
+  final PdfPostScriptProcedure procedure;
   final int nextIndex;
 
   _ParseResult(this.procedure, this.nextIndex);
@@ -438,7 +437,7 @@ class _Budget {
 
   void step() {
     if (--_remaining < 0) {
-      throw CraftPdfFunctionPostScriptException('execution budget exhausted');
+      throw PdfFunctionPostScriptException('execution budget exhausted');
     }
   }
 }

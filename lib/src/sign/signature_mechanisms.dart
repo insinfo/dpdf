@@ -3,8 +3,8 @@ import 'oid.dart';
 /// Bidirectional lookup of signature mechanism identifiers
 /// and algorithm names, including selection of an OID
 /// for a signing algorithm paired with a digest.
-class CraftSignatureMechanisms {
-  CraftSignatureMechanisms._();
+class SignatureMechanisms {
+  SignatureMechanisms._();
 
   /// Maps IDs of signature algorithms with its human-readable name.
   static final Map<String, String> algorithmNames = {
@@ -51,10 +51,10 @@ class CraftSignatureMechanisms {
     '2.16.840.1.101.3.4.3.15': 'RSA',
     '2.16.840.1.101.3.4.3.16': 'RSA',
     // RSASSA-PSS
-    CraftOID.rsassaPss: 'RSASSA-PSS',
+    OID.rsassaPss: 'RSASSA-PSS',
     // EdDSA
-    CraftOID.ed25519: 'Ed25519',
-    CraftOID.ed448: 'Ed448',
+    OID.ed25519: 'Ed25519',
+    OID.ed448: 'Ed448',
   };
 
   /// Maps digest algorithm names to RSA OIDs.
@@ -108,8 +108,8 @@ class CraftSignatureMechanisms {
     switch (signatureAlgorithmName) {
       case 'RSA':
         return digestAlgorithmName != null
-            ? rsaOidsByDigest[digestAlgorithmName] ?? CraftOID.rsa
-            : CraftOID.rsa;
+            ? rsaOidsByDigest[digestAlgorithmName] ?? OID.rsa
+            : OID.rsa;
       case 'DSA':
         return digestAlgorithmName != null
             ? dsaOidsByDigest[digestAlgorithmName]
@@ -119,12 +119,12 @@ class CraftSignatureMechanisms {
             ? ecdsaOidsByDigest[digestAlgorithmName]
             : null;
       case 'Ed25519':
-        return CraftOID.ed25519;
+        return OID.ed25519;
       case 'Ed448':
-        return CraftOID.ed448;
+        return OID.ed448;
       case 'RSASSA-PSS':
       case 'RSA/PSS':
-        return CraftOID.rsassaPss;
+        return OID.rsassaPss;
       default:
         return null;
     }

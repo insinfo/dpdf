@@ -3,8 +3,8 @@ import 'package:dpdf/src/commons/digest/sdk_message_digest.dart';
 import 'package:dpdf/src/kernel/crypto/oid.dart';
 
 /// Digest algorithm identifier registry.
-class CraftDigestAlgorithms {
-  CraftDigestAlgorithms._();
+class DigestAlgorithms {
+  DigestAlgorithms._();
 
   static const String sha1 = "SHA-1";
   static const String sha256 = "SHA-256";
@@ -20,10 +20,10 @@ class CraftDigestAlgorithms {
     "1.2.840.113549.2.5": "MD5",
     "1.2.840.113549.2.2": "MD2",
     "1.3.14.3.2.26": "SHA1",
-    CraftOID.sha224: "SHA224",
-    CraftOID.sha256: "SHA256",
-    CraftOID.sha384: "SHA384",
-    CraftOID.sha512: "SHA512",
+    OID.sha224: "SHA224",
+    OID.sha256: "SHA256",
+    OID.sha384: "SHA384",
+    OID.sha512: "SHA512",
     "1.3.36.3.2.2": "RIPEMD128",
     "1.3.36.3.2.1": "RIPEMD160",
     "1.3.36.3.2.3": "RIPEMD256",
@@ -43,11 +43,11 @@ class CraftDigestAlgorithms {
     "1.3.36.3.3.1.2": "RIPEMD160",
     "1.3.36.3.3.1.4": "RIPEMD256",
     "1.2.643.2.2.9": "GOST3411",
-    CraftOID.sha3_224: "SHA3-224",
-    CraftOID.sha3_256: "SHA3-256",
-    CraftOID.sha3_384: "SHA3-384",
-    CraftOID.sha3_512: "SHA3-512",
-    CraftOID.shake256: "SHAKE256",
+    OID.sha3_224: "SHA3-224",
+    OID.sha3_256: "SHA3-256",
+    OID.sha3_384: "SHA3-384",
+    OID.sha3_512: "SHA3-512",
+    OID.shake256: "SHAKE256",
   };
 
   // Names and output sizes describe the algorithms, independently of a backend.

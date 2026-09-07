@@ -9,36 +9,35 @@ import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
 
-CraftPdfStream stream(String text) =>
-    CraftPdfStream.withBytes(Uint8List.fromList(ascii.encode(text)), 0);
-CraftPdfStream form(String text, [CraftPdfDictionary? resources]) {
-  final result = stream(text)..put(CraftPdfName.subtype, CraftPdfName('Form'));
-  if (resources != null) result.put(CraftPdfName.resources, resources);
+PdfStream stream(String text) =>
+    PdfStream.withBytes(Uint8List.fromList(ascii.encode(text)), 0);
+PdfStream form(String text, [PdfDictionary? resources]) {
+  final result = stream(text)..put(PdfName.subtype, PdfName('Form'));
+  if (resources != null) result.put(PdfName.resources, resources);
   return result;
 }
 
-CraftPdfDictionary resources(Map<String, CraftPdfStream> forms,
+PdfDictionary resources(Map<String, PdfStream> forms,
         {String font = 'Helvetica'}) =>
-    CraftPdfDictionary()
+    PdfDictionary()
       ..put(
-          CraftPdfName.font,
-          CraftPdfDictionary()
+          PdfName.font,
+          PdfDictionary()
             ..put(
-                CraftPdfName('F1'),
-                CraftPdfDictionary()
-                  ..put(CraftPdfName.subtype, CraftPdfName('Type1'))
-                  ..put(CraftPdfName.baseFont, CraftPdfName(font))))
+                PdfName('F1'),
+                PdfDictionary()
+                  ..put(PdfName.subtype, PdfName('Type1'))
+                  ..put(PdfName.baseFont, PdfName(font))))
       ..put(
-          CraftPdfName('XObject'),
-          CraftPdfDictionary.fromEntries(forms.entries
-              .map((e) => MapEntry(CraftPdfName(e.key), e.value))));
-Future<String> extract(String content, CraftPdfDictionary directory) async {
-  final doc =
-      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
+          PdfName('XObject'),
+          PdfDictionary.fromEntries(
+              forms.entries.map((e) => MapEntry(PdfName(e.key), e.value))));
+Future<String> extract(String content, PdfDictionary directory) async {
+  final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(BytesBuilder()));
   final page = await doc.appendBlankPage();
   page.pdfRepresentation()
-    ..put(CraftPdfName.resources, directory)
-    ..put(CraftPdfName.contents, stream(content));
+    ..put(PdfName.resources, directory)
+    ..put(PdfName.contents, stream(content));
   // Do not serialize deliberately cyclic fixtures.
   return PdfTextExtraction.fromPage(page);
 }
@@ -46,15 +45,15 @@ Future<String> extract(String content, CraftPdfDictionary directory) async {
 void main() {
   test('Shared indirect Form survives write and reopen', () async {
     final bytes = BytesBuilder();
-    final doc = CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(bytes));
+    final doc = PdfDocument.create(PdfWriter.fromBytesBuilder(bytes));
     final page = await doc.appendBlankPage();
     page.pdfRepresentation()
-      ..put(CraftPdfName.resources,
+      ..put(PdfName.resources,
           resources({'X': form('BT /F1 12 Tf (shared) Tj ET')}))
-      ..put(CraftPdfName.contents, stream('/X Do /X Do'));
+      ..put(PdfName.contents, stream('/X Do /X Do'));
     await doc.close();
-    final reopened = await CraftPdfDocument.open(
-        CraftPdfReader.fromBytes(bytes.takeBytes()));
+    final reopened =
+        await PdfDocument.open(PdfReader.fromBytes(bytes.takeBytes()));
     try {
       expect(await PdfTextExtraction.fromPage((await reopened.pageAt(1))!),
           'sharedshared');

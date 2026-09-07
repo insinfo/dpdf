@@ -14,28 +14,27 @@ import 'package:dpdf/src/layout/properties/unit_value.dart';
 import 'package:dpdf/src/layout/renderer/paragraph_renderer.dart';
 import 'package:dpdf/src/layout/element/paragraph.dart';
 
-class CraftListItemRenderer extends CraftDivRenderer {
-  CraftRenderer? symbolRenderer;
+class ListItemRenderer extends DivRenderer {
+  Renderer? symbolRenderer;
   double symbolAreaWidth = 0;
   bool symbolAddedInside = false;
 
-  CraftListItemRenderer(CraftListItem super.modelElement);
+  ListItemRenderer(ListItem super.modelElement);
 
-  void addSymbolRenderer(
-      CraftRenderer? symbolRenderer, double symbolAreaWidth) {
+  void addSymbolRenderer(Renderer? symbolRenderer, double symbolAreaWidth) {
     this.symbolRenderer = symbolRenderer;
     this.symbolAreaWidth = symbolAreaWidth;
   }
 
   @override
-  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
+  LayoutResult? layout(LayoutContext layoutContext) {
     _applyListSymbolPosition();
-    CraftLayoutResult? result = super.layout(layoutContext);
+    LayoutResult? result = super.layout(layoutContext);
     return result;
   }
 
   @override
-  Future<void> draw(CraftDrawContext drawContext) async {
+  Future<void> draw(DrawContext drawContext) async {
     if (occupiedArea == null) return;
     await super.draw(drawContext);
 
@@ -43,15 +42,15 @@ class CraftListItemRenderer extends CraftDivRenderer {
       symbolRenderer!.setParent(this);
       double x = occupiedArea!.getBBox().getLeft();
 
-      CraftListSymbolPosition symbolPosition =
-          (CraftListRenderer.getListItemOrListProperty(
-                      this, parent!, CraftProperty.LIST_SYMBOL_POSITION)
-                  as CraftListSymbolPosition?) ??
-              CraftListSymbolPosition.DEFAULT;
+      ListSymbolPosition symbolPosition =
+          (ListRenderer.getListItemOrListProperty(
+                      this, parent!, Property.LIST_SYMBOL_POSITION)
+                  as ListSymbolPosition?) ??
+              ListSymbolPosition.DEFAULT;
 
-      if (symbolPosition != CraftListSymbolPosition.DEFAULT) {
+      if (symbolPosition != ListSymbolPosition.DEFAULT) {
         double? symbolIndent =
-            getProperty<double?>(CraftProperty.LIST_SYMBOL_INDENT);
+            getProperty<double?>(Property.LIST_SYMBOL_INDENT);
         x -= (symbolAreaWidth + (symbolIndent ?? 0.0));
       }
 
@@ -60,15 +59,15 @@ class CraftListItemRenderer extends CraftDivRenderer {
         double? yLine;
         for (var child in childRenderers) {
           if ((child.getOccupiedArea()?.getBBox().getHeight() ?? 0) > 0) {
-            yLine = (child as CraftAbstractRenderer).getFirstYLineRecursively();
+            yLine = (child as AbstractRenderer).getFirstYLineRecursively();
             if (yLine != null) break;
           }
         }
 
         if (yLine != null) {
-          if (symbolRenderer is CraftLineRenderer) {
-            symbolRenderer!.move(
-                0, yLine - (symbolRenderer as CraftLineRenderer).getYLine());
+          if (symbolRenderer is LineRenderer) {
+            symbolRenderer!
+                .move(0, yLine - (symbolRenderer as LineRenderer).getYLine());
           } else {
             symbolRenderer!.move(
                 0,
@@ -79,14 +78,14 @@ class CraftListItemRenderer extends CraftDivRenderer {
         }
       }
 
-      CraftListSymbolAlignment listSymbolAlignment =
-          (parent?.getProperty<CraftListSymbolAlignment?>(
-                  CraftProperty.LIST_SYMBOL_ALIGNMENT) ??
-              CraftListSymbolAlignment.RIGHT);
+      ListSymbolAlignment listSymbolAlignment =
+          (parent?.getProperty<ListSymbolAlignment?>(
+                  Property.LIST_SYMBOL_ALIGNMENT) ??
+              ListSymbolAlignment.RIGHT);
       double dxPosition =
           x - (symbolRenderer!.getOccupiedArea()?.getBBox().getLeft() ?? 0);
 
-      if (listSymbolAlignment == CraftListSymbolAlignment.RIGHT) {
+      if (listSymbolAlignment == ListSymbolAlignment.RIGHT) {
         dxPosition += symbolAreaWidth -
             (symbolRenderer!.getOccupiedArea()?.getBBox().getWidth() ?? 0);
       }
@@ -97,27 +96,25 @@ class CraftListItemRenderer extends CraftDivRenderer {
   }
 
   @override
-  CraftRenderer getNextRenderer() {
-    return CraftListItemRenderer(modelElement as CraftListItem);
+  Renderer getNextRenderer() {
+    return ListItemRenderer(modelElement as ListItem);
   }
 
   void _applyListSymbolPosition() {
     if (symbolRenderer == null) return;
-    CraftListSymbolPosition symbolPosition =
-        (CraftListRenderer.getListItemOrListProperty(
-                    this, parent!, CraftProperty.LIST_SYMBOL_POSITION)
-                as CraftListSymbolPosition?) ??
-            CraftListSymbolPosition.DEFAULT;
+    ListSymbolPosition symbolPosition = (ListRenderer.getListItemOrListProperty(
+                this, parent!, Property.LIST_SYMBOL_POSITION)
+            as ListSymbolPosition?) ??
+        ListSymbolPosition.DEFAULT;
 
-    if (symbolPosition == CraftListSymbolPosition.INSIDE) {
-      if (childRenderers.isNotEmpty &&
-          childRenderers[0] is CraftParagraphRenderer) {
+    if (symbolPosition == ListSymbolPosition.INSIDE) {
+      if (childRenderers.isNotEmpty && childRenderers[0] is ParagraphRenderer) {
         _injectSymbolRendererIntoParagraphRenderer(
-            childRenderers[0] as CraftParagraphRenderer);
+            childRenderers[0] as ParagraphRenderer);
         symbolAddedInside = true;
       }
       if (!symbolAddedInside) {
-        CraftRenderer paragraphRenderer = _renderSymbolInNeutralParagraph();
+        Renderer paragraphRenderer = _renderSymbolInNeutralParagraph();
         childRenderers.insert(0, paragraphRenderer);
         symbolAddedInside = true;
       }
@@ -125,14 +122,12 @@ class CraftListItemRenderer extends CraftDivRenderer {
   }
 
   void _injectSymbolRendererIntoParagraphRenderer(
-      CraftParagraphRenderer paragraphRenderer) {
-    double? symbolIndent =
-        getProperty<double?>(CraftProperty.LIST_SYMBOL_INDENT);
-    if (symbolRenderer is CraftLineRenderer) {
+      ParagraphRenderer paragraphRenderer) {
+    double? symbolIndent = getProperty<double?>(Property.LIST_SYMBOL_INDENT);
+    if (symbolRenderer is LineRenderer) {
       if (symbolIndent != null) {
         symbolRenderer!.getChildRenderers()[1].setProperty(
-            CraftProperty.MARGIN_RIGHT,
-            CraftUnitValue.createPointValue(symbolIndent));
+            Property.MARGIN_RIGHT, UnitValue.createPointValue(symbolIndent));
       }
       for (int i = symbolRenderer!.getChildRenderers().length - 1;
           i >= 0;
@@ -144,19 +139,19 @@ class CraftListItemRenderer extends CraftDivRenderer {
       }
     } else {
       if (symbolIndent != null) {
-        symbolRenderer!.setProperty(CraftProperty.MARGIN_RIGHT,
-            CraftUnitValue.createPointValue(symbolIndent));
+        symbolRenderer!.setProperty(
+            Property.MARGIN_RIGHT, UnitValue.createPointValue(symbolIndent));
       }
       paragraphRenderer.getChildRenderers().insert(0, symbolRenderer!);
       symbolRenderer!.setParent(paragraphRenderer);
     }
   }
 
-  CraftRenderer _renderSymbolInNeutralParagraph() {
-    CraftParagraph p = CraftParagraph();
-    CraftRenderer paragraphRenderer = p.setMargin(0.0).createRendererSubTree()!;
+  Renderer _renderSymbolInNeutralParagraph() {
+    Paragraph p = Paragraph();
+    Renderer paragraphRenderer = p.setMargin(0.0).createRendererSubTree()!;
     _injectSymbolRendererIntoParagraphRenderer(
-        paragraphRenderer as CraftParagraphRenderer);
+        paragraphRenderer as ParagraphRenderer);
     return paragraphRenderer;
   }
 }

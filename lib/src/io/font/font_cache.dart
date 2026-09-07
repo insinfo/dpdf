@@ -2,16 +2,16 @@ import 'package:dpdf/src/io/font/font_program.dart';
 import 'dart:typed_data';
 import '../../commons/digest/digest_bytes.dart';
 
-class CraftFontCacheKey {
+class FontCacheKey {
   final String? name;
   final Uint8List? bytes;
 
-  CraftFontCacheKey(this.name, [this.bytes]);
+  FontCacheKey(this.name, [this.bytes]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! CraftFontCacheKey) return false;
+    if (other is! FontCacheKey) return false;
     if (name != null && other.name != null) return name == other.name;
     if (bytes != null && other.bytes != null) {
       // Hash comparison of bytes for performance
@@ -34,15 +34,14 @@ class CraftFontCacheKey {
   }
 }
 
-class CraftFontCache {
-  static final Map<CraftFontCacheKey, CraftFontProgram> _cache = {};
+class FontCache {
+  static final Map<FontCacheKey, FontProgram> _cache = {};
 
-  static CraftFontProgram? resolveTypeface(CraftFontCacheKey key) {
+  static FontProgram? resolveTypeface(FontCacheKey key) {
     return _cache[key];
   }
 
-  static CraftFontProgram saveFont(
-      CraftFontProgram font, CraftFontCacheKey key) {
+  static FontProgram saveFont(FontProgram font, FontCacheKey key) {
     _cache[key] = font;
     return font;
   }

@@ -3,7 +3,7 @@ import '../exceptions/io_exception.dart';
 import '../exceptions/io_exception_message_constant.dart';
 
 /// Class used to represent the International Color Consortium profile.
-class CraftIccProfile {
+class IccProfile {
   /// Raw ICC profile data.
   Uint8List? data;
 
@@ -40,19 +40,19 @@ class CraftIccProfile {
   };
 
   /// Private constructor.
-  CraftIccProfile._();
+  IccProfile._();
 
   /// Construct an ICC profile from the passed byte[], using the passed number of components.
-  static CraftIccProfile getInstance(Uint8List data, [int? numComponentsHint]) {
+  static IccProfile getInstance(Uint8List data, [int? numComponentsHint]) {
     if (data.length < 128 ||
         data[36] != 0x61 ||
         data[37] != 0x63 ||
         data[38] != 0x73 ||
         data[39] != 0x70) {
-      throw IoException(CraftIoExceptionMessageConstant.invalidIccProfile);
+      throw IoException(IoExceptionMessageConstant.invalidIccProfile);
     }
 
-    final icc = CraftIccProfile._();
+    final icc = IccProfile._();
     icc.data = data;
 
     final nc = getIccNumberOfComponents(data) ?? 0;
@@ -61,7 +61,7 @@ class CraftIccProfile {
     // Validate component count if hint provided
     if (numComponentsHint != null && nc != numComponentsHint) {
       throw IoException(
-          '${CraftIoExceptionMessageConstant.invalidIccProfile}: ICC profile contains $nc components while image data contains $numComponentsHint');
+          '${IoExceptionMessageConstant.invalidIccProfile}: ICC profile contains $nc components while image data contains $numComponentsHint');
     }
 
     return icc;
@@ -70,7 +70,7 @@ class CraftIccProfile {
   /// Get the color space name of the ICC profile found in the data.
   static String getIccColorSpaceName(Uint8List data) {
     if (data.length < 20) {
-      throw IoException(CraftIoExceptionMessageConstant.invalidIccProfile);
+      throw IoException(IoExceptionMessageConstant.invalidIccProfile);
     }
     return String.fromCharCodes(data.sublist(16, 20));
   }
@@ -78,7 +78,7 @@ class CraftIccProfile {
   /// Get the device class of the ICC profile found in the data.
   static String getIccDeviceClass(Uint8List data) {
     if (data.length < 16) {
-      throw IoException(CraftIoExceptionMessageConstant.invalidIccProfile);
+      throw IoException(IoExceptionMessageConstant.invalidIccProfile);
     }
     return String.fromCharCodes(data.sublist(12, 16));
   }

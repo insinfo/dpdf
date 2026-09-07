@@ -2,23 +2,23 @@ import 'gf_256_poly.dart';
 
 /// Byte-polynomial arithmetic using reduction modulo an irreducible polynomial.
 /// Multiplication operates on bits rather than using logarithm tables.
-class CraftGF256 {
-  static final CraftGF256 QR_CODE_FIELD = CraftGF256._(0x11d);
-  static final CraftGF256 DATA_MATRIX_FIELD = CraftGF256._(0x12d);
+class GF256 {
+  static final GF256 QR_CODE_FIELD = GF256._(0x11d);
+  static final GF256 DATA_MATRIX_FIELD = GF256._(0x12d);
   final int _modulus;
-  late final CraftGF256Poly _zero = CraftGF256Poly(this, [0]);
-  late final CraftGF256Poly _one = CraftGF256Poly(this, [1]);
+  late final GF256Poly _zero = GF256Poly(this, [0]);
+  late final GF256Poly _one = GF256Poly(this, [1]);
 
-  CraftGF256._(this._modulus);
-  CraftGF256Poly getZero() => _zero;
-  CraftGF256Poly getOne() => _one;
+  GF256._(this._modulus);
+  GF256Poly getZero() => _zero;
+  GF256Poly getOne() => _one;
 
-  CraftGF256Poly buildMonomial(int degree, int coefficient) {
+  GF256Poly buildMonomial(int degree, int coefficient) {
     RangeError.checkNotNegative(degree, 'degree');
     _checkByte(coefficient);
     return coefficient == 0
         ? _zero
-        : CraftGF256Poly(this, [coefficient, ...List<int>.filled(degree, 0)]);
+        : GF256Poly(this, [coefficient, ...List<int>.filled(degree, 0)]);
   }
 
   static int addOrSubtract(int a, int b) => a ^ b;

@@ -40,7 +40,7 @@ void main() {
     final bytes = Uint8List.fromList(List.generate(10000, (i) => i % 251));
     final file = File('${temp.path}/input.bin')..writeAsBytesSync(bytes);
     final source = PdfFileSource.open(file.path, blockSize: 1024, maxBlocks: 2);
-    final input = CraftRandomAccessFileOrArray.fromSource(source);
+    final input = RandomAccessFileOrArray.fromSource(source);
     final view = input.createView();
     input.seek(1015);
     final actual = Uint8List(3200);
@@ -57,7 +57,7 @@ void main() {
       () async {
     final file = File('${temp.path}/large.pdf')..writeAsBytesSync(largePdf());
     final source = PdfFileSource.open(file.path, blockSize: 4096, maxBlocks: 4);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromSource(source));
+    final doc = await PdfDocument.open(PdfReader.fromSource(source));
     expect(doc.pageTotal(), 1);
     expect(source.bytesRead, lessThan(100000));
     expect(source.cachedBytes, lessThanOrEqualTo(16384));
@@ -72,19 +72,19 @@ void main() {
         .replaceFirst(RegExp(r'startxref\s+\d+'), 'startxref\n99999999')));
     final file = File('${temp.path}/damaged.pdf')..writeAsBytesSync(damaged);
     final source = PdfFileSource.open(file.path, blockSize: 4096, maxBlocks: 4);
-    final doc = await CraftPdfDocument.open(CraftPdfReader.fromSource(source,
-        CraftReaderProperties()..recoveryMode = PdfRecoveryMode.skipStreams));
+    final doc = await PdfDocument.open(PdfReader.fromSource(source,
+        ReaderProperties()..recoveryMode = PdfRecoveryMode.skipStreams));
     expect(doc.pageTotal(), 1);
     expect(doc.wasRepaired, isTrue);
     expect(source.bytesRead, lessThan(150000));
     await doc.close();
-    final properties = CraftReaderProperties()
+    final properties = ReaderProperties()
       ..readFileInBlocks = true
       ..fileBlockSize = 4096
       ..fileCacheBlocks = 4
       ..recoveryMode = PdfRecoveryMode.skipStreams;
-    final reader = await CraftPdfReader.fromFile(file.path, properties);
-    final reopened = await CraftPdfDocument.open(reader);
+    final reader = await PdfReader.fromFile(file.path, properties);
+    final reopened = await PdfDocument.open(reader);
     expect(reopened.wasRepaired, isTrue);
     expect(reopened.pageTotal(), 1);
     await reopened.close();
@@ -96,22 +96,21 @@ void main() {
     final file = File('${temp.path}/large.pdf')..writeAsBytesSync(bytes);
     final source = PdfFileSource.open(file.path, blockSize: 4096, maxBlocks: 4);
     final output = BytesBuilder();
-    final doc = CraftPdfDocument(
-        reader: CraftPdfReader.fromSource(source),
-        writer: CraftPdfWriter.fromBytesBuilder(output),
-        properties: CraftStampingProperties()..useAppendMode());
+    final doc = PdfDocument(
+        reader: PdfReader.fromSource(source),
+        writer: PdfWriter.fromBytesBuilder(output),
+        properties: StampingProperties()..useAppendMode());
     await doc.load();
     (await doc.pageAt(1))!.setRotationDegrees(90);
     await doc.close();
     final result = output.takeBytes();
     expect(result.sublist(0, bytes.length), bytes);
-    final reopened =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(result));
+    final reopened = await PdfDocument.open(PdfReader.fromBytes(result));
     expect(
         await (await reopened.pageAt(1))!
             .pdfRepresentation()
-            .get(CraftPdfName.rotate),
-        (isA<CraftPdfNumber>()));
+            .get(PdfName.rotate),
+        (isA<PdfNumber>()));
     await reopened.close();
   });
 }

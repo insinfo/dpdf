@@ -68,7 +68,7 @@ abstract class AbstractTrueTypeFontModifier {
   late Map<String, List<int>> tableDirectory;
   late Map<int, Uint8List> glyphDataMap;
   final Map<String, Uint8List> modifiedTables = {};
-  late CraftRandomAccessFileOrArray raf;
+  late RandomAccessFileOrArray raf;
   late int directoryOffset;
   final String fontName;
   late Map<int, Uint8List> horizontalMetricMap;
@@ -182,7 +182,7 @@ abstract class AbstractTrueTypeFontModifier {
     raf.seek(directoryOffset);
     int id = raf.readInt();
     if (id != 0x00010000) {
-      throw IoException(CraftIoExceptionMessageConstant.notAtTrueTypeFile)
+      throw IoException(IoExceptionMessageConstant.notAtTrueTypeFile)
           .setMessageParams([fontName]);
     }
     int numTables = raf.readUnsignedShort();
@@ -200,7 +200,7 @@ abstract class AbstractTrueTypeFontModifier {
   bool _isLocaShortTable() {
     List<int>? tableLocation = tableDirectory["head"];
     if (tableLocation == null) {
-      throw IoException(CraftIoExceptionMessageConstant.tableDoesNotExistsIn)
+      throw IoException(IoExceptionMessageConstant.tableDoesNotExistsIn)
           .setMessageParams(["head", fontName]);
     }
     raf.seek(tableLocation[TABLE_OFFSET] + HEAD_LOCA_FORMAT_OFFSET);
@@ -270,7 +270,7 @@ abstract class AbstractTrueTypeFontModifier {
   String _readTag() {
     Uint8List buf = Uint8List(4);
     raf.readFully(buf);
-    return CraftPdfEncodings.convertToString(buf, CraftPdfEncodings.WINANSI);
+    return PdfEncodings.convertToString(buf, PdfEncodings.WINANSI);
   }
 
   static void _writeToLoca(
@@ -326,8 +326,7 @@ class _FontRawData {
 
   Uint8List getData() => _data;
 
-  void writeFontTableFromRaf(
-      CraftRandomAccessFileOrArray raf, int tableLength) {
+  void writeFontTableFromRaf(RandomAccessFileOrArray raf, int tableLength) {
     raf.readFullyInto(_data, _ptr, tableLength);
     _ptr += (tableLength + 3) & ~3;
   }
@@ -350,8 +349,7 @@ class _FontRawData {
   }
 
   void writeFontString(String s) {
-    Uint8List b =
-        CraftPdfEncodings.convertToBytes(s, CraftPdfEncodings.WINANSI);
+    Uint8List b = PdfEncodings.convertToBytes(s, PdfEncodings.WINANSI);
     _data.setRange(_ptr, _ptr + b.length, b);
     _ptr += b.length;
   }

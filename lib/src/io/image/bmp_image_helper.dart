@@ -10,7 +10,7 @@ import 'package:dpdf/src/io/font/pdf_encodings.dart';
 
 import 'package:dpdf/src/layout/properties/image_type.dart';
 
-class CraftBmpImageHelper {
+class BmpImageHelper {
   // BMP Image types
   static const int version2_1bit = 0;
   static const int version2_4bit = 1;
@@ -41,8 +41,8 @@ class CraftBmpImageHelper {
   static const int biBitfields = 3;
 
   /// Process the passed Image data as a BMP image.
-  static void processImage(CraftImageData image) {
-    if (image.getOriginalType() != CraftImageType.BMP) {
+  static void processImage(ImageData image) {
+    if (image.getOriginalType() != ImageType.BMP) {
       throw ArgumentError("BMP image expected");
     }
 
@@ -53,9 +53,9 @@ class CraftBmpImageHelper {
         throw IoException("Image data is null");
       }
 
-      final bmp = BmpParameters(image as CraftBmpImageData);
+      final bmp = BmpParameters(image as BmpImageData);
       // Using RandomAccessFileOrArray instead of Stream for easier seeking and LE reading
-      final stream = CraftRandomAccessFileOrArray(image.getData()!);
+      final stream = RandomAccessFileOrArray(image.getData()!);
 
       image.imageSize = image.getData()!.length;
 
@@ -69,24 +69,24 @@ class CraftBmpImageHelper {
         image.setDpi(dpiX, dpiY);
       }
 
-      CraftRawImageHelper.updateImageAttributes(bmp.image, bmp.additional);
+      RawImageHelper.updateImageAttributes(bmp.image, bmp.additional);
 
       stream.close();
     } catch (e) {
       if (e is IoException) rethrow;
-      throw IoException(CraftIoExceptionMessageConstant.bmpImageException, e);
+      throw IoException(IoExceptionMessageConstant.bmpImageException, e);
     }
   }
 
-  static void _process(BmpParameters bmp, CraftRandomAccessFileOrArray stream) {
+  static void _process(BmpParameters bmp, RandomAccessFileOrArray stream) {
     bmp.inputStream = stream;
     if (!bmp.image.isNoHeader()) {
       // Start File Header
       if (!(stream.readUnsignedByte() == 0x42 &&
           stream.readUnsignedByte() == 0x4D)) {
         // 'B' 'M'
-        throw IoException(CraftIoExceptionMessageConstant
-            .invalidMagicValueForBmpFileMustBeBm);
+        throw IoException(
+            IoExceptionMessageConstant.invalidMagicValueForBmpFileMustBeBm);
       }
       // Read file size
       bmp.bitmapFileSize = stream.readUnsignedIntLE();
@@ -276,7 +276,7 @@ class CraftBmpImageHelper {
 
           default:
             throw IoException(
-                CraftIoExceptionMessageConstant.invalidBmpFileCompression);
+                IoExceptionMessageConstant.invalidBmpFileCompression);
         }
       } else if (size == 108) {
         // Windows 4.x BMP
@@ -410,7 +410,7 @@ class CraftBmpImageHelper {
       case version2_24bit:
         Uint8List bdata = Uint8List(bmp.width * bmp.height * 3);
         _read24Bit(bdata, bmp);
-        CraftRawImageHelper.updateRawImageParameters(
+        RawImageHelper.updateRawImageParameters(
             bmp.image, bmp.width, bmp.height, 3, 8, bdata);
         return true;
       case version3_1bit:
@@ -423,7 +423,7 @@ class CraftBmpImageHelper {
           _readRle4(bmp);
         } else {
           throw IoException(
-              CraftIoExceptionMessageConstant.invalidBmpFileCompression);
+              IoExceptionMessageConstant.invalidBmpFileCompression);
         }
         return true;
       case version3_8bit:
@@ -433,13 +433,13 @@ class CraftBmpImageHelper {
           _readRle8(bmp);
         } else {
           throw IoException(
-              CraftIoExceptionMessageConstant.invalidBmpFileCompression);
+              IoExceptionMessageConstant.invalidBmpFileCompression);
         }
         return true;
       case version3_24bit:
         Uint8List bdata = Uint8List(bmp.width * bmp.height * 3);
         _read24Bit(bdata, bmp);
-        CraftRawImageHelper.updateRawImageParameters(
+        RawImageHelper.updateRawImageParameters(
             bmp.image, bmp.width, bmp.height, 3, 8, bdata);
         return true;
       case version3_nt_16bit:
@@ -458,7 +458,7 @@ class CraftBmpImageHelper {
           _readRle4(bmp);
         } else {
           throw IoException(
-              CraftIoExceptionMessageConstant.invalidBmpFileCompression);
+              IoExceptionMessageConstant.invalidBmpFileCompression);
         }
         return true;
       case version4_8bit:
@@ -468,7 +468,7 @@ class CraftBmpImageHelper {
           _readRle8(bmp);
         } else {
           throw IoException(
-              CraftIoExceptionMessageConstant.invalidBmpFileCompression);
+              IoExceptionMessageConstant.invalidBmpFileCompression);
         }
         return true;
       case version4_16bit:
@@ -477,7 +477,7 @@ class CraftBmpImageHelper {
       case version4_24bit:
         Uint8List bdata = Uint8List(bmp.width * bmp.height * 3);
         _read24Bit(bdata, bmp);
-        CraftRawImageHelper.updateRawImageParameters(
+        RawImageHelper.updateRawImageParameters(
             bmp.image, bmp.width, bmp.height, 3, 8, bdata);
         return true;
       case version4_32bit:
@@ -538,7 +538,7 @@ class CraftBmpImageHelper {
         rgb[pixel * 3 + channel] = component * 256 ~/ (masks[channel] + 1);
       }
     }
-    CraftRawImageHelper.updateRawImageParameters(
+    RawImageHelper.updateRawImageParameters(
         bmp.image, bmp.width, bmp.height, 3, 8, rgb);
   }
 
@@ -627,7 +627,7 @@ class CraftBmpImageHelper {
 
   static void _indexedModel(
       Uint8List bdata, int bpc, int paletteEntries, BmpParameters bmp) {
-    CraftRawImageHelper.updateRawImageParameters(
+    RawImageHelper.updateRawImageParameters(
         bmp.image, bmp.width, bmp.height, 1, bpc, bdata);
 
     List<Object> colorSpace = List.filled(4, "");
@@ -636,7 +636,7 @@ class CraftBmpImageHelper {
     Uint8List np = _getPalette(paletteEntries, bmp);
     int len = np.length;
     colorSpace[2] = (len ~/ 3) - 1;
-    colorSpace[3] = CraftPdfEncodings.convertToString(np, null);
+    colorSpace[3] = PdfEncodings.convertToString(np, null);
 
     bmp.additional ??= {};
     bmp.additional!["ColorSpace"] = colorSpace;
@@ -682,11 +682,11 @@ class CraftBmpImageHelper {
 }
 
 class BmpParameters {
-  CraftBmpImageData image;
+  BmpImageData image;
   int width = 0;
   int height = 0;
   Map<String, Object>? additional;
-  CraftRandomAccessFileOrArray? inputStream;
+  RandomAccessFileOrArray? inputStream;
   int bitmapFileSize = 0;
   int bitmapOffset = 0;
   int compression = 0;

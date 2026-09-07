@@ -13,14 +13,13 @@ void main() {
       // TODO porque não usar arquivo? tem que usar arquivo para ver se esta funcionando corretamente a gravação em arquivo
       // Use BytesBuilder instead of file for more reliable async handling
       final builder = BytesBuilder();
-      final writer = CraftPdfWriter.fromBytesBuilder(builder);
-      final doc = CraftPdfDocument(writer: writer);
+      final writer = PdfWriter.fromBytesBuilder(builder);
+      final doc = PdfDocument(writer: writer);
       await doc.appendBlankPage();
 
       final structTreeRoot = doc.structureRoot();
-      final docElem =
-          CraftPdfStructElem.withRole(doc, CraftPdfName('Document'));
-      final pElem = CraftPdfStructElem.withRole(doc, CraftPdfName('P'));
+      final docElem = PdfStructElem.withRole(doc, PdfName('Document'));
+      final pElem = PdfStructElem.withRole(doc, PdfName('P'));
 
       await docElem.addKid(pElem);
       await structTreeRoot.addKid(docElem);
@@ -33,8 +32,8 @@ void main() {
       final headerStr = String.fromCharCodes(pdfBytes.take(8));
       expect(headerStr, startsWith('%PDF-'));
 
-      final reader = CraftPdfReader.fromBytes(pdfBytes);
-      final readDoc = await CraftPdfDocument.open(reader);
+      final reader = PdfReader.fromBytes(pdfBytes);
+      final readDoc = await PdfDocument.open(reader);
 
       final readRoot = await readDoc.loadStructureRoot();
       expect(readRoot, isNotNull);
@@ -44,11 +43,11 @@ void main() {
 
       // getKids returns PdfObject, wrap to PdfStructElem
       final firstKid = rootK[0];
-      expect(firstKid is CraftPdfDictionary, isTrue);
+      expect(firstKid is PdfDictionary, isTrue);
 
-      final firstKidElem = CraftPdfStructElem(firstKid as CraftPdfDictionary);
+      final firstKidElem = PdfStructElem(firstKid as PdfDictionary);
       final role = await firstKidElem.getRole();
-      expect(role, equals(CraftPdfName('Document')));
+      expect(role, equals(PdfName('Document')));
 
       await readDoc.close();
     });

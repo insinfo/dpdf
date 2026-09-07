@@ -1,6 +1,6 @@
 /// Class containing all the OID values used by .
-class CraftOID {
-  CraftOID._();
+class OID {
+  OID._();
 
   static const String pkcs7Data = "1.2.840.113549.1.7.1";
   static const String idData = "1.2.840.113549.1.7.1";

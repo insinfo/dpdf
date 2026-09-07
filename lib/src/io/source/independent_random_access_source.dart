@@ -6,12 +6,12 @@ import 'random_access_source.dart';
 ///
 /// This is useful when passing a RandomAccessSource to a method that would
 /// normally close the source.
-class CraftIndependentRandomAccessSource implements CraftRandomAccessSource {
+class IndependentRandomAccessSource implements RandomAccessSource {
   /// The underlying source.
-  final CraftRandomAccessSource _source;
+  final RandomAccessSource _source;
 
   /// Constructs a new IndependentRandomAccessSource object.
-  CraftIndependentRandomAccessSource(this._source);
+  IndependentRandomAccessSource(this._source);
 
   @override
   int get(int position) {

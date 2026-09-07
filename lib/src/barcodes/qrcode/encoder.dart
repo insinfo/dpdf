@@ -13,29 +13,29 @@ import 'reed_solomon_encoder.dart';
 import 'version.dart';
 
 /// Builds a single-segment QR symbol from text and a correction level.
-class CraftEncoder {
+class Encoder {
   static const _alphabet = r'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
 
   static int getAlphanumericCode(int code) => code < 0 || code > 127
       ? -1
       : _alphabet.indexOf(String.fromCharCode(code));
 
-  static CraftMode chooseMode(String content, [String? encoding]) {
-    if (content.isEmpty || encoding == 'Shift_JIS') return CraftMode.BYTE;
+  static Mode chooseMode(String content, [String? encoding]) {
+    if (content.isEmpty || encoding == 'Shift_JIS') return Mode.BYTE;
     if (content.codeUnits.every((unit) => unit >= 48 && unit <= 57)) {
-      return CraftMode.NUMERIC;
+      return Mode.NUMERIC;
     }
     return content.codeUnits.every((unit) => getAlphanumericCode(unit) >= 0)
-        ? CraftMode.ALPHANUMERIC
-        : CraftMode.BYTE;
+        ? Mode.ALPHANUMERIC
+        : Mode.BYTE;
   }
 
   static void appendBytes(
-      String content, CraftMode mode, CraftBitVector bits, String encoding) {
-    if (mode == CraftMode.KANJI) {
+      String content, Mode mode, BitVector bits, String encoding) {
+    if (mode == Mode.KANJI) {
       throw UnsupportedError('QR Kanji requires a Shift-JIS text codec');
     }
-    if (mode == CraftMode.BYTE) {
+    if (mode == Mode.BYTE) {
       final converter = switch (encoding) {
         'ISO-8859-1' => latin1,
         'UTF-8' => utf8,
@@ -48,8 +48,8 @@ class CraftEncoder {
       }
       return;
     }
-    final numeric = mode == CraftMode.NUMERIC;
-    if (!numeric && mode != CraftMode.ALPHANUMERIC) {
+    final numeric = mode == Mode.NUMERIC;
+    if (!numeric && mode != Mode.ALPHANUMERIC) {
       throw ArgumentError.value(mode, 'mode', 'Not a QR text segment mode');
     }
     final values = content.codeUnits.map((unit) {
@@ -73,28 +73,27 @@ class CraftEncoder {
     }
   }
 
-  static void encode(String content, CraftErrorCorrectionLevel ecLevel,
-      Map<CraftEncodeHintType, dynamic>? hints, CraftQRCode qrCode) {
+  static void encode(String content, ErrorCorrectionLevel ecLevel,
+      Map<EncodeHintType, dynamic>? hints, QRCode qrCode) {
     final encoding =
-        hints?[CraftEncodeHintType.CHARACTER_SET] as String? ?? 'ISO-8859-1';
+        hints?[EncodeHintType.CHARACTER_SET] as String? ?? 'ISO-8859-1';
     final minimum =
-        (hints?[CraftEncodeHintType.MIN_VERSION_NR] as int? ?? 1).clamp(1, 40);
+        (hints?[EncodeHintType.MIN_VERSION_NR] as int? ?? 1).clamp(1, 40);
     final mode = chooseMode(content, encoding);
-    final payload = CraftBitVector();
+    final payload = BitVector();
     appendBytes(content, mode, payload, encoding);
-    final count =
-        mode == CraftMode.BYTE ? payload.sizeInBytes() : content.length;
-    final prefix = CraftBitVector();
-    if (mode == CraftMode.BYTE && encoding != 'ISO-8859-1') {
+    final count = mode == Mode.BYTE ? payload.sizeInBytes() : content.length;
+    final prefix = BitVector();
+    if (mode == Mode.BYTE && encoding != 'ISO-8859-1') {
       // The supported nondefault codec is UTF-8, ECI assignment 26.
       _writeAssignment(prefix, 26);
     }
     prefix.appendBits(mode.getBits(), 4);
 
-    CraftVersion? selected;
+    Version? selected;
     var capacity = 0;
     for (var candidate = minimum; candidate <= 40; candidate++) {
-      final version = CraftVersion.getVersionForNumber(candidate);
+      final version = Version.getVersionForNumber(candidate);
       final width = mode.getCharacterCountBits(version);
       final available = version.getTotalCodewords() -
           version.getECBlocksForLevel(ecLevel).getTotalECCodewords();
@@ -117,17 +116,16 @@ class CraftEncoder {
         _codewords(prefix, selected.getTotalCodewords(), capacity, blocks);
     final versionNumber = selected.getVersionNumber();
     final side = selected.getDimensionForVersion();
-    CraftByteMatrix? chosen;
+    ByteMatrix? chosen;
     int? score;
     var mask = 0;
     for (var trial = 0; trial < 8; trial++) {
-      final matrix = CraftByteMatrix(side, side);
-      CraftMatrixUtil.buildMatrix(
-          stream, ecLevel, versionNumber, trial, matrix);
-      final penalty = CraftMaskUtil.repeatedRunPenalty(matrix) +
-          CraftMaskUtil.uniformSquarePenalty(matrix) +
-          CraftMaskUtil.finderPatternPenalty(matrix) +
-          CraftMaskUtil.darkBalancePenalty(matrix);
+      final matrix = ByteMatrix(side, side);
+      MatrixUtil.buildMatrix(stream, ecLevel, versionNumber, trial, matrix);
+      final penalty = MaskUtil.repeatedRunPenalty(matrix) +
+          MaskUtil.uniformSquarePenalty(matrix) +
+          MaskUtil.finderPatternPenalty(matrix) +
+          MaskUtil.darkBalancePenalty(matrix);
       if (score == null || penalty < score) {
         score = penalty;
         chosen = matrix;
@@ -146,9 +144,9 @@ class CraftEncoder {
     qrCode.setMatrix(chosen!);
   }
 
-  static void _writeAssignment(CraftBitVector bits, int value) {
+  static void _writeAssignment(BitVector bits, int value) {
     RangeError.checkValueInInterval(value, 0, 999999, 'ECI assignment');
-    bits.appendBits(CraftMode.ECI.getBits(), 4);
+    bits.appendBits(Mode.ECI.getBits(), 4);
     if (value < 128) {
       bits.appendBits(value, 8);
     } else if (value < 16384) {
@@ -158,7 +156,7 @@ class CraftEncoder {
     }
   }
 
-  static void _fillCapacity(CraftBitVector bits, int bytes) {
+  static void _fillCapacity(BitVector bits, int bytes) {
     final budget = bytes * 8;
     final remaining = budget - bits.size();
     bits.appendBits(0, remaining < 4 ? remaining : 4);
@@ -170,15 +168,15 @@ class CraftEncoder {
     }
   }
 
-  static CraftBitVector _codewords(
-      CraftBitVector data, int total, int dataCount, int blockCount) {
+  static BitVector _codewords(
+      BitVector data, int total, int dataCount, int blockCount) {
     final parityCount = (total - dataCount) ~/ blockCount;
     final shortLength = dataCount ~/ blockCount;
     final shortBlocks = blockCount - dataCount % blockCount;
     final source = data.getArray();
     final dataBlocks = <List<int>>[];
     final parityBlocks = <List<int>>[];
-    final parityEncoder = CraftReedSolomonEncoder(CraftGF256.QR_CODE_FIELD);
+    final parityEncoder = ReedSolomonEncoder(GF256.QR_CODE_FIELD);
     var offset = 0;
     for (var index = 0; index < blockCount; index++) {
       final length = shortLength + (index >= shortBlocks ? 1 : 0);
@@ -191,7 +189,7 @@ class CraftEncoder {
       parityBlocks.add(word.sublist(length));
       offset += length;
     }
-    final result = CraftBitVector();
+    final result = BitVector();
     for (final group in [dataBlocks, parityBlocks]) {
       var column = 0;
       while (group.any((block) => column < block.length)) {

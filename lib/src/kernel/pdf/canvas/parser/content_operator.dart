@@ -5,8 +5,8 @@ import '../../pdf_object.dart';
 import 'pdf_canvas_processor.dart';
 
 /// Interface for content stream operators.
-abstract class CraftContentOperator {
+abstract class ContentOperator {
   /// Invokes the operator, awaiting only implementations that return a Future.
-  FutureOr<void> invoke(CraftPdfCanvasProcessor processor,
-      CraftPdfLiteral operator, List<CraftPdfObject> operands);
+  FutureOr<void> invoke(PdfCanvasProcessor processor, PdfLiteral operator,
+      List<PdfObject> operands);
 }

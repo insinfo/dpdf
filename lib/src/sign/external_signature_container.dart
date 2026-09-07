@@ -5,7 +5,7 @@ import '../kernel/pdf/pdf_dictionary.dart';
 /// Interface to sign a document.
 ///
 /// The signing is fully done externally, including the container composition.
-abstract class CraftExternalSignatureContainer {
+abstract class ExternalSignatureContainer {
   /// Produces the container with the signature.
   ///
   /// @param data the data to sign (as a stream of bytes)
@@ -18,5 +18,5 @@ abstract class CraftExternalSignatureContainer {
   /// At least the keys PdfName.Filter and PdfName.SubFilter will have to be set.
   ///
   /// @param signDic the signature dictionary
-  void modifySigningDictionary(CraftPdfDictionary signDic);
+  void modifySigningDictionary(PdfDictionary signDic);
 }

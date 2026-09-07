@@ -5,31 +5,31 @@ import 'package:dpdf/src/layout/renderer/renderer.dart';
 import 'package:dpdf/src/layout/renderer/paragraph_renderer.dart';
 import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
 
-class CraftParagraph extends CraftBlockElement<CraftParagraph> {
-  CraftParagraph([String? text]) {
+class Paragraph extends BlockElement<Paragraph> {
+  Paragraph([String? text]) {
     if (text != null) {
       addText(text);
     }
   }
 
   @override
-  CraftParagraph add(CraftElement element) {
+  Paragraph add(Element element) {
     childElements.add(element);
     return this;
   }
 
-  CraftParagraph addText(String text) {
-    childElements.add(CraftText(text));
+  Paragraph addText(String text) {
+    childElements.add(Text(text));
     return this;
   }
 
   @override
-  CraftRenderer makeNewRenderer() {
-    return CraftParagraphRenderer(this);
+  Renderer makeNewRenderer() {
+    return ParagraphRenderer(this);
   }
 
   @override
-  CraftAccessibilityProperties getAccessibilityProperties() {
-    return CraftAccessibilityProperties(); // Stub
+  AccessibilityProperties getAccessibilityProperties() {
+    return AccessibilityProperties(); // Stub
   }
 }

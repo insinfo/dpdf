@@ -2,12 +2,12 @@ import 'dart:typed_data';
 import 'bit_array.dart';
 
 /// Rectangular binary raster, stored as independent byte rows.
-class CraftBitMatrix {
+class BitMatrix {
   final int _width;
   final int _height;
   late final List<Uint8List> _rows;
 
-  CraftBitMatrix(this._width, [int? height]) : _height = height ?? _width {
+  BitMatrix(this._width, [int? height]) : _height = height ?? _width {
     if (_width <= 0 || _height <= 0) {
       throw ArgumentError(
           'Raster dimensions must be positive: $_width x $_height');
@@ -55,10 +55,10 @@ class CraftBitMatrix {
     }
   }
 
-  CraftBitArray getRow(int y, [CraftBitArray? row]) {
+  BitArray getRow(int y, [BitArray? row]) {
     RangeError.checkValidIndex(y, _rows, 'y');
     final result =
-        row != null && row.getSize() >= _width ? row : CraftBitArray(_width);
+        row != null && row.getSize() >= _width ? row : BitArray(_width);
     // Only replace words belonging to this matrix; a larger caller buffer keeps
     // its subsequent words, matching the original public behavior.
     for (var base = 0; base < _width; base += 32) {

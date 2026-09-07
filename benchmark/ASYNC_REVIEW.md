@@ -5,15 +5,15 @@ descreve essa base; a refatoração posterior está registrada nesta seção.
 
 ## Refatoração aplicada após a auditoria
 
-- CraftPdfTokenizer agora retorna valores diretamente, inclusive close,
+- PdfTokenizer agora retorna valores diretamente, inclusive close,
   readFully, nextToken e nextValidToken. Aliases Sync compartilham o mesmo
   corpo; não há mais duas implementações do scanner.
-- CraftCMapContentParser, leitura recursiva de operandos do canvas e análise
+- CMapContentParser, leitura recursiva de operandos do canvas e análise
   de aparência padrão dos campos agora são síncronos.
-- CraftRandomAccessSource e suas implementações em memória/delegação têm
+- RandomAccessSource e suas implementações em memória/delegação têm
   contrato síncrono. Implementações externas desse contrato precisam adaptar
   suas assinaturas.
-- CraftPdfReader.close retorna void; os streams comuns e de xref usam leitura
+- PdfReader.close retorna void; os streams comuns e de xref usam leitura
   em lote. Removidos os awaits sobre tokenizer nos chamadores internos.
 - Operadores padrão do canvas retornam void. O contrato de extensão aceita
   FutureOr<void>, e o processor aguarda somente callbacks que retornam Future.

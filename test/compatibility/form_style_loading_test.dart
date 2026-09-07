@@ -12,10 +12,9 @@ void main() {
       PdfPageSelection(input),
       PdfPageSelection(input)
     ], preserveForms: true);
-    final document =
-        await CraftPdfDocument.open(CraftPdfReader.fromBytes(merged));
+    final document = await PdfDocument.open(PdfReader.fromBytes(merged));
     try {
-      final form = await CraftPdfAcroForm.getAcroForm(document, false);
+      final form = await PdfAcroForm.getAcroForm(document, false);
       final fields = await form.getAllFormFields();
       expect(fields.keys, containsAll(['nome', 'nome_2', 'nome_3']));
       for (final field in fields.values) {

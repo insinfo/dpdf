@@ -18,10 +18,10 @@ class PdfContentOperation {
   final String operator;
 
   /// Operands in the order they appeared.
-  final List<CraftPdfObject> operands;
+  final List<PdfObject> operands;
 
   /// The dictionary between `BI` and `ID`, for an inline image.
-  final CraftPdfDictionary? inlineImage;
+  final PdfDictionary? inlineImage;
 
   /// The raw sample bytes between `ID` and `EI`, still filtered as stored.
   final Uint8List? inlineImageData;
@@ -37,14 +37,14 @@ class PdfContentOperation {
   double? number(int index) {
     if (index < 0 || index >= operands.length) return null;
     final value = operands[index];
-    return value is CraftPdfNumber ? value.doubleValue() : null;
+    return value is PdfNumber ? value.doubleValue() : null;
   }
 
   /// The operand at [index] as a name's text, or null when it is not a name.
   String? name(int index) {
     if (index < 0 || index >= operands.length) return null;
     final value = operands[index];
-    return value is CraftPdfName ? value.getValue() : null;
+    return value is PdfName ? value.getValue() : null;
   }
 
   /// Every operand as a number, in order. Null when any of them is not.
@@ -55,7 +55,7 @@ class PdfContentOperation {
     if (expected != null && operands.length != expected) return null;
     final result = <double>[];
     for (final operand in operands) {
-      if (operand is! CraftPdfNumber) return null;
+      if (operand is! PdfNumber) return null;
       result.add(operand.doubleValue());
     }
     return result;
@@ -94,7 +94,7 @@ abstract final class PdfContentParser {
   /// rather than silently producing nonsense.
   static Iterable<PdfContentOperation> parse(Uint8List content) sync* {
     final reader = _Reader(content);
-    var operands = <CraftPdfObject>[];
+    var operands = <PdfObject>[];
 
     while (true) {
       reader.skipWhitespaceAndComments();
@@ -106,11 +106,11 @@ abstract final class PdfContentParser {
       if (token is _Operator) {
         if (token.name == 'BI') {
           yield reader.readInlineImage();
-          operands = <CraftPdfObject>[];
+          operands = <PdfObject>[];
           continue;
         }
         yield PdfContentOperation(token.name, operands);
-        operands = <CraftPdfObject>[];
+        operands = <PdfObject>[];
         continue;
       }
 
@@ -120,7 +120,7 @@ abstract final class PdfContentParser {
             'the stream is not valid content.',
             reader.offset);
       }
-      operands.add(token as CraftPdfObject);
+      operands.add(token as PdfObject);
     }
   }
 
@@ -229,7 +229,7 @@ class _Reader {
     return _readOperator();
   }
 
-  CraftPdfName _readName() {
+  PdfName _readName() {
     offset++; // the slash
     final buffer = <int>[];
     while (offset < data.length) {
@@ -248,7 +248,7 @@ class _Reader {
       buffer.add(byte);
       offset++;
     }
-    return CraftPdfName(String.fromCharCodes(buffer));
+    return PdfName(String.fromCharCodes(buffer));
   }
 
   static int _hexValue(int byte) {
@@ -258,7 +258,7 @@ class _Reader {
     return -1;
   }
 
-  CraftPdfString _readLiteralString() {
+  PdfString _readLiteralString() {
     final start = offset;
     offset++; // the opening parenthesis
     final buffer = <int>[];
@@ -311,7 +311,7 @@ class _Reader {
       if (byte == 0x29) {
         nesting--;
         if (nesting == 0) {
-          return CraftPdfString.fromBytes(Uint8List.fromList(buffer));
+          return PdfString.fromBytes(Uint8List.fromList(buffer));
         }
         buffer.add(byte);
         continue;
@@ -321,7 +321,7 @@ class _Reader {
     throw PdfContentException('A ( string is never closed.', start);
   }
 
-  CraftPdfString _readHexString() {
+  PdfString _readHexString() {
     final start = offset;
     offset++; // the opening angle bracket
     final buffer = <int>[];
@@ -332,7 +332,7 @@ class _Reader {
       if (byte == 0x3E) {
         // An odd trailing digit is padded with a zero.
         if (high >= 0) buffer.add(high * 16);
-        return CraftPdfString.fromBytes(Uint8List.fromList(buffer), true);
+        return PdfString.fromBytes(Uint8List.fromList(buffer), true);
       }
       if (_isWhitespace(byte)) continue;
       final value = _hexValue(byte);
@@ -350,7 +350,7 @@ class _Reader {
     throw PdfContentException('A < hex string is never closed.', start);
   }
 
-  CraftPdfNumber _readNumber() {
+  PdfNumber _readNumber() {
     final start = offset;
     if (offset < data.length &&
         (data[offset] == 0x2B || data[offset] == 0x2D)) {
@@ -371,9 +371,9 @@ class _Reader {
     if (value == null || !value.isFinite) {
       // `.` alone, or `-`, or an overflow: treat as zero rather than aborting
       // a page for one bad token.
-      return CraftPdfNumber(0);
+      return PdfNumber(0);
     }
-    return CraftPdfNumber(value);
+    return PdfNumber(value);
   }
 
   Object _readOperator() {
@@ -391,19 +391,19 @@ class _Reader {
     final text = String.fromCharCodes(data.sublist(start, offset));
     switch (text) {
       case 'true':
-        return CraftPdfBoolean(true);
+        return PdfBoolean(true);
       case 'false':
-        return CraftPdfBoolean(false);
+        return PdfBoolean(false);
       case 'null':
-        return CraftPdfNull();
+        return PdfNull();
     }
     return _Operator(text);
   }
 
-  CraftPdfArray _readArray(int depth) {
+  PdfArray _readArray(int depth) {
     final start = offset;
     offset++; // [
-    final array = CraftPdfArray();
+    final array = PdfArray();
     while (true) {
       skipWhitespaceAndComments();
       if (atEnd) {
@@ -422,14 +422,14 @@ class _Reader {
         // it keeps the rest of the array usable.
         continue;
       }
-      array.add(token as CraftPdfObject);
+      array.add(token as PdfObject);
     }
   }
 
-  CraftPdfDictionary _readDictionary(int depth) {
+  PdfDictionary _readDictionary(int depth) {
     final start = offset;
     offset += 2; // <<
-    final dictionary = CraftPdfDictionary();
+    final dictionary = PdfDictionary();
     while (true) {
       skipWhitespaceAndComments();
       if (atEnd) {
@@ -449,7 +449,7 @@ class _Reader {
         throw PdfContentException('A << dictionary is never closed.', start);
       }
       if (value is _Operator) continue;
-      dictionary.put(key, value as CraftPdfObject);
+      dictionary.put(key, value as PdfObject);
     }
   }
 
@@ -459,7 +459,7 @@ class _Reader {
   /// an inline image declares no length. That is what the specification leaves
   /// readers to do, and why `EI` can appear inside the data only by accident.
   PdfContentOperation readInlineImage() {
-    final dictionary = CraftPdfDictionary();
+    final dictionary = PdfDictionary();
     while (true) {
       skipWhitespaceAndComments();
       if (atEnd) {
@@ -472,7 +472,7 @@ class _Reader {
           throw PdfContentException(
               'An inline image key has no value.', offset);
         }
-        dictionary.put(key, value as CraftPdfObject);
+        dictionary.put(key, value as PdfObject);
         continue;
       }
       final token = readToken();

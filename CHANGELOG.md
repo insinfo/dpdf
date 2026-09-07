@@ -61,10 +61,10 @@ externos, e compila para VM (JIT/AOT), `dart2js` e `dart2wasm`.
   CMaps `ToUnicode`, Adobe Glyph List e recursos CJK carregados pelo consumidor.
 - **Imagens e codecs**: PNG, JPEG, BMP, GIF, TIFF (incluindo LZW e CCITT G4) e
   JBIG2, com escritores PNG/TIFF e filtros Flate, LZW, RunLength e ASCII.
-- **Layout**: `CraftDocument` com parágrafos, divs, listas, tabelas com
+- **Layout**: `Document` com parágrafos, divs, listas, tabelas com
   `colspan`/`rowspan`, imagens, quebras de área, colapso de margens e cálculo
   de largura mínima/máxima.
-- **HTML para PDF**: `CraftHtmlConverter` com pipeline independente de DOM,
+- **HTML para PDF**: `HtmlConverter` com pipeline independente de DOM,
   CSS, layout e pintura, cobrindo texto, listas, tabelas, imagens e links.
 - **SVG**: processadores e renderizadores para as formas básicas, caminhos,
   transformações e marcadores.

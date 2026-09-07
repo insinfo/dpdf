@@ -13,19 +13,18 @@ void main() {
     final page = (await document.pageAt(1))!;
     final sibling = (await document.pageAt(2))!;
     final parent =
-        await page.pdfRepresentation().dictionaryEntry(CraftPdfName.parent);
+        await page.pdfRepresentation().dictionaryEntry(PdfName.parent);
     final inherited =
-        await page.pdfRepresentation().dictionaryEntry(CraftPdfName.resources);
-    parent!.put(CraftPdfName.resources, inherited!);
-    page.pdfRepresentation().remove(CraftPdfName.resources);
-    sibling.pdfRepresentation().remove(CraftPdfName.resources);
+        await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+    parent!.put(PdfName.resources, inherited!);
+    page.pdfRepresentation().remove(PdfName.resources);
+    sibling.pdfRepresentation().remove(PdfName.resources);
     await _draw(page, 'LOCAL');
-    expect(
-        await parent.dictionaryEntry(CraftPdfName.resources), same(inherited));
-    expect(inherited.containsKey(CraftPdfName.xObject), isFalse);
+    expect(await parent.dictionaryEntry(PdfName.resources), same(inherited));
+    expect(inherited.containsKey(PdfName.xObject), isFalse);
     await document.close();
-    final reopened = await CraftPdfDocument.open(
-        CraftPdfReader.fromBytes(output.takeBytes()));
+    final reopened =
+        await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
     try {
       expect(await PdfTextExtraction.fromPage((await reopened.pageAt(1))!),
           contains('LOCAL'));
@@ -54,8 +53,8 @@ void main() {
     final document = await _open(bytes, output);
     await _draw((await document.pageAt(1))!, 'OVERLAY');
     await document.close();
-    final result = await CraftPdfDocument.open(
-        CraftPdfReader.fromBytes(output.takeBytes()));
+    final result =
+        await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
     try {
       expect(await PdfTextExtraction.fromPage((await result.pageAt(1))!),
           contains('OVERLAY'));
@@ -84,7 +83,7 @@ void main() {
       await document.close();
       bytes = output.takeBytes();
     }
-    final result = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    final result = await PdfDocument.open(PdfReader.fromBytes(bytes));
     try {
       final text = await PdfTextExtraction.fromPage((await result.pageAt(1))!);
       for (final label in ['Page 1', 'FIRST', 'SECOND', 'THIRD']) {
@@ -104,21 +103,20 @@ void main() {
     expect(operators, isNot(contains(' cm')));
     expect(RegExp(r'\bDo\b').allMatches(operators).length, 2);
     final resources = await page.resourceDirectory();
-    final objects = await resources
-        .pdfRepresentation()
-        .dictionaryEntry(CraftPdfName.xObject);
+    final objects =
+        await resources.pdfRepresentation().dictionaryEntry(PdfName.xObject);
     final forms = await objects!.entrySet();
     final payloads = <String>[];
     for (final entry in forms) {
-      payloads.add(
-          latin1.decode((await (entry.value as CraftPdfStream).getBytes())!));
+      payloads
+          .add(latin1.decode((await (entry.value as PdfStream).getBytes())!));
     }
     expect(payloads.where((p) => p.contains('300 400 cm')).length, 1);
     expect(payloads.where((p) => p.contains('GUARDED')).single,
         isNot(contains('300 400 cm')));
     await document.close();
-    final reopened = await CraftPdfDocument.open(
-        CraftPdfReader.fromBytes(output.takeBytes()));
+    final reopened =
+        await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
     try {
       expect(await PdfTextExtraction.fromPage((await reopened.pageAt(1))!),
           contains('GUARDED'));
@@ -128,36 +126,34 @@ void main() {
   });
 }
 
-Future<CraftPdfDocument> _open(Uint8List bytes, BytesBuilder output) async {
-  final document = CraftPdfDocument(
-      reader: CraftPdfReader.fromBytes(bytes),
-      writer: CraftPdfWriter.fromBytesBuilder(output));
+Future<PdfDocument> _open(Uint8List bytes, BytesBuilder output) async {
+  final document = PdfDocument(
+      reader: PdfReader.fromBytes(bytes),
+      writer: PdfWriter.fromBytesBuilder(output));
   await document.load();
   return document;
 }
 
-Future<void> _draw(CraftPdfPage page, String text) async {
+Future<void> _draw(PdfPage page, String text) async {
   final canvas = await PdfPageOverlay.create(page);
   canvas.beginText();
-  await canvas.setFontAndSize(CraftPdfFontFactory.createFont('Helvetica'), 18);
+  await canvas.setFontAndSize(PdfFontFactory.createFont('Helvetica'), 18);
   canvas.moveText(20, 40).showText(text).endText();
 }
 
 Future<Uint8List> _source({bool unbalanced = false}) async {
   final output = BytesBuilder();
-  final document =
-      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final document = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   for (var index = 1; index <= 2; index++) {
     final page = await document.appendBlankPage();
-    final canvas = await CraftPdfCanvas.fromPage(page);
+    final canvas = await PdfCanvas.fromPage(page);
     if (unbalanced && index == 1) {
       canvas.contentStream!
           .getOutputStream()
           .writeBytes(ascii.encode('q 2 0 0 2 300 400 cm\n'));
     }
     canvas.beginText();
-    await canvas.setFontAndSize(
-        CraftPdfFontFactory.createFont('Helvetica'), 18);
+    await canvas.setFontAndSize(PdfFontFactory.createFont('Helvetica'), 18);
     canvas.moveText(50, 100).showText('Page $index').endText();
   }
   await document.close();

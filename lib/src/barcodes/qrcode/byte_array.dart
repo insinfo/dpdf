@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'dart:math' as math;
 
 /// This class implements an array of unsigned bytes.
-class CraftByteArray {
+class ByteArray {
   static const int INITIAL_SIZE = 32;
 
   Uint8List? _bytes;
@@ -11,7 +11,7 @@ class CraftByteArray {
   /// Creates a new ByteArray instance.
   ///
   /// [arg] can be int (size) or Uint8List (bytes) or List<int>.
-  CraftByteArray([dynamic arg]) {
+  ByteArray([dynamic arg]) {
     if (arg == null) {
       _bytes = null;
       _size = 0;

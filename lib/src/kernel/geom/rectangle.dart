@@ -2,7 +2,7 @@ import '../pdf/pdf_array.dart';
 import '../pdf/pdf_number.dart';
 
 /// Class that represent rectangle object.
-class CraftRectangle {
+class Rectangle {
   static const double EPS = 1e-4;
 
   double x;
@@ -11,14 +11,13 @@ class CraftRectangle {
   double height;
 
   /// Creates new instance.
-  CraftRectangle(this.x, this.y, this.width, this.height);
+  Rectangle(this.x, this.y, this.width, this.height);
 
   /// Creates a rectangle whose lower-left corner is the origin.
-  CraftRectangle.withSize(double width, double height)
-      : this(0, 0, width, height);
+  Rectangle.withSize(double width, double height) : this(0, 0, width, height);
 
   /// Creates the copy of given [Rectangle]
-  CraftRectangle.fromRectangle(CraftRectangle rect)
+  Rectangle.fromRectangle(Rectangle rect)
       : this(rect.x, rect.y, rect.width, rect.height);
 
   /// Gets the X coordinate of lower left point.
@@ -58,16 +57,16 @@ class CraftRectangle {
   double getBottom() => y;
 
   /// Converts rectangle to a [PdfArray].
-  CraftPdfArray toPdfArray() {
-    return CraftPdfArray()
-      ..add(CraftPdfNumber(x))
-      ..add(CraftPdfNumber(y))
-      ..add(CraftPdfNumber(x + width))
-      ..add(CraftPdfNumber(y + height));
+  PdfArray toPdfArray() {
+    return PdfArray()
+      ..add(PdfNumber(x))
+      ..add(PdfNumber(y))
+      ..add(PdfNumber(x + width))
+      ..add(PdfNumber(y + height));
   }
 
   /// Creates a [Rectangle] from a [PdfArray].
-  static Future<CraftRectangle?> fromPdfArray(CraftPdfArray? array) async {
+  static Future<Rectangle?> fromPdfArray(PdfArray? array) async {
     if (array == null || array.size() < 4) {
       return null;
     }
@@ -75,7 +74,7 @@ class CraftRectangle {
     final lly = (await array.numberEntry(1))?.doubleValue() ?? 0.0;
     final urx = (await array.numberEntry(2))?.doubleValue() ?? 0.0;
     final ury = (await array.numberEntry(3))?.doubleValue() ?? 0.0;
-    return CraftRectangle(llx, lly, urx - llx, ury - lly);
+    return Rectangle(llx, lly, urx - llx, ury - lly);
   }
 
   @override
@@ -83,11 +82,11 @@ class CraftRectangle {
     return 'Rectangle: ${width}x$height at ($x, $y)';
   }
 
-  CraftRectangle clone() {
-    return CraftRectangle(x, y, width, height);
+  Rectangle clone() {
+    return Rectangle(x, y, width, height);
   }
 
-  bool equalsWithEpsilon(CraftRectangle other) {
+  bool equalsWithEpsilon(Rectangle other) {
     return (x - other.x).abs() < EPS &&
         (y - other.y).abs() < EPS &&
         (width - other.width).abs() < EPS &&

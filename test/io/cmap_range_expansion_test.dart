@@ -3,11 +3,10 @@ import 'package:dpdf/src/io/font/cmap/abstract_cmap.dart';
 import 'package:dpdf/src/io/font/cmap/cmap_object.dart';
 import 'package:test/test.dart';
 
-class _RecordedMap extends CraftAbstractCMap {
-  final entries = <String, CraftCMapObject>{};
+class _RecordedMap extends AbstractCMap {
+  final entries = <String, CMapObject>{};
   @override
-  void registerMappedCode(String mark, CraftCMapObject code) =>
-      entries[mark] = code;
+  void registerMappedCode(String mark, CMapObject code) => entries[mark] = code;
 }
 
 String _bytes(List<int> values) => String.fromCharCodes(values);
@@ -15,18 +14,18 @@ String _bytes(List<int> values) => String.fromCharCodes(values);
 void main() {
   test('byte helpers preserve truncation, signed extension and empty buffers',
       () {
-    expect(CraftAbstractCMap.mappingCodeBytes('\u0101\u00ff'), [1, 255]);
+    expect(AbstractCMap.mappingCodeBytes('\u0101\u00ff'), [1, 255]);
     final bytes = Uint8List(10);
-    CraftAbstractCMap.writeMappingInteger(-2, bytes);
+    AbstractCMap.writeMappingInteger(-2, bytes);
     expect(bytes, [...List.filled(9, 255), 254]);
-    CraftAbstractCMap.writeMappingInteger(0x123456, bytes);
+    AbstractCMap.writeMappingInteger(0x123456, bytes);
     expect(bytes, [...List.filled(7, 0), 0x12, 0x34, 0x56]);
-    expect(CraftAbstractCMap.readMappingInteger(bytes), 0x123456);
+    expect(AbstractCMap.readMappingInteger(bytes), 0x123456);
     final short = Uint8List(2);
-    CraftAbstractCMap.writeMappingInteger(0x123456, short);
+    AbstractCMap.writeMappingInteger(0x123456, short);
     expect(short, [0x34, 0x56]);
-    CraftAbstractCMap.writeMappingInteger(1, Uint8List(0));
-    expect(CraftAbstractCMap.readMappingInteger(Uint8List(0)), 0);
+    AbstractCMap.writeMappingInteger(1, Uint8List(0));
+    expect(AbstractCMap.readMappingInteger(Uint8List(0)), 0);
   });
 
   test('text decoding chooses UTF16 by syntax or marker and PDFDoc otherwise',
@@ -40,8 +39,8 @@ void main() {
 
   test('range advances source codes across a byte boundary', () {
     final map = _RecordedMap();
-    map.expandMappingInterval(_bytes([0, 254]), _bytes([1, 1]),
-        CraftCMapObject(CraftCMapObject.number, 30));
+    map.expandMappingInterval(
+        _bytes([0, 254]), _bytes([1, 1]), CMapObject(CMapObject.number, 30));
     expect(map.entries.keys.map((key) => key.codeUnits), [
       [0, 254],
       [0, 255],
@@ -56,7 +55,7 @@ void main() {
     final map = _RecordedMap();
     final original = Uint8List.fromList([0, 65, 0, 66, 0, 67, 0, 68, 0, 255]);
     map.expandMappingInterval(
-        'a', 'b', CraftCMapObject(CraftCMapObject.hexString, original));
+        'a', 'b', CMapObject(CMapObject.hexString, original));
     expect(map.entries['a']!.getValue(), original);
     expect(map.entries['b']!.getValue(), [0, 65, 0, 66, 0, 67, 0, 68, 1, 0]);
     expect(original, [0, 65, 0, 66, 0, 67, 0, 68, 0, 255]);
@@ -65,21 +64,20 @@ void main() {
 
   test('array destinations preserve order and are checked before changes', () {
     final map = _RecordedMap();
-    final values = [CraftCMapObject(CraftCMapObject.number, 9)];
+    final values = [CMapObject(CMapObject.number, 9)];
     expect(
         () => map.expandMappingInterval(
-            'a', 'b', CraftCMapObject(CraftCMapObject.array, values)),
+            'a', 'b', CMapObject(CMapObject.array, values)),
         throwsArgumentError);
     expect(map.entries, isEmpty);
-    values.add(CraftCMapObject(CraftCMapObject.number, 2));
-    map.expandMappingInterval(
-        'a', 'b', CraftCMapObject(CraftCMapObject.array, values));
+    values.add(CMapObject(CMapObject.number, 2));
+    map.expandMappingInterval('a', 'b', CMapObject(CMapObject.array, values));
     expect(map.entries.values.map((value) => value.getValue()), [9, 2]);
   });
 
   test('invalid interval and destination forms leave map untouched', () {
     final map = _RecordedMap();
-    final numeric = CraftCMapObject(CraftCMapObject.number, 1);
+    final numeric = CMapObject(CMapObject.number, 1);
     for (final pair in [
       ['', ''],
       ['a', 'bb'],
@@ -91,11 +89,11 @@ void main() {
     }
     expect(
         () => map.expandMappingInterval(
-            'a', 'a', CraftCMapObject(CraftCMapObject.hexString, Uint8List(0))),
+            'a', 'a', CMapObject(CMapObject.hexString, Uint8List(0))),
         throwsArgumentError);
     expect(
         () => map.expandMappingInterval(
-            'a', 'a', CraftCMapObject(CraftCMapObject.name, 'Unsupported')),
+            'a', 'a', CMapObject(CMapObject.name, 'Unsupported')),
         throwsArgumentError);
     expect(map.entries, isEmpty);
   });

@@ -1,9 +1,9 @@
-/// Stream compression levels, shared by [CraftPdfStream] and the writer.
+/// Stream compression levels, shared by [PdfStream] and the writer.
 ///
 /// The values are the zlib levels, so they can be passed straight to the
 /// deflate implementation.
-class CraftCompressionConstants {
-  CraftCompressionConstants._();
+class CompressionConstants {
+  CompressionConstants._();
 
   /// No level was chosen, so the caller's default applies.
   ///

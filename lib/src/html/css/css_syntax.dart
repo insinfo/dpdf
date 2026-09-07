@@ -3,30 +3,30 @@
 /// It deliberately reads only style rules and declarations.  It is not a
 /// browser CSS implementation, but it preserves quoted strings, comments and
 /// nested function values so that delimiters inside them never split a rule.
-class CraftCssRuleSyntax {
+class CssRuleSyntax {
   final String selectorText;
-  final List<CraftCssDeclarationSyntax> declarations;
+  final List<CssDeclarationSyntax> declarations;
 
-  const CraftCssRuleSyntax(this.selectorText, this.declarations);
+  const CssRuleSyntax(this.selectorText, this.declarations);
 }
 
-class CraftCssDeclarationSyntax {
+class CssDeclarationSyntax {
   final String property;
   final String value;
   final bool important;
 
-  const CraftCssDeclarationSyntax(this.property, this.value,
+  const CssDeclarationSyntax(this.property, this.value,
       {this.important = false});
 }
 
-class CraftCssSyntax {
-  CraftCssSyntax._();
+class CssSyntax {
+  CssSyntax._();
 
   /// Parses top-level style rules. At-rules are skipped as a unit; their
   /// contents cannot accidentally become ordinary declarations.
-  static List<CraftCssRuleSyntax> parseStyleRules(String source) {
+  static List<CssRuleSyntax> parseStyleRules(String source) {
     final reader = _CssReader(source);
-    final rules = <CraftCssRuleSyntax>[];
+    final rules = <CssRuleSyntax>[];
     while (!reader.isAtEnd) {
       reader.skipTrivia();
       if (reader.isAtEnd) break;
@@ -38,16 +38,16 @@ class CraftCssSyntax {
       if (prelude.isEmpty || prelude.startsWith('@')) continue;
       final declarations = parseDeclarations(body);
       if (declarations.isNotEmpty) {
-        rules.add(CraftCssRuleSyntax(prelude, declarations));
+        rules.add(CssRuleSyntax(prelude, declarations));
       }
     }
     return rules;
   }
 
   /// Parses a declaration list from either a style attribute or a rule body.
-  static List<CraftCssDeclarationSyntax> parseDeclarations(String source) {
+  static List<CssDeclarationSyntax> parseDeclarations(String source) {
     final reader = _CssReader(source);
-    final declarations = <CraftCssDeclarationSyntax>[];
+    final declarations = <CssDeclarationSyntax>[];
     while (!reader.isAtEnd) {
       reader.skipTrivia();
       final name = reader.readUntilTopLevel(const {':', ';', '}'}).trim();
@@ -65,15 +65,14 @@ class CraftCssSyntax {
     return declarations;
   }
 
-  static CraftCssDeclarationSyntax? _declaration(String name, String value) {
+  static CssDeclarationSyntax? _declaration(String name, String value) {
     final property = name.toLowerCase();
     if (property.isEmpty || value.isEmpty) return null;
     final important = _endsWithImportant(value);
     final effectiveValue = important ? _removeImportant(value).trim() : value;
     return effectiveValue.isEmpty
         ? null
-        : CraftCssDeclarationSyntax(property, effectiveValue,
-            important: important);
+        : CssDeclarationSyntax(property, effectiveValue, important: important);
   }
 
   static bool _endsWithImportant(String value) {
@@ -123,7 +122,7 @@ class _CssReader {
   void skipTrivia() {
     while (!isAtEnd) {
       final code = source.codeUnitAt(offset);
-      if (CraftCssSyntax._isWhitespace(code)) {
+      if (CssSyntax._isWhitespace(code)) {
         offset++;
       } else if (code == 0x2f &&
           offset + 1 < source.length &&

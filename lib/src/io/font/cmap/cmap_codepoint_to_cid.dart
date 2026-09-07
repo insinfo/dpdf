@@ -3,21 +3,21 @@ import 'abstract_cmap.dart';
 import 'cmap_cid_to_codepoint.dart';
 import 'cmap_object.dart';
 
-class CraftCMapCodepointToCid extends CraftAbstractCMap {
-  late final CraftIntHashtable map;
+class CMapCodepointToCid extends AbstractCMap {
+  late final IntHashtable map;
 
-  CraftCMapCodepointToCid() {
-    map = CraftIntHashtable();
+  CMapCodepointToCid() {
+    map = IntHashtable();
   }
 
-  CraftCMapCodepointToCid.fromReverseMap(CraftCMapCidToCodepoint reverseMap) {
+  CMapCodepointToCid.fromReverseMap(CMapCidToCodepoint reverseMap) {
     map = reverseMap.getReversMap();
   }
 
   @override
-  void registerMappedCode(String mark, CraftCMapObject code) {
+  void registerMappedCode(String mark, CMapObject code) {
     if (code.isNumber()) {
-      List<int> ser = CraftAbstractCMap.mappingCodeBytes(mark);
+      List<int> ser = AbstractCMap.mappingCodeBytes(mark);
       int byteCode = 0;
       for (int b in ser) {
         byteCode <<= 8;

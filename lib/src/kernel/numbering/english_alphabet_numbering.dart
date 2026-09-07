@@ -1,6 +1,6 @@
 import 'alphabet_numbering.dart';
 
-class CraftEnglishAlphabetNumbering {
+class EnglishAlphabetNumbering {
   static const int ALPHABET_LENGTH = 26;
   static final List<String> ALPHABET_LOWERCASE = List.generate(
       ALPHABET_LENGTH, (i) => String.fromCharCode('a'.codeUnitAt(0) + i));
@@ -8,11 +8,11 @@ class CraftEnglishAlphabetNumbering {
       ALPHABET_LENGTH, (i) => String.fromCharCode('A'.codeUnitAt(0) + i));
 
   static String toLatinAlphabetNumberLowerCase(int number) {
-    return CraftAlphabetNumbering.toAlphabetNumber(number, ALPHABET_LOWERCASE);
+    return AlphabetNumbering.toAlphabetNumber(number, ALPHABET_LOWERCASE);
   }
 
   static String toLatinAlphabetNumberUpperCase(int number) {
-    return CraftAlphabetNumbering.toAlphabetNumber(number, ALPHABET_UPPERCASE);
+    return AlphabetNumbering.toAlphabetNumber(number, ALPHABET_UPPERCASE);
   }
 
   static String toLatinAlphabetNumber(int number, bool upperCase) {

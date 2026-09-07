@@ -62,13 +62,12 @@ void main() {
   test('Page resolves property resource dictionary', () async {
     final resources = fixtures.resources({})
       ..put(
-          CraftPdfName('Properties'),
-          CraftPdfDictionary()
+          PdfName('Properties'),
+          PdfDictionary()
             ..put(
-                CraftPdfName('P'),
-                CraftPdfDictionary()
-                  ..put(CraftPdfName('ActualText'),
-                      CraftPdfString('replacement'))));
+                PdfName('P'),
+                PdfDictionary()
+                  ..put(PdfName('ActualText'), PdfString('replacement'))));
     expect(
         await fixtures.extract(
             '/Span /P BDC BT /F1 12 Tf (secret) Tj ET EMC', resources),

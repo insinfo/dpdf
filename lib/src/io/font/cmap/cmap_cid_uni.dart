@@ -3,11 +3,11 @@ import 'unicode_mapping_scalar.dart';
 import 'abstract_cmap.dart';
 import 'cmap_object.dart';
 
-class CraftCMapCidUni extends CraftAbstractCMap {
-  final CraftIntHashtable map = CraftIntHashtable.withInitialCapacity(65537);
+class CMapCidUni extends AbstractCMap {
+  final IntHashtable map = IntHashtable.withInitialCapacity(65537);
 
   @override
-  void registerMappedCode(String mark, CraftCMapObject code) {
+  void registerMappedCode(String mark, CMapObject code) {
     if (!code.isNumber()) return;
     final cid = code.getValue();
     if (cid is! int || cid < 0 || cid > 0xffff) {

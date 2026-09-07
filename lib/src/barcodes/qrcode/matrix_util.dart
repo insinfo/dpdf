@@ -5,15 +5,11 @@ import 'mask_util.dart';
 import 'version.dart';
 
 /// Placement and polynomial checks for the fixed QR symbol geometry.
-class CraftMatrixUtil {
-  static void clearMatrix(CraftByteMatrix matrix) => matrix.clear(255);
+class MatrixUtil {
+  static void clearMatrix(ByteMatrix matrix) => matrix.clear(255);
 
-  static void buildMatrix(
-      CraftBitVector dataBits,
-      CraftErrorCorrectionLevel ecLevel,
-      int version,
-      int maskPattern,
-      CraftByteMatrix matrix) {
+  static void buildMatrix(BitVector dataBits, ErrorCorrectionLevel ecLevel,
+      int version, int maskPattern, ByteMatrix matrix) {
     final side = 17 + 4 * version;
     RangeError.checkValueInInterval(version, 1, 40, 'version');
     if (matrix.getWidth() != side || matrix.getHeight() != side) {
@@ -26,7 +22,7 @@ class CraftMatrixUtil {
     embedDataBits(dataBits, maskPattern, matrix);
   }
 
-  static void embedBasicPatterns(int version, CraftByteMatrix matrix) {
+  static void embedBasicPatterns(int version, ByteMatrix matrix) {
     embedPositionDetectionPatternsAndSeparators(matrix);
     maybeEmbedPositionAdjustmentPatterns(version, matrix);
     embedTimingPatterns(matrix);
@@ -59,21 +55,21 @@ class CraftMatrixUtil {
   }
 
   static void makeTypeInfoBits(
-      CraftErrorCorrectionLevel ecLevel, int maskPattern, CraftBitVector bits) {
+      ErrorCorrectionLevel ecLevel, int maskPattern, BitVector bits) {
     RangeError.checkValueInInterval(maskPattern, 0, 7, 'maskPattern');
     final value = ecLevel.bits * 8 + maskPattern;
     final protected = (value * 1024 + calculateBCHCode(value, 0x537)) ^ 0x5412;
     bits.appendBits(protected, 15);
   }
 
-  static void makeVersionInfoBits(int version, CraftBitVector bits) {
+  static void makeVersionInfoBits(int version, BitVector bits) {
     RangeError.checkValueInInterval(version, 1, 40, 'version');
     bits.appendBits(version * 4096 + calculateBCHCode(version, 0x1f25), 18);
   }
 
-  static void embedTypeInfo(CraftErrorCorrectionLevel ecLevel, int maskPattern,
-      CraftByteMatrix matrix) {
-    final bits = CraftBitVector();
+  static void embedTypeInfo(
+      ErrorCorrectionLevel ecLevel, int maskPattern, ByteMatrix matrix) {
+    final bits = BitVector();
     makeTypeInfoBits(ecLevel, maskPattern, bits);
     final first = <(int, int)>[
       for (var y = 0; y <= 5; y++) (8, y),
@@ -95,9 +91,9 @@ class CraftMatrixUtil {
     }
   }
 
-  static void maybeEmbedVersionInfo(int version, CraftByteMatrix matrix) {
+  static void maybeEmbedVersionInfo(int version, ByteMatrix matrix) {
     if (version < 7) return;
-    final bits = CraftBitVector();
+    final bits = BitVector();
     makeVersionInfoBits(version, bits);
     for (var index = 0; index < 18; index++) {
       final major = index ~/ 3;
@@ -109,7 +105,7 @@ class CraftMatrixUtil {
   }
 
   static void embedDataBits(
-      CraftBitVector dataBits, int maskPattern, CraftByteMatrix matrix) {
+      BitVector dataBits, int maskPattern, ByteMatrix matrix) {
     RangeError.checkValueInInterval(maskPattern, -1, 7, 'maskPattern');
     final columns = [
       for (var x = matrix.getWidth() - 1; x >= 0; x--)
@@ -123,8 +119,7 @@ class CraftMatrixUtil {
         for (final x in [columns[stripe], columns[stripe + 1]]) {
           if (matrix.get(x, y) != 255) continue;
           var value = consumed < dataBits.size() ? dataBits.at(consumed++) : 0;
-          if (maskPattern >= 0 &&
-              CraftMaskUtil.maskAppliesAt(maskPattern, x, y)) {
+          if (maskPattern >= 0 && MaskUtil.maskAppliesAt(maskPattern, x, y)) {
             value ^= 1;
           }
           matrix.set(x, y, value);
@@ -136,14 +131,14 @@ class CraftMatrixUtil {
     }
   }
 
-  static void _writeVacant(CraftByteMatrix matrix, int x, int y, int value) {
+  static void _writeVacant(ByteMatrix matrix, int x, int y, int value) {
     if (matrix.get(x, y) != 255) {
       throw StateError('QR pattern overlaps an occupied module at ($x, $y)');
     }
     matrix.set(x, y, value);
   }
 
-  static void _square(CraftByteMatrix matrix, int left, int top, int radius) {
+  static void _square(ByteMatrix matrix, int left, int top, int radius) {
     for (var position = 0;
         position < (radius * 2 + 1) * (radius * 2 + 1);
         position++) {
@@ -156,28 +151,27 @@ class CraftMatrixUtil {
   }
 
   static void embedPositionDetectionPattern(
-          int xStart, int yStart, CraftByteMatrix matrix) =>
+          int xStart, int yStart, ByteMatrix matrix) =>
       _square(matrix, xStart, yStart, 3);
   static void embedPositionAdjustmentPattern(
-          int xStart, int yStart, CraftByteMatrix matrix) =>
+          int xStart, int yStart, ByteMatrix matrix) =>
       _square(matrix, xStart, yStart, 2);
 
   static void embedHorizontalSeparationPattern(
-      int xStart, int yStart, CraftByteMatrix matrix) {
+      int xStart, int yStart, ByteMatrix matrix) {
     for (var offset = 0; offset < 8; offset++) {
       _writeVacant(matrix, xStart + offset, yStart, 0);
     }
   }
 
   static void embedVerticalSeparationPattern(
-      int xStart, int yStart, CraftByteMatrix matrix) {
+      int xStart, int yStart, ByteMatrix matrix) {
     for (var offset = 0; offset < 7; offset++) {
       _writeVacant(matrix, xStart, yStart + offset, 0);
     }
   }
 
-  static void embedPositionDetectionPatternsAndSeparators(
-      CraftByteMatrix matrix) {
+  static void embedPositionDetectionPatternsAndSeparators(ByteMatrix matrix) {
     for (final corner in [
       (0, 0),
       (matrix.getWidth() - 7, 0),
@@ -193,9 +187,9 @@ class CraftMatrixUtil {
   }
 
   static void maybeEmbedPositionAdjustmentPatterns(
-      int version, CraftByteMatrix matrix) {
+      int version, ByteMatrix matrix) {
     final centers =
-        CraftVersion.getVersionForNumber(version).getAlignmentPatternCenters();
+        Version.getVersionForNumber(version).getAlignmentPatternCenters();
     for (final x in centers) {
       for (final y in centers) {
         if (matrix.get(x, y) == 255) {
@@ -205,7 +199,7 @@ class CraftMatrixUtil {
     }
   }
 
-  static void embedTimingPatterns(CraftByteMatrix matrix) {
+  static void embedTimingPatterns(ByteMatrix matrix) {
     for (var coordinate = 8; coordinate < matrix.getWidth() - 8; coordinate++) {
       for (final cell in [(coordinate, 6), (6, coordinate)]) {
         final (x, y) = cell;
@@ -219,7 +213,7 @@ class CraftMatrixUtil {
     }
   }
 
-  static void embedDarkDotAtLeftBottomCorner(CraftByteMatrix matrix) {
+  static void embedDarkDotAtLeftBottomCorner(ByteMatrix matrix) {
     final y = matrix.getHeight() - 8;
     if (matrix.get(8, y) == 0) {
       throw StateError('QR fixed dark module was reserved as light');

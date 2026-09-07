@@ -1,5 +1,5 @@
 /// The possible values for the type of overflow of block elements.
-enum CraftOverflowPropertyValue {
+enum OverflowPropertyValue {
   /// Fit content within bounds.
   fit,
 

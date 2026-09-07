@@ -6,8 +6,8 @@ import '../model/html_raster_image.dart';
 
 /// Decodes the narrow, portable image source profile accepted by HTML paint.
 /// External URLs are intentionally not fetched by document conversion.
-class CraftHtmlDataImage {
-  static CraftHtmlRasterImage? tryParse(String? source,
+class HtmlDataImage {
+  static HtmlRasterImage? tryParse(String? source,
       {String? width, String? height}) {
     if (source == null || !source.startsWith('data:')) return null;
     final comma = source.indexOf(',');
@@ -18,10 +18,10 @@ class CraftHtmlDataImage {
         header == 'image/jpg;base64';
     if (!accepted) return null;
     try {
-      final image = CraftImageDataFactory.create(
-          base64Decode(source.substring(comma + 1)));
+      final image =
+          ImageDataFactory.create(base64Decode(source.substring(comma + 1)));
       final type = image.getOriginalType();
-      if (type != CraftImageType.PNG && type != CraftImageType.JPEG) {
+      if (type != ImageType.PNG && type != ImageType.JPEG) {
         return null;
       }
       final naturalWidth = image.getWidth();
@@ -35,7 +35,7 @@ class CraftHtmlDataImage {
               : naturalWidth * requestedHeight / naturalHeight);
       final resolvedHeight =
           requestedHeight ?? naturalHeight * resolvedWidth / naturalWidth;
-      return CraftHtmlRasterImage(image, resolvedWidth, resolvedHeight);
+      return HtmlRasterImage(image, resolvedWidth, resolvedHeight);
     } on FormatException {
       return null;
     } catch (_) {

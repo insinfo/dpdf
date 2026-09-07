@@ -5,7 +5,7 @@ import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 
 /// Renderizador de `<ellipse>`, e base de `<circle>`.
-class CraftEllipseSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
+class EllipseSvgNodeRenderer extends AbstractSvgNodeRenderer {
   double cx = 0;
   double cy = 0;
   double rx = 0;
@@ -14,7 +14,7 @@ class CraftEllipseSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
   /// Resolve centro e raios. Devolve `false` quando a elipse é degenerada —
   /// raio ausente ou não positivo desliga o desenho, em vez de emitir um
   /// caminho vazio que ainda assim consumiria o operador de pintura.
-  bool setParameters(CraftSvgDrawContext context) {
+  bool setParameters(SvgDrawContext context) {
     initCenter(context);
     final rxValue = getAttribute(SvgAttributes.RX);
     final ryValue = getAttribute(SvgAttributes.RY);
@@ -26,7 +26,7 @@ class CraftEllipseSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
     return rx > 0 && ry > 0;
   }
 
-  void initCenter(CraftSvgDrawContext context) {
+  void initCenter(SvgDrawContext context) {
     cx = parseHorizontalLength(
         getAttributeOrDefault(SvgAttributes.CX, '0'), context);
     cy = parseVerticalLength(
@@ -34,7 +34,7 @@ class CraftEllipseSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
   }
 
   @override
-  Future<void> doDraw(CraftSvgDrawContext context) async {
+  Future<void> doDraw(SvgDrawContext context) async {
     if (!setParameters(context)) return;
     final canvas = context.getCurrentCanvas();
     // O `arc` do canvas só emite curvas; o ponto inicial tem de ser posto à
@@ -44,14 +44,14 @@ class CraftEllipseSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
   }
 
   @override
-  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context) {
+  Rectangle? getObjectBoundingBox(SvgDrawContext context) {
     if (!setParameters(context)) return null;
-    return CraftRectangle(cx - rx, cy - ry, rx * 2, ry * 2);
+    return Rectangle(cx - rx, cy - ry, rx * 2, ry * 2);
   }
 
   @override
-  CraftSvgNodeRenderer createDeepCopy() {
-    final copy = CraftEllipseSvgNodeRenderer();
+  SvgNodeRenderer createDeepCopy() {
+    final copy = EllipseSvgNodeRenderer();
     deepCopyAttributesAndStyles(copy);
     return copy;
   }

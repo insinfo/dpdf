@@ -8,23 +8,22 @@ import 'package:dpdf/src/layout/renderer/draw_context.dart';
 import 'package:dpdf/src/layout/layout/root_layout_area.dart';
 
 /// Places children in the fixed rectangle supplied by a canvas.
-class CraftCanvasRenderer extends CraftRootRenderer {
-  final CraftCanvas canvas;
+class CanvasRenderer extends RootRenderer {
+  final Canvas canvas;
 
-  CraftCanvasRenderer(this.canvas, [bool immediateFlush = true])
-      : super(canvas) {
+  CanvasRenderer(this.canvas, [bool immediateFlush = true]) : super(canvas) {
     this.immediateFlush = immediateFlush;
   }
 
   @override
-  Future<void> addChild(CraftRenderer renderer) async {
+  Future<void> addChild(Renderer renderer) async {
     final area = currentArea ?? await updateCurrentArea(null);
     if (area == null) {
       throw StateError('Canvas placement requires a usable rectangle.');
     }
     renderer.setParent(this);
-    final result = renderer.layout(CraftLayoutContext(area.clone()));
-    if (result == null || result.getStatus() != CraftLayoutResult.FULL) {
+    final result = renderer.layout(LayoutContext(area.clone()));
+    if (result == null || result.getStatus() != LayoutResult.FULL) {
       throw StateError('The canvas rectangle cannot contain this child.');
     }
     if (immediateFlush) {
@@ -41,14 +40,13 @@ class CraftCanvasRenderer extends CraftRootRenderer {
   }
 
   @override
-  Future<void> flushSingleRenderer(CraftRenderer renderer) => renderer.draw(
-      CraftDrawContext(canvas.getPdfDocument(), canvas.getPdfCanvas(), false));
+  Future<void> flushSingleRenderer(Renderer renderer) => renderer
+      .draw(DrawContext(canvas.getPdfDocument(), canvas.getPdfCanvas(), false));
 
   @override
-  Future<CraftLayoutArea?> updateCurrentArea(
-      CraftLayoutResult? overflowResult) async {
+  Future<LayoutArea?> updateCurrentArea(LayoutResult? overflowResult) async {
     if (overflowResult != null) return null;
-    return currentArea ??= CraftRootLayoutArea(
+    return currentArea ??= RootLayoutArea(
       canvas.getIsCanvasOfPage() && canvas.pageAt() != null
           ? canvas.getPdfDocument().pageOrdinal(canvas.pageAt()!)
           : 0,
@@ -57,10 +55,9 @@ class CraftCanvasRenderer extends CraftRootRenderer {
   }
 
   @override
-  CraftLayoutResult layout(CraftLayoutContext context) =>
-      CraftLayoutResult(CraftLayoutResult.FULL, context.getArea(), null, null);
+  LayoutResult layout(LayoutContext context) =>
+      LayoutResult(LayoutResult.FULL, context.getArea(), null, null);
 
   @override
-  CraftRenderer getNextRenderer() =>
-      CraftCanvasRenderer(canvas, immediateFlush);
+  Renderer getNextRenderer() => CanvasRenderer(canvas, immediateFlush);
 }

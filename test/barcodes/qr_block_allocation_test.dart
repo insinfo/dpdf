@@ -7,18 +7,18 @@ import 'package:test/test.dart';
 
 void main() {
   for (final level in [
-    CraftErrorCorrectionLevel.L,
-    CraftErrorCorrectionLevel.M,
-    CraftErrorCorrectionLevel.Q,
-    CraftErrorCorrectionLevel.H
+    ErrorCorrectionLevel.L,
+    ErrorCorrectionLevel.M,
+    ErrorCorrectionLevel.Q,
+    ErrorCorrectionLevel.H
   ]) {
     test('all 40 versions allocate data and equal parity at level $level', () {
       for (var number = 1; number <= 40; number++) {
-        final version = CraftVersion.getVersionForNumber(number);
+        final version = Version.getVersionForNumber(number);
         final correction = version.getECBlocksForLevel(level);
-        final symbol = CraftQRCode();
-        CraftEncoder.encode(
-            'a', level, {CraftEncodeHintType.MIN_VERSION_NR: number}, symbol);
+        final symbol = QRCode();
+        Encoder.encode(
+            'a', level, {EncodeHintType.MIN_VERSION_NR: number}, symbol);
         expect(symbol.formatVersion(), number, reason: 'version $number');
         expect(symbol.isValid(), isTrue);
         expect(symbol.getMatrixWidth(), 17 + 4 * number);

@@ -1,7 +1,7 @@
 import 'package:dpdf/src/commons/utils/value_collections.dart';
 import 'package:dpdf/src/io/util/text_util.dart';
 
-class CraftGlyph {
+class Glyph {
   static const int REPLACEMENT_CHARACTER = 0xFFFD;
   static final List<int> REPLACEMENT_CHARACTERS = [REPLACEMENT_CHARACTER];
   static final String REPLACEMENT_CHARACTER_STRING =
@@ -20,12 +20,11 @@ class CraftGlyph {
   int yAdvance = 0;
   int anchorDelta = 0;
 
-  CraftGlyph(this._code, this._width, this._unicode, [this._bbox])
-      : _chars =
-            _unicode > -1 ? CraftTextUtil.convertFromUtf32(_unicode) : null,
+  Glyph(this._code, this._width, this._unicode, [this._bbox])
+      : _chars = _unicode > -1 ? TextUtil.convertFromUtf32(_unicode) : null,
         _isMark = false;
 
-  CraftGlyph.withOffsets(
+  Glyph.withOffsets(
       this._code,
       this._width,
       this._unicode,
@@ -35,11 +34,10 @@ class CraftGlyph {
       this.xAdvance,
       this.yAdvance,
       this.anchorDelta)
-      : _chars =
-            _unicode > -1 ? CraftTextUtil.convertFromUtf32(_unicode) : null,
+      : _chars = _unicode > -1 ? TextUtil.convertFromUtf32(_unicode) : null,
         _isMark = false;
 
-  CraftGlyph.withChars(this._code, this._width, List<int>? chars,
+  Glyph.withChars(this._code, this._width, List<int>? chars,
       {bool isMark = false})
       : _chars = chars ??
             (chars == null ? null : getCharsFromCodePoint(codePoint(chars))),
@@ -47,11 +45,10 @@ class CraftGlyph {
         _bbox = null,
         _isMark = isMark;
 
-  CraftGlyph.full(
-      this._code, this._width, this._unicode, this._chars, this._isMark,
+  Glyph.full(this._code, this._width, this._unicode, this._chars, this._isMark,
       [this._bbox]);
 
-  CraftGlyph.copy(CraftGlyph other)
+  Glyph.copy(Glyph other)
       : _code = other._code,
         _width = other._width,
         _unicode = other._unicode,
@@ -118,7 +115,7 @@ class CraftGlyph {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! CraftGlyph) return false;
+    if (other is! Glyph) return false;
     return _code == other._code &&
         _width == other._width &&
         ValueCollections.listsEqual(_chars, other._chars);
@@ -129,16 +126,16 @@ class CraftGlyph {
       if (a.length == 1) {
         return a[0];
       } else if (a.length == 2 &&
-          CraftTextUtil.isSurrogateHigh(a[0]) &&
-          CraftTextUtil.isSurrogateLow(a[1])) {
-        return CraftTextUtil.convertToUtf32(String.fromCharCodes(a), 0);
+          TextUtil.isSurrogateHigh(a[0]) &&
+          TextUtil.isSurrogateLow(a[1])) {
+        return TextUtil.convertToUtf32(String.fromCharCodes(a), 0);
       }
     }
     return -1;
   }
 
   static List<int>? getCharsFromCodePoint(int unicode) {
-    return unicode > -1 ? CraftTextUtil.convertFromUtf32(unicode) : null;
+    return unicode > -1 ? TextUtil.convertFromUtf32(unicode) : null;
   }
 
   @override

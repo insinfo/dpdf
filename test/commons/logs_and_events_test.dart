@@ -7,24 +7,23 @@ import 'package:dpdf/src/kernel/logs/kernel_log_message_constant.dart';
 void main() {
   group('CommonsLogMessageConstant', () {
     test('contains base64 exception message', () {
-      expect(CraftCommonsLogMessageConstant.base64Exception, isNotEmpty);
+      expect(CommonsLogMessageConstant.base64Exception, isNotEmpty);
     });
 
     test('contains placeholder patterns', () {
-      expect(CraftCommonsLogMessageConstant.invalidStatisticsName,
-          contains('{0}'));
+      expect(CommonsLogMessageConstant.invalidStatisticsName, contains('{0}'));
     });
   });
 
   group('EventManager', () {
     test('singleton instance', () {
-      final em1 = CraftEventManager.instance;
-      final em2 = CraftEventManager.instance;
+      final em1 = EventManager.instance;
+      final em2 = EventManager.instance;
       expect(identical(em1, em2), isTrue);
     });
 
     test('register and dispatch event', () {
-      final manager = CraftEventManager.instance;
+      final manager = EventManager.instance;
       manager.clear();
 
       String? receivedType;
@@ -41,7 +40,7 @@ void main() {
     });
 
     test('unregister handler', () {
-      final manager = CraftEventManager.instance;
+      final manager = EventManager.instance;
       manager.clear();
 
       int callCount = 0;
@@ -59,27 +58,26 @@ void main() {
 
   group('ProductNameConstant', () {
     test('contains dpdf Core', () {
-      expect(CraftProductNameConstant.Core, equals('dpdf Core'));
+      expect(ProductNameConstant.Core, equals('dpdf Core'));
     });
   });
 
   group('IoLogMessageConstant', () {
     test('contains action message', () {
-      expect(
-          CraftIoLogMessageConstant.actionWasSetToLinkAnnotationWithDestination,
+      expect(IoLogMessageConstant.actionWasSetToLinkAnnotationWithDestination,
           isNotEmpty);
     });
 
     test('contains font messages', () {
-      expect(CraftIoLogMessageConstant.fontSubsetIssue, contains('subset'));
+      expect(IoLogMessageConstant.fontSubsetIssue, contains('subset'));
     });
   });
 
   group('KernelLogMessageConstant', () {
     test('contains filter decoding messages', () {
-      expect(CraftKernelLogMessageConstant.dctdecodeFilterDecoding,
+      expect(KernelLogMessageConstant.dctdecodeFilterDecoding,
           contains('DCTDecode'));
-      expect(CraftKernelLogMessageConstant.jpxdecodeFilterDecoding,
+      expect(KernelLogMessageConstant.jpxdecodeFilterDecoding,
           contains('JPEG2000'));
     });
   });
@@ -90,10 +88,10 @@ class _TestEvent extends AbstractEvent {
   _TestEvent(this.type);
 }
 
-class _TestEventHandler implements CraftEventHandler {
-  final void Function(CraftEvent) callback;
+class _TestEventHandler implements EventHandler {
+  final void Function(Event) callback;
   _TestEventHandler(this.callback);
 
   @override
-  void onEvent(CraftEvent event) => callback(event);
+  void onEvent(Event event) => callback(event);
 }

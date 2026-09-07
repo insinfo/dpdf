@@ -18,19 +18,19 @@ void main() {
         await file.delete();
       }
 
-      final writer = CraftPdfWriter(file.openWrite());
-      final pdf = CraftPdfDocument.create(writer);
+      final writer = PdfWriter(file.openWrite());
+      final pdf = PdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
       final pageSize = await page.mediaBounds();
 
-      final pdfCanvas = await CraftPdfCanvas.fromPage(page);
+      final pdfCanvas = await PdfCanvas.fromPage(page);
 
       final rect =
-          CraftRectangle(pageSize.getX() + 36, pageSize.getY() + 36, 200, 100);
+          Rectangle(pageSize.getX() + 36, pageSize.getY() + 36, 200, 100);
 
-      final canvas = CraftCanvas(pdfCanvas, rect);
-      CraftParagraph p = CraftParagraph();
-      p.add(CraftText("Hello Canvas"));
+      final canvas = Canvas(pdfCanvas, rect);
+      Paragraph p = Paragraph();
+      p.add(Text("Hello Canvas"));
       canvas.add(p);
 
       await canvas.close();
@@ -45,18 +45,18 @@ void main() {
         await file.delete();
       }
 
-      final writer = CraftPdfWriter(file.openWrite());
-      final pdf = CraftPdfDocument.create(writer);
+      final writer = PdfWriter(file.openWrite());
+      final pdf = PdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
 
-      final pdfCanvas = await CraftPdfCanvas.fromPage(page);
-      final canvas = CraftCanvas(pdfCanvas, await page.mediaBounds());
+      final pdfCanvas = await PdfCanvas.fromPage(page);
+      final canvas = Canvas(pdfCanvas, await page.mediaBounds());
 
       canvas.showTextAligned(
           text: "Centered Text",
           x: 200,
           y: 400,
-          textAlign: CraftTextAlignment.center,
+          textAlign: TextAlignment.center,
           angle: 0.785398); // 45 degrees
 
       await canvas.close();

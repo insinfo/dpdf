@@ -8,26 +8,26 @@ import 'package:dpdf/src/svg/svg_constants.dart';
 import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 
 /// Renderizador de `<polyline>`, e base de `<polygon>`.
-class CraftPolylineSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
-  final List<CraftPoint> points = [];
+class PolylineSvgNodeRenderer extends AbstractSvgNodeRenderer {
+  final List<Point> points = [];
 
   /// Lê o atributo `points`. Uma coordenada solta no fim é descartada em vez
   /// de abortar: os agentes de usuário desenham o prefixo válido.
   void setPoints(String? pointsAttribute) {
     points.clear();
     if (pointsAttribute == null) return;
-    final values = CraftSvgCssUtils.splitValueList(pointsAttribute);
+    final values = SvgCssUtils.splitValueList(pointsAttribute);
     for (var i = 0; i + 1 < values.length; i += 2) {
       final x = _parse(values[i]);
       final y = _parse(values[i + 1]);
       if (x == null || y == null) return;
-      points.add(CraftPoint(x, y));
+      points.add(Point(x, y));
     }
   }
 
   static double? _parse(String value) {
     try {
-      return CraftCssDimensionParsingUtils.parseAbsoluteLength(value);
+      return CssDimensionParsingUtils.parseAbsoluteLength(value);
     } catch (_) {
       return null;
     }
@@ -37,7 +37,7 @@ class CraftPolylineSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
   bool get closesPath => false;
 
   @override
-  Future<void> doDraw(CraftSvgDrawContext context) async {
+  Future<void> doDraw(SvgDrawContext context) async {
     setPoints(getAttribute(SvgAttributes.POINTS));
     if (points.isEmpty) return;
     final canvas = context.getCurrentCanvas();
@@ -49,7 +49,7 @@ class CraftPolylineSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
   }
 
   @override
-  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context) {
+  Rectangle? getObjectBoundingBox(SvgDrawContext context) {
     setPoints(getAttribute(SvgAttributes.POINTS));
     if (points.length < 2) return null;
     var minX = points.first.getX();
@@ -62,12 +62,12 @@ class CraftPolylineSvgNodeRenderer extends CraftAbstractSvgNodeRenderer {
       if (point.getY() < minY) minY = point.getY();
       if (point.getY() > maxY) maxY = point.getY();
     }
-    return CraftRectangle(minX, minY, maxX - minX, maxY - minY);
+    return Rectangle(minX, minY, maxX - minX, maxY - minY);
   }
 
   @override
-  CraftSvgNodeRenderer createDeepCopy() {
-    final copy = CraftPolylineSvgNodeRenderer();
+  SvgNodeRenderer createDeepCopy() {
+    final copy = PolylineSvgNodeRenderer();
     deepCopyAttributesAndStyles(copy);
     return copy;
   }

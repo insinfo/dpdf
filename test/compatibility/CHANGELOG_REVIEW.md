@@ -28,7 +28,7 @@ Nenhum engine da referência foi transplantado nesta revisão.
 | Compartilhamento de objetos entre páginas | Clone do grafo possui mapa por documento; testes de assembly e repetição continuam passando. Não foi medido consumo em corpus de vários GB. |
 | startxref inválido, ausente ou xref malformado | Sem reconstrução automática; leitura falha explicitamente. Corrigido indicador `rebuiltXref` que antes ficava verdadeiro mesmo sem reconstrução. |
 | Salvar documento reparado gera Prev inválido | Caminho de reparo não existe; abertura rejeita xref danificado antes da gravação. Revisões incrementais válidas têm testes próprios. |
-| Root ausente ou não dicionário causa TypeError | Não reproduzido: quatro regressões confirmam `CraftPdfException` para referências inválidas, null e número. |
+| Root ausente ou não dicionário causa TypeError | Não reproduzido: quatro regressões confirmam `PdfException` para referências inválidas, null e número. |
 | Referências antigas apontam para geração atual | Corrigido: gerações divergentes não resolvem silenciosamente. Testes com geração não zero e revisão incremental mais recente. |
 | Xref aponta para cabeçalho de outro objeto | Corrigido: o cabeçalho lido precisa corresponder ao número e à geração esperados. |
 | Comprimento de stream inválido causa RangeError/alocação indevida | Corrigido: comprimento negativo ou além dos bytes disponíveis é rejeitado antes da alocação. |
@@ -38,7 +38,7 @@ Nenhum engine da referência foi transplantado nesta revisão.
 | List<int> growable multiplica memória do PDF | Principais buffers atuais usam Uint8List/BytesBuilder. Assinatura ainda materializa o PDF e cópias em memória; não é streaming com memória constante. |
 | Assinatura em saída baseada em bytes perde os patches | Testes existentes `memory_signature_roundtrip_test.dart` e assinatura múltipla passaram: ByteRange e Contents são preenchidos na saída. |
 | Escrita direta em sink e fonte de arquivo por blocos | A escrita oferece sink, mas `fromFile` ainda lê o arquivo inteiro. Leitura com cache/janela e assinatura com memória constante não estão implementadas. |
-| Datas ignoram offset ou interpretam Z como fuso local | Corrigido `CraftPdfDate.decode`: offset explícito resulta em UTC, preservando o instante. Sem timezone continua local, documentado; datas inválidas não são normalizadas silenciosamente. |
+| Datas ignoram offset ou interpretam Z como fuso local | Corrigido `PdfDate.decode`: offset explícito resulta em UTC, preservando o instante. Sem timezone continua local, documentado; datas inválidas não são normalizadas silenciosamente. |
 | Datas truncadas causam RangeError | Corrigido e testado como FormatException; datas parciais válidas recebem os campos padrão. |
 | Classificar todo dado malformado como Exception | Melhorado nos casos reproduzidos acima. Não é certificação de todos os caminhos de erro; testes de garbage anteriores também passaram. |
 | adbe.pkcs7.sha1 aceita conteúdo ausente ou verifica digest errado | Corrigido: exige eContent de 20 bytes e SHA1(ByteRange)==eContent; messageDigest usa digest(eContent), independentemente da ordem das chamadas. |

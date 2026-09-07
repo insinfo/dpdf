@@ -29,7 +29,7 @@ os testes completos podem ser executados a partir deste repositório.
 | Merge de marcadores com destinos locais explícitos | `PdfPageAssembly.merge(..., preserveOutlines: true)` |
 | Inspeção de cabeçalho | `await PdfQuickInfo.fromBytes(bytes, readDocument: false)` |
 | DocMDP declarado | `await PdfQuickInfo.fromBytes(bytes)` |
-| Formulários | `CraftPdfAcroForm` e campos exportados por `dpdf.dart` |
+| Formulários | `PdfAcroForm` e campos exportados por `dpdf.dart` |
 | Comentários e serial de certificado | Exports correspondentes em `dpdf.dart` |
 
 O overlay utiliza coordenadas PDF, com origem inferior esquerda, e Forms com

@@ -8,10 +8,10 @@ import 'package:test/test.dart';
 
 void main() {
   test('synchronous sources preserve partial reads and ownership', () {
-    final CraftRandomAccessSource owner =
-        CraftArrayRandomAccessSource(Uint8List.fromList([10, 20, 30]));
-    final borrowed = CraftIndependentRandomAccessSource(owner);
-    final forwarding = CraftThreadSafeRandomAccessSource(borrowed);
+    final RandomAccessSource owner =
+        ArrayRandomAccessSource(Uint8List.fromList([10, 20, 30]));
+    final borrowed = IndependentRandomAccessSource(owner);
+    final forwarding = ThreadSafeRandomAccessSource(borrowed);
     final int length = forwarding.length();
     final int byte = forwarding.get(1);
     final buffer = Uint8List(4);

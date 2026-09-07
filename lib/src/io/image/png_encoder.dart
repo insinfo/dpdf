@@ -27,7 +27,7 @@ enum PngPixelFormat {
 
 /// Encodes 8-bit samples as a PNG.
 ///
-/// A thin, safe front on [CraftPngWriter]: it checks that the buffer is the
+/// A thin, safe front on [PngWriter]: it checks that the buffer is the
 /// size the geometry implies, picks the colour type, and converts the packed
 /// 32-bit forms a rasterizer produces. The writer emits one `IDAT` with the
 /// `None` row filter, which deflates well enough for screen-resolution page
@@ -50,7 +50,7 @@ abstract final class PngEncoder {
           'are needed for a ${width}x$height ${format.name} image.');
     }
 
-    final writer = CraftPngWriter()
+    final writer = PngWriter()
       ..writeHeader(width, height, 8, format.colourType)
       ..writeData(
           pixels.length == needed

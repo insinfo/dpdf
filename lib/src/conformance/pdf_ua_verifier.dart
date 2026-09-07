@@ -35,13 +35,13 @@ class PdfUAVerifier {
     String? password,
   }) async {
     final findings = FindingSink();
-    final properties = CraftReaderProperties();
+    final properties = ReaderProperties();
     if (password != null) {
       properties.setPassword(Uint8List.fromList(utf8.encode(password)));
     }
 
-    final reader = CraftPdfReader.fromBytes(bytes, properties);
-    final document = await CraftPdfDocument.open(reader);
+    final reader = PdfReader.fromBytes(bytes, properties);
+    final document = await PdfDocument.open(reader);
     try {
       final catalog = document.rootCatalog().pdfRepresentation();
       final claim = await XmpIdentification.read(catalog);
@@ -89,10 +89,10 @@ class PdfUAVerifier {
   }
 
   static Future<void> _checkTagging(
-    CraftPdfDictionary catalog,
+    PdfDictionary catalog,
     FindingSink findings,
   ) async {
-    final markInfo = await catalog.dictionaryEntry(CraftPdfName.markInfo);
+    final markInfo = await catalog.dictionaryEntry(PdfName.markInfo);
     if (markInfo == null) {
       findings.add(const PdfConformanceFinding(
         'missing-markinfo',
@@ -103,7 +103,7 @@ class PdfUAVerifier {
       ));
       return;
     }
-    if (await markInfo.flagEntry(CraftPdfName('Marked')) != true) {
+    if (await markInfo.flagEntry(PdfName('Marked')) != true) {
       findings.add(const PdfConformanceFinding(
         'not-marked',
         PdfConformanceSeverity.violation,
@@ -111,7 +111,7 @@ class PdfUAVerifier {
         clause: 'ISO 14289-1:7.1',
       ));
     }
-    if (await markInfo.flagEntry(CraftPdfName('Suspects')) == true) {
+    if (await markInfo.flagEntry(PdfName('Suspects')) == true) {
       findings.add(const PdfConformanceFinding(
         'suspects',
         PdfConformanceSeverity.violation,
@@ -123,10 +123,10 @@ class PdfUAVerifier {
   }
 
   static Future<void> _checkLanguage(
-    CraftPdfDictionary catalog,
+    PdfDictionary catalog,
     FindingSink findings,
   ) async {
-    final lang = await catalog.stringEntry(CraftPdfName('Lang'));
+    final lang = await catalog.stringEntry(PdfName('Lang'));
     final value = lang?.getValue();
     if (value == null || value.trim().isEmpty) {
       findings.add(const PdfConformanceFinding(
@@ -140,8 +140,8 @@ class PdfUAVerifier {
   }
 
   static Future<void> _checkTitle(
-    CraftPdfDocument document,
-    CraftPdfDictionary catalog,
+    PdfDocument document,
+    PdfDictionary catalog,
     XmpIdentification claim,
     FindingSink findings,
   ) async {
@@ -156,9 +156,9 @@ class PdfUAVerifier {
     }
 
     final preferences =
-        await catalog.dictionaryEntry(CraftPdfName('ViewerPreferences'));
+        await catalog.dictionaryEntry(PdfName('ViewerPreferences'));
     final displayTitle =
-        await preferences?.flagEntry(CraftPdfName('DisplayDocTitle'));
+        await preferences?.flagEntry(PdfName('DisplayDocTitle'));
     if (displayTitle != true) {
       findings.add(const PdfConformanceFinding(
         'title-not-displayed',
@@ -171,10 +171,10 @@ class PdfUAVerifier {
   }
 
   static Future<void> _checkStructureTree(
-    CraftPdfDictionary catalog,
+    PdfDictionary catalog,
     FindingSink findings,
   ) async {
-    final root = await catalog.dictionaryEntry(CraftPdfName.structTreeRoot);
+    final root = await catalog.dictionaryEntry(PdfName.structTreeRoot);
     if (root == null) {
       findings.add(const PdfConformanceFinding(
         'missing-structure-tree',
@@ -185,7 +185,7 @@ class PdfUAVerifier {
       ));
       return;
     }
-    if (!root.containsKey(CraftPdfName('K'))) {
+    if (!root.containsKey(PdfName('K'))) {
       findings.add(const PdfConformanceFinding(
         'empty-structure-tree',
         PdfConformanceSeverity.violation,
@@ -194,23 +194,23 @@ class PdfUAVerifier {
       ));
       return;
     }
-    await _walkStructure(root, findings, 0, <CraftPdfDictionary>{});
+    await _walkStructure(root, findings, 0, <PdfDictionary>{});
   }
 
   static const int _maxStructureDepth = 128;
 
   static Future<void> _walkStructure(
-    CraftPdfDictionary node,
+    PdfDictionary node,
     FindingSink findings,
     int depth,
-    Set<CraftPdfDictionary> seen,
+    Set<PdfDictionary> seen,
   ) async {
     if (depth > _maxStructureDepth || !seen.add(node)) return;
 
-    final type = (await node.nameEntry(CraftPdfName('S')))?.getValue();
+    final type = (await node.nameEntry(PdfName('S')))?.getValue();
     if (type != null && _needsAlternative.contains(type)) {
-      final alt = await node.stringEntry(CraftPdfName('Alt'));
-      final actual = await node.stringEntry(CraftPdfName('ActualText'));
+      final alt = await node.stringEntry(PdfName('Alt'));
+      final actual = await node.stringEntry(PdfName('ActualText'));
       if ((alt?.getValue().trim().isEmpty ?? true) &&
           (actual?.getValue().trim().isEmpty ?? true)) {
         findings.add(PdfConformanceFinding(
@@ -223,15 +223,14 @@ class PdfUAVerifier {
       }
     }
 
-    final kids = await node.get(CraftPdfName('K'));
+    final kids = await node.get(PdfName('K'));
     if (kids == null) return;
     if (kids.objectKind() == PdfObjectType.dictionary) {
-      await _walkStructure(
-          kids as CraftPdfDictionary, findings, depth + 1, seen);
+      await _walkStructure(kids as PdfDictionary, findings, depth + 1, seen);
       return;
     }
     if (kids.objectKind() == PdfObjectType.array) {
-      final array = kids as CraftPdfArray;
+      final array = kids as PdfArray;
       for (var i = 0; i < array.size(); i++) {
         final kid = await array.dictionaryEntry(i);
         if (kid != null) {
@@ -242,7 +241,7 @@ class PdfUAVerifier {
   }
 
   static Future<void> _checkPages(
-    CraftPdfDocument document,
+    PdfDocument document,
     FindingSink findings,
   ) async {
     final pageCount = document.pageHierarchy().pageTotal();
@@ -251,7 +250,7 @@ class PdfUAVerifier {
       if (page == null) continue;
       final dictionary = page.pdfRepresentation();
 
-      if (!dictionary.containsKey(CraftPdfName('StructParents'))) {
+      if (!dictionary.containsKey(PdfName('StructParents'))) {
         findings.add(PdfConformanceFinding(
           'page-without-structparents',
           PdfConformanceSeverity.violation,
@@ -262,16 +261,16 @@ class PdfUAVerifier {
         ));
       }
 
-      final annotations = await dictionary.arrayEntry(CraftPdfName.annots);
+      final annotations = await dictionary.arrayEntry(PdfName.annots);
       if (annotations == null) continue;
       for (var i = 0; i < annotations.size(); i++) {
         final annotation = await annotations.dictionaryEntry(i);
         if (annotation == null) continue;
         final subtype =
-            (await annotation.nameEntry(CraftPdfName.subtype))?.getValue();
+            (await annotation.nameEntry(PdfName.subtype))?.getValue();
         if (subtype == 'Popup') continue;
 
-        final contents = await annotation.stringEntry(CraftPdfName('Contents'));
+        final contents = await annotation.stringEntry(PdfName('Contents'));
         if (subtype == 'Link' &&
             (contents?.getValue().trim().isEmpty ?? true)) {
           findings.add(PdfConformanceFinding(
@@ -283,7 +282,7 @@ class PdfUAVerifier {
             page: number,
           ));
         }
-        if (!annotation.containsKey(CraftPdfName('StructParent'))) {
+        if (!annotation.containsKey(PdfName('StructParent'))) {
           findings.add(PdfConformanceFinding(
             'annotation-without-structparent',
             PdfConformanceSeverity.violation,

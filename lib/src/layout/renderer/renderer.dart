@@ -7,24 +7,24 @@ import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 import 'package:dpdf/src/layout/layout/layout_area.dart';
 import 'package:dpdf/src/layout/property_container.dart';
 
-abstract class CraftRenderer implements CraftPropertyContainer {
-  void addChild(CraftRenderer renderer);
+abstract class Renderer implements PropertyContainer {
+  void addChild(Renderer renderer);
 
-  List<CraftRenderer> getChildRenderers();
+  List<Renderer> getChildRenderers();
 
-  CraftPropertyContainer? getModelElement();
+  PropertyContainer? getModelElement();
 
-  CraftLayoutArea? getOccupiedArea();
+  LayoutArea? getOccupiedArea();
 
-  CraftRenderer? getNextRenderer();
+  Renderer? getNextRenderer();
 
-  CraftLayoutResult? layout(CraftLayoutContext layoutContext);
+  LayoutResult? layout(LayoutContext layoutContext);
 
-  Future<void> draw(CraftDrawContext drawContext);
+  Future<void> draw(DrawContext drawContext);
 
-  void setParent(CraftRenderer? parent);
+  void setParent(Renderer? parent);
 
-  CraftMinMaxWidth? getMinMaxWidth();
+  MinMaxWidth? getMinMaxWidth();
 
   void move(double dx, double dy);
 }

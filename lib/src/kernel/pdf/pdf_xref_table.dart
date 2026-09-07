@@ -4,7 +4,7 @@ import 'pdf_object.dart';
 ///
 /// The xref table maps object numbers to their byte offsets in the PDF file,
 /// enabling random access to any object in the document.
-class CraftPdfXrefTable {
+class PdfXrefTable {
   /// Maximum generation number for a PDF object.
   static const int maxGeneration = 65535;
 
@@ -12,7 +12,7 @@ class CraftPdfXrefTable {
   static const int _initialCapacity = 32;
 
   /// Array of indirect references indexed by object number.
-  List<CraftPdfIndirectReference?> _xref;
+  List<PdfIndirectReference?> _xref;
 
   /// Count of objects (highest object number seen).
   int _count = 0;
@@ -21,14 +21,14 @@ class CraftPdfXrefTable {
   bool _readingCompleted = false;
 
   /// Creates a new PdfXrefTable with default capacity.
-  CraftPdfXrefTable() : this.withCapacity(_initialCapacity);
+  PdfXrefTable() : this.withCapacity(_initialCapacity);
 
   /// Creates a new PdfXrefTable with specified initial capacity.
-  CraftPdfXrefTable.withCapacity(int capacity)
-      : _xref = List<CraftPdfIndirectReference?>.filled(
+  PdfXrefTable.withCapacity(int capacity)
+      : _xref = List<PdfIndirectReference?>.filled(
             capacity < 1 ? _initialCapacity : capacity, null) {
     // Object 0 is always free with generation 65535
-    add(CraftPdfIndirectReference(0, maxGeneration)
+    add(PdfIndirectReference(0, maxGeneration)
       ..setOffset(0)
       ..setState(PdfObjectState.free));
   }
@@ -36,7 +36,7 @@ class CraftPdfXrefTable {
   /// Adds an indirect reference to the xref table.
   ///
   /// Returns the reference that was added.
-  CraftPdfIndirectReference? add(CraftPdfIndirectReference? reference) {
+  PdfIndirectReference? add(PdfIndirectReference? reference) {
     if (reference == null) {
       return null;
     }
@@ -55,7 +55,7 @@ class CraftPdfXrefTable {
   /// Gets the indirect reference for the specified object number.
   ///
   /// Returns null if the object number is out of range or not defined.
-  CraftPdfIndirectReference? get(int index) {
+  PdfIndirectReference? get(int index) {
     if (index > _count || index < 0) {
       return null;
     }
@@ -107,7 +107,7 @@ class CraftPdfXrefTable {
   }
 
   /// Sets the reference to free state.
-  void freeReference(CraftPdfIndirectReference reference) {
+  void freeReference(PdfIndirectReference reference) {
     if (reference.isFree()) {
       return;
     }
@@ -149,7 +149,7 @@ class CraftPdfXrefTable {
 
   /// Extends the xref array to the specified capacity.
   void _extendXref(int capacity) {
-    final newXref = List<CraftPdfIndirectReference?>.filled(capacity, null);
+    final newXref = List<PdfIndirectReference?>.filled(capacity, null);
     for (var i = 0; i < _xref.length; i++) {
       newXref[i] = _xref[i];
     }
@@ -157,7 +157,7 @@ class CraftPdfXrefTable {
   }
 
   /// Creates an iterator over all non-null references.
-  Iterable<CraftPdfIndirectReference> get references sync* {
+  Iterable<PdfIndirectReference> get references sync* {
     for (var i = 0; i <= _count; i++) {
       final ref = _xref[i];
       if (ref != null) {

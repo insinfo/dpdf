@@ -3,26 +3,24 @@ import 'package:dpdf/src/commons/utils/value_collections.dart';
 
 /// Row-major 3×3 values stored at single precision.
 /// PDF affine values occupy rows [a,b,0], [c,d,0], [e,f,1].
-class CraftMatrix {
+class Matrix {
   static const int I11 = 0, I12 = 1, I13 = 2;
   static const int I21 = 3, I22 = 4, I23 = 5;
   static const int I31 = 6, I32 = 7, I33 = 8;
   final Float32List _vals;
-  CraftMatrix._values(Iterable<double> values)
+  Matrix._values(Iterable<double> values)
       : _vals = Float32List.fromList(values.toList());
-  CraftMatrix() : this._values([1, 0, 0, 0, 1, 0, 0, 0, 1]);
-  CraftMatrix.translation(double tx, double ty)
+  Matrix() : this._values([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  Matrix.translation(double tx, double ty)
       : this._values([1, 0, 0, 0, 1, 0, tx, ty, 1]);
-  CraftMatrix.fromValues(double e11, double e12, double e13, double e21,
-      double e22, double e23, double e31, double e32, double e33)
+  Matrix.fromValues(double e11, double e12, double e13, double e21, double e22,
+      double e23, double e31, double e32, double e33)
       : this._values([e11, e12, e13, e21, e22, e23, e31, e32, e33]);
-  CraftMatrix.fromAffine(
-      double a, double b, double c, double d, double e, double f)
+  Matrix.fromAffine(double a, double b, double c, double d, double e, double f)
       : this._values([a, b, 0, c, d, 0, e, f, 1]);
   double get(int index) => _vals[index];
 
-  CraftMatrix multiply(CraftMatrix by) =>
-      CraftMatrix._values(Iterable.generate(9, (cell) {
+  Matrix multiply(Matrix by) => Matrix._values(Iterable.generate(9, (cell) {
         final row = cell ~/ 3, column = cell % 3;
         var value = _vals[row * 3] * by._vals[column];
         for (var term = 1; term < 3; term++) {
@@ -30,9 +28,9 @@ class CraftMatrix {
         }
         return value;
       }));
-  CraftMatrix add(CraftMatrix arg) => CraftMatrix._values(
+  Matrix add(Matrix arg) => Matrix._values(
       Iterable.generate(9, (cell) => _vals[cell] + arg._vals[cell]));
-  CraftMatrix subtract(CraftMatrix arg) => CraftMatrix._values(
+  Matrix subtract(Matrix arg) => Matrix._values(
       Iterable.generate(9, (cell) => _vals[cell] - arg._vals[cell]));
   double getDeterminant() {
     var determinant = 0.0;
@@ -48,7 +46,7 @@ class CraftMatrix {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is CraftMatrix && ValueCollections.listsEqual(_vals, other._vals);
+      other is Matrix && ValueCollections.listsEqual(_vals, other._vals);
   @override
   int get hashCode => ValueCollections.listHash(_vals);
   @override

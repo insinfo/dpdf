@@ -4,9 +4,9 @@ import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 
 /// Renderizador de `<circle>`: uma elipse cujos dois raios vêm de `r`.
-class CraftCircleSvgNodeRenderer extends CraftEllipseSvgNodeRenderer {
+class CircleSvgNodeRenderer extends EllipseSvgNodeRenderer {
   @override
-  bool setParameters(CraftSvgDrawContext context) {
+  bool setParameters(SvgDrawContext context) {
     initCenter(context);
     final radius = getAttribute(SvgAttributes.R);
     if (radius == null) return false;
@@ -18,8 +18,8 @@ class CraftCircleSvgNodeRenderer extends CraftEllipseSvgNodeRenderer {
   }
 
   @override
-  CraftSvgNodeRenderer createDeepCopy() {
-    final copy = CraftCircleSvgNodeRenderer();
+  SvgNodeRenderer createDeepCopy() {
+    final copy = CircleSvgNodeRenderer();
     deepCopyAttributesAndStyles(copy);
     return copy;
   }

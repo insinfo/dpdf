@@ -32,37 +32,35 @@ typedef PdfCharacterDecoder = String Function(String font, Uint8List codes);
 /// Form XObjects are visited in painting order. Marked-content replacement
 /// text is emitted once per sequence; inline images remain unsupported.
 class PdfTextExtraction {
-  static Future<String> fromPage(CraftPdfPage page,
+  static Future<String> fromPage(PdfPage page,
       {PdfCharacterDecoder? decoder}) async {
     var resources =
-        await page.pdfRepresentation().dictionaryEntry(CraftPdfName.resources);
-    CraftPdfDictionary? parent = page.pdfRepresentation();
-    final visited = <CraftPdfDictionary>{};
+        await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+    PdfDictionary? parent = page.pdfRepresentation();
+    final visited = <PdfDictionary>{};
     while (resources == null && parent != null && visited.add(parent)) {
-      parent = await parent.dictionaryEntry(CraftPdfName.parent);
-      resources = await parent?.dictionaryEntry(CraftPdfName.resources);
+      parent = await parent.dictionaryEntry(PdfName.parent);
+      resources = await parent?.dictionaryEntry(PdfName.resources);
     }
-    return _fromResources(await _strictContent(page), resources, decoder,
-        <CraftPdfStream>{}, null);
+    return _fromResources(
+        await _strictContent(page), resources, decoder, <PdfStream>{}, null);
   }
 
   static Future<String> _fromResources(
       Uint8List bytes,
-      CraftPdfDictionary? resources,
+      PdfDictionary? resources,
       PdfCharacterDecoder? customDecoder,
-      Set<CraftPdfStream> activeForms,
+      Set<PdfStream> activeForms,
       _FontBinding? inheritedFont,
       {bool suppressed = false}) async {
     final decoder = customDecoder ?? await _resourceDecoder(resources);
     final propertyValues = <String, Object>{};
-    final properties =
-        await resources?.dictionaryEntry(CraftPdfName('Properties'));
+    final properties = await resources?.dictionaryEntry(PdfName('Properties'));
     if (properties != null) {
       for (final entry in await properties.entrySet()) {
         final property = await properties.get(entry.key, true);
-        if (property is CraftPdfDictionary) {
-          final replacement =
-              await property.get(CraftPdfName('ActualText'), true);
+        if (property is PdfDictionary) {
+          final replacement = await property.get(PdfName('ActualText'), true);
           propertyValues[entry.key.getValue()] = replacement == null
               ? <String, Object>{}
               : <String, Object>{'ActualText': replacement};
@@ -84,13 +82,12 @@ class PdfTextExtraction {
         continue;
       }
       final invocation = part as _FormInvocation;
-      final objects = await resources?.dictionaryEntry(CraftPdfName('XObject'));
-      final object = await objects?.get(CraftPdfName(invocation.name), true);
-      if (object is! CraftPdfStream) {
+      final objects = await resources?.dictionaryEntry(PdfName('XObject'));
+      final object = await objects?.get(PdfName(invocation.name), true);
+      if (object is! PdfStream) {
         throw FormatException('Missing XObject stream /${invocation.name}.');
       }
-      final subtype =
-          (await object.nameEntry(CraftPdfName.subtype))?.getValue();
+      final subtype = (await object.nameEntry(PdfName.subtype))?.getValue();
       if (subtype == 'Image') continue;
       if (subtype != 'Form') {
         throw UnsupportedError('Unsupported XObject subtype: $subtype.');
@@ -100,13 +97,13 @@ class PdfTextExtraction {
             'Recursive or excessively nested Form XObject /${invocation.name}.');
       }
       try {
-        final local = await object.get(CraftPdfName.resources, true);
-        if (local != null && local is! CraftPdfDictionary) {
+        final local = await object.get(PdfName.resources, true);
+        if (local != null && local is! PdfDictionary) {
           throw FormatException('Form resources must be a dictionary.');
         }
         output.write(await _fromResources(
             await _strictStream(object),
-            local as CraftPdfDictionary? ?? resources,
+            local as PdfDictionary? ?? resources,
             customDecoder,
             activeForms,
             invocation.font,
@@ -152,24 +149,24 @@ class PdfTextExtraction {
         bytes[2] == 0xbf) {
       return utf8.decode(bytes.sublist(3));
     }
-    return CraftPdfEncodings.convertToString(bytes, 'PDF');
+    return PdfEncodings.convertToString(bytes, 'PDF');
   }
 
   static Future<PdfCharacterDecoder> _resourceDecoder(
-      CraftPdfDictionary? resources) async {
-    final fonts = await resources?.dictionaryEntry(CraftPdfName.font);
+      PdfDictionary? resources) async {
+    final fonts = await resources?.dictionaryEntry(PdfName.font);
     final permitted = <String, String>{};
     final unicodeMaps = <String, PdfUnicodeCMap>{};
     final differences = <String, PdfEncodingDifferences>{};
     if (fonts != null) {
       for (final entry in await fonts.entrySet()) {
         final font = await fonts.dictionaryEntry(entry.key);
-        final unicode = await font?.get(CraftPdfName('ToUnicode'), true);
+        final unicode = await font?.get(PdfName('ToUnicode'), true);
         if (unicode != null) {
-          if (unicode is! CraftPdfStream) {
+          if (unicode is! PdfStream) {
             throw FormatException('ToUnicode must be a stream.');
           }
-          if (unicode.containsKey(CraftPdfName('UseCMap'))) {
+          if (unicode.containsKey(PdfName('UseCMap'))) {
             throw UnsupportedError(
                 'Inherited ToUnicode CMaps are unsupported.');
           }
@@ -177,11 +174,9 @@ class PdfTextExtraction {
               PdfUnicodeCMap.parse(await _strictStream(unicode));
           continue;
         }
-        final base = (await font?.nameEntry(CraftPdfName.baseFont))?.getValue();
-        final subtype =
-            (await font?.nameEntry(CraftPdfName.subtype))?.getValue();
-        final encoding =
-            (await font?.nameEntry(CraftPdfName.encoding))?.getValue();
+        final base = (await font?.nameEntry(PdfName.baseFont))?.getValue();
+        final subtype = (await font?.nameEntry(PdfName.subtype))?.getValue();
+        final encoding = (await font?.nameEntry(PdfName.encoding))?.getValue();
         final latinBase14 = subtype == 'Type1' &&
             const {
               'Helvetica',
@@ -197,8 +192,8 @@ class PdfTextExtraction {
               'Times-Italic',
               'Times-BoldItalic'
             }.contains(base);
-        final encodingObject = await font?.get(CraftPdfName.encoding, true);
-        if (encodingObject is CraftPdfDictionary &&
+        final encodingObject = await font?.get(PdfName.encoding, true);
+        if (encodingObject is PdfDictionary &&
             (subtype == 'Type1' ||
                 subtype == 'TrueType' ||
                 subtype == 'Type3')) {
@@ -208,10 +203,10 @@ class PdfTextExtraction {
           continue;
         }
         if (latinBase14 &&
-            (await font!.get(CraftPdfName.encoding) == null ||
+            (await font!.get(PdfName.encoding) == null ||
                 encoding == 'WinAnsiEncoding' ||
                 encoding == 'StandardEncoding') &&
-            !font.containsKey(CraftPdfName('ToUnicode'))) {
+            !font.containsKey(PdfName('ToUnicode'))) {
           permitted[entry.key.getValue()] = encoding ?? 'StandardEncoding';
         }
       }
@@ -228,19 +223,16 @@ class PdfTextExtraction {
     };
   }
 
-  static Future<Uint8List> _strictContent(CraftPdfPage page) async {
+  static Future<Uint8List> _strictContent(PdfPage page) async {
     final result = BytesBuilder();
-    final contents =
-        await page.pdfRepresentation().get(CraftPdfName.contents, true);
-    if (contents != null &&
-        contents is! CraftPdfStream &&
-        contents is! CraftPdfArray) {
+    final contents = await page.pdfRepresentation().get(PdfName.contents, true);
+    if (contents != null && contents is! PdfStream && contents is! PdfArray) {
       throw FormatException('Page contents must be a stream or array.');
     }
     final count = await page.contentSegmentCount();
     for (var i = 0; i < count; i++) {
       final object = await page.contentSegmentAt(i);
-      if (object is! CraftPdfStream) {
+      if (object is! PdfStream) {
         throw FormatException('Page contents must resolve to streams.');
       }
       final bytes = await _strictStream(object);
@@ -250,21 +242,21 @@ class PdfTextExtraction {
     return result.takeBytes();
   }
 
-  static Future<Uint8List> _strictStream(CraftPdfStream object) async {
-    if (object.containsKey(CraftPdfName('DecodeParms'))) {
+  static Future<Uint8List> _strictStream(PdfStream object) async {
+    if (object.containsKey(PdfName('DecodeParms'))) {
       throw UnsupportedError(
           'Content-stream decode parameters require a dedicated decoder.');
     }
     var bytes = await object.getBytes(false);
     if (bytes == null) throw FormatException('Missing stream bytes.');
-    final filter = await object.get(CraftPdfName.filter, true);
+    final filter = await object.get(PdfName.filter, true);
     final names = <String>[];
-    if (filter is CraftPdfName) {
+    if (filter is PdfName) {
       names.add(filter.getValue());
-    } else if (filter is CraftPdfArray) {
+    } else if (filter is PdfArray) {
       for (var j = 0; j < filter.size(); j++) {
         final name = await filter.get(j);
-        if (name is! CraftPdfName) {
+        if (name is! PdfName) {
           throw FormatException('Invalid stream filter.');
         }
         names.add(name.getValue());
@@ -401,7 +393,7 @@ class PdfTextExtraction {
           String? text;
           if (replacement is Uint8List) {
             text = _replacementText(replacement);
-          } else if (replacement is CraftPdfString) {
+          } else if (replacement is PdfString) {
             text =
                 _replacementText(replacement.getValueBytes() ?? Uint8List(0));
           } else if (replacement != null) {

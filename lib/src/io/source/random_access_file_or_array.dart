@@ -3,22 +3,21 @@ import 'pdf_byte_source.dart';
 import 'dart:typed_data';
 import '../../platform/io.dart';
 
-class CraftRandomAccessFileOrArray {
+class RandomAccessFileOrArray {
   final PdfByteSource _source;
   final bool _ownsSource;
   int _position = 0;
   int? _back;
 
-  CraftRandomAccessFileOrArray(Uint8List data)
+  RandomAccessFileOrArray(Uint8List data)
       : _source = PdfMemorySource(data),
         _ownsSource = true;
 
-  CraftRandomAccessFileOrArray.fromSource(this._source,
-      {bool ownsSource = true})
+  RandomAccessFileOrArray.fromSource(this._source, {bool ownsSource = true})
       : _ownsSource = ownsSource;
 
-  factory CraftRandomAccessFileOrArray.fromFile(File file) {
-    return CraftRandomAccessFileOrArray(file.readAsBytesSync());
+  factory RandomAccessFileOrArray.fromFile(File file) {
+    return RandomAccessFileOrArray(file.readAsBytesSync());
   }
 
   /// Explicit materialization. Streaming reader paths use positional reads.
@@ -200,8 +199,8 @@ class CraftRandomAccessFileOrArray {
     return _source.byteAt(_position);
   }
 
-  CraftRandomAccessFileOrArray createView() {
-    return CraftRandomAccessFileOrArray.fromSource(_source, ownsSource: false);
+  RandomAccessFileOrArray createView() {
+    return RandomAccessFileOrArray.fromSource(_source, ownsSource: false);
   }
 
   String? readLine() {

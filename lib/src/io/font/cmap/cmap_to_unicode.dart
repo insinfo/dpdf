@@ -6,14 +6,14 @@ import '../../util/int_hashtable.dart';
 
 /// Stores unsigned, big-endian character codes and their Unicode text.
 /// Integer APIs intentionally identify codes by value, not encoded width.
-class CraftCMapToUnicode extends CraftAbstractCMap {
+class CMapToUnicode extends AbstractCMap {
   final Map<int, String> _text = {};
   final List<Uint8List> _bounds = [];
 
-  CraftCMapToUnicode();
+  CMapToUnicode();
 
-  static CraftCMapToUnicode getIdentity() {
-    final result = CraftCMapToUnicode();
+  static CMapToUnicode getIdentity() {
+    final result = CMapToUnicode();
     // Identity covers UTF-16 code units, including surrogate code units.
     for (var unit = 0; unit < 0x10000; unit++) {
       result._text[unit] = String.fromCharCode(unit);
@@ -35,8 +35,8 @@ class CraftCMapToUnicode extends CraftAbstractCMap {
   String? lookupInt(int code) => _text[code];
   Iterable<int> getCodes() => _text.keys;
 
-  CraftIntHashtable createDirectMapping() {
-    final result = CraftIntHashtable();
+  IntHashtable createDirectMapping() {
+    final result = IntHashtable();
     for (final pair in _text.entries) {
       final scalar = _singleScalar(pair.value);
       if (scalar != null) result.put(pair.key, scalar);
@@ -75,7 +75,7 @@ class CraftCMapToUnicode extends CraftAbstractCMap {
   }
 
   @override
-  void registerMappedCode(String mark, CraftCMapObject code) {
+  void registerMappedCode(String mark, CMapObject code) {
     if (mark.isEmpty || mark.length > 4 || mark.codeUnits.any((n) => n > 255)) {
       throw ArgumentError(
           'A character code must contain 1 to 4 byte-valued characters.');
@@ -111,8 +111,8 @@ class CraftCMapToUnicode extends CraftAbstractCMap {
             bytes[i] * 256 + bytes[i + 1]
         ]);
       } else {
-        decoded = CraftPdfEncodings.convertToString(
-            Uint8List.fromList(bytes), CraftPdfEncodings.PDF_DOC_ENCODING);
+        decoded = PdfEncodings.convertToString(
+            Uint8List.fromList(bytes), PdfEncodings.PDF_DOC_ENCODING);
       }
       addCharInt(key, decoded);
     } else {

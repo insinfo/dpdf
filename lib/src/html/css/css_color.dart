@@ -1,20 +1,20 @@
 /// Device-RGB color used by the portable HTML/CSS profile.
-class CraftCssColor {
+class CssColor {
   final double red;
   final double green;
   final double blue;
-  const CraftCssColor(this.red, this.green, this.blue);
+  const CssColor(this.red, this.green, this.blue);
 
-  static const black = CraftCssColor(0, 0, 0);
-  static const white = CraftCssColor(1, 1, 1);
+  static const black = CssColor(0, 0, 0);
+  static const white = CssColor(1, 1, 1);
 }
 
 /// Parses the deliberately small, deterministic color grammar supported by
 /// HTML-to-PDF: named colors, #rgb, #rrggbb and rgb(r,g,b).
-class CraftCssColors {
-  CraftCssColors._();
+class CssColors {
+  CssColors._();
 
-  static CraftCssColor? parse(String? source) {
+  static CssColor? parse(String? source) {
     if (source == null) return null;
     final value = source.trim().toLowerCase();
     if (value == 'transparent') return null;
@@ -27,7 +27,7 @@ class CraftCssColors {
     return null;
   }
 
-  static CraftCssColor? _hex(String value) {
+  static CssColor? _hex(String value) {
     final source = value.substring(1);
     if (source.length == 3) {
       final r = _hexDigit(source.codeUnitAt(0));
@@ -35,7 +35,7 @@ class CraftCssColors {
       final b = _hexDigit(source.codeUnitAt(2));
       return r == null || g == null || b == null
           ? null
-          : CraftCssColor(r / 15, g / 15, b / 15);
+          : CssColor(r / 15, g / 15, b / 15);
     }
     if (source.length != 6) return null;
     final channels = <int>[];
@@ -45,8 +45,7 @@ class CraftCssColors {
       if (high == null || low == null) return null;
       channels.add(high * 16 + low);
     }
-    return CraftCssColor(
-        channels[0] / 255, channels[1] / 255, channels[2] / 255);
+    return CssColor(channels[0] / 255, channels[1] / 255, channels[2] / 255);
   }
 
   static int? _hexDigit(int value) {
@@ -55,7 +54,7 @@ class CraftCssColors {
     return null;
   }
 
-  static CraftCssColor? _rgb(String source) {
+  static CssColor? _rgb(String source) {
     final parts = source.split(',');
     if (parts.length != 3) return null;
     final channels = <double>[];
@@ -66,17 +65,17 @@ class CraftCssColors {
       }
       channels.add(value / 255);
     }
-    return CraftCssColor(channels[0], channels[1], channels[2]);
+    return CssColor(channels[0], channels[1], channels[2]);
   }
 
-  static const _named = <String, CraftCssColor>{
-    'black': CraftCssColor.black,
-    'white': CraftCssColor.white,
-    'red': CraftCssColor(1, 0, 0),
-    'green': CraftCssColor(0, .5, 0),
-    'blue': CraftCssColor(0, 0, 1),
-    'yellow': CraftCssColor(1, 1, 0),
-    'gray': CraftCssColor(.5, .5, .5),
-    'grey': CraftCssColor(.5, .5, .5),
+  static const _named = <String, CssColor>{
+    'black': CssColor.black,
+    'white': CssColor.white,
+    'red': CssColor(1, 0, 0),
+    'green': CssColor(0, .5, 0),
+    'blue': CssColor(0, 0, 1),
+    'yellow': CssColor(1, 1, 0),
+    'gray': CssColor(.5, .5, .5),
+    'grey': CssColor(.5, .5, .5),
   };
 }

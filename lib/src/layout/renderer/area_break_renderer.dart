@@ -11,45 +11,45 @@ import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
 import 'package:dpdf/src/layout/renderer/abstract_renderer.dart';
 
-class CraftAreaBreakRenderer extends CraftAbstractRenderer {
+class AreaBreakRenderer extends AbstractRenderer {
   static final _logger = LogManager.getLoggerByName('AreaBreakRenderer');
-  CraftAreaBreak areaBreak;
+  AreaBreak areaBreak;
 
-  CraftAreaBreakRenderer(this.areaBreak) : super(areaBreak);
+  AreaBreakRenderer(this.areaBreak) : super(areaBreak);
 
   @override
-  void addChild(CraftRenderer renderer) {
-    _logger.logWarning(CraftLayoutLogMessageConstant.areaBreakUnexpected);
+  void addChild(Renderer renderer) {
+    _logger.logWarning(LayoutLogMessageConstant.areaBreakUnexpected);
   }
 
   @override
-  void setParent(CraftRenderer? parent) {
+  void setParent(Renderer? parent) {
     // Do nothing or store if needed
   }
 
   @override
-  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
-    return CraftLayoutResult(CraftLayoutResult.NOTHING, null, null, null, this)
+  LayoutResult? layout(LayoutContext layoutContext) {
+    return LayoutResult(LayoutResult.NOTHING, null, null, null, this)
         .setAreaBreak(areaBreak);
   }
 
   @override
-  Future<void> draw(CraftDrawContext drawContext) async {
-    _logger.logWarning(CraftLayoutLogMessageConstant.areaBreakUnexpected);
+  Future<void> draw(DrawContext drawContext) async {
+    _logger.logWarning(LayoutLogMessageConstant.areaBreakUnexpected);
   }
 
   @override
-  CraftElement? getModelElement() {
+  Element? getModelElement() {
     return null;
   }
 
   @override
-  CraftRenderer? getNextRenderer() {
+  Renderer? getNextRenderer() {
     return null;
   }
 
   @override
-  CraftMinMaxWidth? getMinMaxWidth() {
-    return CraftMinMaxWidth(0);
+  MinMaxWidth? getMinMaxWidth() {
+    return MinMaxWidth(0);
   }
 }

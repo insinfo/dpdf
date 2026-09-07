@@ -19,36 +19,35 @@ import 'listener/event_listener.dart';
 import 'standard_operators.dart';
 
 /// Processor for PDF content streams.
-class CraftPdfCanvasProcessor {
-  final CraftEventListener _eventListener;
-  final Map<String, CraftContentOperator> _operators = {};
+class PdfCanvasProcessor {
+  final EventListener _eventListener;
+  final Map<String, ContentOperator> _operators = {};
 
-  final List<CraftCanvasGraphicsState> _gsStack = [];
-  late CraftCanvasGraphicsState _currentGs;
+  final List<CanvasGraphicsState> _gsStack = [];
+  late CanvasGraphicsState _currentGs;
 
-  CraftMatrix _textMatrix = CraftMatrix();
-  CraftMatrix _textLineMatrix = CraftMatrix();
+  Matrix _textMatrix = Matrix();
+  Matrix _textLineMatrix = Matrix();
 
-  CraftPdfResources? _resources;
+  PdfResources? _resources;
 
-  CraftPdfCanvasProcessor(this._eventListener) {
-    _currentGs = CraftCanvasGraphicsState();
+  PdfCanvasProcessor(this._eventListener) {
+    _currentGs = CanvasGraphicsState();
     _registerOperators();
   }
 
   /// Registers a content operator.
-  void registerContentOperator(
-      String operatorName, CraftContentOperator operator) {
+  void registerContentOperator(String operatorName, ContentOperator operator) {
     _operators[operatorName] = operator;
   }
 
   /// Gets the registered content operator.
-  CraftContentOperator? getContentOperator(String operatorName) {
+  ContentOperator? getContentOperator(String operatorName) {
     return _operators[operatorName];
   }
 
   /// Processes content from a page.
-  Future<void> processPageContent(CraftPdfPage page) async {
+  Future<void> processPageContent(PdfPage page) async {
     _resources = await page.resourceDirectory();
     final bytes = await page.contentPayload();
     await processContent(bytes, _resources);
@@ -56,11 +55,10 @@ class CraftPdfCanvasProcessor {
 
   /// Processes a content stream.
   Future<void> processContent(
-      Uint8List contentBytes, CraftPdfResources? resources) async {
+      Uint8List contentBytes, PdfResources? resources) async {
     _resources = resources;
-    final tokenizer =
-        CraftPdfTokenizer(CraftRandomAccessFileOrArray(contentBytes));
-    final operands = <CraftPdfObject>[];
+    final tokenizer = PdfTokenizer(RandomAccessFileOrArray(contentBytes));
+    final operands = <PdfObject>[];
 
     try {
       while (tokenizer.nextToken()) {
@@ -69,7 +67,7 @@ class CraftPdfCanvasProcessor {
           final op = _operators[operator];
           if (op != null) {
             final pending =
-                op.invoke(this, CraftPdfLiteral(operator), List.from(operands));
+                op.invoke(this, PdfLiteral(operator), List.from(operands));
             if (pending is Future<void>) await pending;
           } else {
             // Unknown operator or just unsupported
@@ -84,11 +82,11 @@ class CraftPdfCanvasProcessor {
     }
   }
 
-  CraftPdfObject _readObject(CraftPdfTokenizer tokenizer) {
+  PdfObject _readObject(PdfTokenizer tokenizer) {
     final type = tokenizer.getTokenType();
     switch (type) {
       case TokenType.startArray:
-        final array = CraftPdfArray();
+        final array = PdfArray();
         while (tokenizer.nextToken()) {
           if (tokenizer.getTokenType() == TokenType.endArray) {
             break;
@@ -97,7 +95,7 @@ class CraftPdfCanvasProcessor {
         }
         return array;
       case TokenType.startDic:
-        final dict = CraftPdfDictionary();
+        final dict = PdfDictionary();
         // Simple dictionary parsing - might need improvements for nested dicts/correct key/value
         // Dictionary in content stream is usually for inline image or marked content
         // This logic is simplified
@@ -108,35 +106,35 @@ class CraftPdfCanvasProcessor {
           final key = _readObject(tokenizer);
           if (tokenizer.nextToken()) {
             final val = _readObject(tokenizer);
-            if (key is CraftPdfName) {
+            if (key is PdfName) {
               dict.put(key, val);
             }
           }
         }
         return dict;
       case TokenType.number:
-        return CraftPdfNumber.fromString(tokenizer.getStringValue());
+        return PdfNumber.fromString(tokenizer.getStringValue());
       case TokenType.string:
         if (tokenizer.isHexString()) {
-          return CraftPdfString.fromBytes(tokenizer.getByteContent())
+          return PdfString.fromBytes(tokenizer.getByteContent())
             ..setHexWriting(true);
         } else {
-          return CraftPdfString(tokenizer.getStringValue());
+          return PdfString(tokenizer.getStringValue());
         }
       case TokenType.name:
-        return CraftPdfName(tokenizer.getStringValue());
+        return PdfName(tokenizer.getStringValue());
       case TokenType.ref:
         // Indirect reference in content stream? Possible but rare (e.g. XObject)
         // Usually references are just "1 0 R", which tokenizer might split into Number Number Other(R)
         // But PdfTokenizer might recognize Ref if implemented logic allows
         // Here simplified:
-        return CraftPdfLiteral(tokenizer.getStringValue());
+        return PdfLiteral(tokenizer.getStringValue());
       default:
-        return CraftPdfLiteral(tokenizer.getStringValue());
+        return PdfLiteral(tokenizer.getStringValue());
     }
   }
 
-  CraftEventListener getEventListener() {
+  EventListener getEventListener() {
     return _eventListener;
   }
 
@@ -148,12 +146,12 @@ class CraftPdfCanvasProcessor {
     registerContentOperator('Q', RestoreState());
   }
 
-  CraftCanvasGraphicsState getGraphicsState() {
+  CanvasGraphicsState getGraphicsState() {
     return _currentGs;
   }
 
   void saveGraphicsState() {
-    _gsStack.add(CraftCanvasGraphicsState(_currentGs));
+    _gsStack.add(CanvasGraphicsState(_currentGs));
   }
 
   void restoreGraphicsState() {
@@ -162,19 +160,19 @@ class CraftPdfCanvasProcessor {
     }
   }
 
-  CraftMatrix getTextMatrix() => _textMatrix;
+  Matrix getTextMatrix() => _textMatrix;
 
-  CraftMatrix getTextLineMatrix() => _textLineMatrix;
+  Matrix getTextLineMatrix() => _textLineMatrix;
 
-  void setTextMatrix(CraftMatrix matrix) {
+  void setTextMatrix(Matrix matrix) {
     _textMatrix = matrix;
   }
 
-  void setTextLineMatrix(CraftMatrix matrix) {
+  void setTextLineMatrix(Matrix matrix) {
     _textLineMatrix = matrix;
   }
 
-  CraftPdfResources? resourceDirectory() {
+  PdfResources? resourceDirectory() {
     return _resources;
   }
 }

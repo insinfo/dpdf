@@ -5,7 +5,7 @@ import 'package:dpdf/src/barcodes/qrcode/matrix_util.dart';
 import 'package:dpdf/src/barcodes/qrcode/version.dart';
 import 'package:test/test.dart';
 
-int asNumber(CraftBitVector bits) {
+int asNumber(BitVector bits) {
   var value = 0;
   for (var i = 0; i < bits.size(); i++) {
     value = value * 2 + bits.at(i);
@@ -15,29 +15,29 @@ int asNumber(CraftBitVector bits) {
 
 void main() {
   test('polynomial vectors and malformed polynomial guards', () {
-    final format = CraftBitVector();
-    CraftMatrixUtil.makeTypeInfoBits(CraftErrorCorrectionLevel.L, 0, format);
+    final format = BitVector();
+    MatrixUtil.makeTypeInfoBits(ErrorCorrectionLevel.L, 0, format);
     expect(asNumber(format), 0x77c4);
-    final version = CraftBitVector();
-    CraftMatrixUtil.makeVersionInfoBits(7, version);
+    final version = BitVector();
+    MatrixUtil.makeVersionInfoBits(7, version);
     expect(asNumber(version), 0x07c94);
-    expect(() => CraftMatrixUtil.calculateBCHCode(1, 0), throwsArgumentError);
-    expect(() => CraftMatrixUtil.findMSBSet(-1), throwsArgumentError);
+    expect(() => MatrixUtil.calculateBCHCode(1, 0), throwsArgumentError);
+    expect(() => MatrixUtil.findMSBSet(-1), throwsArgumentError);
   });
   test('version words recover from every three-bit error combination', () {
     for (var version = 7; version <= 40; version++) {
-      final word = CraftVersion.VERSION_DECODE_INFO[version - 7];
-      expect(CraftVersion.decodeVersionInformation(word)?.getVersionNumber(),
-          version);
+      final word = Version.VERSION_DECODE_INFO[version - 7];
+      expect(
+          Version.decodeVersionInformation(word)?.getVersionNumber(), version);
       for (var a = 0; a < 18; a++) {
         expect(
-            CraftVersion.decodeVersionInformation(word ^ (1 << a))
+            Version.decodeVersionInformation(word ^ (1 << a))
                 ?.getVersionNumber(),
             version);
         for (var b = a + 1; b < 18; b++) {
           for (var c = b + 1; c < 18; c++) {
             expect(
-                CraftVersion.decodeVersionInformation(
+                Version.decodeVersionInformation(
                         word ^ (1 << a) ^ (1 << b) ^ (1 << c))
                     ?.getVersionNumber(),
                 version);
@@ -45,18 +45,18 @@ void main() {
         }
       }
     }
-    expect(CraftVersion.decodeVersionInformation(-1), isNull);
-    expect(CraftVersion.decodeVersionInformation(1 << 18), isNull);
+    expect(Version.decodeVersionInformation(-1), isNull);
+    expect(Version.decodeVersionInformation(1 << 18), isNull);
   });
   test('reservation map agrees with every module placed for all versions', () {
     for (var number = 1; number <= 40; number++) {
-      final version = CraftVersion.getVersionForNumber(number);
+      final version = Version.getVersionForNumber(number);
       final side = version.getDimensionForVersion();
-      final matrix = CraftByteMatrix(side, side);
-      CraftMatrixUtil.clearMatrix(matrix);
-      CraftMatrixUtil.embedBasicPatterns(number, matrix);
-      CraftMatrixUtil.embedTypeInfo(CraftErrorCorrectionLevel.M, 3, matrix);
-      CraftMatrixUtil.maybeEmbedVersionInfo(number, matrix);
+      final matrix = ByteMatrix(side, side);
+      MatrixUtil.clearMatrix(matrix);
+      MatrixUtil.embedBasicPatterns(number, matrix);
+      MatrixUtil.embedTypeInfo(ErrorCorrectionLevel.M, 3, matrix);
+      MatrixUtil.maybeEmbedVersionInfo(number, matrix);
       final reserved = version.buildFunctionPattern();
       var vacant = 0;
       for (var y = 0; y < side; y++) {
@@ -71,11 +71,11 @@ void main() {
     }
   });
   test('data stripes start at bottom right and skip reserved modules', () {
-    final matrix = CraftByteMatrix(21, 21);
-    CraftMatrixUtil.clearMatrix(matrix);
+    final matrix = ByteMatrix(21, 21);
+    MatrixUtil.clearMatrix(matrix);
     matrix.set(20, 20, 0);
-    final data = CraftBitVector()..appendBits(0x9, 4);
-    CraftMatrixUtil.embedDataBits(data, -1, matrix);
+    final data = BitVector()..appendBits(0x9, 4);
+    MatrixUtil.embedDataBits(data, -1, matrix);
     expect(matrix.get(20, 20), 0);
     expect(matrix.get(19, 20), 1);
     expect(matrix.get(20, 19), 0);

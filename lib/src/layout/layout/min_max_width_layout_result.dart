@@ -1,20 +1,20 @@
 import 'package:dpdf/src/layout/layout/layout_result.dart';
 import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
-class CraftMinMaxWidthLayoutResult extends CraftLayoutResult {
-  CraftMinMaxWidth? minMaxWidth;
+class MinMaxWidthLayoutResult extends LayoutResult {
+  MinMaxWidth? minMaxWidth;
 
-  CraftMinMaxWidthLayoutResult(super.status, super.occupiedArea,
-      super.splitRenderer, super.overflowRenderer,
+  MinMaxWidthLayoutResult(super.status, super.occupiedArea, super.splitRenderer,
+      super.overflowRenderer,
       [super.causeOfNothing]) {
-    minMaxWidth = CraftMinMaxWidth();
+    minMaxWidth = MinMaxWidth();
   }
 
-  CraftMinMaxWidth? getMinMaxWidth() {
+  MinMaxWidth? getMinMaxWidth() {
     return minMaxWidth;
   }
 
-  CraftMinMaxWidthLayoutResult setMinMaxWidth(CraftMinMaxWidth? minMaxWidth) {
+  MinMaxWidthLayoutResult setMinMaxWidth(MinMaxWidth? minMaxWidth) {
     this.minMaxWidth = minMaxWidth;
     return this;
   }

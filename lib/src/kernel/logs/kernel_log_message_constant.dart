@@ -1,6 +1,6 @@
 /// Diagnostic templates for DPDF. Public identifiers and format slots are stable.
-class CraftKernelLogMessageConstant {
-  CraftKernelLogMessageConstant._();
+class KernelLogMessageConstant {
+  KernelLogMessageConstant._();
 
   static const String corruptedOutlineDictionaryHasInfiniteLoop =
       'Outline object "{0}" has an invalid first/next link; stopping traversal of the remaining entries to avoid a cycle.';

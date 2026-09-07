@@ -1,10 +1,10 @@
 import 'package:dpdf/src/layout/property_container.dart';
 import 'package:dpdf/src/layout/renderer/renderer.dart';
 
-abstract class CraftElement implements CraftPropertyContainer {
-  void setNextRenderer(CraftRenderer renderer);
+abstract class Element implements PropertyContainer {
+  void setNextRenderer(Renderer renderer);
 
-  CraftRenderer? getRenderer();
+  Renderer? getRenderer();
 
-  CraftRenderer? createRendererSubTree();
+  Renderer? createRendererSubTree();
 }

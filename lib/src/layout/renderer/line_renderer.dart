@@ -7,11 +7,11 @@ import 'package:dpdf/src/kernel/geom/rectangle.dart';
 
 /// Places list markers and inline children in a single horizontal row.
 /// Bidirectional shaping, floating elements and tab stops are not handled here.
-class CraftLineRenderer extends CraftAbstractRenderer {
-  CraftLineRenderer() : super(null);
+class LineRenderer extends AbstractRenderer {
+  LineRenderer() : super(null);
 
   @override
-  CraftLayoutResult? layout(CraftLayoutContext layoutContext) {
+  LayoutResult? layout(LayoutContext layoutContext) {
     double curX = layoutContext.getArea().getBBox().getLeft();
     double maxY = 0;
     double totalWidth = 0;
@@ -20,16 +20,16 @@ class CraftLineRenderer extends CraftAbstractRenderer {
       child.setParent(this);
 
       // Relative positioning for children within the line
-      CraftRectangle childBBox = CraftRectangle(
+      Rectangle childBBox = Rectangle(
           curX,
           layoutContext.getArea().getBBox().getBottom(),
           layoutContext.getArea().getBBox().getWidth() - totalWidth,
           layoutContext.getArea().getBBox().getHeight());
 
-      var res = child.layout(CraftLayoutContext(
-          CraftLayoutArea(layoutContext.getArea().pageOrdinal(), childBBox)));
+      var res = child.layout(LayoutContext(
+          LayoutArea(layoutContext.getArea().pageOrdinal(), childBBox)));
       if (res != null && res.getOccupiedArea() != null) {
-        if (child is CraftAbstractRenderer) {
+        if (child is AbstractRenderer) {
           child.occupiedArea = res.getOccupiedArea();
         }
         var occupied = res.getOccupiedArea()!.getBBox();
@@ -41,21 +41,20 @@ class CraftLineRenderer extends CraftAbstractRenderer {
       }
     }
 
-    occupiedArea = CraftLayoutArea(
+    occupiedArea = LayoutArea(
         layoutContext.getArea().pageOrdinal(),
-        CraftRectangle(
+        Rectangle(
             layoutContext.getArea().getBBox().getLeft(),
             layoutContext.getArea().getBBox().getTop() - maxY,
             totalWidth,
             maxY));
 
-    return CraftLayoutResult(
-        CraftLayoutResult.FULL, occupiedArea, null, null, this);
+    return LayoutResult(LayoutResult.FULL, occupiedArea, null, null, this);
   }
 
   @override
-  CraftRenderer getNextRenderer() {
-    return CraftLineRenderer();
+  Renderer getNextRenderer() {
+    return LineRenderer();
   }
 
   double getYLine() {

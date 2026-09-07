@@ -1,6 +1,6 @@
 /// Typed values used by the supported CSS layout profile.
-class CraftCssValues {
-  CraftCssValues._();
+class CssValues {
+  CssValues._();
 
   /// Converts a non-negative CSS `pt` or `px` length into PDF points.
   static double length(String? source, {double fallback = 0}) {
@@ -21,33 +21,31 @@ class CraftCssValues {
 
   /// Parses an absolute or percentage CSS length without coupling CSS to a
   /// particular page width. Unsupported units deliberately remain [auto].
-  static CraftCssLength lengthValue(String? source) {
-    if (source == null) return const CraftCssLength.auto();
+  static CssLength lengthValue(String? source) {
+    if (source == null) return const CssLength.auto();
     var value = source.trim().toLowerCase();
-    if (value.isEmpty || value == 'auto') return const CraftCssLength.auto();
+    if (value.isEmpty || value == 'auto') return const CssLength.auto();
     if (value.endsWith('%')) {
       final fraction = double.tryParse(value.substring(0, value.length - 1));
       return fraction == null || !fraction.isFinite || fraction < 0
-          ? const CraftCssLength.auto()
-          : CraftCssLength.percent(fraction / 100);
+          ? const CssLength.auto()
+          : CssLength.percent(fraction / 100);
     }
     final points = length(value, fallback: -1);
-    return points < 0
-        ? const CraftCssLength.auto()
-        : CraftCssLength.points(points);
+    return points < 0 ? const CssLength.auto() : CssLength.points(points);
   }
 
   /// Expands CSS one-to-four value shorthand in top/right/bottom/left order.
-  static CraftCssEdges edges(String? source) {
-    if (source == null) return const CraftCssEdges.zero();
+  static CssEdges edges(String? source) {
+    if (source == null) return const CssEdges.zero();
     final tokens = _spaceSeparatedTokens(source);
-    if (tokens.isEmpty || tokens.length > 4) return const CraftCssEdges.zero();
+    if (tokens.isEmpty || tokens.length > 4) return const CssEdges.zero();
     final values = tokens.map(lengthValue).toList(growable: false);
     return switch (values.length) {
-      1 => CraftCssEdges.all(values[0]),
-      2 => CraftCssEdges(values[0], values[1], values[0], values[1]),
-      3 => CraftCssEdges(values[0], values[1], values[2], values[1]),
-      _ => CraftCssEdges(values[0], values[1], values[2], values[3]),
+      1 => CssEdges.all(values[0]),
+      2 => CssEdges(values[0], values[1], values[0], values[1]),
+      3 => CssEdges(values[0], values[1], values[2], values[1]),
+      _ => CssEdges(values[0], values[1], values[2], values[3]),
     };
   }
 
@@ -76,16 +74,16 @@ class CraftCssValues {
 }
 
 /// A CSS length which resolves only when the layout constraint is known.
-class CraftCssLength {
+class CssLength {
   final double? points;
   final double? percentage;
-  const CraftCssLength.auto()
+  const CssLength.auto()
       : points = null,
         percentage = null;
-  const CraftCssLength.points(double value)
+  const CssLength.points(double value)
       : points = value,
         percentage = null;
-  const CraftCssLength.percent(double value)
+  const CssLength.percent(double value)
       : points = null,
         percentage = value;
 
@@ -95,29 +93,29 @@ class CraftCssLength {
 }
 
 /// Typed CSS edge values in top/right/bottom/left order.
-class CraftCssEdges {
-  final CraftCssLength top;
-  final CraftCssLength right;
-  final CraftCssLength bottom;
-  final CraftCssLength left;
-  const CraftCssEdges(this.top, this.right, this.bottom, this.left);
-  const CraftCssEdges.zero()
-      : top = const CraftCssLength.points(0),
-        right = const CraftCssLength.points(0),
-        bottom = const CraftCssLength.points(0),
-        left = const CraftCssLength.points(0);
-  CraftCssEdges.all(CraftCssLength value)
+class CssEdges {
+  final CssLength top;
+  final CssLength right;
+  final CssLength bottom;
+  final CssLength left;
+  const CssEdges(this.top, this.right, this.bottom, this.left);
+  const CssEdges.zero()
+      : top = const CssLength.points(0),
+        right = const CssLength.points(0),
+        bottom = const CssLength.points(0),
+        left = const CssLength.points(0);
+  CssEdges.all(CssLength value)
       : top = value,
         right = value,
         bottom = value,
         left = value;
 
-  CraftCssEdges override({
-    CraftCssLength? top,
-    CraftCssLength? right,
-    CraftCssLength? bottom,
-    CraftCssLength? left,
+  CssEdges override({
+    CssLength? top,
+    CssLength? right,
+    CssLength? bottom,
+    CssLength? left,
   }) =>
-      CraftCssEdges(top ?? this.top, right ?? this.right, bottom ?? this.bottom,
+      CssEdges(top ?? this.top, right ?? this.right, bottom ?? this.bottom,
           left ?? this.left);
 }

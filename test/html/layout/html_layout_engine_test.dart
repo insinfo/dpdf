@@ -3,21 +3,21 @@ import 'package:dpdf/src/html/layout/html_layout_plan.dart';
 import 'package:dpdf/src/html/model/html_box.dart';
 import 'package:test/test.dart';
 
-CraftHtmlBox _text(String text) => CraftHtmlBox(
-      style: const CraftHtmlBoxStyle(
-        display: CraftHtmlDisplay.inline,
-        text: CraftHtmlTextStyle(12),
+HtmlBox _text(String text) => HtmlBox(
+      style: const HtmlBoxStyle(
+        display: HtmlDisplay.inline,
+        text: HtmlTextStyle(12),
       ),
       text: text,
     );
 
 void main() {
   test('flex row assigns distinct physical columns to its children', () {
-    final fragments = CraftHtmlLayoutEngine(300).layout([
-      CraftHtmlBox(
-        style: const CraftHtmlBoxStyle(
-          display: CraftHtmlDisplay.flex,
-          text: CraftHtmlTextStyle(12),
+    final fragments = HtmlLayoutEngine(300).layout([
+      HtmlBox(
+        style: const HtmlBoxStyle(
+          display: HtmlDisplay.flex,
+          text: HtmlTextStyle(12),
           gap: 12,
         ),
         children: [_text('esquerda'), _text('direita')],
@@ -31,11 +31,11 @@ void main() {
   });
 
   test('grid starts a new row after its configured track count', () {
-    final fragments = CraftHtmlLayoutEngine(300).layout([
-      CraftHtmlBox(
-        style: const CraftHtmlBoxStyle(
-          display: CraftHtmlDisplay.grid,
-          text: CraftHtmlTextStyle(12),
+    final fragments = HtmlLayoutEngine(300).layout([
+      HtmlBox(
+        style: const HtmlBoxStyle(
+          display: HtmlDisplay.grid,
+          text: HtmlTextStyle(12),
           gridTemplateColumns: 'repeat(2, 1fr)',
           gap: 10,
         ),
@@ -51,18 +51,18 @@ void main() {
 
   test('parses nested repeat lists and resolves fixed and fractional tracks',
       () {
-    expect(CraftHtmlLayoutPlan.gridColumns('repeat(2, 1fr 2fr) 24pt'), 5);
-    expect(CraftHtmlLayoutPlan.gridTrackWidths('100pt 2fr 1fr', 400, gap: 10),
+    expect(HtmlLayoutPlan.gridColumns('repeat(2, 1fr 2fr) 24pt'), 5);
+    expect(HtmlLayoutPlan.gridTrackWidths('100pt 2fr 1fr', 400, gap: 10),
         [100, closeTo(186.6666667, .0001), closeTo(93.3333333, .0001)]);
-    expect(CraftHtmlLayoutPlan.gridTrackWidths('120px 1fr', 300), [90, 210]);
+    expect(HtmlLayoutPlan.gridTrackWidths('120px 1fr', 300), [90, 210]);
   });
 
   test('grid uses resolved track widths for physical positions', () {
-    final fragments = CraftHtmlLayoutEngine(400).layout([
-      CraftHtmlBox(
-        style: const CraftHtmlBoxStyle(
-          display: CraftHtmlDisplay.grid,
-          text: CraftHtmlTextStyle(12),
+    final fragments = HtmlLayoutEngine(400).layout([
+      HtmlBox(
+        style: const HtmlBoxStyle(
+          display: HtmlDisplay.grid,
+          text: HtmlTextStyle(12),
           gridTemplateColumns: '100pt 2fr 1fr',
           gap: 10,
         ),
@@ -80,11 +80,11 @@ void main() {
 
   test('flex wrap starts a new line when its intrinsic items no longer fit',
       () {
-    final fragments = CraftHtmlLayoutEngine(120).layout([
-      CraftHtmlBox(
-        style: const CraftHtmlBoxStyle(
-          display: CraftHtmlDisplay.flex,
-          text: CraftHtmlTextStyle(12),
+    final fragments = HtmlLayoutEngine(120).layout([
+      HtmlBox(
+        style: const HtmlBoxStyle(
+          display: HtmlDisplay.flex,
+          text: HtmlTextStyle(12),
           flexWrap: true,
           gap: 10,
         ),
@@ -98,24 +98,23 @@ void main() {
   });
 
   test('justify-content distributes each flex row on the main axis', () {
-    CraftHtmlBox flex(CraftHtmlJustifyContent value) => CraftHtmlBox(
-          style: CraftHtmlBoxStyle(
-            display: CraftHtmlDisplay.flex,
-            text: const CraftHtmlTextStyle(12),
+    HtmlBox flex(HtmlJustifyContent value) => HtmlBox(
+          style: HtmlBoxStyle(
+            display: HtmlDisplay.flex,
+            text: const HtmlTextStyle(12),
             gap: 10,
             justifyContent: value,
             hasJustifyContent: true,
           ),
           children: [_text('aa'), _text('bb')],
         );
-    final start = CraftHtmlLayoutEngine(100)
-        .layout([flex(CraftHtmlJustifyContent.start)]);
-    final center = CraftHtmlLayoutEngine(100)
-        .layout([flex(CraftHtmlJustifyContent.center)]);
-    final end =
-        CraftHtmlLayoutEngine(100).layout([flex(CraftHtmlJustifyContent.end)]);
-    final between = CraftHtmlLayoutEngine(100)
-        .layout([flex(CraftHtmlJustifyContent.spaceBetween)]);
+    final start =
+        HtmlLayoutEngine(100).layout([flex(HtmlJustifyContent.start)]);
+    final center =
+        HtmlLayoutEngine(100).layout([flex(HtmlJustifyContent.center)]);
+    final end = HtmlLayoutEngine(100).layout([flex(HtmlJustifyContent.end)]);
+    final between =
+        HtmlLayoutEngine(100).layout([flex(HtmlJustifyContent.spaceBetween)]);
 
     expect(start[0].x, 0);
     expect(center[0].x, greaterThan(start[0].x));

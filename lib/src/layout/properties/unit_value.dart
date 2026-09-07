@@ -1,18 +1,18 @@
-class CraftUnitValue {
+class UnitValue {
   static const int POINT = 1;
   static const int PERCENT = 2;
 
   int unitType;
   double value;
 
-  CraftUnitValue(this.unitType, this.value);
+  UnitValue(this.unitType, this.value);
 
-  static CraftUnitValue createPointValue(double value) {
-    return CraftUnitValue(POINT, value);
+  static UnitValue createPointValue(double value) {
+    return UnitValue(POINT, value);
   }
 
-  static CraftUnitValue createPercentValue(double value) {
-    return CraftUnitValue(PERCENT, value);
+  static UnitValue createPercentValue(double value) {
+    return UnitValue(PERCENT, value);
   }
 
   bool isPointValue() {
@@ -34,7 +34,7 @@ class CraftUnitValue {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is CraftUnitValue &&
+    return other is UnitValue &&
         other.unitType == unitType &&
         (other.value - value).abs() < 0.0001; // basic float comparison
   }

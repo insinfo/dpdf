@@ -13,17 +13,17 @@ void main() {
   group('BarcodeQRCode Tests', () {
     test('BarcodeQRCode Basic Test', () async {
       final file = File('test/tmp/barcode_qr_code_test.pdf');
-      final writer = CraftPdfWriter(file.openWrite());
-      final pdf = CraftPdfDocument.create(writer);
+      final writer = PdfWriter(file.openWrite());
+      final pdf = PdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
-      final canvas = await CraftPdfCanvas.fromPage(page);
+      final canvas = await PdfCanvas.fromPage(page);
 
-      final barcode = CraftBarcodeQRCode("https://dpdfpdf.com");
+      final barcode = BarcodeQRCode("https://dpdfpdf.com");
 
       // Test basic getters
       expect(barcode.getCode(), equals("https://dpdfpdf.com"));
 
-      final rect = barcode.placeBarcode(canvas, CraftDeviceGray(0));
+      final rect = barcode.placeBarcode(canvas, DeviceGray(0));
 
       expect(rect.getWidth(), greaterThan(0));
       // Add text label
@@ -39,8 +39,8 @@ void main() {
     });
 
     test('BarcodeQRCode Hints Test', () async {
-      final hints = {CraftEncodeHintType.CHARACTER_SET: "UTF-8"};
-      final barcode = CraftBarcodeQRCode("Test Hints", hints);
+      final hints = {EncodeHintType.CHARACTER_SET: "UTF-8"};
+      final barcode = BarcodeQRCode("Test Hints", hints);
       expect(barcode.getHints(), equals(hints));
 
       // Sizing check
@@ -51,13 +51,13 @@ void main() {
 
     test('BarcodeQRCode CreateFormXObject Test', () async {
       final file = File('test/tmp/barcode_qr_code_xobject_test.pdf');
-      final writer = CraftPdfWriter(file.openWrite());
-      final pdf = CraftPdfDocument.create(writer);
+      final writer = PdfWriter(file.openWrite());
+      final pdf = PdfDocument.create(writer);
       final page = await pdf.appendBlankPage();
-      final canvas = await CraftPdfCanvas.fromPage(page);
+      final canvas = await PdfCanvas.fromPage(page);
 
-      final barcode = CraftBarcodeQRCode("XObject Test");
-      final xObject = await barcode.createFormXObject(pdf, CraftDeviceGray(0));
+      final barcode = BarcodeQRCode("XObject Test");
+      final xObject = await barcode.createFormXObject(pdf, DeviceGray(0));
 
       // Draw XObject on canvas
       await canvas.addXObjectWithTransformationMatrix(

@@ -10,26 +10,26 @@ import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 /// Mantê-los como nós (em vez de descartá-los na montagem) preserva o
 /// caminho para resolvê-los por referência mais tarde, sem que o conteúdo
 /// vaze para o fluxo de desenho.
-class CraftNoOpSvgNodeRenderer extends CraftAbstractBranchSvgNodeRenderer
-    implements CraftNoDrawSvgNodeRenderer {
+class NoOpSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
+    implements NoDrawSvgNodeRenderer {
   @override
   bool canElementFill() => false;
 
   @override
-  Future<void> doDraw(CraftSvgDrawContext context) async {}
+  Future<void> doDraw(SvgDrawContext context) async {}
 
   @override
-  Future<void> preDraw(CraftSvgDrawContext context) async {}
+  Future<void> preDraw(SvgDrawContext context) async {}
 
   @override
-  Future<void> postDraw(CraftSvgDrawContext context) async {}
+  Future<void> postDraw(SvgDrawContext context) async {}
 
   @override
-  CraftRectangle? getObjectBoundingBox(CraftSvgDrawContext context) => null;
+  Rectangle? getObjectBoundingBox(SvgDrawContext context) => null;
 
   @override
-  CraftSvgNodeRenderer createDeepCopy() {
-    final copy = CraftNoOpSvgNodeRenderer();
+  SvgNodeRenderer createDeepCopy() {
+    final copy = NoOpSvgNodeRenderer();
     deepCopyAttributesAndStyles(copy);
     deepCopyChildren(copy);
     return copy;

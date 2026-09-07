@@ -12,15 +12,15 @@ import 'package:dpdf/src/layout/properties/vertical_alignment.dart';
 import 'package:dpdf/src/layout/properties/horizontal_alignment.dart';
 import 'package:dpdf/src/layout/properties/property.dart';
 
-abstract class CraftRootElement<T extends CraftPropertyContainer>
-    extends CraftElementPropertyContainer<T> {
-  CraftPdfDocument pdfDocument;
-  CraftRootRenderer? rootRenderer;
+abstract class RootElement<T extends PropertyContainer>
+    extends ElementPropertyContainer<T> {
+  PdfDocument pdfDocument;
+  RootRenderer? rootRenderer;
   bool immediateFlush = true;
 
-  CraftRootElement(this.pdfDocument);
+  RootElement(this.pdfDocument);
 
-  Future<T> add(CraftBlockContent element) async {
+  Future<T> add(BlockContent element) async {
     var renderer = element.createRendererSubTree();
     // In C#, CreateRendererSubTree returns IRenderer
     // We should add it to root renderer
@@ -28,21 +28,20 @@ abstract class CraftRootElement<T extends CraftPropertyContainer>
     return this as T;
   }
 
-  CraftRootRenderer ensureRootRendererNotNull();
+  RootRenderer ensureRootRendererNotNull();
 
   Future<T> showTextAligned(
       {required String text,
       required double x,
       required double y,
-      required CraftTextAlignment textAlign,
-      CraftVerticalAlignment? vertAlign,
+      required TextAlignment textAlign,
+      VerticalAlignment? vertAlign,
       double angle = 0,
       int pageNumber = 0}) async {
-    CraftParagraph p = CraftParagraph();
-    p.add(CraftText(text));
+    Paragraph p = Paragraph();
+    p.add(Text(text));
     p.setMargin(0);
-    p.setProperty(
-        CraftProperty.LEADING, CraftLeading(CraftLeading.MULTIPLIED, 1.0));
+    p.setProperty(Property.LEADING, Leading(Leading.MULTIPLIED, 1.0));
 
     return await showTextAlignedParagraph(
         p: p,
@@ -55,16 +54,16 @@ abstract class CraftRootElement<T extends CraftPropertyContainer>
   }
 
   Future<T> showTextAlignedParagraph(
-      {required CraftParagraph p,
+      {required Paragraph p,
       required double x,
       required double y,
-      required CraftTextAlignment textAlign,
-      CraftVerticalAlignment? vertAlign,
+      required TextAlignment textAlign,
+      VerticalAlignment? vertAlign,
       double angle = 0,
       int pageNumber = 0}) async {
     if (pageNumber == 0) pageNumber = 1;
 
-    CraftDiv div = CraftDiv();
+    Div div = Div();
     div.setTextAlignment(textAlign);
     if (vertAlign != null) {
       div.setVerticalAlignment(vertAlign);
@@ -72,24 +71,24 @@ abstract class CraftRootElement<T extends CraftPropertyContainer>
     if (angle != 0) {
       div.setRotationAngle(angle);
     }
-    div.setProperty(CraftProperty.ROTATION_POINT_X, x);
-    div.setProperty(CraftProperty.ROTATION_POINT_Y, y);
+    div.setProperty(Property.ROTATION_POINT_X, x);
+    div.setProperty(Property.ROTATION_POINT_Y, y);
 
     double divSize = 5000;
     double divX = x;
     double divY = y;
 
-    if (textAlign == CraftTextAlignment.center) {
+    if (textAlign == TextAlignment.center) {
       divX = x - divSize / 2;
-      p.setHorizontalAlignment(CraftHorizontalAlignment.center);
-    } else if (textAlign == CraftTextAlignment.right) {
+      p.setHorizontalAlignment(HorizontalAlignment.center);
+    } else if (textAlign == TextAlignment.right) {
       divX = x - divSize;
-      p.setHorizontalAlignment(CraftHorizontalAlignment.right);
+      p.setHorizontalAlignment(HorizontalAlignment.right);
     }
 
-    if (vertAlign == CraftVerticalAlignment.middle) {
+    if (vertAlign == VerticalAlignment.middle) {
       divY = y - divSize / 2;
-    } else if (vertAlign == CraftVerticalAlignment.top) {
+    } else if (vertAlign == VerticalAlignment.top) {
       // Check enum case
       divY = y - divSize;
     }

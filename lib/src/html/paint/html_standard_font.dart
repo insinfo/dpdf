@@ -5,10 +5,10 @@ import '../../io/resources/embedded_font_resources.dart';
 ///
 /// No host font is discovered or loaded. An unknown CSS family falls back to
 /// Helvetica, a face every conforming PDF viewer supplies.
-class CraftHtmlStandardFont {
-  CraftHtmlStandardFont._();
+class HtmlStandardFont {
+  HtmlStandardFont._();
 
-  static String resolve(CraftHtmlTextStyle style) {
+  static String resolve(HtmlTextStyle style) {
     late String candidate;
     switch (_family(style.fontFamily)) {
       case 'Courier':

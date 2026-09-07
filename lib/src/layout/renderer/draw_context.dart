@@ -1,18 +1,18 @@
 import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
 import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 
-class CraftDrawContext {
-  CraftPdfDocument document;
-  CraftPdfCanvas canvas;
+class DrawContext {
+  PdfDocument document;
+  PdfCanvas canvas;
   bool taggingEnabled = false;
 
-  CraftDrawContext(this.document, this.canvas, [this.taggingEnabled = false]);
+  DrawContext(this.document, this.canvas, [this.taggingEnabled = false]);
 
-  CraftPdfDocument getDocument() {
+  PdfDocument getDocument() {
     return document;
   }
 
-  CraftPdfCanvas getCanvas() {
+  PdfCanvas getCanvas() {
     return canvas;
   }
 

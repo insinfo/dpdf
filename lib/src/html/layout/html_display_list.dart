@@ -3,46 +3,46 @@ import '../model/html_box.dart';
 import '../model/html_raster_image.dart';
 
 /// Platform-neutral output of the HTML layout stage, consumed by PDF paint.
-class CraftHtmlDisplayList {
-  final List<CraftHtmlTextFragment> textFragments;
-  final List<CraftHtmlBoxDecoration> boxDecorations;
-  final List<CraftHtmlImageFragment> imageFragments;
-  const CraftHtmlDisplayList(this.textFragments, this.boxDecorations,
+class HtmlDisplayList {
+  final List<HtmlTextFragment> textFragments;
+  final List<HtmlBoxDecoration> boxDecorations;
+  final List<HtmlImageFragment> imageFragments;
+  const HtmlDisplayList(this.textFragments, this.boxDecorations,
       [this.imageFragments = const []]);
 }
 
 /// Positioned raster image command. Images are atomic in the flow profile.
-class CraftHtmlImageFragment {
-  final CraftHtmlRasterImage image;
+class HtmlImageFragment {
+  final HtmlRasterImage image;
   final double x;
   final double top;
   final double width;
   final double height;
-  const CraftHtmlImageFragment(
+  const HtmlImageFragment(
       this.image, this.x, this.top, this.width, this.height);
 }
 
-class CraftHtmlTextFragment {
+class HtmlTextFragment {
   final String text;
-  final CraftHtmlTextStyle style;
+  final HtmlTextStyle style;
   final double x;
   final double baseline;
 
   /// URI from a source HTML anchor. Null means ordinary non-interactive text.
   final String? linkTarget;
-  const CraftHtmlTextFragment(this.text, this.style, this.x, this.baseline,
+  const HtmlTextFragment(this.text, this.style, this.x, this.baseline,
       {this.linkTarget});
 }
 
 /// Background and border paint command in top-down document coordinates.
-class CraftHtmlBoxDecoration {
+class HtmlBoxDecoration {
   final double x;
   final double top;
   final double width;
   final double height;
-  final CraftCssColor? backgroundColor;
-  final CraftHtmlBorder? border;
-  const CraftHtmlBoxDecoration({
+  final CssColor? backgroundColor;
+  final HtmlBorder? border;
+  const HtmlBoxDecoration({
     required this.x,
     required this.top,
     required this.width,

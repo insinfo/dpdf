@@ -3,12 +3,12 @@ import '../exceptions/io_exception.dart';
 
 /// Decodes TIFF 6.0 LZW strips using prefix links and one-byte suffixes.
 /// All strip state belongs to the call, so a decoder can be reused.
-class CraftTIFFLZWDecoder {
+class TIFFLZWDecoder {
   final int _width;
   final int _predictor;
   final int _samples;
 
-  CraftTIFFLZWDecoder(this._width, this._predictor, this._samples);
+  TIFFLZWDecoder(this._width, this._predictor, this._samples);
 
   Uint8List decode(Uint8List data, Uint8List uncompData, int h) {
     if (_predictor != 1 && _predictor != 2) {
@@ -99,8 +99,8 @@ class CraftTIFFLZWDecoder {
   }
 }
 
-class CraftLZWDecoder {
-  CraftLZWDecoder._();
+class LZWDecoder {
+  LZWDecoder._();
 
   static Uint8List decode(
     Uint8List data, {
@@ -111,7 +111,7 @@ class CraftLZWDecoder {
     int height = 1,
   }) {
     RangeError.checkNotNegative(expectedSize, 'expectedSize');
-    return CraftTIFFLZWDecoder(width, predictor, samplesPerPixel)
+    return TIFFLZWDecoder(width, predictor, samplesPerPixel)
         .decode(data, Uint8List(expectedSize), height);
   }
 }

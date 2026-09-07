@@ -14,7 +14,7 @@ void main() {
   group('PdfPKCS7', () {
     test('forSigning throws on unknown hash algorithm', () {
       expect(
-        () => CraftPdfPKCS7.forSigning(
+        () => PdfPKCS7.forSigning(
           null,
           [],
           'UNKNOWN-HASH',
@@ -26,7 +26,7 @@ void main() {
 
     test('forSigning creates instance with valid parameters', () {
       // Mock needs to return valid OID for algorithm
-      final pkcs7 = CraftPdfPKCS7.forSigning(
+      final pkcs7 = PdfPKCS7.forSigning(
         null,
         [],
         'SHA-256',
@@ -52,7 +52,7 @@ void main() {
       );
       final signature = Uint8List.fromList([1, 2, 3, 4]);
       final tsa = _RecordingTsaClient();
-      final pkcs7 = CraftPdfPKCS7.forSigning(
+      final pkcs7 = PdfPKCS7.forSigning(
         null,
         [certificate],
         'SHA-256',
@@ -62,15 +62,14 @@ void main() {
 
       await pkcs7.getEncodedPKCS7(Uint8List(32), tsaClient: tsa);
 
-      expect(
-          tsa.imprint, CraftDigestAlgorithms.digestBytes(signature, 'SHA-256'));
+      expect(tsa.imprint, DigestAlgorithms.digestBytes(signature, 'SHA-256'));
     });
 
     // Add more tests as we have mocks for Certificates and Keys
   });
 }
 
-class _RecordingTsaClient implements CraftTSAClient {
+class _RecordingTsaClient implements TSAClient {
   Uint8List? imprint;
 
   @override
@@ -78,7 +77,7 @@ class _RecordingTsaClient implements CraftTSAClient {
 
   @override
   SigningDigest getMessageDigest() =>
-      CraftDigestAlgorithms.getMessageDigest('SHA-256');
+      DigestAlgorithms.getMessageDigest('SHA-256');
 
   @override
   Future<Uint8List> getTimeStampToken(Uint8List value) async {
@@ -90,7 +89,7 @@ class _RecordingTsaClient implements CraftTSAClient {
   }
 }
 
-class MockExternalDigest implements CraftExternalDigest {
+class MockExternalDigest implements ExternalDigest {
   @override
   SigningDigest getMessageDigest(String hashAlgorithm) {
     return MockMessageDigest(hashAlgorithm);

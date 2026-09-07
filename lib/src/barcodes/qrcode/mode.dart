@@ -2,40 +2,38 @@ import 'version.dart';
 
 /// See ISO 18004:2006, 6.4.1, Tables 2 and 3. This enum encapsulates the various modes in which
 /// data can be encoded to bits in the QR code standard.
-class CraftMode {
+class Mode {
   // Not really a mode...
-  static final CraftMode TERMINATOR =
-      CraftMode._([0, 0, 0], 0x00, "TERMINATOR");
+  static final Mode TERMINATOR = Mode._([0, 0, 0], 0x00, "TERMINATOR");
 
-  static final CraftMode NUMERIC = CraftMode._([10, 12, 14], 0x01, "NUMERIC");
+  static final Mode NUMERIC = Mode._([10, 12, 14], 0x01, "NUMERIC");
 
-  static final CraftMode ALPHANUMERIC =
-      CraftMode._([9, 11, 13], 0x02, "ALPHANUMERIC");
+  static final Mode ALPHANUMERIC = Mode._([9, 11, 13], 0x02, "ALPHANUMERIC");
 
   // Not supported
-  static final CraftMode STRUCTURED_APPEND =
-      CraftMode._([0, 0, 0], 0x03, "STRUCTURED_APPEND");
+  static final Mode STRUCTURED_APPEND =
+      Mode._([0, 0, 0], 0x03, "STRUCTURED_APPEND");
 
-  static final CraftMode BYTE = CraftMode._([8, 16, 16], 0x04, "BYTE");
+  static final Mode BYTE = Mode._([8, 16, 16], 0x04, "BYTE");
 
   // character counts don't apply
-  static final CraftMode ECI = CraftMode._(null, 0x07, "ECI");
+  static final Mode ECI = Mode._(null, 0x07, "ECI");
 
-  static final CraftMode KANJI = CraftMode._([8, 10, 12], 0x08, "KANJI");
+  static final Mode KANJI = Mode._([8, 10, 12], 0x08, "KANJI");
 
-  static final CraftMode FNC1_FIRST_POSITION =
-      CraftMode._(null, 0x05, "FNC1_FIRST_POSITION");
+  static final Mode FNC1_FIRST_POSITION =
+      Mode._(null, 0x05, "FNC1_FIRST_POSITION");
 
-  static final CraftMode FNC1_SECOND_POSITION =
-      CraftMode._(null, 0x09, "FNC1_SECOND_POSITION");
+  static final Mode FNC1_SECOND_POSITION =
+      Mode._(null, 0x09, "FNC1_SECOND_POSITION");
 
   final List<int>? _characterCountBitsForVersions;
   final int _bits;
   final String _name;
 
-  CraftMode._(this._characterCountBitsForVersions, this._bits, this._name);
+  Mode._(this._characterCountBitsForVersions, this._bits, this._name);
 
-  static CraftMode forBits(int bits) {
+  static Mode forBits(int bits) {
     switch (bits) {
       case 0x0:
         return TERMINATOR;
@@ -62,7 +60,7 @@ class CraftMode {
 
   /// [version] - version in question
   /// Returns number of bits used, in this QR Code symbol, to encode the count of characters
-  int getCharacterCountBits(CraftVersion version) {
+  int getCharacterCountBits(Version version) {
     if (_characterCountBitsForVersions == null) {
       throw ArgumentError("Character count doesn't apply to this mode");
     }

@@ -12,8 +12,8 @@ import 'package:test/test.dart';
 void main() {
   group('PdfCanvas', () {
     test('Detailed drawing operations', () async {
-      final stream = CraftPdfStream();
-      final canvas = CraftPdfCanvas(stream, null, null);
+      final stream = PdfStream();
+      final canvas = PdfCanvas(stream, null, null);
 
       canvas
           .saveState()
@@ -33,8 +33,8 @@ void main() {
     });
 
     test('Text operations', () async {
-      final stream = CraftPdfStream();
-      final canvas = CraftPdfCanvas(stream, null, null);
+      final stream = PdfStream();
+      final canvas = PdfCanvas(stream, null, null);
 
       canvas.beginText().moveText(50, 50).showText("Hello").endText();
 
@@ -54,21 +54,20 @@ void main() {
       final directory = Directory.systemTemp.createTempSync('dpdf_type1_');
       addTearDown(() => directory.deleteSync(recursive: true));
       final file = File('${directory.path}/test_type1.pdf');
-      final writer = CraftPdfWriter.toFile(file.path);
-      final doc = CraftPdfDocument.create(writer);
+      final writer = PdfWriter.toFile(file.path);
+      final doc = PdfDocument.create(writer);
 
-      final resources = CraftPdfResources();
-      final stream = CraftPdfStream();
+      final resources = PdfResources();
+      final stream = PdfStream();
       // Mock or use real components
       // Since we are writing to stream, we don't fully need Document attached to Page yet for this unit test,
       // BUT setFontAndSize needs doc to add font to resources.
 
-      final canvas = CraftPdfCanvas(stream, resources, doc);
+      final canvas = PdfCanvas(stream, resources, doc);
 
       // Load font
-      final type1Font =
-          CraftType1Font(CraftStandardFonts.HELVETICA, "", null, null);
-      final font = CraftPdfType1Font(type1Font);
+      final type1Font = Type1Font(StandardFonts.HELVETICA, "", null, null);
+      final font = PdfType1Font(type1Font);
 
       await canvas.setFontAndSize(font, 12);
       canvas

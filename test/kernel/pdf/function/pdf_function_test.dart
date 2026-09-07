@@ -14,29 +14,29 @@ import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'package:test/test.dart';
 
-CraftPdfName _n(String value) => CraftPdfName.intern(value);
+PdfName _n(String value) => PdfName.intern(value);
 
 /// Builds a type 2 (exponential) function dictionary.
-CraftPdfDictionary _exponential(
+PdfDictionary _exponential(
     {List<double> domain = const [0.0, 1.0],
     List<double> c0 = const [0.0],
     List<double> c1 = const [1.0],
     double exponent = 1.0,
     List<double>? range}) {
-  final dict = CraftPdfDictionary();
-  dict.put(_n('FunctionType'), CraftPdfNumber.fromInt(2));
-  dict.put(_n('Domain'), CraftPdfArray.fromDoubles(domain));
-  dict.put(_n('C0'), CraftPdfArray.fromDoubles(c0));
-  dict.put(_n('C1'), CraftPdfArray.fromDoubles(c1));
-  dict.put(_n('N'), CraftPdfNumber(exponent));
+  final dict = PdfDictionary();
+  dict.put(_n('FunctionType'), PdfNumber.fromInt(2));
+  dict.put(_n('Domain'), PdfArray.fromDoubles(domain));
+  dict.put(_n('C0'), PdfArray.fromDoubles(c0));
+  dict.put(_n('C1'), PdfArray.fromDoubles(c1));
+  dict.put(_n('N'), PdfNumber(exponent));
   if (range != null) {
-    dict.put(_n('Range'), CraftPdfArray.fromDoubles(range));
+    dict.put(_n('Range'), PdfArray.fromDoubles(range));
   }
   return dict;
 }
 
 /// Builds a type 0 (sampled) function stream over raw sample bytes.
-CraftPdfStream _sampled(
+PdfStream _sampled(
     {required List<int> size,
     required int bitsPerSample,
     required List<int> bytes,
@@ -45,38 +45,38 @@ CraftPdfStream _sampled(
     List<double>? encode,
     List<double>? decode,
     int? order}) {
-  final stream = CraftPdfStream.withBytes(Uint8List.fromList(bytes));
-  stream.put(_n('FunctionType'), CraftPdfNumber.fromInt(0));
-  stream.put(_n('Domain'), CraftPdfArray.fromDoubles(domain));
-  stream.put(_n('Range'), CraftPdfArray.fromDoubles(range));
-  stream.put(_n('Size'), CraftPdfArray.fromInts(size));
-  stream.put(_n('BitsPerSample'), CraftPdfNumber.fromInt(bitsPerSample));
+  final stream = PdfStream.withBytes(Uint8List.fromList(bytes));
+  stream.put(_n('FunctionType'), PdfNumber.fromInt(0));
+  stream.put(_n('Domain'), PdfArray.fromDoubles(domain));
+  stream.put(_n('Range'), PdfArray.fromDoubles(range));
+  stream.put(_n('Size'), PdfArray.fromInts(size));
+  stream.put(_n('BitsPerSample'), PdfNumber.fromInt(bitsPerSample));
   if (encode != null) {
-    stream.put(_n('Encode'), CraftPdfArray.fromDoubles(encode));
+    stream.put(_n('Encode'), PdfArray.fromDoubles(encode));
   }
   if (decode != null) {
-    stream.put(_n('Decode'), CraftPdfArray.fromDoubles(decode));
+    stream.put(_n('Decode'), PdfArray.fromDoubles(decode));
   }
   if (order != null) {
-    stream.put(_n('Order'), CraftPdfNumber.fromInt(order));
+    stream.put(_n('Order'), PdfNumber.fromInt(order));
   }
   return stream;
 }
 
 /// Builds a type 4 (PostScript calculator) function stream.
-CraftPdfStream _postScript(String program,
+PdfStream _postScript(String program,
     {List<double> domain = const [0.0, 1.0],
     List<double> range = const [0.0, 1.0]}) {
   final stream =
-      CraftPdfStream.withBytes(Uint8List.fromList(latin1.encode(program)));
-  stream.put(_n('FunctionType'), CraftPdfNumber.fromInt(4));
-  stream.put(_n('Domain'), CraftPdfArray.fromDoubles(domain));
-  stream.put(_n('Range'), CraftPdfArray.fromDoubles(range));
+      PdfStream.withBytes(Uint8List.fromList(latin1.encode(program)));
+  stream.put(_n('FunctionType'), PdfNumber.fromInt(4));
+  stream.put(_n('Domain'), PdfArray.fromDoubles(domain));
+  stream.put(_n('Range'), PdfArray.fromDoubles(range));
   return stream;
 }
 
-Future<CraftPdfFunction> _parse(CraftPdfObject object) async {
-  final function = await CraftPdfFunction.parse(object);
+Future<PdfFunction> _parse(PdfObject object) async {
+  final function = await PdfFunction.parse(object);
   expect(function, isNotNull, reason: 'the function should have parsed');
   return function!;
 }
@@ -113,10 +113,10 @@ void main() {
     });
 
     test('defaults to the 0..1 ramp when C0 and C1 are absent', () async {
-      final dict = CraftPdfDictionary();
-      dict.put(_n('FunctionType'), CraftPdfNumber.fromInt(2));
-      dict.put(_n('Domain'), CraftPdfArray.fromDoubles([0.0, 1.0]));
-      dict.put(_n('N'), CraftPdfNumber(1.0));
+      final dict = PdfDictionary();
+      dict.put(_n('FunctionType'), PdfNumber.fromInt(2));
+      dict.put(_n('Domain'), PdfArray.fromDoubles([0.0, 1.0]));
+      dict.put(_n('N'), PdfNumber(1.0));
       final function = await _parse(dict);
       expect(function.evaluate([0.75])[0], closeTo(0.75, 1e-12));
     });
@@ -136,10 +136,10 @@ void main() {
     });
 
     test('is rejected without /N', () async {
-      final dict = CraftPdfDictionary();
-      dict.put(_n('FunctionType'), CraftPdfNumber.fromInt(2));
-      dict.put(_n('Domain'), CraftPdfArray.fromDoubles([0.0, 1.0]));
-      expect(await CraftPdfFunction.parse(dict), isNull);
+      final dict = PdfDictionary();
+      dict.put(_n('FunctionType'), PdfNumber.fromInt(2));
+      dict.put(_n('Domain'), PdfArray.fromDoubles([0.0, 1.0]));
+      expect(await PdfFunction.parse(dict), isNull);
     });
   });
 
@@ -147,7 +147,7 @@ void main() {
     test('interpolates a two sample ramp', () async {
       final function = await _parse(
           _sampled(size: [2], bitsPerSample: 8, bytes: [0x00, 0xFF]));
-      expect(function, isA<CraftPdfFunctionSampled>());
+      expect(function, isA<PdfFunctionSampled>());
       expect(function.evaluate([0.0])[0], closeTo(0.0, 1e-12));
       expect(function.evaluate([0.5])[0], closeTo(0.5, 1e-12));
       expect(function.evaluate([1.0])[0], closeTo(1.0, 1e-12));
@@ -241,13 +241,13 @@ void main() {
     test('order 3 falls back to linear interpolation', () async {
       final function = await _parse(
           _sampled(size: [2], bitsPerSample: 8, bytes: [0x00, 0xFF], order: 3));
-      expect((function as CraftPdfFunctionSampled).order, 3);
+      expect((function as PdfFunctionSampled).order, 3);
       expect(function.evaluate([0.5])[0], closeTo(0.5, 1e-12));
     });
 
     test('rejects an unsupported bits per sample', () async {
       expect(
-          await CraftPdfFunction.parse(
+          await PdfFunction.parse(
               _sampled(size: [2], bitsPerSample: 5, bytes: [0x00, 0xFF])),
           isNull);
     });
@@ -263,24 +263,24 @@ void main() {
 
   group('type 3 stitching', () {
     /// Two half ramps stitched at 0.5 reproduce a single 0..1 ramp.
-    Future<CraftPdfFunction> twoRamps() async {
-      final dict = CraftPdfDictionary();
-      dict.put(_n('FunctionType'), CraftPdfNumber.fromInt(3));
-      dict.put(_n('Domain'), CraftPdfArray.fromDoubles([0.0, 1.0]));
+    Future<PdfFunction> twoRamps() async {
+      final dict = PdfDictionary();
+      dict.put(_n('FunctionType'), PdfNumber.fromInt(3));
+      dict.put(_n('Domain'), PdfArray.fromDoubles([0.0, 1.0]));
       dict.put(
           _n('Functions'),
-          CraftPdfArray.fromList([
+          PdfArray.fromList([
             _exponential(c0: [0.0], c1: [0.5]),
             _exponential(c0: [0.5], c1: [1.0]),
           ]));
-      dict.put(_n('Bounds'), CraftPdfArray.fromDoubles([0.5]));
-      dict.put(_n('Encode'), CraftPdfArray.fromDoubles([0.0, 1.0, 0.0, 1.0]));
+      dict.put(_n('Bounds'), PdfArray.fromDoubles([0.5]));
+      dict.put(_n('Encode'), PdfArray.fromDoubles([0.0, 1.0, 0.0, 1.0]));
       return _parse(dict);
     }
 
     test('selects the subfunction and re-encodes the input', () async {
       final function = await twoRamps();
-      expect(function, isA<CraftPdfFunctionStitching>());
+      expect(function, isA<PdfFunctionStitching>());
       expect(function.inputCount, 1);
       expect(function.outputCount, 1);
       expect(function.evaluate([0.0])[0], closeTo(0.0, 1e-12));
@@ -291,30 +291,30 @@ void main() {
     });
 
     test('a single subfunction needs no bounds', () async {
-      final dict = CraftPdfDictionary();
-      dict.put(_n('FunctionType'), CraftPdfNumber.fromInt(3));
-      dict.put(_n('Domain'), CraftPdfArray.fromDoubles([0.0, 1.0]));
+      final dict = PdfDictionary();
+      dict.put(_n('FunctionType'), PdfNumber.fromInt(3));
+      dict.put(_n('Domain'), PdfArray.fromDoubles([0.0, 1.0]));
       dict.put(
           _n('Functions'),
-          CraftPdfArray.fromList([
+          PdfArray.fromList([
             _exponential(c0: [0.0], c1: [1.0])
           ]));
-      dict.put(_n('Bounds'), CraftPdfArray());
+      dict.put(_n('Bounds'), PdfArray());
       // The subdomain 0..1 is mapped onto the subfunction's 1..0, reversing it.
-      dict.put(_n('Encode'), CraftPdfArray.fromDoubles([1.0, 0.0]));
+      dict.put(_n('Encode'), PdfArray.fromDoubles([1.0, 0.0]));
       final function = await _parse(dict);
       expect(function.evaluate([0.25])[0], closeTo(0.75, 1e-12));
     });
 
     test('is rejected when /Bounds has the wrong length', () async {
-      final dict = CraftPdfDictionary();
-      dict.put(_n('FunctionType'), CraftPdfNumber.fromInt(3));
-      dict.put(_n('Domain'), CraftPdfArray.fromDoubles([0.0, 1.0]));
-      dict.put(_n('Functions'),
-          CraftPdfArray.fromList([_exponential(), _exponential()]));
-      dict.put(_n('Bounds'), CraftPdfArray.fromDoubles([0.3, 0.6]));
-      dict.put(_n('Encode'), CraftPdfArray.fromDoubles([0.0, 1.0, 0.0, 1.0]));
-      expect(await CraftPdfFunction.parse(dict), isNull);
+      final dict = PdfDictionary();
+      dict.put(_n('FunctionType'), PdfNumber.fromInt(3));
+      dict.put(_n('Domain'), PdfArray.fromDoubles([0.0, 1.0]));
+      dict.put(
+          _n('Functions'), PdfArray.fromList([_exponential(), _exponential()]));
+      dict.put(_n('Bounds'), PdfArray.fromDoubles([0.3, 0.6]));
+      dict.put(_n('Encode'), PdfArray.fromDoubles([0.0, 1.0, 0.0, 1.0]));
+      expect(await PdfFunction.parse(dict), isNull);
     });
   });
 
@@ -322,7 +322,7 @@ void main() {
     test('{ 2 mul } doubles its input', () async {
       final function =
           await _parse(_postScript('{ 2 mul }', range: [0.0, 2.0]));
-      expect(function, isA<CraftPdfFunctionPostScript>());
+      expect(function, isA<PdfFunctionPostScript>());
       expect(function.evaluate([0.3])[0], closeTo(0.6, 1e-12));
       expect(function.evaluate([1.0])[0], closeTo(2.0, 1e-12));
     });
@@ -434,8 +434,8 @@ void main() {
     });
 
     test('an unbalanced program does not parse', () async {
-      expect(await CraftPdfFunction.parse(_postScript('{ 2 mul')), isNull);
-      expect(await CraftPdfFunction.parse(_postScript('2 mul')), isNull);
+      expect(await PdfFunction.parse(_postScript('{ 2 mul')), isNull);
+      expect(await PdfFunction.parse(_postScript('2 mul')), isNull);
     });
 
     test('an overflowing program is contained and yields zeros', () async {
@@ -453,13 +453,13 @@ void main() {
   group('function arrays', () {
     test('n one in one out functions stand in for one n output function',
         () async {
-      final array = CraftPdfArray.fromList([
+      final array = PdfArray.fromList([
         _exponential(c0: [0.0], c1: [1.0]),
         _exponential(c0: [1.0], c1: [0.0]),
         _exponential(c0: [0.5], c1: [0.5]),
       ]);
       final function = await _parse(array);
-      expect(function, isA<CraftPdfFunctionArray>());
+      expect(function, isA<PdfFunctionArray>());
       expect(function.inputCount, 1);
       expect(function.outputCount, 3);
       final result = function.evaluate([0.25]);
@@ -469,43 +469,43 @@ void main() {
     });
 
     test('an array holding a multi output function is rejected', () async {
-      final array = CraftPdfArray.fromList([
+      final array = PdfArray.fromList([
         _exponential(c0: [0.0, 0.0], c1: [1.0, 1.0]),
       ]);
-      expect(await CraftPdfFunction.parse(array), isNull);
+      expect(await PdfFunction.parse(array), isNull);
     });
   });
 
   group('parse', () {
     test('resolves an indirect reference', () async {
-      final reference = CraftPdfIndirectReference(1, 0, _exponential());
+      final reference = PdfIndirectReference(1, 0, _exponential());
       final function = await _parse(reference);
-      expect(function, isA<CraftPdfFunctionExponential>());
+      expect(function, isA<PdfFunctionExponential>());
     });
 
     test('returns null for objects that are not functions', () async {
-      expect(await CraftPdfFunction.parse(null), isNull);
-      expect(await CraftPdfFunction.parse(CraftPdfName.deviceRgb), isNull);
-      expect(await CraftPdfFunction.parse(CraftPdfDictionary()), isNull);
-      final unknownType = CraftPdfDictionary();
-      unknownType.put(_n('FunctionType'), CraftPdfNumber.fromInt(9));
-      unknownType.put(_n('Domain'), CraftPdfArray.fromDoubles([0.0, 1.0]));
-      expect(await CraftPdfFunction.parse(unknownType), isNull);
+      expect(await PdfFunction.parse(null), isNull);
+      expect(await PdfFunction.parse(PdfName.deviceRgb), isNull);
+      expect(await PdfFunction.parse(PdfDictionary()), isNull);
+      final unknownType = PdfDictionary();
+      unknownType.put(_n('FunctionType'), PdfNumber.fromInt(9));
+      unknownType.put(_n('Domain'), PdfArray.fromDoubles([0.0, 1.0]));
+      expect(await PdfFunction.parse(unknownType), isNull);
     });
   });
 
   group('helpers', () {
     test('interpolate maps between intervals', () {
-      expect(CraftPdfFunction.interpolate(0.5, 0.0, 1.0, 10.0, 20.0),
+      expect(PdfFunction.interpolate(0.5, 0.0, 1.0, 10.0, 20.0),
           closeTo(15.0, 1e-12));
       // A degenerate source interval collapses onto the low end.
-      expect(CraftPdfFunction.interpolate(0.5, 1.0, 1.0, 10.0, 20.0),
+      expect(PdfFunction.interpolate(0.5, 1.0, 1.0, 10.0, 20.0),
           closeTo(10.0, 1e-12));
     });
 
     test('clip tolerates reversed bounds', () {
-      expect(CraftPdfFunction.clip(5.0, 10.0, 0.0), closeTo(5.0, 1e-12));
-      expect(CraftPdfFunction.clip(-5.0, 10.0, 0.0), closeTo(0.0, 1e-12));
+      expect(PdfFunction.clip(5.0, 10.0, 0.0), closeTo(5.0, 1e-12));
+      expect(PdfFunction.clip(-5.0, 10.0, 0.0), closeTo(0.0, 1e-12));
     });
   });
 }

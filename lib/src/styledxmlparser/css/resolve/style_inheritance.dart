@@ -1,5 +1,5 @@
 /// Interface for attribute and style-inheritance logic
-abstract class CraftStyleInheritance {
+abstract class StyleInheritance {
   /// Checks if a property or attribute is inheritable.
   ///
   /// [propertyIdentifier] the identifier for property

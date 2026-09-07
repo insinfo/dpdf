@@ -1,24 +1,24 @@
 import 'package:dpdf/src/styledxmlparser/node/attribute.dart';
 
-abstract class CraftMarkupNode {
-  CraftMarkupNode? get parentNode;
-  List<CraftMarkupNode> get childNodes;
+abstract class MarkupNode {
+  MarkupNode? get parentNode;
+  List<MarkupNode> get childNodes;
 }
 
-abstract class CraftElementNode extends CraftMarkupNode {
+abstract class ElementNode extends MarkupNode {
   String get name;
-  Iterable<CraftAttribute> getAttributes();
+  Iterable<Attribute> getAttributes();
   String? getAttribute(String key);
 }
 
-abstract class CraftDataNode extends CraftMarkupNode {
+abstract class DataNode extends MarkupNode {
   String getWholeData();
 }
 
-abstract class CraftNode extends CraftMarkupNode {
+abstract class Node extends MarkupNode {
   String wholeText();
 }
 
-abstract class XmlDeclarationNode extends CraftMarkupNode {
+abstract class XmlDeclarationNode extends MarkupNode {
   String get name;
 }

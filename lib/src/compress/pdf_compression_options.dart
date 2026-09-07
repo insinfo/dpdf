@@ -82,7 +82,7 @@ class PdfCompressionOptions {
 
   const PdfCompressionOptions({
     this.objectStreams = true,
-    this.compressionLevel = CraftCompressionConstants.bestCompression,
+    this.compressionLevel = CompressionConstants.bestCompression,
     this.recompressStreams = true,
     this.deduplicateObjects = true,
     this.removeOrphans = true,

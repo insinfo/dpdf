@@ -7,7 +7,7 @@ import 'package:dpdf/src/kernel/font/pdf_font.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 
 /// Wrapper class that represent resource dictionary.
-class CraftPdfResources extends CraftPdfObjectWrapper<CraftPdfDictionary> {
+class PdfResources extends PdfObjectWrapper<PdfDictionary> {
   static const String _f = "F";
   static const String _im = "Im";
   static const String _fm = "Fm";
@@ -17,37 +17,37 @@ class CraftPdfResources extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   static const String _p = "P";
   static const String _sh = "Sh";
 
-  final Map<CraftPdfObject, CraftPdfName> _resourceToName = {};
+  final Map<PdfObject, PdfName> _resourceToName = {};
 
   late final ResourceNameGenerator _fontNamesGen =
-      ResourceNameGenerator(CraftPdfName.font, _f);
+      ResourceNameGenerator(PdfName.font, _f);
 
   late final ResourceNameGenerator _imageNamesGen =
-      ResourceNameGenerator(CraftPdfName.xObject, _im);
+      ResourceNameGenerator(PdfName.xObject, _im);
 
   late final ResourceNameGenerator _formNamesGen =
-      ResourceNameGenerator(CraftPdfName.xObject, _fm);
+      ResourceNameGenerator(PdfName.xObject, _fm);
 
   late final ResourceNameGenerator _egsNamesGen =
-      ResourceNameGenerator(CraftPdfName.extGState, _gs);
+      ResourceNameGenerator(PdfName.extGState, _gs);
 
   late final ResourceNameGenerator _propNamesGen =
-      ResourceNameGenerator(CraftPdfName.properties, _pr);
+      ResourceNameGenerator(PdfName.properties, _pr);
 
   late final ResourceNameGenerator _csNamesGen =
-      ResourceNameGenerator(CraftPdfName.colorSpace, _cs);
+      ResourceNameGenerator(PdfName.colorSpace, _cs);
 
   late final ResourceNameGenerator _patternNamesGen =
-      ResourceNameGenerator(CraftPdfName.pattern, _p);
+      ResourceNameGenerator(PdfName.pattern, _p);
 
   late final ResourceNameGenerator _shadingNamesGen =
-      ResourceNameGenerator(CraftPdfName.shading, _sh);
+      ResourceNameGenerator(PdfName.shading, _sh);
 
   bool _readOnly = false;
   bool _isModified = false;
 
-  CraftPdfResources([CraftPdfDictionary? pdfObject])
-      : super(pdfObject ?? CraftPdfDictionary());
+  PdfResources([PdfDictionary? pdfObject])
+      : super(pdfObject ?? PdfDictionary());
 
   /// Initializes the resources by building the internal map from the dictionary.
   Future<void> init() async {
@@ -63,16 +63,16 @@ class CraftPdfResources extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   bool hasChanges() => _isModified;
 
   @override
-  CraftPdfObjectWrapper<CraftPdfDictionary> markChanged() {
+  PdfObjectWrapper<PdfDictionary> markChanged() {
     _isModified = true;
     return super.markChanged();
   }
 
-  Future<CraftPdfName> addResource(CraftPdfObject resource,
-      CraftPdfName resType, CraftPdfName resName) async {
+  Future<PdfName> addResource(
+      PdfObject resource, PdfName resType, PdfName resName) async {
     if (_readOnly) {
       _readOnly = false;
-      final clonedDict = pdfRepresentation().clone() as CraftPdfDictionary;
+      final clonedDict = pdfRepresentation().clone() as PdfDictionary;
       setPdfObject(clonedDict);
     }
 
@@ -84,7 +84,7 @@ class CraftPdfResources extends CraftPdfObjectWrapper<CraftPdfDictionary> {
     _resourceToName[resource] = resName;
     var resourceCategory = await pdfRepresentation().dictionaryEntry(resType);
     if (resourceCategory == null) {
-      resourceCategory = CraftPdfDictionary();
+      resourceCategory = PdfDictionary();
       pdfRepresentation().put(resType, resourceCategory);
     } else {
       resourceCategory.markChanged();
@@ -94,56 +94,49 @@ class CraftPdfResources extends CraftPdfObjectWrapper<CraftPdfDictionary> {
     return resName;
   }
 
-  Future<CraftPdfName> registerTypeface(
-      CraftPdfDocument document, CraftPdfFont font) async {
+  Future<PdfName> registerTypeface(PdfDocument document, PdfFont font) async {
     document.registerTypeface(font);
-    return addResource(font.pdfRepresentation(), CraftPdfName.font,
+    return addResource(font.pdfRepresentation(), PdfName.font,
         await _fontNamesGen.generate(this));
   }
 
-  Future<CraftPdfName> addXObject(
-      CraftPdfDocument document, CraftPdfStream xObject) async {
-    final subtype = await xObject.nameEntry(CraftPdfName.subtype);
-    final gen = subtype == CraftPdfName.form ? _formNamesGen : _imageNamesGen;
-    return addResource(xObject, CraftPdfName.xObject, await gen.generate(this));
+  Future<PdfName> addXObject(PdfDocument document, PdfStream xObject) async {
+    final subtype = await xObject.nameEntry(PdfName.subtype);
+    final gen = subtype == PdfName.form ? _formNamesGen : _imageNamesGen;
+    return addResource(xObject, PdfName.xObject, await gen.generate(this));
   }
 
-  Future<CraftPdfName> addExtGState(
-      CraftPdfDocument document, CraftPdfObject gs) async {
+  Future<PdfName> addExtGState(PdfDocument document, PdfObject gs) async {
     return addResource(
-        gs, CraftPdfName.extGState, await _egsNamesGen.generate(this));
+        gs, PdfName.extGState, await _egsNamesGen.generate(this));
   }
 
-  Future<CraftPdfName> addProperties(
-      CraftPdfDocument document, CraftPdfObject props) async {
+  Future<PdfName> addProperties(PdfDocument document, PdfObject props) async {
     return addResource(
-        props, CraftPdfName.properties, await _propNamesGen.generate(this));
+        props, PdfName.properties, await _propNamesGen.generate(this));
   }
 
-  Future<CraftPdfName> addColorSpace(
-      CraftPdfDocument document, CraftPdfObject cs) async {
+  Future<PdfName> addColorSpace(PdfDocument document, PdfObject cs) async {
     return addResource(
-        cs, CraftPdfName.colorSpace, await _csNamesGen.generate(this));
+        cs, PdfName.colorSpace, await _csNamesGen.generate(this));
   }
 
-  Future<CraftPdfName> addShading(
-      CraftPdfDocument document, CraftPdfObject shading) async {
+  Future<PdfName> addShading(PdfDocument document, PdfObject shading) async {
     return addResource(
-        shading, CraftPdfName.shading, await _shadingNamesGen.generate(this));
+        shading, PdfName.shading, await _shadingNamesGen.generate(this));
   }
 
-  Future<CraftPdfName> addPattern(
-      CraftPdfDocument document, CraftPdfObject pattern) async {
+  Future<PdfName> addPattern(PdfDocument document, PdfObject pattern) async {
     return addResource(
-        pattern, CraftPdfName.pattern, await _patternNamesGen.generate(this));
+        pattern, PdfName.pattern, await _patternNamesGen.generate(this));
   }
 
-  CraftPdfName getResourceName(CraftPdfObject resource) {
+  PdfName getResourceName(PdfObject resource) {
     var resName = _resourceToName[resource];
-    return resName ?? CraftPdfName('');
+    return resName ?? PdfName('');
   }
 
-  Future<void> _buildResources(CraftPdfDictionary dictionary) async {
+  Future<void> _buildResources(PdfDictionary dictionary) async {
     for (final resourceType in dictionary.keySet()) {
       final resources = await dictionary.dictionaryEntry(resourceType);
       if (resources == null) continue;
@@ -159,21 +152,21 @@ class CraftPdfResources extends CraftPdfObjectWrapper<CraftPdfDictionary> {
 
 /// Resource name generator.
 class ResourceNameGenerator {
-  final CraftPdfName resourceType;
+  final PdfName resourceType;
   final String prefix;
   int _counter;
 
   ResourceNameGenerator(this.resourceType, this.prefix, [this._counter = 1]);
 
-  Future<CraftPdfName> generate(CraftPdfResources resources) async {
-    var newName = CraftPdfName('$prefix$_counter');
+  Future<PdfName> generate(PdfResources resources) async {
+    var newName = PdfName('$prefix$_counter');
     _counter++;
     final r = resources.pdfRepresentation();
     if (r.containsKey(resourceType)) {
       final category = await r.dictionaryEntry(resourceType);
       if (category != null) {
         while (category.containsKey(newName)) {
-          newName = CraftPdfName('$prefix$_counter');
+          newName = PdfName('$prefix$_counter');
           _counter++;
         }
       }

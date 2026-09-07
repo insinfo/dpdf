@@ -29,30 +29,27 @@ Future<Uint8List> _document({
 }) async {
   final samples = pixels ?? _photo(width, height);
   final output = BytesBuilder(copy: false);
-  final document =
-      await CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await document.appendBlankPage();
 
-  final image = CraftPdfStream.withBytes(samples, 0)
-    ..put(CraftPdfName.type, CraftPdfName('XObject'))
-    ..put(CraftPdfName.subtype, CraftPdfName('Image'))
-    ..put(CraftPdfName.width, CraftPdfNumber.fromInt(width))
-    ..put(CraftPdfName.height, CraftPdfNumber.fromInt(height))
-    ..put(CraftPdfName('BitsPerComponent'), CraftPdfNumber.fromInt(8))
-    ..put(CraftPdfName('ColorSpace'),
-        CraftPdfName(channels == 1 ? 'DeviceGray' : 'DeviceRGB'));
+  final image = PdfStream.withBytes(samples, 0)
+    ..put(PdfName.type, PdfName('XObject'))
+    ..put(PdfName.subtype, PdfName('Image'))
+    ..put(PdfName.width, PdfNumber.fromInt(width))
+    ..put(PdfName.height, PdfNumber.fromInt(height))
+    ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+    ..put(PdfName('ColorSpace'),
+        PdfName(channels == 1 ? 'DeviceGray' : 'DeviceRGB'));
   image.attachToDocument(document);
 
   page.pdfRepresentation().put(
-      CraftPdfName.resources,
-      CraftPdfDictionary()
-        ..put(
-            CraftPdfName('XObject'),
-            CraftPdfDictionary()
-              ..put(CraftPdfName('Im0'), image.indirectHandle()!)));
+      PdfName.resources,
+      PdfDictionary()
+        ..put(PdfName('XObject'),
+            PdfDictionary()..put(PdfName('Im0'), image.indirectHandle()!)));
   page.pdfRepresentation().put(
-      CraftPdfName.contents,
-      CraftPdfStream.withBytes(
+      PdfName.contents,
+      PdfStream.withBytes(
           Uint8List.fromList(ascii.encode('q 595 0 0 842 0 0 cm /Im0 Do Q')),
           0));
   await document.close();
@@ -60,13 +57,13 @@ Future<Uint8List> _document({
 }
 
 /// The image XObject on page 1, so a test can read back what was written.
-Future<CraftPdfStream> _imageOf(Uint8List pdf) async {
-  final document = await CraftPdfDocument.open(CraftPdfReader.fromBytes(pdf));
+Future<PdfStream> _imageOf(Uint8List pdf) async {
+  final document = await PdfDocument.open(PdfReader.fromBytes(pdf));
   final page = (await document.pageAt(1))!;
   final resources =
-      await page.pdfRepresentation().dictionaryEntry(CraftPdfName.resources);
-  final xobjects = await resources!.dictionaryEntry(CraftPdfName('XObject'));
-  return (await xobjects!.streamEntry(CraftPdfName('Im0')))!;
+      await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+  final xobjects = await resources!.dictionaryEntry(PdfName('XObject'));
+  return (await xobjects!.streamEntry(PdfName('Im0')))!;
 }
 
 void main() {
@@ -110,8 +107,8 @@ void main() {
       );
 
       final image = await _imageOf(result.bytes);
-      expect(await image.integerEntry(CraftPdfName.width), equals(240));
-      expect(await image.integerEntry(CraftPdfName.height), equals(180));
+      expect(await image.integerEntry(PdfName.width), equals(240));
+      expect(await image.integerEntry(PdfName.height), equals(180));
 
       final decoded = JpegDecoder.decode((await image.getRawBytes())!);
       expect(decoded.width, equals(240));
@@ -130,8 +127,8 @@ void main() {
       );
 
       final image = await _imageOf(result.bytes);
-      expect(await image.integerEntry(CraftPdfName.width), equals(100));
-      expect(await image.integerEntry(CraftPdfName.height), equals(75));
+      expect(await image.integerEntry(PdfName.width), equals(100));
+      expect(await image.integerEntry(PdfName.height), equals(75));
 
       final decoded = JpegDecoder.decode((await image.getRawBytes())!);
       expect(decoded.width, equals(100));
@@ -176,7 +173,7 @@ void main() {
       );
 
       final image = await _imageOf(result.bytes);
-      expect((await image.nameEntry(CraftPdfName('ColorSpace')))?.getValue(),
+      expect((await image.nameEntry(PdfName('ColorSpace')))?.getValue(),
           equals('DeviceGray'));
       final decoded = JpegDecoder.decode((await image.getRawBytes())!);
       expect(decoded.format, equals(JpegPixelFormat.grayscale));
@@ -193,8 +190,8 @@ void main() {
       );
 
       final image = await _imageOf(result.bytes);
-      expect(await image.integerEntry(CraftPdfName.width), equals(240));
-      expect(await image.integerEntry(CraftPdfName.height), equals(180));
+      expect(await image.integerEntry(PdfName.width), equals(240));
+      expect(await image.integerEntry(PdfName.height), equals(180));
     });
 
     test('recompressing an existing JPEG keeps it readable', () async {
@@ -217,7 +214,7 @@ void main() {
       );
 
       final image = await _imageOf(twice.bytes);
-      expect(await image.integerEntry(CraftPdfName.width), equals(120));
+      expect(await image.integerEntry(PdfName.width), equals(120));
       final decoded = JpegDecoder.decode((await image.getRawBytes())!);
       expect(decoded.width, equals(120));
       expect(decoded.height, equals(90));

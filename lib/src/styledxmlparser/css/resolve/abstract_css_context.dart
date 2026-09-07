@@ -1,5 +1,5 @@
 /// Context values used while resolving CSS properties.
-abstract class CraftAbstractCssContext {
+abstract class AbstractCssContext {
   int _quotesDepth = 0;
 
   /// Gets the quotes depth.

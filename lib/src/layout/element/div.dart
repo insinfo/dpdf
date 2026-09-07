@@ -3,14 +3,14 @@ import 'package:dpdf/src/layout/renderer/div_renderer.dart';
 import 'package:dpdf/src/layout/renderer/renderer.dart';
 import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
 
-class CraftDiv extends CraftBlockElement<CraftDiv> {
+class Div extends BlockElement<Div> {
   @override
-  CraftRenderer makeNewRenderer() {
-    return CraftDivRenderer(this);
+  Renderer makeNewRenderer() {
+    return DivRenderer(this);
   }
 
   @override
-  CraftAccessibilityProperties getAccessibilityProperties() {
-    return CraftAccessibilityProperties();
+  AccessibilityProperties getAccessibilityProperties() {
+    return AccessibilityProperties();
   }
 }

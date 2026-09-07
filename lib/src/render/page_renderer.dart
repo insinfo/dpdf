@@ -149,7 +149,7 @@ class PdfPageRenderer {
 
   /// Renders [page].
   static Future<PdfRenderedPage> render(
-    CraftPdfPage page, {
+    PdfPage page, {
     PdfRenderOptions options = const PdfRenderOptions(),
   }) async {
     final box = await _pageBox(page);
@@ -194,7 +194,7 @@ class PdfPageRenderer {
     final renderer =
         _Renderer(context, base, fontFallback: options.fontFallback);
     final resources =
-        await page.pdfRepresentation().dictionaryEntry(CraftPdfName.resources);
+        await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
     await renderer.run(await page.contentPayload(), resources, 0);
     context.flush();
 
@@ -213,14 +213,14 @@ class PdfPageRenderer {
 
   /// Renders [page] straight to PNG bytes.
   static Future<Uint8List> renderToPng(
-    CraftPdfPage page, {
+    PdfPage page, {
     PdfRenderOptions options = const PdfRenderOptions(),
   }) async {
     return (await render(page, options: options)).toPng();
   }
 
   /// The crop box when there is one, else the media box, else US Letter.
-  static Future<CraftRectangle> _pageBox(CraftPdfPage page) async {
+  static Future<Rectangle> _pageBox(PdfPage page) async {
     try {
       final crop = await page.cropBounds();
       if (crop.getWidth() > 0 && crop.getHeight() > 0) return crop;
@@ -233,7 +233,7 @@ class PdfPageRenderer {
     } on Object {
       // Fall through to the default below.
     }
-    return CraftRectangle(0, 0, 612, 792);
+    return Rectangle(0, 0, 612, 792);
   }
 }
 
@@ -245,8 +245,8 @@ class _State {
   BLMatrix2D ctm;
   int fillColour;
   int strokeColour;
-  CraftPdfColorSpace? fillSpace;
-  CraftPdfColorSpace? strokeSpace;
+  PdfColorSpace? fillSpace;
+  PdfColorSpace? strokeSpace;
   double lineWidth;
   BLStrokeCap lineCap;
   BLStrokeJoin lineJoin;
@@ -362,7 +362,7 @@ class _Renderer {
 
   Future<void> run(
     Uint8List content,
-    CraftPdfDictionary? resources,
+    PdfDictionary? resources,
     int depth,
   ) async {
     if (depth > _maxDepth) return;
@@ -385,7 +385,7 @@ class _Renderer {
 
   Future<void> _apply(
     PdfContentOperation op,
-    CraftPdfDictionary? resources,
+    PdfDictionary? resources,
     int depth,
   ) async {
     switch (op.operator) {
@@ -749,13 +749,13 @@ class _Renderer {
 
   Future<void> _setSpace(
     PdfContentOperation op,
-    CraftPdfDictionary? resources, {
+    PdfDictionary? resources, {
     required bool stroke,
   }) async {
     final name = op.name(0);
     if (name == null) return;
 
-    CraftPdfColorSpace? space;
+    PdfColorSpace? space;
     if (const [
       'DeviceGray',
       'DeviceRGB',
@@ -765,12 +765,12 @@ class _Renderer {
       'RGB',
       'CMYK'
     ].contains(name)) {
-      space = await CraftPdfColorSpace.makeColorSpace(CraftPdfName(name));
+      space = await PdfColorSpace.makeColorSpace(PdfName(name));
     } else {
       final dictionary =
-          await resources?.dictionaryEntry(CraftPdfName('ColorSpace'));
-      final entry = await dictionary?.get(CraftPdfName(name), true);
-      if (entry != null) space = await CraftPdfColorSpace.makeColorSpace(entry);
+          await resources?.dictionaryEntry(PdfName('ColorSpace'));
+      final entry = await dictionary?.get(PdfName(name), true);
+      if (entry != null) space = await PdfColorSpace.makeColorSpace(entry);
     }
     if (space == null) {
       _note('cs:$name');
@@ -792,7 +792,7 @@ class _Renderer {
     final space = stroke ? state.strokeSpace : state.fillSpace;
     final components = <double>[];
     for (final operand in op.operands) {
-      if (operand is CraftPdfNumber) components.add(operand.doubleValue());
+      if (operand is PdfNumber) components.add(operand.doubleValue());
     }
     if (components.isEmpty) {
       // `scn` with a name operand selects a pattern, which needs a shading or
@@ -832,28 +832,28 @@ class _Renderer {
   // --- graphics state dictionary --------------------------------------------
 
   Future<void> _applyExtGState(
-      PdfContentOperation op, CraftPdfDictionary? resources) async {
+      PdfContentOperation op, PdfDictionary? resources) async {
     final name = op.name(0);
     if (name == null || resources == null) return;
-    final states = await resources.dictionaryEntry(CraftPdfName('ExtGState'));
-    final gs = await states?.dictionaryEntry(CraftPdfName(name));
+    final states = await resources.dictionaryEntry(PdfName('ExtGState'));
+    final gs = await states?.dictionaryEntry(PdfName(name));
     if (gs == null) return;
 
-    final lineWidth = await gs.decimalEntry(CraftPdfName('LW'));
+    final lineWidth = await gs.decimalEntry(PdfName('LW'));
     if (lineWidth != null && lineWidth >= 0) state.lineWidth = lineWidth;
 
-    final fillAlpha = await gs.decimalEntry(CraftPdfName('ca'));
+    final fillAlpha = await gs.decimalEntry(PdfName('ca'));
     if (fillAlpha != null) state.fillAlpha = fillAlpha.clamp(0.0, 1.0);
 
-    final strokeAlpha = await gs.decimalEntry(CraftPdfName('CA'));
+    final strokeAlpha = await gs.decimalEntry(PdfName('CA'));
     if (strokeAlpha != null) state.strokeAlpha = strokeAlpha.clamp(0.0, 1.0);
 
-    if (gs.containsKey(CraftPdfName('SMask'))) {
-      final mask = await gs.nameEntry(CraftPdfName('SMask'));
+    if (gs.containsKey(PdfName('SMask'))) {
+      final mask = await gs.nameEntry(PdfName('SMask'));
       // A soft mask that is not /None needs a transparency group.
       if (mask?.getValue() != 'None') _note('gs:SMask');
     }
-    final blend = await gs.nameEntry(CraftPdfName('BM'));
+    final blend = await gs.nameEntry(PdfName('BM'));
     final blendName = blend?.getValue();
     if (blendName != null &&
         blendName != 'Normal' &&
@@ -865,11 +865,11 @@ class _Renderer {
   void _setDash(PdfContentOperation op) {
     if (op.operands.length != 2) return;
     final array = op.operands[0];
-    if (array is! CraftPdfArray) return;
+    if (array is! PdfArray) return;
     final pattern = <double>[];
     for (var i = 0; i < array.size(); i++) {
       final value = array.subList(i, i + 1).first;
-      if (value is CraftPdfNumber && value.doubleValue() >= 0) {
+      if (value is PdfNumber && value.doubleValue() >= 0) {
         pattern.add(value.doubleValue());
       }
     }
@@ -889,7 +889,7 @@ class _Renderer {
   // --- text -----------------------------------------------------------------
 
   /// Resolves the `Tf` operand to a font, remembering the result per page.
-  Future<void> _selectFont(String? name, CraftPdfDictionary? resources) async {
+  Future<void> _selectFont(String? name, PdfDictionary? resources) async {
     if (name == null) {
       _font = null;
       return;
@@ -932,19 +932,19 @@ class _Renderer {
     if (operandIndex >= op.operands.length) return;
     final operand = op.operands[operandIndex];
 
-    if (operand is CraftPdfString) {
+    if (operand is PdfString) {
       await _showString(operand.getValueBytes());
       return;
     }
 
-    if (operand is CraftPdfArray) {
+    if (operand is PdfArray) {
       // In `TJ` a number displaces the next glyph by -n/1000 text units,
       // which is how justified text and kerning corrections are encoded.
       for (var i = 0; i < operand.size(); i++) {
         final item = await operand.get(i);
-        if (item is CraftPdfString) {
+        if (item is PdfString) {
           await _showString(item.getValueBytes());
-        } else if (item is CraftPdfNumber) {
+        } else if (item is PdfNumber) {
           _advanceText(-item.doubleValue() /
               1000.0 *
               state.fontSize *
@@ -1079,16 +1079,16 @@ class _Renderer {
 
   Future<void> _doXObject(
     PdfContentOperation op,
-    CraftPdfDictionary? resources,
+    PdfDictionary? resources,
     int depth,
   ) async {
     final name = op.name(0);
     if (name == null || resources == null) return;
-    final xobjects = await resources.dictionaryEntry(CraftPdfName('XObject'));
-    final xobject = await xobjects?.streamEntry(CraftPdfName(name));
+    final xobjects = await resources.dictionaryEntry(PdfName('XObject'));
+    final xobject = await xobjects?.streamEntry(PdfName(name));
     if (xobject == null) return;
 
-    final subtype = (await xobject.nameEntry(CraftPdfName.subtype))?.getValue();
+    final subtype = (await xobject.nameEntry(PdfName.subtype))?.getValue();
     if (subtype == 'Image') {
       await _drawImage(xobject);
       return;
@@ -1104,12 +1104,12 @@ class _Renderer {
     final savedStack = _stack.length;
     context.save();
 
-    final matrix = await xobject.arrayEntry(CraftPdfName('Matrix'));
+    final matrix = await xobject.arrayEntry(PdfName('Matrix'));
     if (matrix != null && matrix.size() == 6) {
       final m = <double>[];
       for (var i = 0; i < 6; i++) {
         final value = await matrix.get(i);
-        m.add(value is CraftPdfNumber
+        m.add(value is PdfNumber
             ? value.doubleValue()
             : (i == 0 || i == 3 ? 1 : 0));
       }
@@ -1117,12 +1117,12 @@ class _Renderer {
           BLMatrix2D(m[0], m[1], m[2], m[3], m[4], m[5]).multiply(state.ctm);
     }
 
-    final bbox = await xobject.arrayEntry(CraftPdfName('BBox'));
+    final bbox = await xobject.arrayEntry(PdfName('BBox'));
     if (bbox != null && bbox.size() == 4) {
       final b = <double>[];
       for (var i = 0; i < 4; i++) {
         final value = await bbox.get(i);
-        b.add(value is CraftPdfNumber ? value.doubleValue() : 0);
+        b.add(value is PdfNumber ? value.doubleValue() : 0);
       }
       _rectangle(math.min(b[0], b[2]), math.min(b[1], b[3]),
           (b[2] - b[0]).abs(), (b[3] - b[1]).abs());
@@ -1132,7 +1132,7 @@ class _Renderer {
     }
 
     final formResources =
-        await xobject.dictionaryEntry(CraftPdfName.resources) ?? resources;
+        await xobject.dictionaryEntry(PdfName.resources) ?? resources;
     final content = await xobject.getBytes();
     if (content != null) {
       await run(content, formResources, depth + 1);
@@ -1154,7 +1154,7 @@ class _Renderer {
 
   /// Draws an image into the unit square of the current CTM, which is where
   /// PDF places every image regardless of its pixel size.
-  Future<void> _drawImage(CraftPdfStream stream) async {
+  Future<void> _drawImage(PdfStream stream) async {
     final decoded = await PdfImageDecoder.decode(stream);
     if (decoded == null) {
       imagesSkipped++;
@@ -1174,8 +1174,7 @@ class _Renderer {
     final inverse = placement.invert();
     if (inverse == null) return; // A degenerate CTM draws nothing.
 
-    final interpolate =
-        await stream.flagEntry(CraftPdfName('Interpolate')) ?? false;
+    final interpolate = await stream.flagEntry(PdfName('Interpolate')) ?? false;
 
     // The area to cover is the unit square through the CTM.
     final path = BLPath();

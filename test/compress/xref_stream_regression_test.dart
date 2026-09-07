@@ -8,19 +8,19 @@ import 'package:test/test.dart';
 /// classic table, so its trailer carries `/Index` and `/W`.
 Future<Uint8List> _documentWithXrefStream({int pages = 3}) async {
   final output = BytesBuilder(copy: false);
-  final document = CraftPdfDocument.create(
-    CraftPdfWriter.fromBytesBuilder(
+  final document = PdfDocument.create(
+    PdfWriter.fromBytesBuilder(
       output,
-      properties: CraftWriterProperties().setFullCompressionMode(true),
+      properties: WriterProperties().setFullCompressionMode(true),
     ),
   );
   for (var i = 0; i < pages; i++) {
     final page = await document.appendBlankPage();
     page.pdfRepresentation()
-      ..put(CraftPdfName.mediaBox, CraftPdfArray.fromDoubles([0, 0, 200, 200]))
+      ..put(PdfName.mediaBox, PdfArray.fromDoubles([0, 0, 200, 200]))
       ..put(
-        CraftPdfName.contents,
-        CraftPdfStream.withBytes(
+        PdfName.contents,
+        PdfStream.withBytes(
             Uint8List.fromList(latin1.encode('0 g 20 20 60 60 re f')), 0),
       );
   }
@@ -48,7 +48,7 @@ Uint8List _withXrefIndex(Uint8List source, int size) {
 }
 
 Future<int> _countPages(Uint8List bytes) async {
-  final document = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+  final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
   try {
     var count = 0;
     while (count < 1000) {

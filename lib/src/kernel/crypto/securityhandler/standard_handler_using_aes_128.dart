@@ -11,12 +11,11 @@ import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 
 /// Standard security handler using AES-128 algorithm.
-class CraftStandardHandlerUsingAes128
-    extends CraftStandardHandlerUsingStandard128 {
+class StandardHandlerUsingAes128 extends StandardHandlerUsingStandard128 {
   static final Uint8List salt =
       Uint8List.fromList([0x73, 0x41, 0x6c, 0x54]); // 'sAlT'
 
-  CraftStandardHandlerUsingAes128(
+  StandardHandlerUsingAes128(
       super.encryptionDictionary,
       super.userPassword,
       super.ownerPassword,
@@ -25,19 +24,18 @@ class CraftStandardHandlerUsingAes128
       super.embeddedFilesOnly,
       super.documentId);
 
-  CraftStandardHandlerUsingAes128.read(super.encryptionDictionary,
-      super.password, super.documentId, super.encryptMetadata)
+  StandardHandlerUsingAes128.read(super.encryptionDictionary, super.password,
+      super.documentId, super.encryptMetadata)
       : super.read();
 
   @override
-  CraftOutputStreamEncryption getEncryptionStream(dynamic os) {
-    return CraftOutputStreamAesEncryption(
-        os, nextObjectKey!, 0, nextObjectKeySize);
+  OutputStreamEncryption getEncryptionStream(dynamic os) {
+    return OutputStreamAesEncryption(os, nextObjectKey!, 0, nextObjectKeySize);
   }
 
   @override
-  CraftDecryptor getDecryptor() {
-    return CraftAesDecryptor(nextObjectKey!, 0, nextObjectKeySize);
+  Decryptor getDecryptor() {
+    return AesDecryptor(nextObjectKey!, 0, nextObjectKeySize);
   }
 
   @override
@@ -61,31 +59,30 @@ class CraftStandardHandlerUsingAes128
   }
 
   @override
-  void setSpecificHandlerDicEntries(CraftPdfDictionary encryptionDictionary,
+  void setSpecificHandlerDicEntries(PdfDictionary encryptionDictionary,
       bool encryptMetadata, bool embeddedFilesOnly) {
     if (!encryptMetadata) {
-      encryptionDictionary.put(
-          CraftPdfName.encryptMetadata, CraftPdfBoolean.pdfFalse);
+      encryptionDictionary.put(PdfName.encryptMetadata, PdfBoolean.pdfFalse);
     }
-    encryptionDictionary.put(CraftPdfName.r, CraftPdfNumber.fromInt(4));
-    encryptionDictionary.put(CraftPdfName.v, CraftPdfNumber.fromInt(4));
+    encryptionDictionary.put(PdfName.r, PdfNumber.fromInt(4));
+    encryptionDictionary.put(PdfName.v, PdfNumber.fromInt(4));
 
-    final stdcf = CraftPdfDictionary();
-    stdcf.put(CraftPdfName.length, CraftPdfNumber.fromInt(16));
+    final stdcf = PdfDictionary();
+    stdcf.put(PdfName.length, PdfNumber.fromInt(16));
     if (embeddedFilesOnly) {
-      stdcf.put(CraftPdfName.authEvent, CraftPdfName.efOpen);
-      encryptionDictionary.put(CraftPdfName.eff, CraftPdfName.stdCF);
-      encryptionDictionary.put(CraftPdfName.strF, CraftPdfName.identity);
-      encryptionDictionary.put(CraftPdfName.stmF, CraftPdfName.identity);
+      stdcf.put(PdfName.authEvent, PdfName.efOpen);
+      encryptionDictionary.put(PdfName.eff, PdfName.stdCF);
+      encryptionDictionary.put(PdfName.strF, PdfName.identity);
+      encryptionDictionary.put(PdfName.stmF, PdfName.identity);
     } else {
-      stdcf.put(CraftPdfName.authEvent, CraftPdfName.docOpen);
-      encryptionDictionary.put(CraftPdfName.strF, CraftPdfName.stdCF);
-      encryptionDictionary.put(CraftPdfName.stmF, CraftPdfName.stdCF);
+      stdcf.put(PdfName.authEvent, PdfName.docOpen);
+      encryptionDictionary.put(PdfName.strF, PdfName.stdCF);
+      encryptionDictionary.put(PdfName.stmF, PdfName.stdCF);
     }
-    stdcf.put(CraftPdfName.cfm, CraftPdfName.aesV2);
+    stdcf.put(PdfName.cfm, PdfName.aesV2);
 
-    final cf = CraftPdfDictionary();
-    cf.put(CraftPdfName.stdCF, stdcf);
-    encryptionDictionary.put(CraftPdfName.cf, cf);
+    final cf = PdfDictionary();
+    cf.put(PdfName.stdCF, stdcf);
+    encryptionDictionary.put(PdfName.cf, cf);
   }
 }

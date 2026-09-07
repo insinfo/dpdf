@@ -35,8 +35,8 @@ import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 ///
 /// Uma unidade de usuário do SVG equivale a um pixel CSS, ou seja 0,75 pt.
 /// É por isso que `<rect width="100">` sem `viewBox` mede 75 pt no PDF.
-class CraftSvgConverter {
-  CraftSvgConverter._();
+class SvgConverter {
+  SvgConverter._();
 
   /// Desenha [svg] no [canvas].
   ///
@@ -44,8 +44,8 @@ class CraftSvgConverter {
   /// origem do sistema de coordenadas corrente, crescendo para cima — que é
   /// o canto inferior esquerdo da página num canvas recém-criado. Para
   /// posicionar o desenho, informe explicitamente o retângulo.
-  static Future<void> drawOnCanvas(String svg, CraftPdfCanvas canvas,
-      {CraftRectangle? viewport}) async {
+  static Future<void> drawOnCanvas(String svg, PdfCanvas canvas,
+      {Rectangle? viewport}) async {
     final prepared = _prepare(svg, viewport);
     if (prepared == null) return;
     await _draw(prepared, canvas, viewport ?? prepared.intrinsicViewport);
@@ -55,16 +55,16 @@ class CraftSvgConverter {
   ///
   /// Sem [viewport], o desenho é ancorado no canto superior esquerdo da
   /// página, que é a leitura natural de um SVG cujo eixo Y cresce para baixo.
-  static Future<void> drawOnPage(String svg, CraftPdfPage page,
-      {CraftRectangle? viewport}) async {
+  static Future<void> drawOnPage(String svg, PdfPage page,
+      {Rectangle? viewport}) async {
     final prepared = _prepare(svg, viewport);
     if (prepared == null) return;
-    final canvas = await CraftPdfCanvas.fromPage(page);
+    final canvas = await PdfCanvas.fromPage(page);
     var area = viewport;
     if (area == null) {
       final bounds = await page.mediaBounds();
       final size = prepared.intrinsicViewport;
-      area = CraftRectangle(bounds.getX(), bounds.getTop() - size.getHeight(),
+      area = Rectangle(bounds.getX(), bounds.getTop() - size.getHeight(),
           size.getWidth(), size.getHeight());
     }
     await _draw(prepared, canvas, area);
@@ -75,23 +75,22 @@ class CraftSvgConverter {
   /// Sem [pageSize] a página recebe exatamente o tamanho intrínseco do
   /// desenho, evitando margens que o chamador não pediu.
   static Future<Uint8List> convertToBytes(String svg,
-      {CraftPageSize? pageSize}) async {
+      {PageSize? pageSize}) async {
     final output = BytesBuilder(copy: false);
-    final document =
-        CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+    final document = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
     try {
       final prepared = _prepare(svg, pageSize);
-      final size = prepared?.intrinsicViewport ?? CraftRectangle(0, 0, 1, 1);
+      final size = prepared?.intrinsicViewport ?? Rectangle(0, 0, 1, 1);
       final resolvedSize = pageSize ??
-          CraftPageSize(size.getWidth() <= 0 ? 1 : size.getWidth(),
+          PageSize(size.getWidth() <= 0 ? 1 : size.getWidth(),
               size.getHeight() <= 0 ? 1 : size.getHeight());
       final page = await document.appendBlankPage(resolvedSize);
       if (prepared != null) {
-        final canvas = await CraftPdfCanvas.fromPage(page);
+        final canvas = await PdfCanvas.fromPage(page);
         await _draw(
             prepared,
             canvas,
-            CraftRectangle(0, resolvedSize.getHeight() - size.getHeight(),
+            Rectangle(0, resolvedSize.getHeight() - size.getHeight(),
                 size.getWidth(), size.getHeight()));
       }
     } finally {
@@ -101,11 +100,11 @@ class CraftSvgConverter {
   }
 
   static Future<void> _draw(
-      _PreparedSvg prepared, CraftPdfCanvas canvas, CraftRectangle area) async {
+      _PreparedSvg prepared, PdfCanvas canvas, Rectangle area) async {
     final context = prepared.context;
     context.pushCanvas(canvas);
     try {
-      await CraftPdfRootSvgNodeRenderer(prepared.tree, area).draw(context);
+      await PdfRootSvgNodeRenderer(prepared.tree, area).draw(context);
     } finally {
       context.popCanvas();
     }
@@ -114,20 +113,20 @@ class CraftSvgConverter {
   /// A montagem da árvore é separada do desenho porque o tamanho intrínseco
   /// só se conhece depois de resolver os atributos do elemento raiz — e ele
   /// é necessário antes de existir uma página onde desenhar.
-  static _PreparedSvg? _prepare(String svg, CraftRectangle? customViewport) {
+  static _PreparedSvg? _prepare(String svg, Rectangle? customViewport) {
     final element = _findSvgElement(svg);
     if (element == null) return null;
-    final tree = const CraftDefaultSvgProcessor().process(element);
+    final tree = const DefaultSvgProcessor().process(element);
     if (tree == null) return null;
 
-    final context = CraftSvgDrawContext(null, null);
+    final context = SvgDrawContext(null, null);
     context.setCustomViewport(customViewport);
     final em = context.getCssContext().getRootFontSize();
-    var size = CraftSvgCssUtils.extractWidthAndHeight(tree, em, context);
+    var size = SvgCssUtils.extractWidthAndHeight(tree, em, context);
     if (size.getWidth() <= 0 || size.getHeight() <= 0) {
       // Dimensão ausente ou inválida cai no viewport padrão do SVG, em vez de
       // produzir um desenho de área nula.
-      size = CraftRectangle(0, 0, SvgValues.DEFAULT_VIEWPORT_WIDTH,
+      size = Rectangle(0, 0, SvgValues.DEFAULT_VIEWPORT_WIDTH,
           SvgValues.DEFAULT_VIEWPORT_HEIGHT);
     }
     return _PreparedSvg(tree, size, context);
@@ -153,9 +152,9 @@ class CraftSvgConverter {
 }
 
 class _PreparedSvg {
-  final CraftSvgNodeRenderer tree;
-  final CraftRectangle intrinsicViewport;
-  final CraftSvgDrawContext context;
+  final SvgNodeRenderer tree;
+  final Rectangle intrinsicViewport;
+  final SvgDrawContext context;
 
   const _PreparedSvg(this.tree, this.intrinsicViewport, this.context);
 }

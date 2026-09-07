@@ -7,22 +7,21 @@ import 'package:dpdf/src/kernel/exceptions/kernel_exception_message_constant.dar
 import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
 
 /// AES encryption output stream.
-class CraftOutputStreamAesEncryption extends CraftOutputStreamEncryption {
-  late CraftAESCipher _cipher;
+class OutputStreamAesEncryption extends OutputStreamEncryption {
+  late AESCipher _cipher;
   bool _finished = false;
 
-  CraftOutputStreamAesEncryption(super.output, Uint8List key,
+  OutputStreamAesEncryption(super.output, Uint8List key,
       [int off = 0, int? len]) {
-    final iv = CraftIVGenerator.getIV();
+    final iv = IVGenerator.getIV();
     final nkey =
         Uint8List.fromList(key.sublist(off, off + (len ?? (key.length - off))));
-    _cipher = CraftAESCipher(true, nkey, iv);
+    _cipher = AESCipher(true, nkey, iv);
 
     try {
       _writeToOutput(iv);
     } catch (e) {
-      throw CraftPdfException(
-          CraftKernelExceptionMessageConstant.unknownPdfException,
+      throw PdfException(KernelExceptionMessageConstant.unknownPdfException,
           cause: e);
     }
   }

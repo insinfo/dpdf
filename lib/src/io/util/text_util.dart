@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-class CraftTextUtil {
+class TextUtil {
   static const int CHARACTER_MIN_SUPPLEMENTARY_CODE_POINT = 0x010000;
 
   static const Set<int> _additionalWhitespaceCodes = {

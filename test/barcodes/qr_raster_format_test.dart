@@ -10,21 +10,20 @@ void main() {
         for (var c = b + 1; c < 15; c++) {
           final noisy = word ^ (1 << a) ^ (1 << b) ^ (1 << c);
           final decoded =
-              CraftFormatInformation.decodeFormatInformation(noisy, noisy)!;
+              FormatInformation.decodeFormatInformation(noisy, noisy)!;
           expect(decoded.getDataMask(), 0);
           expect(decoded.getErrorCorrectionLevel().bits, 1);
         }
       }
     }
     expect(
-        CraftFormatInformation.decodeFormatInformation(0, word)?.getDataMask(),
-        0);
-    expect(CraftFormatInformation.numBitsDiffering(-1, 0), 32);
+        FormatInformation.decodeFormatInformation(0, word)?.getDataMask(), 0);
+    expect(FormatInformation.numBitsDiffering(-1, 0), 32);
   });
   test(
       'writer preserves integer scaling and quiet zone in a rectangular raster',
       () {
-    final writer = CraftQRCodeWriter();
+    final writer = QRCodeWriter();
     final small = writer.encode('ABC', 0, 0);
     final large = writer.encode('ABC', 90, 60);
     expect(small.getWidth(), 29);

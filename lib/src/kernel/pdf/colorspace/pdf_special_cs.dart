@@ -8,27 +8,27 @@ import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
 import 'package:dpdf/src/kernel/pdf/function/pdf_function.dart';
 
 /// Abstract class for special color spaces (Pattern, Indexed, Separation, DeviceN).
-abstract class CraftPdfSpecialCs extends CraftPdfColorSpace {
-  CraftPdfSpecialCs(super.pdfObject);
+abstract class PdfSpecialCs extends PdfColorSpace {
+  PdfSpecialCs(super.pdfObject);
 
   @override
   bool requiresIndirectStorage() => false;
 }
 
 /// Represents a Pattern color space.
-class PdfSpecialCsPattern extends CraftPdfSpecialCs {
+class PdfSpecialCsPattern extends PdfSpecialCs {
   /// For the `[/Pattern base]` (uncoloured) form, the space the pattern's own
   /// colour operands are given in; null for the plain `/Pattern` form.
-  final CraftPdfColorSpace? underlyingColorSpace;
+  final PdfColorSpace? underlyingColorSpace;
 
   /// Creates a new [PdfSpecialCsPattern] object.
   PdfSpecialCsPattern()
       : underlyingColorSpace = null,
-        super(CraftPdfName.pattern);
+        super(PdfName.pattern);
 
   /// Creates the `[/Pattern base]` form, whose operands are colours of [base].
   PdfSpecialCsPattern.withBase(
-      CraftPdfArray super.pdfObject, this.underlyingColorSpace);
+      PdfArray super.pdfObject, this.underlyingColorSpace);
 
   @override
   int getNumberOfComponents() {
@@ -58,9 +58,9 @@ class PdfSpecialCsPattern extends CraftPdfSpecialCs {
 ///
 /// `[/Indexed base hival lookup]`: a single component selects an entry of a
 /// palette of colours in [base].
-class PdfSpecialCsIndexed extends CraftPdfSpecialCs {
+class PdfSpecialCsIndexed extends PdfSpecialCs {
   /// The colour space the palette entries are expressed in.
-  final CraftPdfColorSpace base;
+  final PdfColorSpace base;
 
   /// Highest valid index; the palette holds `hival + 1` entries.
   final int hival;
@@ -69,13 +69,13 @@ class PdfSpecialCsIndexed extends CraftPdfSpecialCs {
   final Uint8List lookup;
 
   PdfSpecialCsIndexed(
-      CraftPdfArray super.pdfObject, this.base, this.hival, this.lookup);
+      PdfArray super.pdfObject, this.base, this.hival, this.lookup);
 
   /// Builds an Indexed space from its array form; returns null if the base
   /// space or the palette cannot be resolved.
-  static Future<PdfSpecialCsIndexed?> parseArray(CraftPdfArray array) async {
+  static Future<PdfSpecialCsIndexed?> parseArray(PdfArray array) async {
     if (array.size() < 4) return null;
-    final base = await CraftPdfColorSpace.makeColorSpace(await array.get(1));
+    final base = await PdfColorSpace.makeColorSpace(await array.get(1));
     if (base == null || base.getNumberOfComponents() < 1) return null;
     final hival = (await array.numberEntry(2))?.intValue();
     if (hival == null || hival < 0) return null;
@@ -84,9 +84,9 @@ class PdfSpecialCsIndexed extends CraftPdfSpecialCs {
     // large enough to be worth compressing.
     final lookupObject = await array.get(3);
     Uint8List? lookup;
-    if (lookupObject is CraftPdfStream) {
+    if (lookupObject is PdfStream) {
       lookup = await lookupObject.getBytes();
-    } else if (lookupObject is CraftPdfString) {
+    } else if (lookupObject is PdfString) {
       lookup = lookupObject.getValueBytes();
     }
     if (lookup == null) return null;
@@ -102,7 +102,7 @@ class PdfSpecialCsIndexed extends CraftPdfSpecialCs {
 
   @override
   List<double> toRgb(List<double> components) {
-    final raw = CraftPdfColorSpace.componentAt(components, 0);
+    final raw = PdfColorSpace.componentAt(components, 0);
     var index = raw.isNaN ? 0 : raw.round();
     if (index < 0) index = 0;
     if (index > hival) index = hival;
@@ -127,23 +127,22 @@ class PdfSpecialCsIndexed extends CraftPdfSpecialCs {
 ///
 /// `[/Separation name alternate tintTransform]`: one tint value is mapped by
 /// the tint transform into a colour of the alternate space.
-class PdfSpecialCsSeparation extends CraftPdfSpecialCs {
+class PdfSpecialCsSeparation extends PdfSpecialCs {
   /// The colourant name; `/None` marks a separation that paints nothing.
-  final CraftPdfName colorantName;
+  final PdfName colorantName;
 
-  final CraftPdfColorSpace alternate;
+  final PdfColorSpace alternate;
 
-  final CraftPdfFunction tintTransform;
+  final PdfFunction tintTransform;
 
-  PdfSpecialCsSeparation(CraftPdfArray super.pdfObject, this.colorantName,
+  PdfSpecialCsSeparation(PdfArray super.pdfObject, this.colorantName,
       this.alternate, this.tintTransform);
 
-  static Future<PdfSpecialCsSeparation?> parseArray(CraftPdfArray array) async {
+  static Future<PdfSpecialCsSeparation?> parseArray(PdfArray array) async {
     if (array.size() < 4) return null;
     final name = await array.nameEntry(1);
-    final alternate =
-        await CraftPdfColorSpace.makeColorSpace(await array.get(2));
-    final tint = await CraftPdfFunction.parse(await array.get(3));
+    final alternate = await PdfColorSpace.makeColorSpace(await array.get(2));
+    final tint = await PdfFunction.parse(await array.get(3));
     if (name == null || alternate == null || tint == null) return null;
     return PdfSpecialCsSeparation(array, name, alternate, tint);
   }
@@ -156,10 +155,10 @@ class PdfSpecialCsSeparation extends CraftPdfSpecialCs {
     // A /None separation is never painted at all. There is no "no paint" value
     // in RGB, so report white, which is what leaving the area untouched looks
     // like on a blank page.
-    if (colorantName == CraftPdfName.none) {
+    if (colorantName == PdfName.none) {
       return <double>[1.0, 1.0, 1.0];
     }
-    final tint = CraftPdfColorSpace.componentAt(components, 0);
+    final tint = PdfColorSpace.componentAt(components, 0);
     return alternate.toRgb(tintTransform.evaluate(<double>[tint]));
   }
 }
@@ -168,25 +167,24 @@ class PdfSpecialCsSeparation extends CraftPdfSpecialCs {
 ///
 /// `[/DeviceN names alternate tintTransform attributes]`: the same idea as
 /// Separation with one tint per colourant name.
-class PdfSpecialCsDeviceN extends CraftPdfSpecialCs {
-  final List<CraftPdfName> colorantNames;
+class PdfSpecialCsDeviceN extends PdfSpecialCs {
+  final List<PdfName> colorantNames;
 
-  final CraftPdfColorSpace alternate;
+  final PdfColorSpace alternate;
 
-  final CraftPdfFunction tintTransform;
+  final PdfFunction tintTransform;
 
-  PdfSpecialCsDeviceN(CraftPdfArray super.pdfObject, this.colorantNames,
+  PdfSpecialCsDeviceN(PdfArray super.pdfObject, this.colorantNames,
       this.alternate, this.tintTransform);
 
-  static Future<PdfSpecialCsDeviceN?> parseArray(CraftPdfArray array) async {
+  static Future<PdfSpecialCsDeviceN?> parseArray(PdfArray array) async {
     if (array.size() < 4) return null;
     final namesArray = await array.arrayEntry(1);
-    final alternate =
-        await CraftPdfColorSpace.makeColorSpace(await array.get(2));
-    final tint = await CraftPdfFunction.parse(await array.get(3));
+    final alternate = await PdfColorSpace.makeColorSpace(await array.get(2));
+    final tint = await PdfFunction.parse(await array.get(3));
     if (namesArray == null || alternate == null || tint == null) return null;
 
-    final names = <CraftPdfName>[];
+    final names = <PdfName>[];
     for (var i = 0; i < namesArray.size(); i++) {
       final name = await namesArray.nameEntry(i);
       if (name == null) return null;
@@ -202,8 +200,8 @@ class PdfSpecialCsDeviceN extends CraftPdfSpecialCs {
 
   @override
   List<double> toRgb(List<double> components) {
-    final tints = List<double>.generate(colorantNames.length,
-        (i) => CraftPdfColorSpace.componentAt(components, i));
+    final tints = List<double>.generate(
+        colorantNames.length, (i) => PdfColorSpace.componentAt(components, i));
     return alternate.toRgb(tintTransform.evaluate(tints));
   }
 }

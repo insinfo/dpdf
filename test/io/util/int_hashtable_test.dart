@@ -4,7 +4,7 @@ import 'package:dpdf/src/io/util/int_hashtable.dart';
 void main() {
   group('IntHashtable', () {
     test('put and get values', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       ht.put(1, 100);
       ht.put(2, 200);
       ht.put(3, 300);
@@ -15,12 +15,12 @@ void main() {
     });
 
     test('returns 0 for non-existent keys', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       expect(ht.get(999), equals(0));
     });
 
     test('size increases with puts', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       expect(ht.size(), equals(0));
       ht.put(1, 100);
       expect(ht.size(), equals(1));
@@ -29,28 +29,28 @@ void main() {
     });
 
     test('isEmpty returns correct value', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       expect(ht.isEmpty(), isTrue);
       ht.put(1, 100);
       expect(ht.isEmpty(), isFalse);
     });
 
     test('containsKey works', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       ht.put(42, 100);
       expect(ht.containsKey(42), isTrue);
       expect(ht.containsKey(43), isFalse);
     });
 
     test('containsValue works', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       ht.put(1, 100);
       expect(ht.containsValue(100), isTrue);
       expect(ht.containsValue(200), isFalse);
     });
 
     test('remove works', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       ht.put(1, 100);
       expect(ht.remove(1), equals(100));
       expect(ht.containsKey(1), isFalse);
@@ -58,7 +58,7 @@ void main() {
     });
 
     test('clear removes all entries', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       ht.put(1, 100);
       ht.put(2, 200);
       ht.clear();
@@ -67,7 +67,7 @@ void main() {
     });
 
     test('getKeys returns all keys', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       ht.put(3, 300);
       ht.put(1, 100);
       ht.put(2, 200);
@@ -79,7 +79,7 @@ void main() {
     });
 
     test('toOrderedKeys returns sorted keys', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       ht.put(3, 300);
       ht.put(1, 100);
       ht.put(2, 200);
@@ -88,7 +88,7 @@ void main() {
     });
 
     test('clone creates independent copy', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       ht.put(1, 100);
       final clone = ht.clone();
       clone.put(2, 200);
@@ -97,13 +97,13 @@ void main() {
     });
 
     test('operator [] works', () {
-      final ht = CraftIntHashtable();
+      final ht = IntHashtable();
       ht[1] = 100;
       expect(ht[1], equals(100));
     });
 
     test('handles many entries with rehash', () {
-      final ht = CraftIntHashtable.withInitialCapacity(10);
+      final ht = IntHashtable.withInitialCapacity(10);
       for (int i = 0; i < 100; i++) {
         ht.put(i, i * 10);
       }

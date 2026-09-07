@@ -4,11 +4,11 @@ import 'dart:typed_data';
 import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
 
-CraftPdfDictionary _helvetica() => CraftPdfDictionary()
-  ..put(CraftPdfName.type, CraftPdfName.font)
-  ..put(CraftPdfName.subtype, CraftPdfName('Type1'))
-  ..put(CraftPdfName.baseFont, CraftPdfName('Helvetica'))
-  ..put(CraftPdfName.encoding, CraftPdfName('WinAnsiEncoding'));
+PdfDictionary _helvetica() => PdfDictionary()
+  ..put(PdfName.type, PdfName.font)
+  ..put(PdfName.subtype, PdfName('Type1'))
+  ..put(PdfName.baseFont, PdfName('Helvetica'))
+  ..put(PdfName.encoding, PdfName('WinAnsiEncoding'));
 
 /// A document with [pages] text pages, each carrying an uncompressed content
 /// stream and its own copy of the same font dictionary — the shape a naive
@@ -16,10 +16,10 @@ CraftPdfDictionary _helvetica() => CraftPdfDictionary()
 Future<Uint8List> _report(
     {int pages = 20, bool fullCompression = false}) async {
   final output = BytesBuilder(copy: false);
-  final properties = CraftWriterProperties()
+  final properties = WriterProperties()
     ..setFullCompressionMode(fullCompression);
-  final document = await CraftPdfDocument.create(
-      CraftPdfWriter.fromBytesBuilder(output, properties: properties));
+  final document = await PdfDocument.create(
+      PdfWriter.fromBytesBuilder(output, properties: properties));
 
   for (var i = 1; i <= pages; i++) {
     final page = await document.appendBlankPage();
@@ -28,20 +28,18 @@ Future<Uint8List> _report(
     // objects can be shared, so this is what deduplication has to merge.
     final font = _helvetica()..attachToDocument(document);
     page.pdfRepresentation().put(
-        CraftPdfName.resources,
-        CraftPdfDictionary()
-          ..put(
-              CraftPdfName.font,
-              CraftPdfDictionary()
-                ..put(CraftPdfName('F1'), font.indirectHandle()!)));
+        PdfName.resources,
+        PdfDictionary()
+          ..put(PdfName.font,
+              PdfDictionary()..put(PdfName('F1'), font.indirectHandle()!)));
     final text = StringBuffer();
     for (var line = 0; line < 30; line++) {
       text.writeln('BT /F1 11 Tf 72 ${740 - line * 20} Td '
           '(Linha $line da pagina $i deste relatorio de exemplo) Tj ET');
     }
     page.pdfRepresentation().put(
-        CraftPdfName.contents,
-        CraftPdfStream.withBytes(
+        PdfName.contents,
+        PdfStream.withBytes(
             Uint8List.fromList(latin1.encode(text.toString())), 0));
   }
   await document.close();
@@ -49,7 +47,7 @@ Future<Uint8List> _report(
 }
 
 Future<int> _pageCount(Uint8List bytes) async {
-  final document = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+  final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
   try {
     return document.pageTotal();
   } finally {
@@ -58,7 +56,7 @@ Future<int> _pageCount(Uint8List bytes) async {
 }
 
 Future<String> _textOf(Uint8List bytes, int page) async {
-  final document = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+  final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
   try {
     return await PdfTextExtraction.fromPage((await document.pageAt(page))!);
   } finally {
@@ -147,16 +145,14 @@ void main() {
     test('removes thumbnails and private application data by default',
         () async {
       final output = BytesBuilder(copy: false);
-      final document = await CraftPdfDocument.create(
-          CraftPdfWriter.fromBytesBuilder(output));
+      final document =
+          await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
       final page = await document.appendBlankPage();
       page.pdfRepresentation()
-        ..put(CraftPdfName('Thumb'),
-            CraftPdfStream.withBytes(Uint8List.fromList([1, 2, 3]), 0))
-        ..put(
-            CraftPdfName('PieceInfo'),
-            CraftPdfDictionary()
-              ..put(CraftPdfName('MyApp'), CraftPdfName('private')));
+        ..put(PdfName('Thumb'),
+            PdfStream.withBytes(Uint8List.fromList([1, 2, 3]), 0))
+        ..put(PdfName('PieceInfo'),
+            PdfDictionary()..put(PdfName('MyApp'), PdfName('private')));
       await document.close();
       final source = output.takeBytes();
 
@@ -170,8 +166,8 @@ void main() {
 
     test('keeps metadata unless explicitly asked to remove it', () async {
       final output = BytesBuilder(copy: false);
-      final document = await CraftPdfDocument.create(
-          CraftPdfWriter.fromBytesBuilder(output));
+      final document =
+          await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
       await document.appendBlankPage();
       await document.assignMetadataPayload(
           Uint8List.fromList(latin1.encode('<x:xmpmeta/>')));
@@ -224,8 +220,8 @@ void main() {
       // A tiny document costs more in cross-reference and object streams than
       // the structure saves, so the compressor must hand back what it got.
       final output = BytesBuilder(copy: false);
-      final document = await CraftPdfDocument.create(
-          CraftPdfWriter.fromBytesBuilder(output));
+      final document =
+          await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
       await document.appendBlankPage();
       await document.close();
       final tiny = output.takeBytes();
@@ -240,8 +236,8 @@ void main() {
 
     test('can be told to keep the rewrite even when it grew', () async {
       final output = BytesBuilder(copy: false);
-      final document = await CraftPdfDocument.create(
-          CraftPdfWriter.fromBytesBuilder(output));
+      final document =
+          await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
       await document.appendBlankPage();
       await document.close();
       final tiny = output.takeBytes();

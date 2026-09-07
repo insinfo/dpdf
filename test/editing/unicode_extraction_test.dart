@@ -26,35 +26,33 @@ Future<String> extract(
     bool compressed = false,
     bool inherited = false}) async {
   final output = BytesBuilder();
-  final document =
-      CraftPdfDocument.create(CraftPdfWriter.fromBytesBuilder(output));
+  final document = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await document.appendBlankPage();
-  final font = CraftPdfDictionary()
-    ..put(CraftPdfName.subtype, CraftPdfName(cmap == null ? 'Type1' : 'Type0'))
-    ..put(CraftPdfName.baseFont, CraftPdfName('Helvetica'));
-  if (encoding != null) font.put(CraftPdfName.encoding, CraftPdfName(encoding));
+  final font = PdfDictionary()
+    ..put(PdfName.subtype, PdfName(cmap == null ? 'Type1' : 'Type0'))
+    ..put(PdfName.baseFont, PdfName('Helvetica'));
+  if (encoding != null) font.put(PdfName.encoding, PdfName(encoding));
   if (cmap != null) {
     final bytes = ascii.encode(cmap);
-    final stream = CraftPdfStream.withBytes(
+    final stream = PdfStream.withBytes(
         Uint8List.fromList(compressed ? zlib.encode(bytes) : bytes), 0);
     if (compressed) {
-      stream.put(CraftPdfName.filter, CraftPdfName('FlateDecode'));
+      stream.put(PdfName.filter, PdfName('FlateDecode'));
     }
     if (inherited) {
-      stream.put(CraftPdfName('UseCMap'), CraftPdfName('Unsupported'));
+      stream.put(PdfName('UseCMap'), PdfName('Unsupported'));
     }
-    font.put(CraftPdfName('ToUnicode'), stream);
+    font.put(PdfName('ToUnicode'), stream);
   }
   page.pdfRepresentation().put(
-      CraftPdfName.resources,
-      CraftPdfDictionary()
-        ..put(CraftPdfName.font,
-            CraftPdfDictionary()..put(CraftPdfName('F1'), font)));
-  page.pdfRepresentation().put(CraftPdfName.contents,
-      CraftPdfStream.withBytes(Uint8List.fromList(ascii.encode(content)), 0));
+      PdfName.resources,
+      PdfDictionary()
+        ..put(PdfName.font, PdfDictionary()..put(PdfName('F1'), font)));
+  page.pdfRepresentation().put(PdfName.contents,
+      PdfStream.withBytes(Uint8List.fromList(ascii.encode(content)), 0));
   await document.close();
   final reopened =
-      await CraftPdfDocument.open(CraftPdfReader.fromBytes(output.takeBytes()));
+      await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
   try {
     return await PdfTextExtraction.fromPage((await reopened.pageAt(1))!);
   } finally {
@@ -64,12 +62,10 @@ Future<String> extract(
 
 void main() {
   test('Malformed Contents fails instead of reporting empty text', () async {
-    final document = CraftPdfDocument.create(
-        CraftPdfWriter.fromBytesBuilder(BytesBuilder()));
+    final document =
+        PdfDocument.create(PdfWriter.fromBytesBuilder(BytesBuilder()));
     final page = await document.appendBlankPage();
-    page
-        .pdfRepresentation()
-        .put(CraftPdfName.contents, CraftPdfName('invalid'));
+    page.pdfRepresentation().put(PdfName.contents, PdfName('invalid'));
     await expectLater(PdfTextExtraction.fromPage(page), throwsFormatException);
     await document.close();
   });

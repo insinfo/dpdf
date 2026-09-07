@@ -13,11 +13,11 @@ void main() {
       </style>
       <section class="flex"><div>plain <strong>bold</strong></div><div class="grid"><span class="large">large</span><em class="italic">italic</em></div></section>
     ''');
-    final boxes = CraftHtmlBoxBuilder(
-      CraftHtmlStyleSheet.fromDocument(document),
+    final boxes = HtmlBoxBuilder(
+      HtmlStyleSheet.fromDocument(document),
       12,
     ).build(document.body!.nodes);
-    final fragments = CraftHtmlLayoutEngine(400).layout(boxes);
+    final fragments = HtmlLayoutEngine(400).layout(boxes);
 
     final byText = {
       for (final fragment in fragments) fragment.text.trim(): fragment
@@ -34,11 +34,11 @@ void main() {
         .panel { width: 200pt; margin: 10pt 20pt; padding: 5pt 8pt; text-align: center; }
       </style><div class="panel">one two</div>
     ''');
-    final boxes = CraftHtmlBoxBuilder(
-      CraftHtmlStyleSheet.fromDocument(document),
+    final boxes = HtmlBoxBuilder(
+      HtmlStyleSheet.fromDocument(document),
       12,
     ).build(document.body!.nodes);
-    final fragments = CraftHtmlLayoutEngine(400).layout(boxes);
+    final fragments = HtmlLayoutEngine(400).layout(boxes);
 
     final first = fragments.firstWhere((fragment) => fragment.text == 'one');
     // x = margin-left + padding-left + centered content offset.
@@ -51,11 +51,11 @@ void main() {
       <style>.paint { color: #f00; background-color: rgb(0, 255, 0); border: 2pt solid blue; }</style>
       <div class="paint">painted</div>
     ''');
-    final boxes = CraftHtmlBoxBuilder(
-      CraftHtmlStyleSheet.fromDocument(document),
+    final boxes = HtmlBoxBuilder(
+      HtmlStyleSheet.fromDocument(document),
       12,
     ).build(document.body!.nodes);
-    final displayList = CraftHtmlLayoutEngine(400).layoutDisplayList(boxes);
+    final displayList = HtmlLayoutEngine(400).layoutDisplayList(boxes);
 
     expect(displayList.textFragments.single.style.color.red, 1);
     expect(displayList.boxDecorations, hasLength(1));

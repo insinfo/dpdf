@@ -14,30 +14,29 @@ import 'package:dpdf/src/svg/svg_constants.dart';
 /// A herança de estilo é resolvida aqui, na montagem, e não no desenho: o
 /// mapa de cada renderizador já chega completo, de modo que o renderizador
 /// nunca precisa consultar o pai para saber com que cor pintar.
-class CraftDefaultSvgProcessor {
-  const CraftDefaultSvgProcessor();
+class DefaultSvgProcessor {
+  const DefaultSvgProcessor();
 
-  static final List<CraftStyleInheritance> _inheritanceRules = [
-    CraftSvgAttributeInheritance(),
-    CraftCssInheritance(),
+  static final List<StyleInheritance> _inheritanceRules = [
+    SvgAttributeInheritance(),
+    CssInheritance(),
   ];
 
   /// Monta a árvore a partir de um elemento `<svg>`. Devolve `null` quando o
   /// elemento não é reconhecido.
-  CraftSvgNodeRenderer? process(dom.Element element) =>
+  SvgNodeRenderer? process(dom.Element element) =>
       _build(element, const <String, String>{});
 
-  CraftSvgNodeRenderer? _build(
-      dom.Element element, Map<String, String> inherited) {
+  SvgNodeRenderer? _build(dom.Element element, Map<String, String> inherited) {
     final name = element.localName;
     if (name == null) return null;
-    final renderer = CraftSvgRendererFactory.create(name);
+    final renderer = SvgRendererFactory.create(name);
     if (renderer == null) return null;
 
     final resolved = _resolveAttributes(element, inherited);
     renderer.setAttributesAndStyles(resolved);
 
-    if (renderer is CraftBranchSvgNodeRenderer) {
+    if (renderer is BranchSvgNodeRenderer) {
       final inheritable = _inheritablePart(resolved);
       for (final child in element.children) {
         final childRenderer = _build(child, inheritable);

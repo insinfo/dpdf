@@ -17,7 +17,7 @@ void main() {
       'D:20260827233000-02': DateTime.utc(2026, 8, 28, 1, 30),
     };
     for (final entry in cases.entries) {
-      final actual = CraftPdfDate.decode(entry.key);
+      final actual = PdfDate.decode(entry.key);
       expect(actual.isUtc, isTrue, reason: entry.key);
       expect(actual, entry.value, reason: entry.key);
     }
@@ -25,9 +25,9 @@ void main() {
   test(
       'PDF dates without timezone remain local; partial dates default missing fields',
       () {
-    expect(CraftPdfDate.decode('D:2026'), DateTime(2026));
-    expect(CraftPdfDate.decode('202608'), DateTime(2026, 8));
-    expect(CraftPdfDate.decode('D:20260827Z'), DateTime.utc(2026, 8, 27));
+    expect(PdfDate.decode('D:2026'), DateTime(2026));
+    expect(PdfDate.decode('202608'), DateTime(2026, 8));
+    expect(PdfDate.decode('D:20260827Z'), DateTime.utc(2026, 8, 27));
   });
   test('Date emitters preserve the instant on roundtrip', () {
     for (final date in [
@@ -35,10 +35,10 @@ void main() {
       DateTime(2026, 8, 27, 14, 30)
     ]) {
       for (final encoded in [
-        CraftPdfDate(date).getValue(),
-        CraftDateTimeUtil.formatPdfDate(date)
+        PdfDate(date).getValue(),
+        DateTimeUtil.formatPdfDate(date)
       ]) {
-        expect(CraftPdfDate.decode(encoded).isAtSameMomentAs(date), isTrue);
+        expect(PdfDate.decode(encoded).isAtSameMomentAs(date), isTrue);
       }
     }
   });
@@ -56,8 +56,7 @@ void main() {
       "D:20260827143000+03'60'",
       'D:20260827143000junk'
     ]) {
-      expect(() => CraftPdfDate.decode(date), throwsFormatException,
-          reason: date);
+      expect(() => PdfDate.decode(date), throwsFormatException, reason: date);
     }
   });
   test(
@@ -66,7 +65,7 @@ void main() {
     for (final position in [0, 15, 1019, 1024, 1500]) {
       final bytes = Uint8List(2600)..fillRange(0, 2600, 32);
       bytes.setRange(position, position + 9, ascii.encode('startxref'));
-      final tokenizer = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
+      final tokenizer = PdfTokenizer(RandomAccessFileOrArray(bytes));
       expect(tokenizer.getStartxref(), position);
     }
   });
@@ -75,13 +74,13 @@ void main() {
     final bytes = Uint8List(2 * 1024 * 1024)..fillRange(0, 2 * 1024 * 1024, 65);
     bytes.setRange(11, 20, ascii.encode('startxref'));
     bytes.setRange(1055, 1064, ascii.encode('startxref'));
-    final tokenizer = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
+    final tokenizer = PdfTokenizer(RandomAccessFileOrArray(bytes));
     expect(tokenizer.getStartxref(), 1055);
   });
   test('Short header reports an exception instead of RangeError', () {
     for (final header in ['%PDF-', '%PDF-1', '%PDF-1.']) {
-      final tokenizer = CraftPdfTokenizer(CraftRandomAccessFileOrArray(
-          Uint8List.fromList(ascii.encode(header))));
+      final tokenizer = PdfTokenizer(
+          RandomAccessFileOrArray(Uint8List.fromList(ascii.encode(header))));
       expect(() => tokenizer.checkPdfHeader(), throwsA(isA<Exception>()));
     }
   });

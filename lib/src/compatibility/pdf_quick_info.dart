@@ -44,8 +44,8 @@ class PdfQuickInfo {
       return PdfQuickInfo._(major, minor, header?.start, header?.group(0), null,
           null, false, null);
     }
-    final reader = CraftPdfReader.fromBytes(bytes);
-    final doc = await CraftPdfDocument.open(reader);
+    final reader = PdfReader.fromBytes(bytes);
+    final doc = await PdfDocument.open(reader);
     try {
       var declared = false;
       int? permission;
@@ -53,24 +53,22 @@ class PdfQuickInfo {
         final permissions = await doc
             .rootCatalog()
             .pdfRepresentation()
-            .dictionaryEntry(CraftPdfName('Perms'));
-        final signature =
-            await permissions?.dictionaryEntry(CraftPdfName('DocMDP'));
+            .dictionaryEntry(PdfName('Perms'));
+        final signature = await permissions?.dictionaryEntry(PdfName('DocMDP'));
         declared = signature != null;
-        final references =
-            await signature?.arrayEntry(CraftPdfName('Reference'));
+        final references = await signature?.arrayEntry(PdfName('Reference'));
         if (references != null) {
           for (var index = 0; index < references.size(); index++) {
             final entry = await references.get(index);
-            if (entry is! CraftPdfDictionary) continue;
-            if ((await entry.nameEntry(CraftPdfName('TransformMethod')))
+            if (entry is! PdfDictionary) continue;
+            if ((await entry.nameEntry(PdfName('TransformMethod')))
                     ?.getValue() !=
                 'DocMDP') {
               continue;
             }
             final parameters =
-                await entry.dictionaryEntry(CraftPdfName('TransformParams'));
-            final value = await parameters?.numberEntry(CraftPdfName('P'));
+                await entry.dictionaryEntry(PdfName('TransformParams'));
+            final value = await parameters?.numberEntry(PdfName('P'));
             if (value != null &&
                 value.doubleValue() == value.intValue() &&
                 value.intValue() >= 1 &&

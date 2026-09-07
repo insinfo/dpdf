@@ -60,7 +60,7 @@ void main() {
     });
 
     test('createOID encodes SHA-256 OID', () {
-      final result = ASN1Utils.createOID(CraftOID.sha256);
+      final result = ASN1Utils.createOID(OID.sha256);
       expect(result[0], equals(0x06)); // OID tag
       expect(result.length, greaterThan(2));
     });
@@ -198,7 +198,7 @@ void main() {
 
     test('buildTimeStampRequest creates valid ASN.1', () {
       final client = TimestampClient('http://example.com');
-      final imprint = CraftDigestAlgorithms.digestBytes(
+      final imprint = DigestAlgorithms.digestBytes(
         Uint8List.fromList([1, 2, 3, 4, 5]),
         'SHA-256',
       );

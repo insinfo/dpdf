@@ -2,17 +2,17 @@
 ///
 /// PDF defines a standard date format: (D:YYYYMMDDHHmmSSOHH'mm')
 /// See ISO-320001 7.9.4, "Dates".
-class CraftPdfDate {
+class PdfDate {
   final String _value;
 
   /// Constructs a PdfDate from a DateTime.
-  CraftPdfDate(DateTime d) : _value = _generateStringByDateTime(d);
+  PdfDate(DateTime d) : _value = _generateStringByDateTime(d);
 
   /// Constructs a PdfDate representing the current time.
-  CraftPdfDate.now() : this(DateTime.now());
+  PdfDate.now() : this(DateTime.now());
 
   /// Constructs a PdfDate from a PDF date string.
-  CraftPdfDate.fromString(String s) : _value = s;
+  PdfDate.fromString(String s) : _value = s;
 
   /// Gets the PDF date string.
   String getValue() => _value;

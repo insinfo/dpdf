@@ -63,7 +63,11 @@ Future<void> main() async {
   final doc=CraftDocument(pdf);
   await doc.add(CraftParagraph('Helvetica outside repository'));
   await doc.close(); await pdf.close();
-  if(!File('consumer.pdf').readAsStringSync(encoding:systemEncoding).startsWith('%PDF-')) throw StateError('PDF missing');
+  // Ler bytes, nao texto: um PDF tem dados binarios, e decodifica-lo com
+  // systemEncoding so funciona onde essa codificacao aceita qualquer byte.
+  // Em Linux e macOS ela e UTF-8, e a leitura lanca.
+  final header = File('consumer.pdf').readAsBytesSync().take(5).toList();
+  if(String.fromCharCodes(header) != '%PDF-') throw StateError('PDF missing');
   stdout.write('consumer-fonts-ok');
 }
 ''');

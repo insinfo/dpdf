@@ -59,4 +59,4 @@ jobs:
 
       - name: Testar
         working-directory: dpdf
-        run: dart test --reporter=expanded -j4
+        run: dart test --reporter=github -j4

@@ -4,6 +4,10 @@ version: 1.0.0
 environment:
   sdk: ^3.6.0
 
+dependencies:
+  # HTML5 parser, MIT licensed; used only to build a DOM for HTML-to-PDF.
+  html: ^0.15.7
+
 dev_dependencies:
   test: ^1.26.3
   # Independent test oracle; never imported by the runtime library.

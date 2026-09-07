@@ -12,6 +12,7 @@ export 'src/editing/pdf_text_extraction.dart';
 export 'src/editing/pdf_unicode_cmap.dart';
 export 'src/editing/pdf_simple_encoding.dart';
 export 'src/editing/pdf_standard_font_metrics.dart';
+export 'src/html/html_to_pdf.dart';
 
 export 'src/commons/exceptions/pdfcraft_exception.dart';
 

@@ -63,6 +63,10 @@ import '../../platform/compression.dart';
 import 'dart:typed_data';
 
 abstract final class EmbeddedFontResources {
+  /// Reports an embedded AFM before a caller constructs a Type 1 program.
+  /// Keeping this check separate avoids decoding the compressed metric data
+  /// merely to decide whether a standard face is usable in this package.
+  static bool hasMetrics(String name) => name == 'Helvetica';
   static String get glyphList =>
       utf8.decode(gzip.decode(base64.decode(_glyphList)));
   static Uint8List? metrics(String name) => name == 'Helvetica'

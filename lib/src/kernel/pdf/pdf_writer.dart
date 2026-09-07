@@ -91,7 +91,16 @@ class CraftPdfWriter {
     if (ref == null) return;
 
     // Object Stream Handling (Full Compression)
+    //
+    // Not in append mode: an incremental revision here is closed by writing a
+    // classic `trailer`, and a classic trailer cannot describe objects that
+    // live inside an object stream — those need a cross-reference stream. The
+    // two were being combined anyway, and the revision failed at close with
+    // "Cannot operate with flushed PdfStream", an internal error that said
+    // nothing about the real limitation. Writing the appended objects plainly
+    // is correct and readable; only the size benefit is given up.
     if (properties.isFullCompression == true &&
+        !(document?.usesIncrementalRevision() ?? false) &&
         canBeInObjStm &&
         _canBeInObjStm(obj)) {
       if (_currentObjStream == null) {
@@ -436,11 +445,28 @@ class CraftPdfWriter {
     xrefStream.put(CraftPdfName.type, CraftPdfName.xref);
     xrefStream.put(CraftPdfName.size, CraftPdfNumber.fromInt(xref.size()));
 
-    // Copy entries from trailer to XRefStream using internal map to avoid async resolution
+    // Copy the trailer's own entries — /Root, /Info, /ID, /Encrypt and any
+    // extension the input carried — into the cross-reference stream dictionary,
+    // which is where they live in this format.
+    //
+    // The keys below are NOT copied: they describe the table this writer is
+    // about to lay out, and the input document's values describe a different
+    // one. Inheriting /Index was silent corruption — the stream got a full
+    // 0..N table while the dictionary still claimed the source's subsections,
+    // so a reader assigned every entry to the wrong object and the document
+    // failed to reopen with "corrupted root entry".
+    const writerOwned = <String>{
+      'Size', // count of entries in the new table
+      'Type', // always /XRef here
+      'Index', // subsections of the new table
+      'W', // field widths computed from the new maxima
+      'Length', 'Filter', 'DecodeParms', // set when the stream is serialised
+      'XRefStm', // only meaningful in a hybrid-reference trailer
+    };
     final trailerMap = trailer.getMap();
     if (trailerMap != null) {
       for (final entry in trailerMap.entries) {
-        if (entry.key != CraftPdfName.size && entry.key != CraftPdfName.type) {
+        if (!writerOwned.contains(entry.key.getValue())) {
           xrefStream.put(entry.key, entry.value);
         }
       }

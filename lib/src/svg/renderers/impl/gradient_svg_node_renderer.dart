@@ -10,6 +10,7 @@ import 'package:dpdf/src/svg/renderers/svg_shading_paint_server.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 import 'package:dpdf/src/svg/utils/svg_color_utils.dart';
 import 'package:dpdf/src/svg/utils/transform_utils.dart';
+import 'package:dpdf/src/svg/utils/template_resolve_utils.dart';
 
 class GradientStopSvgNodeRenderer extends AbstractSvgNodeRenderer {
   @override
@@ -119,6 +120,7 @@ abstract class GradientSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
 class LinearGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
   @override
   Future<void> paintShading(SvgDrawContext context, Rectangle b) async {
+    TemplateResolveUtils.resolve(this, context);
     final s = stops();
     await paintTransformed(
         context,
@@ -148,6 +150,7 @@ class LinearGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
 class RadialGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
   @override
   Future<void> paintShading(SvgDrawContext context, Rectangle b) async {
+    TemplateResolveUtils.resolve(this, context);
     final s = stops();
     final cx =
         coordinate(SvgAttributes.CX, '50%', b.getX(), b.getWidth(), context);

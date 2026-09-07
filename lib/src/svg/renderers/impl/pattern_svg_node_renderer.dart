@@ -12,6 +12,7 @@ import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_pattern_paint_server.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 import 'package:dpdf/src/svg/utils/transform_utils.dart';
+import 'package:dpdf/src/svg/utils/template_resolve_utils.dart';
 
 class PatternSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
     implements SvgPatternPaintServer {
@@ -26,6 +27,7 @@ class PatternSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
     final id = getAttribute(SvgAttributes.ID) ?? '';
     if (id.isNotEmpty && !context.pushPatternId(id)) return false;
     try {
+      TemplateResolveUtils.resolve(this, context);
       final objectUnits = (getAttribute(SvgAttributes.PATTERN_UNITS) ??
               SvgValues.OBJECT_BOUNDING_BOX) !=
           SvgValues.USER_SPACE_ON_USE;

@@ -573,6 +573,35 @@ void main() {
       }
     });
 
+    test('gradiente herda stops e atributos por href sem recursão', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="60" height="20">
+          <defs>
+            <linearGradient id="base" x1="10%" x2="90%">
+              <stop offset="0" stop-color="red"/>
+              <stop offset="1" stop-color="blue"/>
+            </linearGradient>
+            <linearGradient id="derived" href="#base" x2="100%"/>
+          </defs>
+          <rect width="60" height="20" fill="url(#derived)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final shadings = await resources!.dictionaryEntry(PdfName.shading);
+        final shading = (await shadings!.values()).single as PdfDictionary;
+        final coords = await shading.arrayEntry(PdfName.coords);
+        final values = await coords!.toDoubleArray();
+        expect(values[0], closeTo(4.5, 1e-9));
+        expect(values[2], closeTo(45, 1e-9));
+      } finally {
+        await document.close();
+      }
+    });
+
     test('pattern vira um tiling pattern nativo com conteúdo próprio',
         () async {
       final bytes = await SvgConverter.convertToBytes('''
@@ -642,6 +671,36 @@ void main() {
             closeTo(7.5, 1e-9));
         expect((await pattern.numberEntry(PdfName('YStep')))!.doubleValue(),
             closeTo(7.5, 1e-9));
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('pattern herda dimensões e filhos por xlink:href', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg xmlns:xlink="http://www.w3.org/1999/xlink" width="40" height="20">
+          <defs>
+            <pattern id="base" width="8" height="6"
+                     patternUnits="userSpaceOnUse">
+              <rect width="4" height="6" fill="green"/>
+            </pattern>
+            <pattern id="derived" xlink:href="#base"/>
+          </defs>
+          <rect width="40" height="20" fill="url(#derived)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final patterns = await resources!.dictionaryEntry(PdfName.pattern);
+        final pattern = (await patterns!.values()).single as PdfStream;
+        expect((await pattern.numberEntry(PdfName('XStep')))!.doubleValue(), 6);
+        expect(
+            (await pattern.numberEntry(PdfName('YStep')))!.doubleValue(), 4.5);
+        expect(String.fromCharCodes((await pattern.getBytes())!),
+            contains('0 0 3 4.5 re\n'));
       } finally {
         await document.close();
       }

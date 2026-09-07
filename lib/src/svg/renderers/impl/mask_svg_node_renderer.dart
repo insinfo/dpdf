@@ -9,6 +9,7 @@ import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/renderers/svg_mask_paint_server.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
+import 'package:dpdf/src/svg/utils/template_resolve_utils.dart';
 
 /// Emits an SVG `<mask>` as a PDF transparency-group soft mask.
 class MaskSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
@@ -24,6 +25,7 @@ class MaskSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
     final id = getAttribute(SvgAttributes.ID) ?? '';
     if (id.isNotEmpty && !context.pushMaskId(id)) return false;
     try {
+      TemplateResolveUtils.resolve(this, context);
       final objectUnits = (getAttribute(SvgAttributes.MASK_UNITS) ??
               SvgValues.OBJECT_BOUNDING_BOX) !=
           SvgValues.USER_SPACE_ON_USE;

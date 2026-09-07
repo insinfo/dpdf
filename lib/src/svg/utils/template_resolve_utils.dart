@@ -9,22 +9,27 @@ class TemplateResolveUtils {
   TemplateResolveUtils._();
 
   /// Resolve href to other object within svg and fills renderer with its properties and children if needed.
-  static void resolve(BranchSvgNodeRenderer renderer, SvgDrawContext context) {
+  static void resolve(BranchSvgNodeRenderer renderer, SvgDrawContext context,
+      [Set<String>? resolving]) {
     String? href = renderer.getAttribute(SvgAttributes.HREF);
     href ??= renderer.getAttribute(SvgAttributes.XLINK_HREF);
     if (href == null || href.isEmpty || href[0] != '#') {
       return;
     }
     String normalizedName = SvgTextUtil.filterReferenceValue(href);
+    final active = resolving ?? <String>{};
+    if (!active.add(normalizedName)) return;
     SvgNodeRenderer? template = context.getNamedObject(normalizedName);
     if (template is! BranchSvgNodeRenderer) {
+      active.remove(normalizedName);
       return;
     }
     BranchSvgNodeRenderer namedObject =
         template.createDeepCopy() as BranchSvgNodeRenderer;
-    resolve(namedObject, context);
+    resolve(namedObject, context, active);
     if (renderer.getChildren().isEmpty) {
       for (SvgNodeRenderer child in namedObject.getChildren()) {
+        child.setParent(renderer);
         renderer.addChild(child);
       }
     }
@@ -37,5 +42,6 @@ class TemplateResolveUtils {
         renderer.setAttribute(key, value);
       }
     });
+    active.remove(normalizedName);
   }
 }

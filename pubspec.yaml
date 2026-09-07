@@ -19,6 +19,16 @@ environment:
 dependencies:
   # HTML5 parser, MIT licensed; used only to build a DOM for HTML-to-PDF.
   html: ^0.15.7
+  # Bi-level image codec, Apache-2.0; used to recompress scanned pages.
+  jbig2: ^1.0.0
+  # JPEG 2000 codec, MIT; used to recompress continuous-tone images.
+  j2k: ^0.9.0
+
+# jbig2 is not on pub.dev yet. Remove this block once it is published, or the
+# publish of this package will be rejected.
+dependency_overrides:
+  jbig2:
+    path: ../jbig2
 
 dev_dependencies:
   lints: ^5.0.0

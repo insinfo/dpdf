@@ -1,5 +1,8 @@
-import '../../platform/compression.dart';
 import 'dart:typed_data';
+
+import 'package:jbig2/jbig2.dart';
+
+import '../../platform/compression.dart';
 
 import '../../io/codec/tiff_fax_decoder.dart';
 import '../../io/codec/tiff_constants.dart';
@@ -570,24 +573,28 @@ class CraftFilterHandlers {
   }
 
   /// Decodes JBIG2 compressed data.
+  /// Decodes a `/JBIG2Decode` stream to packed 1-bit rows.
+  ///
+  /// The filter's output follows the PDF convention, where a 0 bit is black,
+  /// which is the opposite of JBIG2's own; `toPdfImageData` performs that
+  /// inversion and whitens the padding bits at the end of each row.
+  ///
+  /// A stream that will not decode is returned untouched rather than throwing,
+  /// so one damaged image does not stop a whole page from loading.
   static Future<Uint8List> _jbig2Decode(
       Uint8List bytes, CraftPdfDictionary? parms) async {
-    if (parms == null) {
-      return bytes;
-    }
-
-    final globalsObj = await parms.get(CraftPdfName('JBIG2Globals'), true);
-    if (globalsObj is CraftPdfStream) {
-      final globals = await globalsObj.getBytes(true);
-      if (globals != null) {
-        final combined = Uint8List(globals.length + bytes.length);
-        combined.setRange(0, globals.length, globals);
-        combined.setRange(globals.length, combined.length, bytes);
-        return combined;
+    Uint8List? globals;
+    if (parms != null) {
+      final globalsObject = await parms.get(CraftPdfName('JBIG2Globals'), true);
+      if (globalsObject is CraftPdfStream) {
+        globals = await globalsObject.getBytes(true);
       }
     }
-
-    return bytes;
+    try {
+      return decodeJbig2Embedded(bytes, globals: globals).toPdfImageData();
+    } on Jbig2Exception {
+      return bytes;
+    }
   }
 
   static Uint8List _toUint8List(List<int> bytes) {

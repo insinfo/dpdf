@@ -12,6 +12,7 @@ import '../kernel/pdf/reader_properties.dart';
 import '../kernel/pdf/writer_properties.dart';
 import '../platform/compression.dart';
 import 'pdf_compression_options.dart';
+import 'pdf_image_compressor.dart';
 
 /// The result of compressing one document.
 class PdfCompressionResult {
@@ -69,6 +70,7 @@ class PdfCompressor {
     var streamBytesSaved = 0;
     var duplicatesMerged = 0;
     var orphansRemoved = 0;
+    var images = PdfImageCompressionReport.empty;
 
     try {
       final live = await _liveObjects(document);
@@ -81,6 +83,8 @@ class PdfCompressor {
         _removeCatalogEntries(document, const ['Metadata'], removed);
       }
       await _pruneDictionaries(live, options, removed);
+
+      images = await PdfImageCompressor.run(live, options.images);
 
       if (options.recompressStreams) {
         final saved = await _recompressStreams(live, options.compressionLevel);
@@ -120,6 +124,7 @@ class PdfCompressor {
         streamsRecompressed: streamsRecompressed,
         streamBytesSaved: streamBytesSaved,
         entriesRemoved: Map.unmodifiable(removed),
+        images: images,
       ),
     );
   }

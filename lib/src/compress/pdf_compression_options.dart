@@ -1,4 +1,5 @@
 import '../kernel/pdf/compression_constants.dart';
+import 'pdf_image_compressor.dart';
 
 /// What the compressor is allowed to do to a document.
 ///
@@ -62,6 +63,14 @@ class PdfCompressionOptions {
   /// the accessible PDF/A levels.
   final bool removeStructureTree;
 
+  /// Re-encode the images the pass covers with a better codec.
+  ///
+  /// Lossless, and limited to bi-level images: a scanned black-and-white page
+  /// stored as Flate or CCITT is re-encoded as JBIG2, which is typically
+  /// several times smaller. Continuous-tone images are left alone, because
+  /// improving those means resampling or a lossy re-encode.
+  final PdfImageCompressionOptions images;
+
   /// Return the original bytes when the rewrite came out larger.
   ///
   /// A cross-reference stream and an object stream have a fixed cost, so on a
@@ -82,6 +91,7 @@ class PdfCompressionOptions {
     this.removePieceInfo = true,
     this.removeStructureTree = false,
     this.neverGrow = true,
+    this.images = const PdfImageCompressionOptions(),
   });
 
   /// Only what cannot change how the document behaves in any reader.
@@ -91,6 +101,7 @@ class PdfCompressionOptions {
   static const PdfCompressionOptions conservative = PdfCompressionOptions(
     removeThumbnails: false,
     removePieceInfo: false,
+    images: PdfImageCompressionOptions.none,
   );
 
   /// Everything that keeps the pages identical, including dropping the
@@ -114,6 +125,7 @@ class PdfCompressionOptions {
     bool? removePieceInfo,
     bool? removeStructureTree,
     bool? neverGrow,
+    PdfImageCompressionOptions? images,
   }) {
     return PdfCompressionOptions(
       objectStreams: objectStreams ?? this.objectStreams,
@@ -126,6 +138,7 @@ class PdfCompressionOptions {
       removePieceInfo: removePieceInfo ?? this.removePieceInfo,
       removeStructureTree: removeStructureTree ?? this.removeStructureTree,
       neverGrow: neverGrow ?? this.neverGrow,
+      images: images ?? this.images,
     );
   }
 }
@@ -154,6 +167,9 @@ class PdfCompressionReport {
   /// Entries removed by the `remove*` options, e.g. `Thumb` or `Metadata`.
   final Map<String, int> entriesRemoved;
 
+  /// What the image pass did.
+  final PdfImageCompressionReport images;
+
   /// True when the rewrite came out larger and the original was returned
   /// unchanged, because [PdfCompressionOptions.neverGrow] was set.
   final bool keptOriginal;
@@ -167,6 +183,7 @@ class PdfCompressionReport {
     required this.streamBytesSaved,
     required this.entriesRemoved,
     this.keptOriginal = false,
+    this.images = PdfImageCompressionReport.empty,
   });
 
   /// Bytes the output is smaller than the input. Negative when the rewrite
@@ -187,6 +204,7 @@ class PdfCompressionReport {
         'streamBytesSaved': streamBytesSaved,
         'entriesRemoved': entriesRemoved,
         'keptOriginal': keptOriginal,
+        'images': images.toJson(),
       };
 
   @override

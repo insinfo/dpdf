@@ -7,6 +7,18 @@ externos, e compila para VM (JIT/AOT), `dart2js` e `dart2wasm`.
 
 ### Adicionado
 
+- **Compressão de PDF**: `PdfCompressor` reescreve o documento menor sem mudar
+  o que ele desenha — object streams e xref stream, recompressão de fluxos,
+  deduplicação de objetos idênticos, remoção de objetos órfãos e poda opcional
+  de miniaturas, metadados e dados privados. Devolve o original quando a
+  reescrita ficaria maior.
+- **Recompressão de imagens bilevel** (`PdfImageCompressor`), sem perdas: cada
+  imagem é codificada em JBIG2 (via `package:jbig2`) e em Flate, e a menor
+  vence. Nenhum dos dois ganha sempre — medido numa página 800x1000, o Flate
+  faz 287 bytes contra 886 do JBIG2 quando as linhas se repetem exatamente, e
+  20304 contra 16519 quando há ruído de digitalização.
+- **Decodificação JBIG2 real** no filtro `/JBIG2Decode`, que antes apenas
+  concatenava os globals e devolvia os bytes crus.
 - **Verificação de integridade**: `PdfIntegrityChecker` inspeciona cabeçalho,
   marcadores `%%EOF`, `startxref`, deslocamentos da tabela de referências
   cruzadas conferidos byte a byte, `/Count` conferido contra as páginas

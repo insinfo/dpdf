@@ -186,3 +186,4 @@ export 'src/kernel/pdf/pdf_version.dart';
 // Compression: rewrite a document smaller without changing what it draws.
 export 'src/compress/pdf_compression_options.dart';
 export 'src/compress/pdf_compressor.dart';
+export 'src/compress/pdf_image_compressor.dart';

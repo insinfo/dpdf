@@ -12,6 +12,7 @@ import '../kernel/pdf/pdf_number.dart';
 import '../kernel/pdf/pdf_page.dart';
 import '../kernel/pdf/pdf_stream.dart';
 import '../kernel/pdf/pdf_string.dart';
+import '../kernel/pdf/function/pdf_function.dart';
 import '../io/image/png_encoder.dart';
 import 'content_parser.dart';
 import 'glyph_source.dart';
@@ -256,8 +257,8 @@ class _State {
   double dashPhase;
   double fillAlpha;
   double strokeAlpha;
-  PdfStream? fillPattern;
-  PdfStream? strokePattern;
+  PdfDictionary? fillPattern;
+  PdfDictionary? strokePattern;
 
   // Text state.
   double fontSize;
@@ -647,7 +648,7 @@ class _Renderer {
     if (!_pathEmpty) {
       if (fill != null) {
         if (state.fillPattern != null) {
-          await _fillTilingPattern(_path, fill, state.fillPattern!);
+          await _fillPattern(_path, fill, state.fillPattern!);
         } else {
           await context.fillPath(_path,
               color: _withAlpha(state.fillColour, state.fillAlpha), rule: fill);
@@ -684,8 +685,7 @@ class _Renderer {
             _path, state.dashArray.map((d) => d * scale).toList(),
             dashOffset: state.dashPhase * scale);
         final outline = BLStroker.strokePath(dashed, options);
-        await _fillTilingPattern(
-            outline, BLFillRule.nonZero, state.strokePattern!,
+        await _fillPattern(outline, BLFillRule.nonZero, state.strokePattern!,
             stroke: true);
         return;
       }
@@ -700,8 +700,7 @@ class _Renderer {
     }
     if (state.strokePattern != null) {
       final outline = BLStroker.strokePath(_path, options);
-      await _fillTilingPattern(
-          outline, BLFillRule.nonZero, state.strokePattern!,
+      await _fillPattern(outline, BLFillRule.nonZero, state.strokePattern!,
           stroke: true);
       return;
     }
@@ -834,7 +833,8 @@ class _Renderer {
     final name = op.operands.whereType<PdfName>().lastOrNull?.getValue();
     if (name != null) {
       final patterns = await resources?.dictionaryEntry(PdfName.pattern);
-      final pattern = await patterns?.streamEntry(PdfName(name));
+      final patternObject = await patterns?.get(PdfName(name), true);
+      final pattern = patternObject is PdfDictionary ? patternObject : null;
       if (pattern == null) {
         _note('${stroke ? 'SCN' : 'scn'}:pattern');
       } else if (stroke) {
@@ -893,11 +893,14 @@ class _Renderer {
         _ => 0xFF000000,
       };
 
-  Future<void> _fillTilingPattern(
-      BLPath path, BLFillRule rule, PdfStream pattern,
+  Future<void> _fillPattern(BLPath path, BLFillRule rule, PdfDictionary pattern,
       {bool stroke = false}) async {
     final type = await pattern.integerEntry(PdfName('PatternType'));
-    if (type != 1) {
+    if (type == 2) {
+      await _fillShadingPattern(path, rule, pattern, stroke: stroke);
+      return;
+    }
+    if (type != 1 || pattern is! PdfStream) {
       _note('scn:pattern-type-${type ?? 'missing'}');
       return;
     }
@@ -978,6 +981,84 @@ class _Renderer {
       extendModeY: BLGradientExtendMode.repeat,
       transform: deviceToPattern.multiply(patternToPixel),
     ));
+    await context.fillPath(path, rule: rule);
+    context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
+  }
+
+  Future<void> _fillShadingPattern(
+      BLPath path, BLFillRule rule, PdfDictionary pattern,
+      {required bool stroke}) async {
+    final shadingObject = await pattern.get(PdfName.shading, true);
+    if (shadingObject is! PdfDictionary) {
+      _note('scn:malformed-shading-pattern');
+      return;
+    }
+    final shading = shadingObject;
+    final shadingType = await shading.integerEntry(PdfName.shadingType);
+    final expectedCoords = shadingType == 2 ? 4 : (shadingType == 3 ? 6 : 0);
+    final coordsArray = await shading.arrayEntry(PdfName.coords);
+    final function =
+        await PdfFunction.parse(await shading.get(PdfName.function, true));
+    final colorObject = await shading.get(PdfName.colorSpace, true);
+    final colorSpace = colorObject == null
+        ? null
+        : await PdfColorSpace.makeColorSpace(colorObject);
+    if (expectedCoords == 0 ||
+        coordsArray == null ||
+        coordsArray.size() != expectedCoords ||
+        function == null ||
+        colorSpace == null) {
+      _note('scn:unsupported-shading-pattern');
+      return;
+    }
+    final coords = await coordsArray.toDoubleArray();
+    var domainStart = 0.0;
+    var domainEnd = 1.0;
+    final shadingDomain = await shading.arrayEntry(PdfName('Domain'));
+    if (shadingDomain != null && shadingDomain.size() == 2) {
+      final values = await shadingDomain.toDoubleArray();
+      domainStart = values[0];
+      domainEnd = values[1];
+    }
+    var matrix = BLMatrix2D.identity;
+    final matrixArray = await pattern.arrayEntry(PdfName.matrix);
+    if (matrixArray != null && matrixArray.size() == 6) {
+      final values = await matrixArray.toDoubleArray();
+      matrix = BLMatrix2D(
+          values[0], values[1], values[2], values[3], values[4], values[5]);
+    }
+    final toDevice = matrix.multiply(state.ctm);
+    final alpha = stroke ? state.strokeAlpha : state.fillAlpha;
+    final stops = <BLGradientStop>[];
+    for (var index = 0; index <= 256; index++) {
+      final offset = index / 256;
+      try {
+        final input = domainStart + offset * (domainEnd - domainStart);
+        final components = function.evaluate([input]);
+        final rgb = colorSpace.toRgb(components);
+        stops.add(BLGradientStop(
+            offset, _withAlpha(_rgb(rgb[0], rgb[1], rgb[2]), alpha)));
+      } on Object {
+        _note('scn:shading-colour');
+        return;
+      }
+    }
+    if (shadingType == 2) {
+      final p0 = toDevice.mapPoint(coords[0], coords[1]);
+      final p1 = toDevice.mapPoint(coords[2], coords[3]);
+      context.setLinearGradient(BLLinearGradient(
+          p0: BLPoint(p0.$1, p0.$2), p1: BLPoint(p1.$1, p1.$2), stops: stops));
+    } else {
+      final c0 = toDevice.mapPoint(coords[0], coords[1]);
+      final c1 = toDevice.mapPoint(coords[3], coords[4]);
+      final scale = _averageScale(toDevice);
+      context.setRadialGradient(BLRadialGradient(
+          c0: BLPoint(c0.$1, c0.$2),
+          c1: BLPoint(c1.$1, c1.$2),
+          r0: coords[2] * scale,
+          r1: coords[5] * scale,
+          stops: stops));
+    }
     await context.fillPath(path, rule: rule);
     context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
   }

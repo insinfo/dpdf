@@ -137,8 +137,9 @@ subsampling.
   remain partial.
 - PDF rendering may require a supplied fallback for fonts that are not embedded.
   CID-keyed CFF supports FDArray/FDSelect and charset CID-to-GID mapping; CFF2
-  and PatternType 2 shading-pattern cases remain partial.
-  Colored/uncolored tiling patterns and patterned strokes render. Alpha and
+  remains partial. Axial/radial PatternType 2 shadings, colored/uncolored
+  tiling patterns and patterned strokes render. Mesh shadings and asymmetric
+  shading extension remain partial. Alpha and
   luminosity soft masks render; transfer functions and some advanced
   transparency-group replacement cases remain partial.
 - Area redaction of shared, transparent or Form-nested images still covers

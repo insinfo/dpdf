@@ -345,6 +345,64 @@ void main() {
       expect(page.report.unsupportedOperators, isEmpty);
     });
 
+    test('renders an axial PatternType 2 shading pattern', () async {
+      final function = PdfDictionary()
+        ..put(PdfName('FunctionType'), PdfNumber.fromInt(2))
+        ..put(PdfName('Domain'), PdfArray.fromDoubles([0, 1]))
+        ..put(PdfName('C0'), PdfArray.fromDoubles([1, 0, 0]))
+        ..put(PdfName('C1'), PdfArray.fromDoubles([0, 0, 1]))
+        ..put(PdfName('N'), PdfNumber(1));
+      final shading = PdfDictionary()
+        ..put(PdfName.shadingType, PdfNumber.fromInt(2))
+        ..put(PdfName.colorSpace, PdfName.deviceRgb)
+        ..put(PdfName.coords, PdfArray.fromDoubles([0, 0, 100, 0]))
+        ..put(PdfName('Domain'), PdfArray.fromDoubles([0, .5]))
+        ..put(PdfName.function, function)
+        ..put(PdfName('Extend'), PdfArray.fromBooleans([true, true]));
+      final pattern = PdfDictionary()
+        ..put(PdfName.type, PdfName.pattern)
+        ..put(PdfName('PatternType'), PdfNumber.fromInt(2))
+        ..put(PdfName.shading, shading);
+      final resources = PdfDictionary()
+        ..put(PdfName.pattern, PdfDictionary()..put(PdfName('P0'), pattern));
+
+      final page = await _render('/Pattern cs /P0 scn 0 0 100 100 re f',
+          resources: resources);
+
+      expect(_at(page, 10, 50).r, greaterThan(200));
+      expect(_at(page, 10, 50).b, lessThan(60));
+      expect(_at(page, 90, 50).b, greaterThan(100));
+      expect(_at(page, 90, 50).r, greaterThan(100));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
+
+    test('renders a radial PatternType 2 shading pattern', () async {
+      final function = PdfDictionary()
+        ..put(PdfName('FunctionType'), PdfNumber.fromInt(2))
+        ..put(PdfName('Domain'), PdfArray.fromDoubles([0, 1]))
+        ..put(PdfName('C0'), PdfArray.fromDoubles([1, 1, 0]))
+        ..put(PdfName('C1'), PdfArray.fromDoubles([0, 0, 0]))
+        ..put(PdfName('N'), PdfNumber(1));
+      final shading = PdfDictionary()
+        ..put(PdfName.shadingType, PdfNumber.fromInt(3))
+        ..put(PdfName.colorSpace, PdfName.deviceRgb)
+        ..put(PdfName.coords, PdfArray.fromDoubles([50, 50, 0, 50, 50, 50]))
+        ..put(PdfName.function, function);
+      final pattern = PdfDictionary()
+        ..put(PdfName('PatternType'), PdfNumber.fromInt(2))
+        ..put(PdfName.shading, shading);
+      final resources = PdfDictionary()
+        ..put(PdfName.pattern, PdfDictionary()..put(PdfName('P0'), pattern));
+
+      final page = await _render('/Pattern cs /P0 scn 0 0 100 100 re f',
+          resources: resources);
+
+      expect(_at(page, 50, 50).r, greaterThan(230));
+      expect(_at(page, 50, 50).g, greaterThan(230));
+      expect(_at(page, 5, 50).r, lessThan(50));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
+
     test('applies a luminosity soft mask transparency group', () async {
       final group = PdfStream.withBytes(
           Uint8List.fromList(

@@ -60,6 +60,32 @@ class PdfFontRequest {
 /// leave the text undrawn and reported.
 typedef PdfFontFallback = Future<Uint8List?> Function(PdfFontRequest request);
 
+/// Adapta o catálogo compartilhado do dgfx ao fallback do renderizador PDF.
+///
+/// O nome PostScript de `/BaseFont` costuma terminar em `-Bold`, `-Italic` ou
+/// combinações equivalentes. A consulta remove esses sufixos porque peso e
+/// inclinação já são dimensões próprias do catálogo.
+PdfFontFallback pdfFontFallbackFromCollection(BLFontCollection collection) {
+  return (request) async {
+    var family = request.familyName;
+    family = family.replaceFirst(
+      RegExp(r'[-,]?(BoldItalic|BoldOblique|Bold|Italic|Oblique)$',
+          caseSensitive: false),
+      '',
+    );
+    final face = await collection.resolve(BLFontQuery(
+      <String>[
+        family,
+        if (request.isFixedPitch) 'monospace',
+        if (request.isSerif) 'serif' else 'sans-serif',
+      ],
+      weight: request.isBold ? 700 : 400,
+      slant: request.isItalic ? BLFontSlant.italic : BLFontSlant.normal,
+    ));
+    return face?.data;
+  };
+}
+
 /// Why a font could not be drawn, for the render report.
 enum PdfGlyphFailure {
   /// The font dictionary has no embedded program. Drawing it would mean

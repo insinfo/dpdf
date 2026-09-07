@@ -3,6 +3,15 @@
 /// dpdf a dart PDF library
 library;
 
+export 'package:dgfx/dgfx.dart'
+    show
+        BLCallbackFontProvider,
+        BLFontBytesProvider,
+        BLFontCollection,
+        BLFontProvider,
+        BLFontQuery,
+        BLFontSlant;
+
 export 'src/editing/pdf_page_assembly.dart';
 export 'src/editing/pdf_page_overlay.dart';
 export 'src/compatibility/pdf_percent_comments.dart';
@@ -202,6 +211,10 @@ export 'src/render/content_parser.dart';
 // `PdfFontFallback`, `PdfFontRequest` e `PdfGlyphFailure` fazem parte da API
 // do renderizador: aparecem nas opções e no relatório.
 export 'src/render/glyph_source.dart'
-    show PdfFontFallback, PdfFontRequest, PdfGlyphFailure;
+    show
+        PdfFontFallback,
+        PdfFontRequest,
+        PdfGlyphFailure,
+        pdfFontFallbackFromCollection;
 export 'src/render/image_decoder.dart';
 export 'src/render/page_renderer.dart';

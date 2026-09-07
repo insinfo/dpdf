@@ -1,4 +1,5 @@
 import '../../platform/io.dart';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
 
@@ -604,6 +605,7 @@ class CraftPdfWriter {
 class _BytesBuilderSink implements IOSink {
   final BytesBuilder builder;
   final Completer<void> _completer = Completer<void>();
+  Encoding _encoding = latin1;
 
   _BytesBuilderSink(this.builder);
 
@@ -636,7 +638,7 @@ class _BytesBuilderSink implements IOSink {
 
   @override
   void write(Object? object) {
-    add(CraftByteUtils.getIsoBytes(object.toString()));
+    add(_encoding.encode(object.toString()));
   }
 
   @override
@@ -661,9 +663,9 @@ class _BytesBuilderSink implements IOSink {
   }
 
   @override
-  set encoding(_) => throw UnimplementedError();
+  set encoding(Encoding value) => _encoding = value;
   @override
-  get encoding => throw UnimplementedError();
+  Encoding get encoding => _encoding;
 
   @override
   Future<void> flush() async {}

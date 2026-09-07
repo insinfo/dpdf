@@ -2,11 +2,11 @@ import 'dart:typed_data';
 
 import 'random_access_source.dart';
 
-/// A thread-safe wrapper for RandomAccessSource.
+/// A forwarding wrapper for a synchronous random-access source.
 ///
-/// Note: In Dart single-isolate context, this class doesn't need actual locking.
-/// However, it maintains the same interface as the C# version for compatibility.
-/// If used across isolates, appropriate synchronization would be needed.
+/// This wrapper does not provide locking or share a source between isolates.
+/// Each worker must own its source. The historical class name is retained for
+/// source compatibility.
 class CraftThreadSafeRandomAccessSource implements CraftRandomAccessSource {
   /// The underlying source.
   final CraftRandomAccessSource _source;
@@ -15,25 +15,25 @@ class CraftThreadSafeRandomAccessSource implements CraftRandomAccessSource {
   CraftThreadSafeRandomAccessSource(this._source);
 
   @override
-  Future<int> get(int position) {
+  int get(int position) {
     // In single-isolate Dart, no locking is needed
     return _source.get(position);
   }
 
   @override
-  Future<int> getRange(int position, Uint8List bytes, int off, int len) {
+  int getRange(int position, Uint8List bytes, int off, int len) {
     // In single-isolate Dart, no locking is needed
     return _source.getRange(position, bytes, off, len);
   }
 
   @override
-  Future<int> length() {
+  int length() {
     // In single-isolate Dart, no locking is needed
     return _source.length();
   }
 
   @override
-  Future<void> close() {
+  void close() {
     // In single-isolate Dart, no locking is needed
     return _source.close();
   }

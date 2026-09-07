@@ -944,7 +944,12 @@ class CraftPdfPKCS7 {
 
     // UnsignedAttributes [1] IMPLICIT
     if (tsaClient != null) {
-      final tsaToken = await tsaClient.getTimeStampToken(_signatureValue!);
+      // RFC 3161 timestamps the digest of the signature value, never the raw
+      // signature bytes. The TSA client controls the digest it advertised in
+      // its request's MessageImprint algorithm identifier.
+      final tsaDigest = tsaClient.getMessageDigest()
+        ..update(_signatureValue!);
+      final tsaToken = await tsaClient.getTimeStampToken(tsaDigest.digest());
 
       final attrContent = <Uint8List>[];
       attrContent.add(ASN1Utils.createOID(CraftOID.signatureTimeStampToken));

@@ -28,9 +28,9 @@ class _Input extends CraftPdfTokenizer {
   }
 
   @override
-  Future<void> close() async {
+  void close() {
     closed = true;
-    await super.close();
+    super.close();
   }
 }
 

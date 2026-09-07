@@ -1,14 +1,18 @@
 import '../../platform/io.dart';
+import 'dart:typed_data';
 import '../../commons/utils/properties.dart';
 import '../util/int_hashtable.dart';
 import '../util/string_tokenizer.dart';
 import 'cmap/cmap_location_resource.dart';
+import 'cmap/cmap_location_from_provider.dart';
+import 'cmap/cmap_location.dart';
 import 'cmap/cmap_parser.dart';
 import 'cmap/abstract_cmap.dart';
 import 'cmap/cmap_cid_uni.dart';
 import 'cmap/cmap_uni_cid.dart';
 import 'cmap/cmap_cid_to_codepoint.dart';
 import 'cmap/cmap_codepoint_to_cid.dart';
+import 'cjk_resource_provider.dart';
 
 /// This class is responsible for loading and handling CJK fonts and CMaps.
 class CraftCjkResourceLoader {
@@ -22,9 +26,31 @@ class CraftCjkResourceLoader {
   static const String W2_PROP = "W2";
 
   static CraftCMapLocationResource cmapLocation = CraftCMapLocationResource();
+  static CraftCjkResourceProvider? _resourceProvider;
+  static CraftCMapLocation? _providerCmapLocation;
   static bool _loaded = false;
 
   CraftCjkResourceLoader._();
+
+  /// Installs resources supplied by the application, or restores path-based
+  /// loading when [provider] is null. Existing CJK caches are discarded.
+  static void setResourceProvider(CraftCjkResourceProvider? provider) {
+    _resourceProvider = provider;
+    _providerCmapLocation =
+        provider == null ? null : CraftCMapLocationFromProvider(provider);
+    reset();
+  }
+
+  /// The active CMap source, including an installed in-memory provider.
+  static CraftCMapLocation get activeCmapLocation =>
+      _providerCmapLocation ?? cmapLocation;
+
+  /// Clears loaded registry and font metadata without changing the provider.
+  static void reset() {
+    _loaded = false;
+    registryNames.clear();
+    allCidFonts.clear();
+  }
 
   static Future<void> init() async {
     if (_loaded) return;
@@ -36,13 +62,11 @@ class CraftCjkResourceLoader {
     registryNames.clear();
     allCidFonts.clear();
 
-    final path = cmapLocation.getLocationPath() + CJK_REGISTRY_FILENAME;
-    final file = File(path);
-    if (!(await file.exists())) return;
-
     final p = Properties();
     try {
-      p.loadFromBytes(await file.readAsBytes());
+      final bytes = await _readResource(CJK_REGISTRY_FILENAME);
+      if (bytes == null) return;
+      p.loadFromBytes(bytes);
     } catch (e) {
       // ignore
       return;
@@ -67,13 +91,11 @@ class CraftCjkResourceLoader {
   }
 
   static Future<Map<String, dynamic>> readFontProperties(String name) async {
-    final path = cmapLocation.getLocationPath() + name + ".properties";
-    final file = File(path);
-    if (!(await file.exists())) return {};
-
     final p = Properties();
     try {
-      p.loadFromBytes(await file.readAsBytes());
+      final bytes = await _readResource('$name.properties');
+      if (bytes == null) return {};
+      p.loadFromBytes(bytes);
     } catch (e) {
       return {};
     }
@@ -122,7 +144,7 @@ class CraftCjkResourceLoader {
 
   static Future<T> _parseCmap<T extends CraftAbstractCMap>(
       String name, T cmap) async {
-    await CraftCMapParser.loadCidMappings(name, cmap, cmapLocation);
+    await CraftCMapParser.loadCidMappings(name, cmap, activeCmapLocation);
     return cmap;
   }
 
@@ -136,13 +158,11 @@ class CraftCjkResourceLoader {
     registryNames.clear();
     allCidFonts.clear();
 
-    final path = cmapLocation.getLocationPath() + CJK_REGISTRY_FILENAME;
-    final file = File(path);
-    if (!file.existsSync()) return;
-
     final p = Properties();
     try {
-      p.loadFromBytes(file.readAsBytesSync());
+      final bytes = _readResourceSync(CJK_REGISTRY_FILENAME);
+      if (bytes == null) return;
+      p.loadFromBytes(bytes);
     } catch (e) {
       return;
     }
@@ -166,13 +186,11 @@ class CraftCjkResourceLoader {
   }
 
   static Map<String, dynamic> readFontPropertiesSync(String name) {
-    final path = cmapLocation.getLocationPath() + name + ".properties";
-    final file = File(path);
-    if (!file.existsSync()) return {};
-
     final p = Properties();
     try {
-      p.loadFromBytes(file.readAsBytesSync());
+      final bytes = _readResourceSync('$name.properties');
+      if (bytes == null) return {};
+      p.loadFromBytes(bytes);
     } catch (e) {
       return {};
     }
@@ -234,6 +252,22 @@ class CraftCjkResourceLoader {
   }
 
   static void _parseCmapSync<T extends CraftAbstractCMap>(String name, T cmap) {
-    CraftCMapParser.loadCidMappingsSync(name, cmap, cmapLocation);
+    CraftCMapParser.loadCidMappingsSync(name, cmap, activeCmapLocation);
+  }
+
+  static Future<Uint8List?> _readResource(String name) async {
+    final provider = _resourceProvider;
+    if (provider != null) return provider.read(name);
+    final file = File(cmapLocation.getLocationPath() + name);
+    if (!await file.exists()) return null;
+    return file.readAsBytes();
+  }
+
+  static Uint8List? _readResourceSync(String name) {
+    final provider = _resourceProvider;
+    if (provider != null) return provider.readSync(name);
+    final file = File(cmapLocation.getLocationPath() + name);
+    if (!file.existsSync()) return null;
+    return file.readAsBytesSync();
   }
 }

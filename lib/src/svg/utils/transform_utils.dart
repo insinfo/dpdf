@@ -16,7 +16,7 @@ class CraftTransformUtils {
   static const String TRANSLATE = "TRANSLATE";
 
   static CraftAffineTransform parseTransform(String transform) {
-    if (transform.isEmpty) {
+    if (transform.trim().isEmpty) {
       throw CraftSvgProcessingException(
           CraftSvgExceptionMessageConstant.TRANSFORM_EMPTY);
     }
@@ -38,7 +38,13 @@ class CraftTransformUtils {
     int start = 0;
     while (true) {
       int end = transform.indexOf(')', start);
-      if (end == -1) break;
+      if (end == -1) {
+        if (transform.substring(start).trim().isNotEmpty) {
+          throw CraftSvgProcessingException(
+              CraftSvgExceptionMessageConstant.INVALID_TRANSFORM_DECLARATION);
+        }
+        break;
+      }
       String trim = transform.substring(start, end + 1).trim();
       if (trim.isNotEmpty) {
         if (trim.startsWith(',')) {
@@ -49,6 +55,10 @@ class CraftTransformUtils {
         }
       }
       start = end + 1;
+    }
+    if (list.isEmpty) {
+      throw CraftSvgProcessingException(
+          CraftSvgExceptionMessageConstant.INVALID_TRANSFORM_DECLARATION);
     }
     return list;
   }

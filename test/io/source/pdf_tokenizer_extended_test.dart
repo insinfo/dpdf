@@ -14,7 +14,7 @@ CraftPdfTokenizer tokenizerFromString(String content) {
 void main() {
   group('PdfTokenizer Extended', () {
     group('Seek and Position', () {
-      test('seekTest', () async {
+      test('seekTest', () {
         final data = '/Name1 70';
         final expectedTypes = [
           TokenType.name,
@@ -25,140 +25,140 @@ void main() {
         final tok = tokenizerFromString(data);
 
         tok.seek(0); // seek is sync, does not return Future
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(expectedTypes[0]));
         expect(tok.getStringValue(), equals('Name1'));
 
         tok.seek(7);
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(expectedTypes[1]));
         expect(tok.getStringValue(), equals('70'));
 
         tok.seek(8);
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(expectedTypes[1]));
         expect(tok.getStringValue(), equals('0'));
 
         tok.seek(9);
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(expectedTypes[2]));
       });
 
-      test('peekTest', () async {
+      test('peekTest', () {
         final data = '/Name1 70';
         final tokenizer = tokenizerFromString(data);
 
         tokenizer.seek(0);
-        var symbol = await tokenizer.peek();
+        var symbol = tokenizer.peek();
         expect(symbol, equals('/'.codeUnitAt(0)));
         expect(tokenizer.getPosition(), equals(0)); // getPosition is sync
 
         tokenizer.seek(7);
-        symbol = await tokenizer.peek();
+        symbol = tokenizer.peek();
         expect(symbol, equals('7'.codeUnitAt(0)));
         expect(tokenizer.getPosition(), equals(7));
 
         tokenizer.seek(9);
-        symbol = await tokenizer.peek();
+        symbol = tokenizer.peek();
         expect(symbol, equals(-1));
         expect(tokenizer.getPosition(), equals(9));
       });
 
-      test('getPositionTest', () async {
+      test('getPositionTest', () {
         final data = '/Name1 70';
         final tok = tokenizerFromString(data);
 
         expect(tok.getPosition(), equals(0));
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getPosition(), equals(6)); // After "/Name1"
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getPosition(), equals(9)); // After "/Name1 70"
       });
     });
 
     group('Value Parsing', () {
-      test('getLongValueTest', () async {
+      test('getLongValueTest', () {
         final data = '21474836470';
         final tok = tokenizerFromString(data);
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.number));
         expect(tok.getLongValue(), equals(21474836470));
       });
 
-      test('getIntValueTest', () async {
+      test('getIntValueTest', () {
         final data = '15';
         final tok = tokenizerFromString(data);
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.number));
         expect(tok.getIntValue(), equals(15));
       });
     });
 
     group('Length and Read', () {
-      test('lengthTest', () async {
+      test('lengthTest', () {
         final data = '/Name1';
         final tok = tokenizerFromString(data);
-        expect(await tok.length(), equals(6));
+        expect(tok.length(), equals(6));
       });
 
-      test('lengthTwoTokenTest', () async {
+      test('lengthTwoTokenTest', () {
         final data = '/Name1 15';
         final tok = tokenizerFromString(data);
-        expect(await tok.length(), equals(9));
+        expect(tok.length(), equals(9));
       });
 
-      test('readTest', () async {
+      test('readTest', () {
         final data = '/Name1 15';
         final tok = tokenizerFromString(data);
         final read = Uint8List(7);
         for (var i = 0; i < 7; i++) {
-          read[i] = await tok.read();
+          read[i] = tok.read();
         }
         expect(String.fromCharCodes(read), equals('/Name1 '));
       });
 
-      test('readStringFullTest', () async {
+      test('readStringFullTest', () {
         final data = '/Name1 15';
         final tok = tokenizerFromString(data);
-        expect(await tok.readString(data.length), equals(data));
+        expect(tok.readString(data.length), equals(data));
       });
 
-      test('readStringShortTest', () async {
+      test('readStringShortTest', () {
         final data = '/Name1 15';
         final tok = tokenizerFromString(data);
-        expect(await tok.readString(5), equals('/Name'));
+        expect(tok.readString(5), equals('/Name'));
       });
 
-      test('readStringLongerThenDataTest', () async {
+      test('readStringLongerThenDataTest', () {
         final data = '/Name1 15';
         final tok = tokenizerFromString(data);
-        expect(await tok.readString(data.length + 10), equals(data));
+        expect(tok.readString(data.length + 10), equals(data));
       });
 
-      test('readFullyPartThenReadStringTest', () async {
+      test('readFullyPartThenReadStringTest', () {
         final data = '/Name1 15';
         final tok = tokenizerFromString(data);
-        await tok.readFully(Uint8List(6));
-        expect(await tok.readString(data.length), equals(' 15'));
+        tok.readFully(Uint8List(6));
+        expect(tok.readString(data.length), equals(' 15'));
       });
 
-      test('readFullyThenReadStringTest', () async {
+      test('readFullyThenReadStringTest', () {
         final data = '/Name1 15';
         final tok = tokenizerFromString(data);
-        await tok.readFully(Uint8List(7));
-        expect(await tok.readString(data.length), equals('15'));
+        tok.readFully(Uint8List(7));
+        expect(tok.readString(data.length), equals('15'));
       });
     });
 
     group('EOF Parsing', () {
-      test('getNextEofShortTextTest', () async {
+      test('getNextEofShortTextTest', () {
         final data = 'some text to test \ngetting end of\n file logic%%EOF';
         final tok = tokenizerFromString(data);
-        final eofPosition = await tok.getNextEof();
+        final eofPosition = tok.getNextEof();
         expect(eofPosition, equals(data.length));
       });
 
-      test('getNextEofLongTextTest', () async {
+      test('getNextEofLongTextTest', () {
         final dataChunk = 'some text to test \ngetting end of\n file logic';
         final buffer = StringBuffer();
         for (var i = 0; i < 20; i++) {
@@ -168,11 +168,11 @@ void main() {
         final data = buffer.toString();
 
         final tok = tokenizerFromString(data);
-        final eofPosition = await tok.getNextEof();
+        final eofPosition = tok.getNextEof();
         expect(eofPosition, equals(dataChunk.length * 20 + 5));
       });
 
-      test('getNextEofWhichIsCutTest', () async {
+      test('getNextEofWhichIsCutTest', () {
         final buffer = StringBuffer();
         // 124 'a's so %%EOF is cut at buffer boundary (buffer is 128 bytes)
         for (var i = 0; i < 124; i++) {
@@ -181,59 +181,59 @@ void main() {
         buffer.write('%%EOF');
 
         final tok = tokenizerFromString(buffer.toString());
-        final eofPosition = await tok.getNextEof();
+        final eofPosition = tok.getNextEof();
         expect(eofPosition, equals(124 + 5));
       });
 
-      test('getNextEofSeveralEofTest', () async {
+      test('getNextEofSeveralEofTest', () {
         final data =
             'some text %%EOFto test \nget%%EOFting end of\n fil%%EOFe logic%%EOF';
         final tok = tokenizerFromString(data);
-        final eofPosition = await tok.getNextEof();
+        final eofPosition = tok.getNextEof();
         expect(eofPosition, equals(data.indexOf('%%EOF') + 5));
       });
 
-      test('getNextEofFollowedByEOLTest', () async {
+      test('getNextEofFollowedByEOLTest', () {
         final data =
             'some text to test \ngetting end of\n file logic%%EOF\n\r\r\n\r\r\n';
         final tok = tokenizerFromString(data);
-        final eofPosition = await tok.getNextEof();
+        final eofPosition = tok.getNextEof();
         // After %%EOF + trailing EOL characters
         expect(eofPosition,
             equals(data.indexOf('%%EOF') + 4 + 5)); // 4 EOL chars after %%EOF
       });
 
-      test('getNextEofNoEofTest', () async {
+      test('getNextEofNoEofTest', () {
         final data = 'some text to test \ngetting end of\n file logic';
         final tok = tokenizerFromString(data);
         expect(
-          () async => await tok.getNextEof(),
+          () => tok.getNextEof(),
           throwsA(isA<IoException>()),
         );
       });
     });
 
     group('String Content', () {
-      test('getDecodedStringContentTest', () async {
+      test('getDecodedStringContentTest', () {
         final data = '/Name1 15';
         final tok = tokenizerFromString(data);
 
-        await tok.nextToken();
+        tok.nextToken();
         expect(String.fromCharCodes(tok.getDecodedStringContent()),
             equals('Name1'));
 
-        await tok.nextToken();
+        tok.nextToken();
         expect(
             String.fromCharCodes(tok.getDecodedStringContent()), equals('15'));
 
-        await tok.nextToken();
+        tok.nextToken();
         expect(String.fromCharCodes(tok.getDecodedStringContent()), equals(''));
       });
 
-      test('getDecodedStringContentHexTest', () async {
+      test('getDecodedStringContentHexTest', () {
         final data = '<736f6d652068657820737472696e67>';
         final tok = tokenizerFromString(data);
-        await tok.nextToken();
+        tok.nextToken();
         expect(tok.isHexString(), isTrue);
         expect(String.fromCharCodes(tok.getDecodedStringContent()),
             equals('some hex string'));
@@ -241,13 +241,13 @@ void main() {
     });
 
     group('Token Types', () {
-      test('testOneNumber', () async {
-        await checkTokenTypes('/Name1 70',
+      test('testOneNumber', () {
+        checkTokenTypes('/Name1 70',
             [TokenType.name, TokenType.number, TokenType.endOfFile]);
       });
 
-      test('testTwoNumbers', () async {
-        await checkTokenTypes('/Name1 70/Name 2', [
+      test('testTwoNumbers', () {
+        checkTokenTypes('/Name1 70/Name 2', [
           TokenType.name,
           TokenType.number,
           TokenType.name,
@@ -256,8 +256,8 @@ void main() {
         ]);
       });
 
-      test('tokenTypesTest', () async {
-        await checkTokenTypes(
+      test('tokenTypesTest', () {
+        checkTokenTypes(
           '<<Size 70/Root 46 0 R/Info 44 0 R/ID[<8C2547D58D4BD2C6F3D32B830BE3259D><8F69587888569A458EB681A4285D5879>]/Prev 116 >>',
           [
             TokenType.startDic, // <<
@@ -282,36 +282,36 @@ void main() {
     });
 
     group('Token Value Comparison', () {
-      test('tokenValueEqualsToTest', () async {
+      test('tokenValueEqualsToTest', () {
         final data = 'SomeString';
         final tok = tokenizerFromString(data);
-        await tok.nextToken();
+        tok.nextToken();
         expect(tok.tokenValueEqualsTo(Uint8List.fromList(latin1.encode(data))),
             isTrue);
       });
 
-      test('tokenValueEqualsToEmptyTest', () async {
+      test('tokenValueEqualsToEmptyTest', () {
         final data = 'SomeString';
         final tok = tokenizerFromString(data);
-        await tok.nextToken();
+        tok.nextToken();
         // Test with empty bytes (analogous to null in C#)
         expect(tok.tokenValueEqualsTo(Uint8List(0)), isFalse);
       });
 
-      test('tokenValueEqualsToNotSameStringTest', () async {
+      test('tokenValueEqualsToNotSameStringTest', () {
         final data = 'SomeString';
         final tok = tokenizerFromString(data);
-        await tok.nextToken();
+        tok.nextToken();
         expect(
             tok.tokenValueEqualsTo(
                 Uint8List.fromList(latin1.encode('${data}s'))),
             isFalse);
       });
 
-      test('tokenValueEqualsToNotCaseSensitiveStringTest', () async {
+      test('tokenValueEqualsToNotCaseSensitiveStringTest', () {
         final data = 'SomeString';
         final tok = tokenizerFromString(data);
-        await tok.nextToken();
+        tok.nextToken();
         expect(
             tok.tokenValueEqualsTo(
                 Uint8List.fromList(latin1.encode('Somestring'))),
@@ -325,23 +325,23 @@ void main() {
         if (await file.exists()) {
           final bytes = await file.readAsBytes();
           final tok = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
-          final version = await tok.checkPdfHeader();
+          final version = tok.checkPdfHeader();
           expect(version, contains('1.7'));
         }
       });
 
-      test('getHeaderOffsetTest', () async {
+      test('getHeaderOffsetTest', () {
         final data = '%PDF-1.7\n%more content';
         final tok = tokenizerFromString(data);
         // getHeaderOffset reads from current position, so we need to get it first
         // before any other operations
-        final offset = await tok.getHeaderOffset();
+        final offset = tok.getHeaderOffset();
         expect(offset, equals(0));
       });
     });
 
     group('Primitives', () {
-      test('primitivesTest', () async {
+      test('primitivesTest', () {
         final data = '<<Size 70.%comment\n'
             '/Value#20 .1'
             '/Root 46 0 R'
@@ -352,88 +352,88 @@ void main() {
 
         final tok = tokenizerFromString(data);
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.startDic));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(),
             equals(TokenType.other)); // Size (not a name without /)
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.number));
         expect(tok.getStringValue(), equals('70.'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.name));
         expect(tok.getStringValue(), equals('Value#20'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.number));
         expect(tok.getStringValue(), equals('.1'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.name));
         expect(tok.getStringValue(), equals('Root'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.ref));
         expect(tok.getObjNr(), equals(46));
         expect(tok.getGenNr(), equals(0));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.name));
         expect(tok.getStringValue(), equals('Info'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.ref));
         expect(tok.getObjNr(), equals(44));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.name));
         expect(tok.getStringValue(), equals('ID'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.startArray));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.string));
         expect(tok.isHexString(), isTrue);
         expect(tok.getStringValue(), equals('736f6d652068657820737472696e672'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.string));
         expect(tok.isHexString(), isFalse);
         expect(tok.getStringValue(), equals('some simple string '));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.string));
         expect(tok.isHexString(), isTrue);
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.number));
         expect(tok.getStringValue(), equals('-70.1'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.number));
         expect(tok.getStringValue(), equals('-0.2'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.endArray));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.name));
         expect(tok.getStringValue(), equals('Name1'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.number));
         // Double negative becomes positive 0
         expect(tok.getStringValue(), equals('0'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.name));
         expect(tok.getStringValue(), equals('Prev'));
 
-        await tok.nextValidToken();
+        tok.nextValidToken();
         expect(tok.getTokenType(), equals(TokenType.number));
         expect(tok.getStringValue(), equals('-116.23'));
       });
@@ -498,10 +498,10 @@ void main() {
 }
 
 /// Helper method to check token types match expected sequence
-Future<void> checkTokenTypes(String data, List<TokenType> expectedTypes) async {
+void checkTokenTypes(String data, List<TokenType> expectedTypes) {
   final tok = tokenizerFromString(data);
   for (var i = 0; i < expectedTypes.length; i++) {
-    await tok.nextValidToken();
+    tok.nextValidToken();
     expect(tok.getTokenType(), equals(expectedTypes[i]), reason: 'Position $i');
   }
 }

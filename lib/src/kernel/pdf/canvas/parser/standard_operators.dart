@@ -11,8 +11,8 @@ import 'pdf_canvas_processor.dart';
 /// 'BT' operator.
 class BeginText implements CraftContentOperator {
   @override
-  Future<void> invoke(CraftPdfCanvasProcessor processor,
-      CraftPdfLiteral operator, List<CraftPdfObject> operands) async {
+  void invoke(CraftPdfCanvasProcessor processor, CraftPdfLiteral operator,
+      List<CraftPdfObject> operands) {
     processor.setTextMatrix(CraftMatrix());
     processor.setTextLineMatrix(CraftMatrix());
     processor
@@ -24,8 +24,8 @@ class BeginText implements CraftContentOperator {
 /// 'ET' operator.
 class EndText implements CraftContentOperator {
   @override
-  Future<void> invoke(CraftPdfCanvasProcessor processor,
-      CraftPdfLiteral operator, List<CraftPdfObject> operands) async {
+  void invoke(CraftPdfCanvasProcessor processor, CraftPdfLiteral operator,
+      List<CraftPdfObject> operands) {
     processor.setTextMatrix(CraftMatrix());
     processor.setTextLineMatrix(CraftMatrix());
     processor
@@ -37,8 +37,8 @@ class EndText implements CraftContentOperator {
 /// 'Tj' operator.
 class ShowText implements CraftContentOperator {
   @override
-  Future<void> invoke(CraftPdfCanvasProcessor processor,
-      CraftPdfLiteral operator, List<CraftPdfObject> operands) async {
+  void invoke(CraftPdfCanvasProcessor processor, CraftPdfLiteral operator,
+      List<CraftPdfObject> operands) {
     if (operands.isNotEmpty && operands[0] is CraftPdfString) {
       final text = operands[0] as CraftPdfString;
       final info = CraftTextRenderInfo(
@@ -53,8 +53,8 @@ class ShowText implements CraftContentOperator {
 /// 'q' operator.
 class SaveState implements CraftContentOperator {
   @override
-  Future<void> invoke(CraftPdfCanvasProcessor processor,
-      CraftPdfLiteral operator, List<CraftPdfObject> operands) async {
+  void invoke(CraftPdfCanvasProcessor processor, CraftPdfLiteral operator,
+      List<CraftPdfObject> operands) {
     processor.saveGraphicsState();
   }
 }
@@ -62,8 +62,8 @@ class SaveState implements CraftContentOperator {
 /// 'Q' operator.
 class RestoreState implements CraftContentOperator {
   @override
-  Future<void> invoke(CraftPdfCanvasProcessor processor,
-      CraftPdfLiteral operator, List<CraftPdfObject> operands) async {
+  void invoke(CraftPdfCanvasProcessor processor, CraftPdfLiteral operator,
+      List<CraftPdfObject> operands) {
     processor.restoreGraphicsState();
   }
 }

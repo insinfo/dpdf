@@ -33,7 +33,7 @@ void main() {
       await input.read();
       expect(await input.rootCatalog(), isNotNull);
       expect(input.rebuiltXref, isTrue);
-      await input.close();
+      input.close();
     });
     test('$mode keeps latest definition and generation', () async {
       final input = reader(
@@ -48,7 +48,7 @@ void main() {
           (await (await input.rootCatalog())!.nameEntry(CraftPdfName.version))!
               .getValue(),
           'Latest');
-      await input.close();
+      input.close();
     });
     for (final length in ['', '/Length 99999', '/Length 9 0 R', '/Length 51']) {
       test('$mode ignores fake object headers in streams, $length', () async {
@@ -64,7 +64,7 @@ void main() {
         expect(
             await (await input.rootCatalog())!.nameEntry(CraftPdfName.version),
             isNull);
-        await input.close();
+        input.close();
       });
     }
   }
@@ -81,7 +81,7 @@ void main() {
     await input.read();
     expect(input.xref.get(1)!.generationNumber(), 0);
     expect(input.rebuiltXref, isTrue);
-    await input.close();
+    input.close();
   });
   for (final length in ['', '/Length -1', '/Length 99999', '/Length 9 0 R']) {
     test('Repaired stream $length can be read and rewritten', () async {
@@ -95,7 +95,7 @@ void main() {
       final content = await input.readObject(4) as CraftPdfStream;
       expect(
           latin1.decode((await content.getBytes())!), 'q 1 0 0 1 0 0 cm Q\n');
-      await input.close();
+      input.close();
       final output = BytesBuilder();
       final document = CraftPdfDocument(
           reader: reader(text, PdfRecoveryMode.skipStreams),
@@ -158,7 +158,7 @@ void main() {
         PdfRecoveryMode.scan);
     await expectLater(input.read(), throwsUnsupportedError);
     expect(input.rebuiltXref, isFalse);
-    await input.close();
+    input.close();
   });
   test('Recovery rejects out-of-bounds object stream offsets', () async {
     final payload = '4 999 << /Type /Catalog >>';
@@ -169,7 +169,7 @@ void main() {
         PdfRecoveryMode.skipStreams);
     await expectLater(input.read(), throwsFormatException);
     expect(input.rebuiltXref, isFalse);
-    await input.close();
+    input.close();
   });
   test('Strict remains the default and rejects a missing xref', () async {
     expect(CraftReaderProperties().recoveryMode, PdfRecoveryMode.strict);
@@ -186,7 +186,7 @@ void main() {
       final input = CraftPdfReader.fromBytes(bytes(source()), properties);
       await expectLater(input.read(), throwsFormatException);
       expect(input.rebuiltXref, isFalse);
-      await input.close();
+      input.close();
     }
   });
   test('Unterminated stream cannot produce a successful repair', () async {
@@ -194,6 +194,6 @@ void main() {
         PdfRecoveryMode.scan);
     await expectLater(input.read(), throwsFormatException);
     expect(input.rebuiltXref, isFalse);
-    await input.close();
+    input.close();
   });
 }

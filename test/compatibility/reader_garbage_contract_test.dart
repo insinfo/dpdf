@@ -32,7 +32,7 @@ void main() {
           final document = await CraftPdfDocument.open(reader);
           await document.close();
         } finally {
-          await reader.close();
+          reader.close();
         }
       }, throwsA(isA<Exception>()));
     });

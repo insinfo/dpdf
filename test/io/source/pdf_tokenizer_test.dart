@@ -11,184 +11,207 @@ CraftPdfTokenizer tokenizerFromString(String content) {
 }
 
 void main() {
+  test('tokenizer returns bytes and tokens synchronously', () {
+    final tokenizer = tokenizerFromString('12 /Name');
+    final int firstByte = tokenizer.read();
+    expect(firstByte, 49);
+    tokenizer.seek(0);
+    final bool hasToken = tokenizer.nextToken();
+    expect(hasToken, isTrue);
+    expect(tokenizer.getStringValue(), '12');
+    final int position = tokenizer.getPosition();
+    expect(position, greaterThan(0));
+    tokenizer.nextValidToken();
+    expect(tokenizer.getStringValue(), 'Name');
+    final bool hasMore = tokenizer.nextToken();
+    expect(hasMore, isFalse);
+    tokenizer.seek(0);
+    final String prefix = tokenizer.readString(2);
+    expect(prefix, '12');
+    tokenizer.seek(0);
+    final bytes = Uint8List(2);
+    tokenizer.readFully(bytes);
+    expect(bytes, [49, 50]);
+  });
+
   group('PdfTokenizer', () {
     group('Basic Tokens', () {
-      test('reads null as other token', () async {
+      test('reads null as other token', () {
         final tokenizer = tokenizerFromString('null');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.other));
         expect(tokenizer.getStringValue(), equals('null'));
       });
 
-      test('reads true as other token', () async {
+      test('reads true as other token', () {
         final tokenizer = tokenizerFromString('true');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.other));
         expect(tokenizer.getStringValue(), equals('true'));
       });
 
-      test('reads false as other token', () async {
+      test('reads false as other token', () {
         final tokenizer = tokenizerFromString('false');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.other));
         expect(tokenizer.getStringValue(), equals('false'));
       });
 
-      test('reads integer number', () async {
+      test('reads integer number', () {
         final tokenizer = tokenizerFromString('12345');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.number));
         expect(tokenizer.getStringValue(), equals('12345'));
       });
 
-      test('reads negative integer', () async {
+      test('reads negative integer', () {
         final tokenizer = tokenizerFromString('-42');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.number));
         expect(tokenizer.getStringValue(), equals('-42'));
       });
 
-      test('reads float number', () async {
+      test('reads float number', () {
         final tokenizer = tokenizerFromString('3.14159');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.number));
         expect(tokenizer.getStringValue(), equals('3.14159'));
       });
 
-      test('reads negative float', () async {
+      test('reads negative float', () {
         final tokenizer = tokenizerFromString('-0.5');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.number));
         expect(tokenizer.getStringValue(), equals('-0.5'));
       });
     });
 
     group('Name Tokens', () {
-      test('reads simple name', () async {
+      test('reads simple name', () {
         final tokenizer = tokenizerFromString('/Type');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.name));
         expect(tokenizer.getStringValue(), equals('Type'));
       });
 
-      test('reads name with numbers', () async {
+      test('reads name with numbers', () {
         final tokenizer = tokenizerFromString('/Font1');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.name));
         expect(tokenizer.getStringValue(), equals('Font1'));
       });
     });
 
     group('String Tokens', () {
-      test('reads simple literal string', () async {
+      test('reads simple literal string', () {
         final tokenizer = tokenizerFromString('(Hello World)');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.string));
       });
 
-      test('reads string with nested parentheses', () async {
+      test('reads string with nested parentheses', () {
         final tokenizer = tokenizerFromString('(Hello (nested) World)');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.string));
       });
 
-      test('reads hex string', () async {
+      test('reads hex string', () {
         final tokenizer = tokenizerFromString('<48656C6C6F>');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.string));
       });
 
-      test('reads empty string', () async {
+      test('reads empty string', () {
         final tokenizer = tokenizerFromString('()');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.string));
       });
     });
 
     group('Array Tokens', () {
-      test('reads array start', () async {
+      test('reads array start', () {
         final tokenizer = tokenizerFromString('[');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.startArray));
       });
 
-      test('reads array end', () async {
+      test('reads array end', () {
         final tokenizer = tokenizerFromString(']');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.endArray));
       });
     });
 
     group('Dictionary Tokens', () {
-      test('reads dictionary start', () async {
+      test('reads dictionary start', () {
         final tokenizer = tokenizerFromString('<<');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.startDic));
       });
 
-      test('reads dictionary end', () async {
+      test('reads dictionary end', () {
         final tokenizer = tokenizerFromString('>>');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.endDic));
       });
     });
 
     group('Comments', () {
-      test('skips single line comment', () async {
+      test('skips single line comment', () {
         final tokenizer = tokenizerFromString('% this is a comment\n42');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.number));
         expect(tokenizer.getStringValue(), equals('42'));
       });
     });
 
     group('Whitespace Handling', () {
-      test('skips leading whitespace', () async {
+      test('skips leading whitespace', () {
         final tokenizer = tokenizerFromString('   42');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.number));
         expect(tokenizer.getStringValue(), equals('42'));
       });
 
-      test('handles multiple tokens with whitespace', () async {
+      test('handles multiple tokens with whitespace', () {
         final tokenizer = tokenizerFromString('/Type /Page');
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.name));
         expect(tokenizer.getStringValue(), equals('Type'));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.name));
         expect(tokenizer.getStringValue(), equals('Page'));
       });
     });
 
     group('PDF Header', () {
-      test('checks valid PDF header', () async {
+      test('checks valid PDF header', () {
         final tokenizer = tokenizerFromString('%PDF-1.7\n%more');
-        final version = await tokenizer.checkPdfHeader();
+        final version = tokenizer.checkPdfHeader();
         expect(version, contains('1.7'));
       });
 
-      test('checks PDF 2.0 header', () async {
+      test('checks PDF 2.0 header', () {
         final tokenizer = tokenizerFromString('%PDF-2.0\n');
-        final version = await tokenizer.checkPdfHeader();
+        final version = tokenizer.checkPdfHeader();
         expect(version, contains('2.0'));
       });
     });
 
     group('Object References', () {
-      test('reads obj keyword', () async {
+      test('reads obj keyword', () {
         final tokenizer = tokenizerFromString('1 0 obj');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.obj));
         expect(tokenizer.getObjNr(), equals(1));
         expect(tokenizer.getGenNr(), equals(0));
       });
 
-      test('reads reference', () async {
+      test('reads reference', () {
         final tokenizer = tokenizerFromString('5 0 R');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.ref));
         expect(tokenizer.getObjNr(), equals(5));
         expect(tokenizer.getGenNr(), equals(0));
@@ -196,81 +219,81 @@ void main() {
     });
 
     group('Stream Keywords', () {
-      test('reads stream keyword', () async {
+      test('reads stream keyword', () {
         final tokenizer = tokenizerFromString('stream');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.other));
         expect(tokenizer.getStringValue(), equals('stream'));
       });
 
-      test('reads endstream keyword', () async {
+      test('reads endstream keyword', () {
         final tokenizer = tokenizerFromString('endstream');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.other));
         expect(tokenizer.getStringValue(), equals('endstream'));
       });
     });
 
     group('Complex Sequences', () {
-      test('tokenizes simple dictionary', () async {
+      test('tokenizes simple dictionary', () {
         final tokenizer = tokenizerFromString('<< /Type /Page /Count 5 >>');
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.startDic));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.name));
         expect(tokenizer.getStringValue(), equals('Type'));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.name));
         expect(tokenizer.getStringValue(), equals('Page'));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.name));
         expect(tokenizer.getStringValue(), equals('Count'));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.number));
         expect(tokenizer.getStringValue(), equals('5'));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.endDic));
       });
 
-      test('tokenizes array with mixed types', () async {
+      test('tokenizes array with mixed types', () {
         final tokenizer = tokenizerFromString('[ 1 2.5 /Name (String) ]');
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.startArray));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.number));
         expect(tokenizer.getStringValue(), equals('1'));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.number));
         expect(tokenizer.getStringValue(), equals('2.5'));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.name));
         expect(tokenizer.getStringValue(), equals('Name'));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.string));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.endArray));
       });
     });
 
     group('End of File', () {
-      test('detects end of file', () async {
+      test('detects end of file', () {
         final tokenizer = tokenizerFromString('42');
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.number));
 
-        await tokenizer.nextValidToken();
+        tokenizer.nextValidToken();
         expect(tokenizer.getTokenType(), equals(TokenType.endOfFile));
       });
     });

@@ -63,36 +63,37 @@ class CraftPdfCanvasProcessor {
     final operands = <CraftPdfObject>[];
 
     try {
-      while (await tokenizer.nextToken()) {
+      while (tokenizer.nextToken()) {
         if (tokenizer.getTokenType() == TokenType.other) {
           final operator = tokenizer.getStringValue();
           final op = _operators[operator];
           if (op != null) {
-            await op.invoke(
-                this, CraftPdfLiteral(operator), List.from(operands));
+            final pending =
+                op.invoke(this, CraftPdfLiteral(operator), List.from(operands));
+            if (pending is Future<void>) await pending;
           } else {
             // Unknown operator or just unsupported
           }
           operands.clear();
         } else {
-          operands.add(await _readObject(tokenizer));
+          operands.add(_readObject(tokenizer));
         }
       }
     } finally {
-      await tokenizer.close();
+      tokenizer.close();
     }
   }
 
-  Future<CraftPdfObject> _readObject(CraftPdfTokenizer tokenizer) async {
+  CraftPdfObject _readObject(CraftPdfTokenizer tokenizer) {
     final type = tokenizer.getTokenType();
     switch (type) {
       case TokenType.startArray:
         final array = CraftPdfArray();
-        while (await tokenizer.nextToken()) {
+        while (tokenizer.nextToken()) {
           if (tokenizer.getTokenType() == TokenType.endArray) {
             break;
           }
-          array.add(await _readObject(tokenizer));
+          array.add(_readObject(tokenizer));
         }
         return array;
       case TokenType.startDic:
@@ -100,13 +101,13 @@ class CraftPdfCanvasProcessor {
         // Simple dictionary parsing - might need improvements for nested dicts/correct key/value
         // Dictionary in content stream is usually for inline image or marked content
         // This logic is simplified
-        while (await tokenizer.nextToken()) {
+        while (tokenizer.nextToken()) {
           if (tokenizer.getTokenType() == TokenType.endDic) {
             break;
           }
-          final key = await _readObject(tokenizer);
-          if (await tokenizer.nextToken()) {
-            final val = await _readObject(tokenizer);
+          final key = _readObject(tokenizer);
+          if (tokenizer.nextToken()) {
+            final val = _readObject(tokenizer);
             if (key is CraftPdfName) {
               dict.put(key, val);
             }

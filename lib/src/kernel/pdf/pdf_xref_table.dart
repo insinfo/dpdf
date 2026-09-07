@@ -121,13 +121,15 @@ class CraftPdfXrefTable {
 
   /// Clears all references except object 0.
   void clear() {
+    var highestRetained = 0;
     for (var i = 1; i <= _count; i++) {
       if (_xref[i] != null && _xref[i]!.isFree()) {
+        highestRetained = i;
         continue;
       }
       _xref[i] = null;
     }
-    _count = 1;
+    _count = highestRetained;
   }
 
   /// Clears all references including free references.
@@ -135,7 +137,7 @@ class CraftPdfXrefTable {
     for (var i = 1; i <= _count; i++) {
       _xref[i] = null;
     }
-    _count = 1;
+    _count = 0;
   }
 
   /// Ensures the array can hold at least [count] elements.

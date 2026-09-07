@@ -77,7 +77,7 @@ abstract class CraftAbstractPdfFormField
   Future<void> _retrieveStyles() async {
     final da = await getDefaultAppearance();
     if (da != null) {
-      final fontData = await _splitDAelements(da.getValue());
+      final fontData = _splitDAelements(da.getValue());
       if (fontData[_daSize] != null && fontData[_daFont] != null) {
         _fontSize = (fontData[_daSize] as num).toDouble();
         _color = fontData[_daColor] as CraftColor?;
@@ -87,14 +87,14 @@ abstract class CraftAbstractPdfFormField
     }
   }
 
-  static Future<List<Object?>> _splitDAelements(String da) async {
+  static List<Object?> _splitDAelements(String da) {
     final bytes = CraftEncodingUtil.convertToBytes(da, "Latin1");
     final tokenizer = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
     final stack = <String>[];
     final ret = List<Object?>.filled(3, null);
 
     try {
-      while (await tokenizer.nextToken()) {
+      while (tokenizer.nextToken()) {
         if (tokenizer.getTokenType() == TokenType.comment) continue;
         if (tokenizer.getTokenType() == TokenType.other) {
           final operator = tokenizer.getStringValue();

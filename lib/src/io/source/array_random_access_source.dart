@@ -15,7 +15,7 @@ class CraftArrayRandomAccessSource implements CraftRandomAccessSource {
   }
 
   @override
-  Future<int> get(int offset) async {
+  int get(int offset) {
     if (_array == null) {
       throw StateError(CraftIoExceptionMessageConstant.alreadyClosed);
     }
@@ -26,7 +26,7 @@ class CraftArrayRandomAccessSource implements CraftRandomAccessSource {
   }
 
   @override
-  Future<int> getRange(int offset, Uint8List bytes, int off, int len) async {
+  int getRange(int offset, Uint8List bytes, int off, int len) {
     if (_array == null) {
       throw StateError(CraftIoExceptionMessageConstant.alreadyClosed);
     }
@@ -44,7 +44,7 @@ class CraftArrayRandomAccessSource implements CraftRandomAccessSource {
   }
 
   @override
-  Future<int> length() async {
+  int length() {
     if (_array == null) {
       throw StateError(CraftIoExceptionMessageConstant.alreadyClosed);
     }
@@ -52,7 +52,7 @@ class CraftArrayRandomAccessSource implements CraftRandomAccessSource {
   }
 
   @override
-  Future<void> close() async {
+  void close() {
     _array = null;
   }
 }

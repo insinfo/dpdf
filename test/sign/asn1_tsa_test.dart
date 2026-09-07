@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:typed_data';
+import 'dart:io' as io;
 
 import 'package:test/test.dart';
 import 'package:pdfcraft/src/sign/asn1_utils.dart';
@@ -224,12 +226,41 @@ void main() {
       expect(header, startsWith('Basic '));
     });
 
-    test('getTimeStampToken throws UnimplementedError', () {
-      final client = TimestampClient('http://example.com');
-      expect(
-        () async => await client.getTimeStampToken(Uint8List(32)),
-        throwsUnimplementedError,
-      );
+    test('getTimeStampToken posts an RFC 3161 request and returns its token',
+        () async {
+      final server = await io.HttpServer.bind(io.InternetAddress.loopbackIPv4, 0);
+      addTearDown(server.close);
+      final expectedToken = ASN1Utils.createSequence([
+        ASN1Utils.createOID('1.2.840.113549.1.7.2'),
+        ASN1Utils.encodeTagged(0xa0, ASN1Utils.createSequence([])),
+      ]);
+      final response = ASN1Utils.createSequence([
+        ASN1Utils.createSequence([ASN1Utils.createIntegerFromInt(0)]),
+        expectedToken,
+      ]);
+      final received = Completer<void>();
+      server.listen((request) async {
+        expect(request.method, equals('POST'));
+        expect(request.headers.contentType?.mimeType,
+            equals('application/timestamp-query'));
+        expect(request.headers.value('accept'),
+            equals('application/timestamp-reply'));
+        final body = BytesBuilder(copy: false);
+        await request.forEach(body.add);
+        expect(body.length, greaterThan(0));
+        request.response.headers.contentType =
+            io.ContentType('application', 'timestamp-reply');
+        request.response.add(response);
+        await request.response.close();
+        received.complete();
+      });
+
+      final client = TimestampClient(
+          'http://${io.InternetAddress.loopbackIPv4.address}:${server.port}/tsa',
+          tokenSizeEstimate: 1);
+      expect(await client.getTimeStampToken(Uint8List(32)), expectedToken);
+      expect(client.getTokenSizeEstimate(), expectedToken.length);
+      await received.future;
     });
   });
 

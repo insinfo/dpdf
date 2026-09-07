@@ -52,6 +52,8 @@ export 'src/kernel/geom/rectangle.dart';
 export 'src/kernel/font/pdf_font.dart';
 export 'src/kernel/font/pdf_font_factory.dart';
 export 'src/io/font/pdf_encodings.dart';
+export 'src/io/font/cjk_resource_loader.dart';
+export 'src/io/font/cjk_resource_provider.dart';
 
 export 'src/sign/simple_signature_appearance.dart';
 export 'src/sign/pdf_signer.dart';

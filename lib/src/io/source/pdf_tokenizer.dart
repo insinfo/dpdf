@@ -24,7 +24,10 @@ enum TokenType {
   endOfFile,
 }
 
-/// PDF tokenizer for parsing PDF files.
+/// Synchronous PDF tokenizer for memory and blocking byte sources.
+///
+/// Methods return immediately; malformed input throws synchronously.
+/// Run substantial parsing in a worker when the caller must remain responsive.
 ///
 /// This class is responsible for tokenizing PDF content, recognizing
 /// PDF objects like numbers, strings, names, arrays, and dictionaries.
@@ -130,14 +133,12 @@ class CraftPdfTokenizer {
   }
 
   /// Reads bytes fully into the provided buffer.
-  Future<void> readFully(Uint8List bytes) async {
+  void readFully(Uint8List bytes) {
     _file.readFully(bytes);
   }
 
   /// Reads bytes fully into the provided buffer.
-  void readFullySync(Uint8List bytes) {
-    _file.readFully(bytes);
-  }
+  void readFullySync(Uint8List bytes) => readFully(bytes);
 
   /// Gets the current position.
   int getPosition() {
@@ -150,65 +151,53 @@ class CraftPdfTokenizer {
   }
 
   /// Closes this tokenizer.
-  Future<void> close() async {
+  void close() {
     if (_closeStream) {
       _file.close();
     }
   }
 
   /// Closes this tokenizer.
-  void closeSync() {
-    if (_closeStream) {
-      _file.close();
-    }
-  }
+  void closeSync() => close();
 
   /// Gets the length of the source.
-  Future<int> length() async {
+  int length() {
     return _file.length();
   }
 
   /// Gets the length of the source.
-  int lengthSync() {
-    return _file.length();
-  }
+  int lengthSync() => length();
 
   /// Reads a single byte.
-  Future<int> read() async {
+  int read() {
     return _file.read();
   }
 
   /// Reads a single byte.
-  int readSync() {
-    return _file.read();
-  }
+  int readSync() => read();
 
   /// Gets the next byte without moving position.
-  Future<int> peek() async {
+  int peek() {
     return _file.peek();
   }
 
   /// Gets the next byte without moving position.
-  int peekSync() {
-    return _file.peek();
-  }
+  int peekSync() => peek();
 
   /// Gets the next buffer.length bytes without moving position.
-  Future<int> peekBuffer(Uint8List buffer) async {
+  int peekBuffer(Uint8List buffer) {
     return _file.peekBuffer(buffer);
   }
 
   /// Gets the next buffer.length bytes without moving position.
-  int peekBufferSync(Uint8List buffer) {
-    return _file.peekBuffer(buffer);
-  }
+  int peekBufferSync(Uint8List buffer) => peekBuffer(buffer);
 
   /// Reads a string of specified size.
-  Future<String> readString(int size) async {
+  String readString(int size) {
     final buf = StringBuffer();
     int ch;
     while (size-- > 0) {
-      ch = await read();
+      ch = read();
       if (ch == -1) {
         break;
       }
@@ -271,8 +260,8 @@ class CraftPdfTokenizer {
   }
 
   /// Gets the header offset in the file.
-  Future<int> getHeaderOffset() async {
-    final str = await readString(1024);
+  int getHeaderOffset() {
+    final str = readString(1024);
     var idx = str.indexOf('%PDF-');
     if (idx < 0) {
       idx = str.indexOf('%FDF-');
@@ -284,9 +273,9 @@ class CraftPdfTokenizer {
   }
 
   /// Checks and returns the PDF header.
-  Future<String> checkPdfHeader() async {
+  String checkPdfHeader() {
     seek(0);
-    final str = await readString(1024);
+    final str = readString(1024);
     final idx = str.indexOf('%PDF-');
     if (idx != 0 || str.length < 8) {
       throw IoException(CraftIoExceptionMessageConstant.pdfHeaderNotFound);
@@ -295,9 +284,9 @@ class CraftPdfTokenizer {
   }
 
   /// Checks the FDF header.
-  Future<void> checkFdfHeader() async {
+  void checkFdfHeader() {
     seek(0);
-    final str = await readString(1024);
+    final str = readString(1024);
     final idx = str.indexOf('%FDF-');
     if (idx != 0) {
       throw IoException(CraftIoExceptionMessageConstant.fdfStartxrefNotFound);
@@ -305,7 +294,7 @@ class CraftPdfTokenizer {
   }
 
   /// Finds the newest marker directly in bytes, including the first block.
-  Future<int> getStartxref() async {
+  int getStartxref() {
     final input = _file.createView();
     const marker = <int>[115, 116, 97, 114, 116, 120, 114, 101, 102];
     var end = input.length();
@@ -330,17 +319,17 @@ class CraftPdfTokenizer {
   }
 
   /// Gets the next %%EOF marker position.
-  Future<int> getNextEof() async {
+  int getNextEof() {
     const arrLength = 128;
     String str;
     do {
       final currentPosition = getPosition();
-      str = await readString(arrLength);
+      str = readString(arrLength);
       final eofPosition = str.indexOf('%%EOF');
       if (eofPosition >= 0) {
         // Include following EOL bytes
         seek(currentPosition + eofPosition + 5);
-        final remainingBytes = await readString(4);
+        final remainingBytes = readString(4);
         var eolCount = 0;
         for (final b in remainingBytes.codeUnits) {
           if (b == 0x0A || b == 0x0D) {
@@ -359,12 +348,12 @@ class CraftPdfTokenizer {
   }
 
   /// Reads the next valid token, resolving references.
-  Future<void> nextValidToken() async {
+  void nextValidToken() {
     var level = 0;
     Uint8List? n1;
     Uint8List? n2;
     var ptr = 0;
-    while (await nextToken()) {
+    while (nextToken()) {
       if (_type == TokenType.comment) {
         continue;
       }
@@ -421,263 +410,12 @@ class CraftPdfTokenizer {
   }
 
   /// Reads the next valid token, resolving references.
-  void nextValidTokenSync() {
-    var level = 0;
-    Uint8List? n1;
-    Uint8List? n2;
-    var ptr = 0;
-    while (nextTokenSync()) {
-      if (_type == TokenType.comment) {
-        continue;
-      }
-      switch (level) {
-        case 0:
-          if (_type != TokenType.number) {
-            return;
-          }
-          ptr = _file.getPosition();
-          n1 = getByteContent();
-          ++level;
-          break;
-        case 1:
-          if (_type != TokenType.number) {
-            seek(ptr);
-            _type = TokenType.number;
-            _outBuf.reset().appendBytes(n1!);
-            return;
-          }
-          n2 = getByteContent();
-          ++level;
-          break;
-        case 2:
-          if (_type == TokenType.other) {
-            if (tokenValueEqualsTo(r)) {
-              _type = TokenType.ref;
-              try {
-                _reference = int.parse(latin1.decode(n1!));
-                _generation = int.parse(latin1.decode(n2!));
-              } catch (e) {
-                // Invalid reference
-                _reference = -1;
-                _generation = 0;
-              }
-              return;
-            } else if (tokenValueEqualsTo(obj)) {
-              _type = TokenType.obj;
-              _reference = int.parse(latin1.decode(n1!));
-              _generation = int.parse(latin1.decode(n2!));
-              return;
-            }
-          }
-          seek(ptr);
-          _type = TokenType.number;
-          _outBuf.reset().appendBytes(n1!);
-          return;
-      }
-    }
-    // Handle EOF during level 1
-    if (level == 1) {
-      _type = TokenType.number;
-      _outBuf.reset().appendBytes(n1!);
-    }
-  }
+  void nextValidTokenSync() => nextValidToken();
 
   /// Reads the next token.
   ///
   /// Returns true if a token was read, false if EOF.
-  Future<bool> nextToken() async {
-    int ch;
-    _outBuf.reset();
-    do {
-      ch = await _file.read();
-    } while (ch != -1 && isWhitespace(ch));
-
-    if (ch == -1) {
-      _type = TokenType.endOfFile;
-      return false;
-    }
-
-    switch (ch) {
-      case 0x5B: // '['
-        _type = TokenType.startArray;
-        break;
-
-      case 0x5D: // ']'
-        _type = TokenType.endArray;
-        break;
-
-      case 0x2F: // '/'
-        _type = TokenType.name;
-        while (true) {
-          ch = await _file.read();
-          if (_delims[ch + 1]) {
-            break;
-          }
-          _outBuf.append(ch);
-        }
-        backOnePosition(ch);
-        break;
-
-      case 0x3E: // '>'
-        ch = await _file.read();
-        if (ch != 0x3E) {
-          // '>'
-          throwError(CraftIoExceptionMessageConstant.gtNotExpected);
-        }
-        _type = TokenType.endDic;
-        break;
-
-      case 0x3C: // '<'
-        final v1Initial = await _file.read();
-        if (v1Initial == 0x3C) {
-          // '<'
-          _type = TokenType.startDic;
-          break;
-        }
-        _type = TokenType.string;
-        _hexString = true;
-        var v1 = v1Initial;
-        var v2 = 0;
-        while (true) {
-          while (isWhitespace(v1)) {
-            v1 = await _file.read();
-          }
-          if (v1 == 0x3E) {
-            // '>'
-            break;
-          }
-          _outBuf.append(v1);
-          v1 = CraftByteBuffer.getHex(v1);
-          if (v1 < 0) {
-            break;
-          }
-          v2 = await _file.read();
-          while (isWhitespace(v2)) {
-            v2 = await _file.read();
-          }
-          if (v2 == 0x3E) {
-            // '>'
-            break;
-          }
-          _outBuf.append(v2);
-          v2 = CraftByteBuffer.getHex(v2);
-          if (v2 < 0) {
-            break;
-          }
-          v1 = await _file.read();
-        }
-        if (v1 < 0 || v2 < 0) {
-          throwError(CraftIoExceptionMessageConstant.errorReadingString);
-        }
-        break;
-
-      case 0x25: // '%'
-        _type = TokenType.comment;
-        do {
-          ch = await _file.read();
-        } while (ch != -1 && ch != 0x0D && ch != 0x0A); // '\r' '\n'
-        break;
-
-      case 0x28: // '('
-        _type = TokenType.string;
-        _hexString = false;
-        var nesting = 0;
-        while (true) {
-          ch = await _file.read();
-          if (ch == -1) {
-            break;
-          }
-          if (ch == 0x28) {
-            // '('
-            ++nesting;
-          } else if (ch == 0x29) {
-            // ')'
-            --nesting;
-            if (nesting == -1) {
-              break;
-            }
-          } else if (ch == 0x5C) {
-            // '\\'
-            _outBuf.append(0x5C);
-            ch = await _file.read();
-            if (ch < 0) {
-              break;
-            }
-          }
-          _outBuf.append(ch);
-        }
-        if (ch == -1) {
-          throwError(CraftIoExceptionMessageConstant.errorReadingString);
-        }
-        break;
-
-      default:
-        if (ch == 0x2D ||
-            ch == 0x2B ||
-            ch == 0x2E ||
-            (ch >= 0x30 && ch <= 0x39)) {
-          // '-', '+', '.', '0'-'9'
-          _type = TokenType.number;
-          var isReal = false;
-          var numberOfMinuses = 0;
-          if (ch == 0x2D) {
-            // '-'
-            do {
-              ++numberOfMinuses;
-              ch = await _file.read();
-            } while (ch == 0x2D);
-            _outBuf.append(0x2D);
-          } else {
-            _outBuf.append(ch);
-            ch = await _file.read();
-          }
-          while (ch >= 0x30 && ch <= 0x39) {
-            // '0'-'9'
-            _outBuf.append(ch);
-            ch = await _file.read();
-          }
-          if (ch == 0x2E) {
-            // '.'
-            isReal = true;
-            _outBuf.append(ch);
-            ch = await _file.read();
-            // Check for minus after '.'
-            var numberOfMinusesAfterDot = 0;
-            if (ch == 0x2D) {
-              numberOfMinusesAfterDot++;
-              ch = await _file.read();
-            }
-            while (ch >= 0x30 && ch <= 0x39) {
-              if (numberOfMinusesAfterDot == 0) {
-                _outBuf.append(ch);
-              }
-              ch = await _file.read();
-            }
-          }
-          if (numberOfMinuses > 1 && !isReal) {
-            // Multiple minuses for integer = 0
-            _outBuf.reset();
-            _outBuf.append(0x30); // '0'
-          }
-        } else {
-          _type = TokenType.other;
-          do {
-            _outBuf.append(ch);
-            ch = await _file.read();
-          } while (!_delims[ch + 1]);
-        }
-        if (ch != -1) {
-          backOnePosition(ch);
-        }
-        break;
-    }
-    return true;
-  }
-
-  /// Reads the next token synchronously.
-  ///
-  /// Returns true if a token was read, false if EOF.
-  bool nextTokenSync() {
+  bool nextToken() {
     int ch;
     _outBuf.reset();
     do {
@@ -865,6 +603,11 @@ class CraftPdfTokenizer {
     }
     return true;
   }
+
+  /// Reads the next token synchronously.
+  ///
+  /// Returns true if a token was read, false if EOF.
+  bool nextTokenSync() => nextToken();
 
   /// Gets the long value of the current token.
   int getLongValue() {
@@ -1079,13 +822,12 @@ class CraftPdfTokenizer {
   /// Reads data into the provided ByteBuffer.
   ///
   /// Skips initial whitespace.
-  Future<bool> readLineSegment(CraftByteBuffer buffer,
-      [bool isNullWhitespace = true]) async {
+  bool readLineSegment(CraftByteBuffer buffer, [bool isNullWhitespace = true]) {
     int c;
     var eol = false;
 
     // Skip initial whitespace
-    while (isWhitespace((c = await read()), isNullWhitespace)) {}
+    while (isWhitespace((c = read()), isNullWhitespace)) {}
 
     var prevWasWhitespace = false;
     while (!eol) {
@@ -1098,7 +840,7 @@ class CraftPdfTokenizer {
         case 0x0D: // '\r'
           eol = true;
           final cur = getPosition();
-          if (await read() != 0x0A) {
+          if (read() != 0x0A) {
             seek(cur);
           }
           break;
@@ -1122,7 +864,7 @@ class CraftPdfTokenizer {
       if (eol || buffer.size() == buffer.capacity()) {
         eol = true;
       } else {
-        c = await read();
+        c = read();
       }
     }
 
@@ -1130,7 +872,7 @@ class CraftPdfTokenizer {
     if (buffer.size() == buffer.capacity()) {
       eol = false;
       while (!eol) {
-        switch (c = await read()) {
+        switch (c = read()) {
           case -1:
           case 0x0A:
             eol = true;
@@ -1138,7 +880,7 @@ class CraftPdfTokenizer {
           case 0x0D:
             eol = true;
             final cur = getPosition();
-            if (await read() != 0x0A) {
+            if (read() != 0x0A) {
               seek(cur);
             }
             break;
@@ -1152,21 +894,20 @@ class CraftPdfTokenizer {
   /// Check whether line starts with object declaration.
   ///
   /// Returns [objectNumber, generation] if check is successful, otherwise null.
-  static Future<List<int>?> checkObjectStart(
-      CraftPdfTokenizer lineTokenizer) async {
+  static List<int>? checkObjectStart(CraftPdfTokenizer lineTokenizer) {
     try {
       lineTokenizer.seek(0);
-      if (!await lineTokenizer.nextToken() ||
+      if (!lineTokenizer.nextToken() ||
           lineTokenizer.getTokenType() != TokenType.number) {
         return null;
       }
       final num = lineTokenizer.getIntValue();
-      if (!await lineTokenizer.nextToken() ||
+      if (!lineTokenizer.nextToken() ||
           lineTokenizer.getTokenType() != TokenType.number) {
         return null;
       }
       final gen = lineTokenizer.getIntValue();
-      if (!await lineTokenizer.nextToken()) {
+      if (!lineTokenizer.nextToken()) {
         return null;
       }
       if (!_arraysEquals(obj, lineTokenizer.getByteContent())) {

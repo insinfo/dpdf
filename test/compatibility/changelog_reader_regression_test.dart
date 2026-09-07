@@ -26,14 +26,14 @@ void main() {
         CraftPdfReader.fromBytes(pdf('<< /Type /Catalog >>', generation: 1));
     await reader.read();
     expect(await reader.rootCatalog(), isNull);
-    await reader.close();
+    reader.close();
   });
   test('Matching nonzero generation resolves normally', () async {
     final reader = CraftPdfReader.fromBytes(
         pdf('<< /Type /Catalog >>', generation: 1, root: '1 1 R'));
     await reader.read();
     expect(await reader.rootCatalog(), isNotNull);
-    await reader.close();
+    reader.close();
   });
   test('Newest incremental generation wins over the previous xref', () async {
     final base = latin1.decode(pdf('<< /Type /Catalog /Version /Old >>'));
@@ -50,14 +50,14 @@ void main() {
     final catalog = await reader.rootCatalog();
     expect((await catalog!.nameEntry(CraftPdfName.version))?.getValue(), 'New');
     expect(reader.xref.get(1)!.generationNumber(), 1);
-    await reader.close();
+    reader.close();
   });
   test('Wrong xref object header is rejected explicitly', () async {
     final reader = CraftPdfReader.fromBytes(pdf('<< /Type /Catalog >>',
         generation: 1, xrefEntry: '0000000009 00000 n '));
     await reader.read();
     await expectLater(reader.rootCatalog(), throwsFormatException);
-    await reader.close();
+    reader.close();
   });
   test('Malformed xref never claims that reconstruction occurred', () async {
     final source =
@@ -66,7 +66,7 @@ void main() {
         CraftPdfReader.fromBytes(Uint8List.fromList(latin1.encode(source)));
     await expectLater(reader.read(), throwsA(isA<CraftPdfException>()));
     expect(reader.rebuiltXref, isFalse);
-    await reader.close();
+    reader.close();
   });
   for (final length in [-1, 1000000]) {
     test('Invalid stream length $length produces a format error', () async {
@@ -74,7 +74,7 @@ void main() {
           pdf('<< /Length $length >>\nstream\nx\nendstream'));
       await reader.read();
       await expectLater(reader.readObject(1), throwsFormatException);
-      await reader.close();
+      reader.close();
     });
   }
 }

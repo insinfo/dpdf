@@ -125,6 +125,11 @@ class ContentType {
 
 class _Headers {
   ContentType? contentType;
+  final Map<String, String> _values = {};
+
+  void set(String name, Object value) {
+    _values[name] = value.toString();
+  }
 }
 
 /// Fetch transport shared by dart2js and dart2wasm. Browser CORS rules apply.
@@ -153,8 +158,12 @@ class _Request {
   void add(List<int> data) => _body.add(data);
   Future<HttpClientResponse> close() async {
     final options = <String, Object?>{'method': method};
+    final requestHeaders = Map<String, String>.from(headers._values);
     if (headers.contentType != null) {
-      options['headers'] = {'Content-Type': headers.contentType.toString()};
+      requestHeaders['Content-Type'] = headers.contentType.toString();
+    }
+    if (requestHeaders.isNotEmpty) {
+      options['headers'] = requestHeaders;
     }
     if (method != 'GET') options['body'] = _body.toBytes().toJS;
     Future<HttpClientResponse> fetchBytes() async {

@@ -10,17 +10,16 @@ CraftCMapContentParser parser(String text) =>
         CraftRandomAccessFileOrArray(Uint8List.fromList(ascii.encode(text)))));
 
 void main() {
-  for (final asynchronous in [false, true]) {
-    final mode = asynchronous ? 'async' : 'sync';
-    Future<CraftCMapObject?> read(String text) async {
+  for (final primaryApi in [false, true]) {
+    final mode = primaryApi ? 'primary' : 'sync alias';
+    CraftCMapObject? read(String text) {
       final input = parser(text);
-      return asynchronous ? await input.readObject() : input.readObjectSync();
+      return primaryApi ? input.readObject() : input.readObjectSync();
     }
 
-    test('$mode nested CMap objects preserve decimals and decoded keys',
-        () async {
-      final result = await read(
-          '<< /A#20B [0.125 << /Text (a\\n\\050b\\051) >> <4142>] >>');
+    test('$mode nested CMap objects preserve decimals and decoded keys', () {
+      final result =
+          read('<< /A#20B [0.125 << /Text (a\\n\\050b\\051) >> <4142>] >>');
       final dictionary = result!.getValue() as Map<String, CraftCMapObject>;
       final values = dictionary['A B']!.getValue() as List<CraftCMapObject>;
       expect(values[0].getValue(), 0.125);
@@ -29,7 +28,7 @@ void main() {
       expect(values[2].getValue(), [65, 66]);
     });
     test('$mode malformed containers reject incomplete or mismatched syntax',
-        () async {
+        () {
       for (final text in [
         '[',
         '<<',
@@ -40,36 +39,35 @@ void main() {
         '<< 1 2 >>',
         '<< [] 2 >>'
       ]) {
-        await expectLater(read(text), throwsFormatException, reason: text);
+        expect(() => read(text), throwsFormatException, reason: text);
       }
     });
-    test('$mode parser returns successive commands and skips comments',
-        () async {
+    test('$mode parser returns successive commands and skips comments', () {
       final input = parser('% ignored\n /A 3 def [1 2] use');
       final operands = <CraftCMapObject>[];
-      if (asynchronous) {
-        await input.parse(operands);
+      if (primaryApi) {
+        input.parse(operands);
       } else {
         input.parseSync(operands);
       }
       expect(operands.map((v) => v.toString()), ['A', '3', 'def']);
-      if (asynchronous) {
-        await input.parse(operands);
+      if (primaryApi) {
+        input.parse(operands);
       } else {
         input.parseSync(operands);
       }
       expect(operands.length, 2);
       expect(operands.last.getValue(), 'use');
     });
-    test('$mode rejects standalone closers and excessive depth', () async {
+    test('$mode rejects standalone closers and excessive depth', () {
       final input = parser(']');
-      if (asynchronous) {
-        await expectLater(input.parse([]), throwsFormatException);
+      if (primaryApi) {
+        expect(() => input.parse([]), throwsFormatException);
       } else {
         expect(() => input.parseSync([]), throwsFormatException);
       }
-      await expectLater(
-          read(
+      expect(
+          () => read(
               '${List.filled(257, '[').join()}${List.filled(257, ']').join()}'),
           throwsFormatException);
     });

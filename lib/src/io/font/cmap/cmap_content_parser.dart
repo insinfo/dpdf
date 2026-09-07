@@ -10,25 +10,17 @@ class CraftCMapContentParser {
   final CraftPdfTokenizer tokenizer;
   CraftCMapContentParser(this.tokenizer);
 
-  Future<void> parse(List<CraftCMapObject> operands) async {
+  void parse(List<CraftCMapObject> operands) {
     operands.clear();
     while (true) {
-      final operand = await readObject();
+      final operand = readObject();
       if (operand == null) return;
       _appendOperand(operands, operand);
       if (operand.isLiteral()) return;
     }
   }
 
-  void parseSync(List<CraftCMapObject> operands) {
-    operands.clear();
-    while (true) {
-      final operand = readObjectSync();
-      if (operand == null) return;
-      _appendOperand(operands, operand);
-      if (operand.isLiteral()) return;
-    }
-  }
+  void parseSync(List<CraftCMapObject> operands) => parse(operands);
 
   void _appendOperand(List<CraftCMapObject> operands, CraftCMapObject operand) {
     if (operand.isToken()) {
@@ -38,46 +30,30 @@ class CraftCMapContentParser {
     operands.add(operand);
   }
 
-  Future<CraftCMapObject> readDictionary() async =>
-      (await _readAsync(_OperandAssembler(dictionary: true)))!;
-  CraftCMapObject readDictionarySync() =>
-      _readSync(_OperandAssembler(dictionary: true))!;
-  Future<CraftCMapObject> readArray() async =>
-      (await _readAsync(_OperandAssembler(dictionary: false)))!;
-  CraftCMapObject readArraySync() =>
-      _readSync(_OperandAssembler(dictionary: false))!;
-  Future<CraftCMapObject?> readObject() => _readAsync(_OperandAssembler());
-  CraftCMapObject? readObjectSync() => _readSync(_OperandAssembler());
+  CraftCMapObject readDictionary() =>
+      _read(_OperandAssembler(dictionary: true))!;
+  CraftCMapObject readDictionarySync() => readDictionary();
+  CraftCMapObject readArray() => _read(_OperandAssembler(dictionary: false))!;
+  CraftCMapObject readArraySync() => readArray();
+  CraftCMapObject? readObject() => _read(_OperandAssembler());
+  CraftCMapObject? readObjectSync() => readObject();
 
-  Future<CraftCMapObject?> _readAsync(_OperandAssembler state) async {
-    while (await nextValidToken()) {
+  CraftCMapObject? _read(_OperandAssembler state) {
+    while (nextValidToken()) {
       final result = state.accept(tokenizer);
       if (result != null) return result;
     }
     return state.finish();
   }
 
-  CraftCMapObject? _readSync(_OperandAssembler state) {
-    while (nextValidTokenSync()) {
-      final result = state.accept(tokenizer);
-      if (result != null) return result;
-    }
-    return state.finish();
-  }
-
-  Future<bool> nextValidToken() async {
-    while (await tokenizer.nextToken()) {
+  bool nextValidToken() {
+    while (tokenizer.nextToken()) {
       if (tokenizer.getTokenType() != TokenType.comment) return true;
     }
     return false;
   }
 
-  bool nextValidTokenSync() {
-    while (tokenizer.nextTokenSync()) {
-      if (tokenizer.getTokenType() != TokenType.comment) return true;
-    }
-    return false;
-  }
+  bool nextValidTokenSync() => nextValidToken();
 
   static String toHex4(int n) {
     return n.toRadixString(16).padLeft(4, '0');

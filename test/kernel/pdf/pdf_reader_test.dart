@@ -111,7 +111,7 @@ void main() {
 
         // PDF version is extracted from "PDF-1.4" -> "1.4"
         expect(reader.pdfVersion, contains('1.4'));
-        await reader.close();
+        reader.close();
       });
     });
 
@@ -134,7 +134,7 @@ void main() {
         expect(ref1!.isFree(), isFalse);
         expect(ref1.getOffset(), greaterThan(0));
 
-        await reader.close();
+        reader.close();
       });
     });
 
@@ -150,7 +150,7 @@ void main() {
         final root = await reader.trailer!.get(CraftPdfName.root);
         expect(root, isA<CraftPdfIndirectReference>());
 
-        await reader.close();
+        reader.close();
       });
     });
 
@@ -164,7 +164,7 @@ void main() {
         expect(await catalog!.nameEntry(CraftPdfName.type),
             equals(CraftPdfName.catalog));
 
-        await reader.close();
+        reader.close();
       });
     });
 
@@ -176,7 +176,7 @@ void main() {
         final numPages = await reader.pageTotal();
         expect(numPages, equals(1));
 
-        await reader.close();
+        reader.close();
       });
     });
 
@@ -194,7 +194,7 @@ void main() {
         final author = await info.stringEntry(CraftPdfName('Author'));
         expect(author?.getValue(), equals('pdfcraft Dart'));
 
-        await reader.close();
+        reader.close();
       });
     });
 
@@ -220,7 +220,7 @@ void main() {
             equals(CraftPdfName.pages));
         expect(await dict2.integerEntry(CraftPdfName.count), equals(1));
 
-        await reader.close();
+        reader.close();
       });
 
       test('returns null for free object', () async {
@@ -231,7 +231,7 @@ void main() {
         final obj0 = await reader.readObject(0);
         expect(obj0, isNull);
 
-        await reader.close();
+        reader.close();
       });
 
       test('returns null for non-existent object', () async {
@@ -242,7 +242,7 @@ void main() {
         final obj100 = await reader.readObject(100);
         expect(obj100, isNull);
 
-        await reader.close();
+        reader.close();
       });
     });
 
@@ -253,7 +253,7 @@ void main() {
 
         expect(reader.encrypted, isFalse);
 
-        await reader.close();
+        reader.close();
       });
     });
 

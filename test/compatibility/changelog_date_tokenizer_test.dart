@@ -62,27 +62,27 @@ void main() {
   });
   test(
       'Reverse startxref scan includes first block and matches across old block boundaries',
-      () async {
+      () {
     for (final position in [0, 15, 1019, 1024, 1500]) {
       final bytes = Uint8List(2600)..fillRange(0, 2600, 32);
       bytes.setRange(position, position + 9, ascii.encode('startxref'));
       final tokenizer = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
-      expect(await tokenizer.getStartxref(), position);
+      expect(tokenizer.getStartxref(), position);
     }
   });
   test('Reverse scan selects latest marker without materializing a PDF string',
-      () async {
+      () {
     final bytes = Uint8List(2 * 1024 * 1024)..fillRange(0, 2 * 1024 * 1024, 65);
     bytes.setRange(11, 20, ascii.encode('startxref'));
     bytes.setRange(1055, 1064, ascii.encode('startxref'));
     final tokenizer = CraftPdfTokenizer(CraftRandomAccessFileOrArray(bytes));
-    expect(await tokenizer.getStartxref(), 1055);
+    expect(tokenizer.getStartxref(), 1055);
   });
-  test('Short header reports an exception instead of RangeError', () async {
+  test('Short header reports an exception instead of RangeError', () {
     for (final header in ['%PDF-', '%PDF-1', '%PDF-1.']) {
       final tokenizer = CraftPdfTokenizer(CraftRandomAccessFileOrArray(
           Uint8List.fromList(ascii.encode(header))));
-      await expectLater(tokenizer.checkPdfHeader(), throwsA(isA<Exception>()));
+      expect(() => tokenizer.checkPdfHeader(), throwsA(isA<Exception>()));
     }
   });
 }

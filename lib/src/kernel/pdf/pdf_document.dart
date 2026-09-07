@@ -1220,7 +1220,7 @@ class CraftPdfDocument {
     } finally {
       _closed = true;
       _isClosing = false;
-      await _reader?.close();
+      _reader?.close();
     }
   }
 

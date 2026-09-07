@@ -14,23 +14,23 @@ class CraftIndependentRandomAccessSource implements CraftRandomAccessSource {
   CraftIndependentRandomAccessSource(this._source);
 
   @override
-  Future<int> get(int position) {
+  int get(int position) {
     return _source.get(position);
   }
 
   @override
-  Future<int> getRange(int position, Uint8List bytes, int off, int len) {
+  int getRange(int position, Uint8List bytes, int off, int len) {
     return _source.getRange(position, bytes, off, len);
   }
 
   @override
-  Future<int> length() {
+  int length() {
     return _source.length();
   }
 
   /// Does nothing - the underlying source is not closed.
   @override
-  Future<void> close() async {
+  void close() {
     // do not close the source
   }
 }

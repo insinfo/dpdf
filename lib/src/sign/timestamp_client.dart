@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:math';
 
+import '../platform/io.dart';
 import 'tsa_client.dart';
 import 'external_digest.dart';
 import 'digest_algorithms.dart';
@@ -59,12 +61,33 @@ class TimestampClient implements CraftTSAClient {
 
   @override
   Future<Uint8List> getTimeStampToken(Uint8List imprint) async {
-    // Build the TimeStampRequest
     final request = buildTimeStampRequest(imprint);
-
-    // The request can be transported by a caller; automatic transport is pending.
-    throw UnimplementedError(
-        'TSA HTTP request not yet implemented. URL: $_tsaUrl, Request size: ${request.length}');
+    final client = HttpClient();
+    try {
+      final httpRequest = await client.postUrl(Uri.parse(_tsaUrl));
+      httpRequest.headers.contentType =
+          ContentType('application', 'timestamp-query');
+      httpRequest.headers.set('Accept', 'application/timestamp-reply');
+      final authorization = getAuthorizationHeader();
+      if (authorization != null) {
+        httpRequest.headers.set('Authorization', authorization);
+      }
+      httpRequest.add(request);
+      final response = await httpRequest.close();
+      if (response.statusCode != HttpStatus.ok) {
+        throw StateError(
+            'Timestamp authority returned HTTP ${response.statusCode}.');
+      }
+      final bytes = BytesBuilder(copy: false);
+      await response.forEach(bytes.add);
+      final token = parseTimeStampResponse(bytes.toBytes());
+      if (token.length > _tokenSizeEstimate) {
+        _tokenSizeEstimate = token.length;
+      }
+      return token;
+    } finally {
+      client.close();
+    }
   }
 
   /// Builds an RFC 3161 TimeStampRequest.
@@ -200,7 +223,9 @@ class TimestampClient implements CraftTSAClient {
 
   /// Generates a random nonce value.
   int _generateNonce() {
-    return DateTime.now().microsecondsSinceEpoch;
+    // RFC 3161 nonce values must make replaying a captured request impractical.
+    // Random.secure is backed by the platform cryptographic random source.
+    return Random.secure().nextInt(1 << 31);
   }
 
   /// Gets the URL of the TSA service.

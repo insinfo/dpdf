@@ -14,7 +14,7 @@ class CidUnicodeRepository {
   CidUnicodeRepository({CraftCMapLocation? location}) : _location = location;
 
   CraftCMapLocation get _provider =>
-      _location ?? CraftCjkResourceLoader.cmapLocation;
+      _location ?? CraftCjkResourceLoader.activeCmapLocation;
 
   static String? _resource(String registry, String collection) {
     if (registry != 'Adobe' ||

@@ -50,7 +50,7 @@ class CraftCMapParser {
       final program = _MappingCommands(map, ancestors.isEmpty);
       final operands = <CraftCMapObject>[];
       while (true) {
-        await parser.parse(operands);
+        parser.parse(operands);
         if (operands.isEmpty) {
           program.finish();
           return;
@@ -61,7 +61,7 @@ class CraftCMapParser {
     } catch (error) {
       throw FormatException('CMap "$name" could not be read: $error');
     } finally {
-      await input.close();
+      input.close();
     }
   }
 

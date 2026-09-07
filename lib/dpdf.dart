@@ -192,3 +192,7 @@ export 'src/compress/pdf_image_compressor.dart';
 export 'src/io/image/jpeg_decoder.dart';
 export 'src/io/image/jpeg_encoder.dart';
 export 'src/io/image/image_resampler.dart';
+export 'src/io/image/png_encoder.dart';
+
+// Content stream parsing, shared by rendering, extraction and rewriting.
+export 'src/render/content_parser.dart';

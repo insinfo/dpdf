@@ -20,7 +20,7 @@ class CraftPngWriter {
   static final Uint8List _iccp =
       Uint8List.fromList([0x69, 0x43, 0x43, 0x50]); // iCCP
 
-  static Int32List? _crcTable;
+  static Uint32List? _crcTable;
 
   final BytesBuilder _output = BytesBuilder();
 
@@ -99,7 +99,7 @@ class CraftPngWriter {
   static void _makeCrcTable() {
     if (_crcTable != null) return;
 
-    final crc2 = Int32List(256);
+    final table = Uint32List(256);
     for (int n = 0; n < 256; n++) {
       int c = n;
       for (int k = 0; k < 8; k++) {
@@ -109,18 +109,23 @@ class CraftPngWriter {
           c = c >>> 1;
         }
       }
-      crc2[n] = c;
+      table[n] = c;
     }
-    _crcTable = crc2;
+    _crcTable = table;
   }
 
-  /// Updates CRC with data.
+  /// Updates CRC with data. [crc] and the result are unsigned 32-bit.
+  ///
+  /// The register has to stay inside 32 bits. Dart's `int` is 64 bits wide, so
+  /// shifting a value that has bits above 31 set brings that rubbish down into
+  /// the CRC; masking the shifted term to 24 bits is what keeps the arithmetic
+  /// at the width the format defines.
   static int _updateCrc(int crc, Uint8List buf, int offset, int len) {
-    int c = crc;
+    int c = crc & 0xFFFFFFFF;
     if (_crcTable == null) _makeCrcTable();
 
     for (int n = 0; n < len; n++) {
-      c = _crcTable![(c ^ buf[offset + n]) & 0xff] ^ (c >>> 8);
+      c = _crcTable![(c ^ buf[offset + n]) & 0xff] ^ ((c >> 8) & 0x00FFFFFF);
     }
     return c;
   }
@@ -147,8 +152,9 @@ class CraftPngWriter {
     _output.add(chunkType);
     _output.add(data);
 
-    int c = _updateCrc(-1, chunkType, 0, chunkType.length);
-    c = ~_updateCrc(c, data, 0, data.length);
+    // The CRC covers the chunk type and its data, but not the length.
+    int c = _updateCrc(0xFFFFFFFF, chunkType, 0, chunkType.length);
+    c = (~_updateCrc(c, data, 0, data.length)) & 0xFFFFFFFF;
     outputInt(c);
   }
 

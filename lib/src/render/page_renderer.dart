@@ -1158,10 +1158,12 @@ class _Renderer {
       _note('scn:unsupported-shading-pattern');
       return;
     }
-    if (shadingType == 7 && shading is PdfStream && colorSpace != null) {
-      if (await _fillTensorPatchShading(
+    if ((shadingType == 6 || shadingType == 7) &&
+        shading is PdfStream &&
+        colorSpace != null) {
+      if (await _fillPatchShading(
           path, rule, pattern, shading, colorSpace, function,
-          stroke: stroke)) {
+          coons: shadingType == 6, stroke: stroke)) {
         return;
       }
       _note('scn:unsupported-shading-pattern');
@@ -1240,13 +1242,14 @@ class _Renderer {
     context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
   }
 
-  Future<bool> _fillTensorPatchShading(
+  Future<bool> _fillPatchShading(
     BLPath clipPath,
     BLFillRule rule,
     PdfDictionary pattern,
     PdfStream shading,
     PdfColorSpace colorSpace,
     PdfFunction? function, {
+    required bool coons,
     required bool stroke,
   }) async {
     final bitsCoordinate =
@@ -1302,7 +1305,7 @@ class _Renderer {
         if (flag < 0 || flag > 3 || (flag != 0 && previous == null)) {
           return false;
         }
-        final pointCount = flag == 0 ? 16 : 12;
+        final pointCount = flag == 0 ? (coons ? 12 : 16) : (coons ? 8 : 12);
         final colourCount = flag == 0 ? 4 : 2;
         final payloadBits = pointCount * 2 * bitsCoordinate +
             colourCount * inputCount * bitsComponent;
@@ -1351,6 +1354,9 @@ class _Renderer {
                   decode[4 + component * 2], decode[5 + component * 2]),
           ];
         }
+        if (coons) {
+          _completeCoonsControls(points);
+        }
         if (points.any((point) => point == null) ||
             corners.any((colour) => colour == null)) {
           return false;
@@ -1384,6 +1390,61 @@ class _Renderer {
       context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
     }
     return true;
+  }
+
+  void _completeCoonsControls(List<_MeshPoint?> points) {
+    _MeshPoint weighted(List<(int, double)> terms) {
+      var x = 0.0, y = 0.0;
+      for (final (index, weight) in terms) {
+        final point = points[index]!;
+        x += point.x * weight;
+        y += point.y * weight;
+      }
+      return _MeshPoint(x / 9, y / 9);
+    }
+
+    // PDF Coons patches omit the four interior controls. Convert their
+    // boundary curves to the equivalent bicubic tensor-product patch.
+    points[5] = weighted(const [
+      (0, -4),
+      (1, 6),
+      (4, 6),
+      (3, -2),
+      (12, -2),
+      (13, 3),
+      (7, 3),
+      (15, -1),
+    ]);
+    points[6] = weighted(const [
+      (3, -4),
+      (2, 6),
+      (7, 6),
+      (0, -2),
+      (15, -2),
+      (14, 3),
+      (4, 3),
+      (12, -1),
+    ]);
+    points[9] = weighted(const [
+      (12, -4),
+      (13, 6),
+      (8, 6),
+      (15, -2),
+      (0, -2),
+      (1, 3),
+      (11, 3),
+      (3, -1),
+    ]);
+    points[10] = weighted(const [
+      (15, -4),
+      (14, 6),
+      (11, 6),
+      (12, -2),
+      (3, -2),
+      (2, 3),
+      (8, 3),
+      (0, -1),
+    ]);
   }
 
   Future<void> _paintTensorPatch(_TensorPatch patch, BLMatrix2D toDevice,

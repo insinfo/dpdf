@@ -1,10 +1,14 @@
 import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:io';
+
+import 'package:dgfx/dgfx.dart';
 
 import 'package:dpdf/src/kernel/geom/page_size.dart';
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
@@ -351,6 +355,49 @@ void main() {
   group('SvgConverter em documento', () {
     const pixelPng =
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
+    test('text usa fonte padrão e posiciona a linha de base', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="100" height="30">
+          <text x="10" y="20" font-size="16">Hello SVG</text>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final content = String.fromCharCodes(
+            await (await document.pageAt(1))!.contentPayload());
+        expect(content, contains('BT\n'));
+        expect(content, contains('7.5 15 Td\n'));
+        expect(content, contains('(Hello SVG) Tj\n'));
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('text resolve uma fonte registrada no catálogo compartilhado',
+        () async {
+      final fontBytes =
+          await File('test/assets/ABeeZee-Regular.ttf').readAsBytes();
+      final fonts = BLFontCollection()
+        ..addBytes(fontBytes, familyName: 'Example Sans');
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="100" height="30">
+          <text font-family="Example Sans" x="2" y="20">catalog</text>
+        </svg>
+      ''', fontCollection: fonts);
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final fontDictionary = await resources?.dictionaryEntry(PdfName.font);
+        expect(fontDictionary, isNotNull);
+        final content = String.fromCharCodes(await page.contentPayload());
+        expect(content, contains('<004C0043007E00430067006E0056> Tj\n'));
+      } finally {
+        await document.close();
+      }
+    });
 
     test('image incorpora data URI com a geometria declarada', () async {
       final bytes = await SvgConverter.convertToBytes('''

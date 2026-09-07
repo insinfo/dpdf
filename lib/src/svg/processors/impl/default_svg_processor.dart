@@ -65,6 +65,10 @@ class DefaultSvgProcessor {
       final name = key is String ? key : key.toString();
       own[name] = value;
     });
+    if (element.localName == SvgTags.TEXT) {
+      own['_text'] =
+          element.nodes.whereType<dom.Text>().map((node) => node.data).join();
+    }
     final resolved = Map<String, String>.from(inherited);
     resolved.addAll(own);
     final matching = rules.where((rule) => rule.matches(element)).toList()

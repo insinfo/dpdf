@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'package:dgfx/dgfx.dart';
 import 'package:dpdf/src/kernel/geom/affine_transform.dart';
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
@@ -23,6 +24,7 @@ class SvgDrawContext {
   final ResourceResolver _resourceResolver;
   final FontProvider _fontProvider;
   final SvgResourceLoader? resourceLoader;
+  final BLFontCollection? fontCollection;
 
   SvgTextProperties _textProperties = SvgTextProperties();
   SvgCssContext _cssContext = SvgCssContext();
@@ -33,7 +35,7 @@ class SvgDrawContext {
   Rectangle? _customViewport;
 
   SvgDrawContext(ResourceResolver? resourceResolver, FontProvider? fontProvider,
-      {this.resourceLoader})
+      {this.resourceLoader, this.fontCollection})
       : _resourceResolver = resourceResolver ?? ResourceResolver(null),
         _fontProvider = fontProvider ?? BasicFontProvider() {
     _cssContext = SvgCssContext();

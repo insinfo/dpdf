@@ -87,6 +87,69 @@ a própria imagem. Para a garantia mais forte — um documento reconstruído a
 partir de nada além do texto sobrevivente — use `PdfTextRedaction`, que aceita
 um subconjunto estrito e rejeita tudo o que não puder reconstruir.
 
+### Compressão de PDF
+
+`PdfCompressor` reescreve o documento menor sem mudar o que ele desenha:
+object streams com xref stream, recompressão de fluxos, deduplicação de
+objetos idênticos, remoção de objetos órfãos e poda opcional de miniaturas,
+metadados e dados privados de aplicação.
+
+```dart
+final result = await PdfCompressor.compress(bytes);
+print(result.report);          // 161294 -> 21890 bytes, 86.4% menor
+print(result.report.toJson()); // detalhamento por passo
+await File('menor.pdf').writeAsBytes(result.bytes);
+```
+
+Se a reescrita ficasse maior que a entrada, o original é devolvido intacto —
+um compressor não deve piorar o arquivo.
+
+Três perfis: `PdfCompressionOptions.conservative` (só o que nenhum leitor
+percebe, mantendo metadados e miniaturas, de modo que um arquivo PDF/A
+continua declarando PDF/A), o padrão, e `PdfCompressionOptions.aggressive`
+(também descarta metadados e a árvore de estrutura — o que custa a
+acessibilidade e a conformidade).
+
+#### Imagens
+
+Imagens bilevel são reencodadas **sem perdas**. Nenhum codec ganha sempre, e
+por isso o padrão mede em vez de supor: cada imagem é codificada em JBIG2 e em
+Flate, e a menor vence. Numa página 800×1000, o Flate faz 287 bytes contra 886
+do JBIG2 quando as linhas se repetem exatamente, e 20304 contra 16519 quando
+há ruído de digitalização.
+
+Imagens de tom contínuo só são tocadas se você pedir, porque isso significa
+JPEG e possivelmente reamostragem:
+
+```dart
+final result = await PdfCompressor.compress(
+  bytes,
+  options: const PdfCompressionOptions(
+    images: PdfImageCompressionOptions.lossy(quality: 75, maxDimension: 1600),
+  ),
+);
+```
+
+`maxDimension` é um limite em **pixels**, não um DPI alvo: decidir um DPI exige
+a transformação que o fluxo de conteúdo da página aplica à imagem, que este
+passo não lê.
+
+### Codec JPEG
+
+O decodificador lê o modo baseline sequencial — qualquer amostragem de
+componentes (4:4:4, 4:2:2, 4:2:0), intervalos de reinício, cinza, RGB e CMYK
+com a transformação Adobe. Arquivos progressivos e com codificação aritmética
+são recusados com uma mensagem, em vez de decodificados errado.
+
+```dart
+final image = JpegDecoder.decode(jpegBytes);
+final smaller = ImageResampler.resize(image.pixels,
+    width: image.width, height: image.height,
+    targetWidth: 800, targetHeight: 600, channels: 3);
+final out = JpegEncoder.encode(smaller,
+    width: 800, height: 600, quality: 85);
+```
+
 ### Layout de texto
 
 `CraftDocument` compõe parágrafos, divs, listas, tabelas com `colspan`/
@@ -129,6 +192,9 @@ padrões e limites em
   glifo exigem uma CMap que a máquina de texto de byte único não lê.
 - O conversor de HTML desenha com as 14 faces padrão; não há descoberta nem
   incorporação de fontes do sistema.
+- A reamostragem de imagens usa um limite em pixels, não um DPI alvo.
+- O encoder JBIG2 usa região genérica; um dicionário de símbolos venceria em
+  páginas de texto.
 
 ## Desenvolvimento
 

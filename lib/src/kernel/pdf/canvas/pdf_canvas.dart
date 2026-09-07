@@ -23,6 +23,7 @@ import 'package:dpdf/src/kernel/pdf/canvas/bezier.dart';
 import 'package:dpdf/src/kernel/geom/affine_transform.dart';
 import 'package:dpdf/src/kernel/pdf/xobject/pdf_x_object.dart';
 import 'package:dpdf/src/kernel/pdf/colorspace/pdf_device_cs.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_special_cs.dart';
 
 /// Writes PDF graphics and text operators into content streams.
 class CraftPdfCanvas {
@@ -747,4 +748,3 @@ class CraftPdfCanvas {
   }
 }
 
-class PdfSpecialCsPattern {}

@@ -233,6 +233,28 @@ void main() {
       expect(content, isNot(contains('0 0 1 rg\n')));
     });
 
+    test('style aceita seletores descendentes e de filho direto', () async {
+      final content = await _render('''
+        <svg width="30" height="20">
+          <style>
+            rect { fill: black; }
+            .layer .desc { fill: red; }
+            .layer > rect { stroke: blue; }
+          </style>
+          <g class="layer">
+            <rect class="desc" width="5" height="5"/>
+            <g><rect class="desc" x="10" width="5" height="5"/></g>
+          </g>
+        </svg>
+      ''');
+
+      expect(_count(content, '1 0 0 rg\n'), 2);
+      expect(_count(content, '0 0 1 RG\n'), 1,
+          reason: 'o retângulo dentro do segundo g não é filho direto');
+      expect(content, isNot(contains('0 0 0 rg\n')),
+          reason: 'o seletor descendente mais específico vence rect');
+    });
+
     test('use instancia geometria de defs e aplica x e y', () async {
       final content = await _render('''
         <svg width="40" height="20">

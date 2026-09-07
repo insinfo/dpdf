@@ -136,48 +136,109 @@ class DefaultSvgProcessor {
   }
 }
 
-/// Regra simples suficiente para estilos SVG embutidos: tipo, id e classes.
-/// Seletores relacionais são ignorados em vez de aplicados ao nó errado.
+/// Regra para estilos SVG embutidos: compostos de tipo, id e classes, ligados
+/// pelos combinadores descendente e filho direto.
 class _SvgStyleRule {
-  final String? tag;
-  final String? id;
-  final Set<String> classes;
+  final List<_SvgSimpleSelector> selectors;
+  final List<bool> directChild;
   final Map<String, String> declarations;
   final int specificity;
   final int order;
 
-  const _SvgStyleRule(this.tag, this.id, this.classes, this.declarations,
+  const _SvgStyleRule(this.selectors, this.directChild, this.declarations,
       this.specificity, this.order);
 
   static _SvgStyleRule? parse(
       String raw, Map<String, String> declarations, int order) {
     final selector = raw.trim();
-    if (selector.isEmpty || RegExp(r'[\s>+~:\[]').hasMatch(selector)) {
-      return null;
+    if (selector.isEmpty || RegExp(r'[+~:\[]').hasMatch(selector)) return null;
+    final tokens = selector
+        .replaceAll(RegExp(r'\s*>\s*'), ' > ')
+        .split(RegExp(r'\s+'))
+        .where((token) => token.isNotEmpty)
+        .toList();
+    final selectors = <_SvgSimpleSelector>[];
+    final directChild = <bool>[];
+    var pendingChild = false;
+    for (final token in tokens) {
+      if (token == '>') {
+        if (selectors.isEmpty || pendingChild) return null;
+        pendingChild = true;
+        continue;
+      }
+      final parsed = _SvgSimpleSelector.parse(token);
+      if (parsed == null) return null;
+      if (selectors.isNotEmpty) directChild.add(pendingChild);
+      selectors.add(parsed);
+      pendingChild = false;
     }
-    final idMatch = RegExp(r'#([\w-]+)').firstMatch(selector);
+    if (selectors.isEmpty || pendingChild) return null;
+    return _SvgStyleRule(
+      List.unmodifiable(selectors),
+      List.unmodifiable(directChild),
+      Map<String, String>.unmodifiable(declarations),
+      selectors.fold(0, (sum, part) => sum + part.specificity),
+      order,
+    );
+  }
+
+  bool matches(dom.Element element) {
+    var current = element;
+    if (!selectors.last.matches(current)) return false;
+    for (var index = selectors.length - 2; index >= 0; index--) {
+      final wanted = selectors[index];
+      var ancestor = current.parent;
+      if (directChild[index]) {
+        if (ancestor is! dom.Element || !wanted.matches(ancestor)) return false;
+        current = ancestor;
+        continue;
+      }
+      while (ancestor is dom.Element && !wanted.matches(ancestor)) {
+        ancestor = ancestor.parent;
+      }
+      if (ancestor is! dom.Element) return false;
+      current = ancestor;
+    }
+    return true;
+  }
+}
+
+class _SvgSimpleSelector {
+  final String? tag;
+  final String? id;
+  final Set<String> classes;
+  final int specificity;
+
+  const _SvgSimpleSelector(this.tag, this.id, this.classes, this.specificity);
+
+  static _SvgSimpleSelector? parse(String selector) {
+    final idMatches = RegExp(r'#([\w-]+)').allMatches(selector).toList();
+    if (idMatches.length > 1) return null;
+    final id = idMatches.isEmpty ? null : idMatches.single.group(1);
     final classes = RegExp(r'\.([\w-]+)')
         .allMatches(selector)
         .map((match) => match.group(1)!)
         .toSet();
     final tagMatch = RegExp(r'^([A-Za-z][\w-]*|\*)').firstMatch(selector);
-    if (idMatch == null && classes.isEmpty && tagMatch == null) return null;
-    final tag = tagMatch?.group(1);
-    return _SvgStyleRule(
-      tag == '*' ? null : tag,
-      idMatch?.group(1),
+    if (id == null && classes.isEmpty && tagMatch == null) return null;
+    final parts = RegExp(r'(^[A-Za-z][\w-]*|^\*|[.#][\w-]+)')
+        .allMatches(selector)
+        .map((match) => match.group(0)!)
+        .join();
+    if (parts != selector) return null;
+    final rawTag = tagMatch?.group(1);
+    final tag = rawTag == '*' ? null : rawTag;
+    return _SvgSimpleSelector(
+      tag,
+      id,
       classes,
-      Map<String, String>.unmodifiable(declarations),
-      (idMatch == null ? 0 : 100) + classes.length * 10 + (tag == null ? 0 : 1),
-      order,
+      (id == null ? 0 : 100) + classes.length * 10 + (tag == null ? 0 : 1),
     );
   }
 
   bool matches(dom.Element element) {
     if (tag != null && element.localName != tag) return false;
     if (id != null && element.id != id) return false;
-    // `Element.classes` segue regras HTML e pode não refletir corretamente
-    // elementos no namespace SVG; o atributo cru tem a semântica necessária.
     final actual = (element.attributes['class'] ?? '')
         .split(RegExp(r'\s+'))
         .where((value) => value.isNotEmpty)

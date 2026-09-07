@@ -130,7 +130,8 @@ subsampling.
 
 ## Known limitations
 
-- SVG colored tiling patterns and luminance/alpha masks are emitted as native
+- SVG `<style>` rules support compound, descendant and direct-child selectors.
+  Colored tiling patterns and luminance/alpha masks are emitted as native
   PDF pattern and soft-mask resources. Gradient stop opacity uses an aligned
   shading soft mask. Marker viewports support alignment, meet/slice and
   overflow clipping; some advanced paint-server cases remain partial.

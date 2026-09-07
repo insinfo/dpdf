@@ -2,6 +2,11 @@ import 'dart:math' as math;
 
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/kernel/pdf/colorspace/pdf_shading.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/xobject/pdf_form_x_object.dart';
 import 'package:dpdf/src/svg/renderers/impl/abstract_branch_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
@@ -32,8 +37,9 @@ abstract class GradientSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
   @override
   Future<void> doDraw(SvgDrawContext context) async {}
 
-  ({List<double> offsets, List<List<double>> colors}) stops() {
-    final values = <({double offset, List<double> color})>[];
+  ({List<double> offsets, List<List<double>> colors, List<double> opacities})
+      stops() {
+    final values = <({double offset, List<double> color, double opacity})>[];
     for (final child in getChildren()) {
       if (child is! GradientStopSvgNodeRenderer) continue;
       final raw = child.getAttribute(SvgAttributes.OFFSET) ?? '0';
@@ -47,27 +53,81 @@ abstract class GradientSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
       final color =
           SvgColorUtils.parse(child.getAttribute(SvgTags.STOP_COLOR) ?? 'black')
               ?.getColorValue();
-      values.add((offset: offset, color: color ?? <double>[0, 0, 0]));
+      final opacityRaw = child.getAttribute(SvgTags.STOP_OPACITY) ?? '1';
+      final opacity = (opacityRaw.trim().endsWith('%')
+              ? (double.tryParse(opacityRaw
+                          .trim()
+                          .substring(0, opacityRaw.trim().length - 1)) ??
+                      100) /
+                  100
+              : double.tryParse(opacityRaw) ?? 1)
+          .clamp(0, 1)
+          .toDouble();
+      values.add((
+        offset: offset,
+        color: color ?? <double>[0, 0, 0],
+        opacity: opacity
+      ));
     }
     if (values.isEmpty) {
       values.addAll([
-        (offset: 0, color: <double>[0, 0, 0]),
-        (offset: 1, color: <double>[0, 0, 0]),
+        (offset: 0, color: <double>[0, 0, 0], opacity: 1),
+        (offset: 1, color: <double>[0, 0, 0], opacity: 1),
       ]);
     } else if (values.length == 1) {
-      values.add((offset: 1, color: List<double>.from(values.first.color)));
+      values.add((
+        offset: 1,
+        color: List<double>.from(values.first.color),
+        opacity: values.first.opacity
+      ));
     }
     if (values.first.offset > 0) {
-      values
-          .insert(0, (offset: 0, color: List<double>.from(values.first.color)));
+      values.insert(0, (
+        offset: 0,
+        color: List<double>.from(values.first.color),
+        opacity: values.first.opacity
+      ));
     }
     if (values.last.offset < 1) {
-      values.add((offset: 1, color: List<double>.from(values.last.color)));
+      values.add((
+        offset: 1,
+        color: List<double>.from(values.last.color),
+        opacity: values.last.opacity
+      ));
     }
     return (
       offsets: values.map((v) => v.offset).toList(),
       colors: values.map((v) => v.color).toList(),
+      opacities: values.map((v) => v.opacity).toList(),
     );
+  }
+
+  Future<void> paintGradient(SvgDrawContext context, Rectangle bounds,
+      PdfShading color, PdfShading opacity) async {
+    final target = context.getCurrentCanvas();
+    final document = target.getDocument();
+    final hasTransparency = stops().opacities.any((value) => value < 1);
+    if (hasTransparency && document != null && target.resources != null) {
+      final form = PdfFormXObject(bounds);
+      form.pdfRepresentation()
+        ..put(
+            PdfName('Group'),
+            PdfDictionary()
+              ..put(PdfName.s, PdfName('Transparency'))
+              ..put(PdfName('CS'), PdfName.deviceRgb))
+        ..attachToDocument(document);
+      final maskCanvas = await PdfCanvas.fromFormXObject(form, document);
+      context.pushCanvas(maskCanvas);
+      try {
+        await paintTransformed(context, () => maskCanvas.shading(opacity));
+      } finally {
+        context.popCanvas();
+      }
+      await target.setExtGState(PdfExtGState().setSoftMask(PdfDictionary()
+        ..put(PdfName.s, PdfName('Luminosity'))
+        ..put(PdfName('G'), form.pdfRepresentation())));
+    }
+    await paintTransformed(context, () => target.shading(color));
   }
 
   double coordinate(String name, String fallback, double origin, double size,
@@ -122,20 +182,20 @@ class LinearGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
   Future<void> paintShading(SvgDrawContext context, Rectangle b) async {
     TemplateResolveUtils.resolve(this, context);
     final s = stops();
-    await paintTransformed(
+    final x0 =
+        coordinate(SvgAttributes.X1, '0%', b.getX(), b.getWidth(), context);
+    final y0 =
+        coordinate(SvgAttributes.Y1, '0%', b.getY(), b.getHeight(), context);
+    final x1 =
+        coordinate(SvgAttributes.X2, '100%', b.getX(), b.getWidth(), context);
+    final y1 =
+        coordinate(SvgAttributes.Y2, '0%', b.getY(), b.getHeight(), context);
+    await paintGradient(
         context,
-        () => context.getCurrentCanvas().shading(PdfShading.axialRgbStops(
-              coordinate(
-                  SvgAttributes.X1, '0%', b.getX(), b.getWidth(), context),
-              coordinate(
-                  SvgAttributes.Y1, '0%', b.getY(), b.getHeight(), context),
-              coordinate(
-                  SvgAttributes.X2, '100%', b.getX(), b.getWidth(), context),
-              coordinate(
-                  SvgAttributes.Y2, '0%', b.getY(), b.getHeight(), context),
-              s.offsets,
-              s.colors,
-            )));
+        b,
+        PdfShading.axialRgbStops(x0, y0, x1, y1, s.offsets, s.colors),
+        PdfShading.axialRgbStops(x0, y0, x1, y1, s.offsets,
+            s.opacities.map((v) => <double>[v, v, v]).toList()));
   }
 
   @override
@@ -160,10 +220,12 @@ class RadialGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
     final fy = coordinate('fy', '50%', b.getY(), b.getHeight(), context);
     final r = coordinate(SvgAttributes.R, '50%', 0,
         math.max(b.getWidth(), b.getHeight()), context);
-    await paintTransformed(
+    await paintGradient(
         context,
-        () => context.getCurrentCanvas().shading(PdfShading.radialRgbStops(
-            fx, fy, 0, cx, cy, r, s.offsets, s.colors)));
+        b,
+        PdfShading.radialRgbStops(fx, fy, 0, cx, cy, r, s.offsets, s.colors),
+        PdfShading.radialRgbStops(fx, fy, 0, cx, cy, r, s.offsets,
+            s.opacities.map((v) => <double>[v, v, v]).toList()));
   }
 
   @override

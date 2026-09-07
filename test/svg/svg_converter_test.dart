@@ -602,6 +602,44 @@ void main() {
       }
     });
 
+    test('stop-opacity cria soft mask gradual alinhada ao shading', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="60" height="20">
+          <linearGradient id="fade" gradientTransform="translate(2 0)">
+            <stop offset="0" stop-color="red" stop-opacity="0"/>
+            <stop offset="50%" stop-color="green" stop-opacity="25%"/>
+            <stop offset="1" stop-color="blue" stop-opacity="1"/>
+          </linearGradient>
+          <rect width="60" height="20" fill="url(#fade)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final states = await resources!.dictionaryEntry(PdfName.extGState);
+        final state = (await states!.values()).single as PdfDictionary;
+        final softMask = await state.dictionaryEntry(PdfName.smaskG);
+        expect(
+            (await softMask!.nameEntry(PdfName.s))!.getValue(), 'Luminosity');
+        final group = await softMask.streamEntry(PdfName('G'));
+        final maskContent = String.fromCharCodes((await group!.getBytes())!);
+        expect(maskContent, contains('1 0 0 1 1.5 0 cm\n'));
+        expect(maskContent, contains(' sh\n'));
+        final groupResources = await group.dictionaryEntry(PdfName.resources);
+        final opacityShadings =
+            await groupResources!.dictionaryEntry(PdfName.shading);
+        expect(await opacityShadings!.values(), hasLength(1));
+
+        final content = String.fromCharCodes(await page.contentPayload());
+        expect(
+            content.indexOf(' gs\n'), lessThan(content.lastIndexOf(' sh\n')));
+      } finally {
+        await document.close();
+      }
+    });
+
     test('pattern vira um tiling pattern nativo com conteúdo próprio',
         () async {
       final bytes = await SvgConverter.convertToBytes('''

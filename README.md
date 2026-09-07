@@ -132,8 +132,9 @@ subsampling.
 ## Known limitations
 
 - SVG colored tiling patterns and luminance/alpha masks are emitted as native
-  PDF pattern and soft-mask resources. Gradient opacity, paint-server
-  inheritance, and some marker viewport cases remain partial.
+  PDF pattern and soft-mask resources. Gradient stop opacity uses an aligned
+  shading soft mask; some marker viewport and advanced paint-server cases
+  remain partial.
 - PDF rendering may require a supplied fallback for fonts that are not embedded;
   some advanced CFF/CID and pattern cases remain partial.
 - Area redaction of shared, transparent or Form-nested images still covers

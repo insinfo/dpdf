@@ -796,6 +796,16 @@ void main() {
         final maskContent = String.fromCharCodes((await group.getBytes())!);
         expect(maskContent, contains('1 1 1 rg\n'));
         expect(maskContent, contains('0 0 0 rg\n'));
+
+        final rendered = await PdfPageRenderer.render(page,
+            options: const PdfRenderOptions(dpi: 72));
+        int channelAt(int x, int y, int shift) =>
+            (rendered.pixels[y * rendered.width + x] >> shift) & 0xff;
+        expect(channelAt(10, 15, 16), greaterThan(240));
+        expect(channelAt(10, 15, 8), lessThan(15));
+        expect(channelAt(35, 15, 8), greaterThan(240),
+            reason: 'o trecho preto da máscara deixa aparecer o fundo branco');
+        expect(rendered.report.unsupportedOperators, isEmpty);
       } finally {
         await document.close();
       }

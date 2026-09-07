@@ -137,7 +137,8 @@ subsampling.
   remain partial.
 - PDF rendering may require a supplied fallback for fonts that are not embedded;
   some advanced CFF/CID cases, uncoloured patterns, and patterned strokes remain
-  partial.
+  partial. Alpha and luminosity soft masks render; transfer functions and some
+  advanced transparency-group replacement cases remain partial.
 - Area redaction of shared, transparent or Form-nested images still covers
   rather than rewriting their source pixels.
 - HTML uses the 14 standard PDF fonts and does not discover system fonts.

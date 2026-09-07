@@ -269,6 +269,65 @@ void main() {
       expect(_at(page, 4, 50).r, greaterThan(240));
       expect(_at(page, 9, 50).b, greaterThan(240));
     });
+
+    test('applies a luminosity soft mask transparency group', () async {
+      final group = PdfStream.withBytes(
+          Uint8List.fromList(
+              latin1.encode('1 g 0 0 50 100 re f 0 g 50 0 50 100 re f')),
+          0)
+        ..put(PdfName.subtype, PdfName.form)
+        ..put(PdfName.bBox, PdfArray.fromDoubles([0, 0, 100, 100]))
+        ..put(PdfName.resources, PdfDictionary());
+      final softMask = PdfDictionary()
+        ..put(PdfName.s, PdfName('Luminosity'))
+        ..put(PdfName('G'), group);
+      final resources = PdfDictionary()
+        ..put(
+            PdfName.extGState,
+            PdfDictionary()
+              ..put(PdfName('GS0'),
+                  PdfDictionary()..put(PdfName.sMask, softMask)));
+
+      final page = await _render('/GS0 gs 1 0 0 rg 0 0 100 100 re f',
+          resources: resources);
+
+      expect(_at(page, 25, 50).r, greaterThan(240));
+      expect(_at(page, 25, 50).g, lessThan(15));
+      expect(_at(page, 75, 50).g, greaterThan(240));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
+
+    test('uses transparency-group alpha for an alpha soft mask', () async {
+      final groupResources = PdfDictionary()
+        ..put(
+            PdfName.extGState,
+            PdfDictionary()
+              ..put(PdfName('A'),
+                  PdfDictionary()..put(PdfName.ca, PdfNumber(0.25))));
+      final group = PdfStream.withBytes(
+          Uint8List.fromList(latin1.encode('/A gs 0 g 0 0 100 100 re f')), 0)
+        ..put(PdfName.subtype, PdfName.form)
+        ..put(PdfName.bBox, PdfArray.fromDoubles([0, 0, 100, 100]))
+        ..put(PdfName.resources, groupResources);
+      final resources = PdfDictionary()
+        ..put(
+            PdfName.extGState,
+            PdfDictionary()
+              ..put(
+                  PdfName('GS0'),
+                  PdfDictionary()
+                    ..put(
+                        PdfName.sMask,
+                        PdfDictionary()
+                          ..put(PdfName.s, PdfName('Alpha'))
+                          ..put(PdfName('G'), group))));
+
+      final page =
+          await _render('/GS0 gs 0 g 0 0 100 100 re f', resources: resources);
+
+      expect(_at(page, 50, 50).r, closeTo(191, 4));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
   });
 
   group('PdfPageRenderer images', () {

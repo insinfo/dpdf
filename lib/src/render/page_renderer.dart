@@ -135,8 +135,9 @@ class PdfRenderedPage {
 ///
 /// What it draws today: paths (fill, stroke, both, with either winding rule),
 /// clipping, the device and CIE colour spaces including Indexed, Separation
-/// and DeviceN, coloured tiling patterns, image XObjects with their masks,
-/// inline images, form XObjects recursively, and text as real glyph outlines.
+/// and DeviceN, coloured tiling patterns, alpha/luminosity soft masks, image
+/// XObjects with their masks, inline images, form XObjects recursively, and
+/// text as real glyph outlines.
 ///
 /// Text is drawn when the PDF embeds the font program. A document that
 /// references a font without carrying it — the standard fourteen, most often —
@@ -429,7 +430,7 @@ class _Renderer {
       case 'd':
         _setDash(op);
       case 'gs':
-        await _applyExtGState(op, resources);
+        await _applyExtGState(op, resources, depth);
       case 'i':
       case 'ri':
         break; // Flatness and rendering intent do not change the geometry.
@@ -944,7 +945,7 @@ class _Renderer {
   // --- graphics state dictionary --------------------------------------------
 
   Future<void> _applyExtGState(
-      PdfContentOperation op, PdfDictionary? resources) async {
+      PdfContentOperation op, PdfDictionary? resources, int depth) async {
     final name = op.name(0);
     if (name == null || resources == null) return;
     final states = await resources.dictionaryEntry(PdfName('ExtGState'));
@@ -961,9 +962,12 @@ class _Renderer {
     if (strokeAlpha != null) state.strokeAlpha = strokeAlpha.clamp(0.0, 1.0);
 
     if (gs.containsKey(PdfName('SMask'))) {
-      final mask = await gs.nameEntry(PdfName('SMask'));
-      // A soft mask that is not /None needs a transparency group.
-      if (mask?.getValue() != 'None') _note('gs:SMask');
+      final maskObject = await gs.get(PdfName('SMask'), true);
+      if (maskObject is PdfDictionary) {
+        await _applySoftMask(maskObject, resources, depth);
+      } else if (maskObject is PdfName && maskObject.getValue() != 'None') {
+        _note('gs:SMask');
+      }
     }
     final blend = await gs.nameEntry(PdfName('BM'));
     final blendName = blend?.getValue();
@@ -972,6 +976,75 @@ class _Renderer {
         blendName != 'Compatible') {
       _note('gs:BM/$blendName');
     }
+  }
+
+  Future<void> _applySoftMask(
+      PdfDictionary mask, PdfDictionary? resources, int depth) async {
+    if (depth >= _maxDepth) {
+      _note('gs:SMask-depth');
+      return;
+    }
+    final group = await mask.streamEntry(PdfName('G'));
+    if (group == null) {
+      _note('gs:SMask-missing-group');
+      return;
+    }
+    final subtype = (await mask.nameEntry(PdfName.s))?.getValue();
+    if (subtype != 'Alpha' && subtype != 'Luminosity') {
+      _note('gs:SMask-${subtype ?? 'missing-subtype'}');
+      return;
+    }
+
+    var groupToDevice = state.ctm;
+    final matrix = await group.arrayEntry(PdfName.matrix);
+    if (matrix != null && matrix.size() == 6) {
+      final m = await matrix.toDoubleArray();
+      groupToDevice = BLMatrix2D(m[0], m[1], m[2], m[3], m[4], m[5])
+          .multiply(groupToDevice);
+    }
+    final surface = BLImage(context.image.width, context.image.height)
+      ..clear(0x00000000);
+    final maskContext = BLContext(surface);
+    final nested =
+        _Renderer(maskContext, groupToDevice, fontFallback: _fontFallback);
+
+    final bbox = await group.arrayEntry(PdfName.bBox);
+    if (bbox != null && bbox.size() == 4) {
+      final b = await bbox.toDoubleArray();
+      nested._rectangle(math.min(b[0], b[2]), math.min(b[1], b[3]),
+          (b[2] - b[0]).abs(), (b[3] - b[1]).abs());
+      maskContext.clipToPath(nested._path);
+      nested._path = BLPath();
+      nested._pathEmpty = true;
+    }
+    final groupResources =
+        await group.dictionaryEntry(PdfName.resources) ?? resources;
+    final content = await group.getBytes();
+    if (content != null) await nested.run(content, groupResources, depth + 1);
+    maskContext.flush();
+
+    final coverage = Uint8List(surface.pixels.length);
+    for (var i = 0; i < coverage.length; i++) {
+      final pixel = surface.pixels[i];
+      final alpha = (pixel >>> 24) & 0xff;
+      if (subtype == 'Alpha') {
+        coverage[i] = alpha;
+      } else {
+        final red = (pixel >>> 16) & 0xff;
+        final green = (pixel >>> 8) & 0xff;
+        final blue = pixel & 0xff;
+        final luminance = (red * 299 + green * 587 + blue * 114 + 500) ~/ 1000;
+        coverage[i] = (luminance * alpha + 127) ~/ 255;
+      }
+    }
+    context.intersectClipMask(coverage);
+    for (final entry in nested.unsupported.entries) {
+      unsupported[entry.key] = (unsupported[entry.key] ?? 0) + entry.value;
+    }
+    glyphsSkipped += nested.glyphsSkipped;
+    imagesSkipped += nested.imagesSkipped;
+    fontFailures.addAll(nested.fontFailures);
+    if (mask.containsKey(PdfName('TR'))) _note('gs:SMask-transfer');
   }
 
   void _setDash(PdfContentOperation op) {

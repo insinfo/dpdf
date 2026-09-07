@@ -182,6 +182,7 @@ export 'src/editing/pdf_form_merge.dart';
 
 // Structural inspection: does this file open, and what would break a reader.
 export 'src/validation/pdf_integrity.dart';
+export 'src/validation/pdf_image_inventory.dart';
 
 // Conformance: PDF/A archival and PDF/UA accessibility verification.
 export 'src/conformance/pdf_conformance.dart';

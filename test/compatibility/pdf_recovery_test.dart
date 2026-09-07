@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
-import 'package:dpdf/src/kernel/pdf/writer_properties.dart';
+import 'package:dpdf/src/platform/compression.dart';
 
 Uint8List bytes(String text) => Uint8List.fromList(latin1.encode(text));
 String source({String suffix = '', String extras = '', int generation = 0}) =>
@@ -12,7 +12,63 @@ String source({String suffix = '', String extras = '', int generation = 0}) =>
 PdfReader reader(String text, PdfRecoveryMode mode) =>
     PdfReader.fromBytes(bytes(text), ReaderProperties()..recoveryMode = mode);
 
+Uint8List indirectLengthPdf({bool damageXref = false}) {
+  final output = BytesBuilder();
+  final offsets = <int>[0];
+  void addText(String value) => output.add(latin1.encode(value));
+  void object(int number, void Function() body) {
+    offsets.add(output.length);
+    addText('$number 0 obj\n');
+    body();
+    addText('\nendobj\n');
+  }
+
+  addText('%PDF-1.7\n');
+  object(1, () => addText('<< /Type /Catalog /Pages 2 0 R >>'));
+  object(2, () => addText('<< /Type /Pages /Kids [3 0 R] /Count 1 >>'));
+  object(
+      3,
+      () => addText(
+          '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] /Contents 4 0 R >>'));
+  final plain = latin1
+      .encode('BT (antes endstream\nendobj\nbytes comprimidos depois) Tj ET');
+  final compressed = ZLibEncoder(level: 0).convert(plain);
+  object(4, () {
+    addText('<< /Length 5 0 R /Filter /FlateDecode >>\nstream\n');
+    output.add(compressed);
+    addText('\nendstream');
+  });
+  object(5, () => addText('${compressed.length}'));
+  final xref = output.length;
+  addText('xref\n0 6\n0000000000 65535 f \n');
+  for (final offset in offsets.skip(1)) {
+    addText('${offset.toString().padLeft(10, '0')} 00000 n \n');
+  }
+  addText('trailer\n<< /Root 1 0 R /Size 6 >>\nstartxref\n'
+      '${damageXref ? 1 : xref}\n%%EOF\n');
+  return output.takeBytes();
+}
+
 void main() {
+  test('strict resolves indirect Length without scanning compressed payload',
+      () async {
+    final input = PdfReader.fromBytes(indirectLengthPdf());
+    await input.read();
+    final stream = await input.readObject(4) as PdfStream;
+    expect(latin1.decode((await stream.getBytes())!), contains('depois'));
+    expect(input.rebuiltXref, isFalse);
+    input.close();
+  });
+  test('skipStreams repair rejects endstream bytes inside Flate payload',
+      () async {
+    final input = PdfReader.fromBytes(indirectLengthPdf(damageXref: true),
+        ReaderProperties()..recoveryMode = PdfRecoveryMode.skipStreams);
+    await input.read();
+    final stream = await input.readObject(4) as PdfStream;
+    expect(latin1.decode((await stream.getBytes())!), contains('depois'));
+    expect(input.rebuiltXref, isTrue);
+    input.close();
+  });
   for (final mode in [PdfRecoveryMode.scan, PdfRecoveryMode.skipStreams]) {
     for (final suffix in [
       '',

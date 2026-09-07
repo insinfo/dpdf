@@ -14,6 +14,11 @@ final options = ReaderProperties()
 final reader = await PdfReader.fromFile('entrada.pdf', options);
 final document = await PdfDocument.open(reader);
 print(document.wasRepaired);
+final images = await PdfImageInventory.inspect(document);
+for (final image in images.images) {
+  print('${image.objectNumber}: ${image.width}x${image.height} '
+      '${image.encodedLength} bytes');
+}
 await document.close();
 ```
 
@@ -32,7 +37,8 @@ gerações, catálogo, objetos comprimidos em ObjStm e comprimentos de streams.
 `recoveryScanLimit` limita o tamanho lógico aceito para recuperação (4 GiB por
 padrão); `recoveryObjectLimit` limita identificadores e quantidade de objetos.
 O modo `skipStreams` foi testado com uma fonte lógica corrompida acima de 3 GiB:
-o payload declarado foi saltado e menos de 2 MiB precisaram ser lidos.
+o payload declarado foi saltado, as imagens foram enumeradas pelo xref e menos
+de 2 MiB precisaram ser lidos. `PdfImageInventory` não decodifica os pixels.
 
 O cache limita entrada de arquivo, não a memória de todo o documento: objetos e
 streams efetivamente usados ainda precisam de memória. A gravação incremental

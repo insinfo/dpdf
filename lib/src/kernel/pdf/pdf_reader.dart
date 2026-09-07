@@ -344,7 +344,7 @@ class PdfReader {
       file.seek(position - 1);
       if (!whitespace(file.read())) return null;
     }
-    final boundary = file.getPosition();
+    final keyword = file.getPosition();
     for (final byte in 'endstream'.codeUnits) {
       if (file.read() != byte) return null;
     }
@@ -360,8 +360,36 @@ class PdfReader {
     final end = file.getPosition();
     next = file.read();
     if (next != -1 && !whitespace(next) && next != 37) return null;
-    _recoveryBoundaryStart = boundary;
+    if (!_looksLikeRecoveryBoundary(end)) return null;
+    if (!exact) {
+      // A trusted /Length points at the first delimiter after the payload.
+      _recoveryBoundaryStart = position;
+    } else {
+      // Without a usable length, preserve every byte before `endstream`.
+      // The preceding EOL can be intentional stream data.
+      _recoveryBoundaryStart = keyword;
+    }
     return end;
+  }
+
+  bool _looksLikeRecoveryBoundary(int position) {
+    final file = _tokens.getSafeFile();
+    file.seek(position);
+    final bytes = Uint8List(256);
+    final count = file.readBuffer(bytes);
+    if (count <= 0) return true;
+    var text = String.fromCharCodes(bytes, 0, count);
+    while (true) {
+      text = text.replaceFirst(RegExp(r'^[\x00\x09\x0A\x0C\x0D ]+'), '');
+      if (!text.startsWith('%') || text.startsWith('%%EOF')) break;
+      final newline = text.indexOf(RegExp(r'[\r\n]'));
+      if (newline < 0) return true;
+      text = text.substring(newline + 1);
+    }
+    if (text.isEmpty) return true;
+    return RegExp(
+            r'^(?:\d+\s+\d+\s+obj\b|xref\b|trailer\b|startxref\b|%%EOF(?:\s|$))')
+        .hasMatch(text);
   }
 
   void _readHeader() {
@@ -869,17 +897,30 @@ class PdfReader {
     if (repairedLength != null) {
       dict.put(PdfName.length, PdfNumber(length.toDouble()));
     }
-    tokens.seek(dataPosition);
-
-    final bytes = Uint8List(length);
-    tokens.readFully(bytes);
-
+    // Validate the declared boundary without touching the payload. This is
+    // what keeps image enumeration cheap for multi-gigabyte files.
+    tokens.seek(dataPosition + length);
     tokens.nextValidToken();
     if (!tokens.tokenValueEqualsTo(PdfTokenizer.endStream)) {
       throw PdfException("Stream did not end with 'endstream'");
     }
 
-    final stream = PdfStream.withBytes(bytes);
+    final stream = PdfStream.withLazyBytes(length, () async {
+      final memoryLimit = properties.memoryLimit;
+      if (memoryLimit != null && length > memoryLimit) {
+        throw StateError('Stream length $length exceeds the configured '
+            'memory limit of $memoryLimit bytes.');
+      }
+      final source = tokens.getSafeFile().createView();
+      try {
+        source.seek(dataPosition);
+        final bytes = Uint8List(length);
+        source.readFully(bytes);
+        return bytes;
+      } finally {
+        source.close();
+      }
+    });
     final entries = await dict.entrySet();
     for (final entry in entries) {
       stream.put(entry.key, entry.value);

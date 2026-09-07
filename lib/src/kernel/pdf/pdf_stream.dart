@@ -18,6 +18,9 @@ class PdfStream extends PdfDictionary {
   /// Output buffer for stream data.
   Uint8List? _outputBytes;
 
+  /// Deferred raw payload for streams read from a random-access source.
+  Future<Uint8List> Function()? _lazyBytes;
+
   /// Input stream (for efficient large data handling).
   Stream<List<int>>? _inputStream;
 
@@ -45,6 +48,13 @@ class PdfStream extends PdfDictionary {
 
   /// Creates an empty PdfStream.
   PdfStream() : this.withBytes(null);
+
+  /// Creates a stream whose payload is fetched only when bytes are requested.
+  PdfStream.withLazyBytes(int length, Future<Uint8List> Function() loader) {
+    setState(PdfObject.mustBeIndirect);
+    _length = length;
+    _lazyBytes = loader;
+  }
 
   /// Creates a PdfStream with specified compression level.
   PdfStream.withCompression(int compressionLevel)
@@ -79,6 +89,10 @@ class PdfStream extends PdfDictionary {
     }
 
     final cloned = PdfStream.withBytes(bytes, _compressionLevel);
+    if (bytes == null && _lazyBytes != null) {
+      cloned._lazyBytes = _lazyBytes;
+      cloned._length = _length;
+    }
     // Note: Clone here is sync
     final map = getMap();
     if (map != null) {
@@ -146,6 +160,12 @@ class PdfStream extends PdfDictionary {
       bytes = _outputBytes;
     }
 
+    if (bytes == null && _lazyBytes != null) {
+      bytes = await _lazyBytes!();
+      _outputBytes = bytes;
+      _lazyBytes = null;
+    }
+
     if (bytes != null && decoded && containsKey(PdfName.filter)) {
       bytes = await FilterHandlers.decodeBytes(bytes, this);
     }
@@ -174,6 +194,7 @@ class PdfStream extends PdfDictionary {
       }
     } else {
       // Replace content
+      _lazyBytes = null;
       _bytesBuilder = BytesBuilder();
       _outputStream = PdfOutputStream.fromBuilder(_bytesBuilder!);
       _outputBytes = null;

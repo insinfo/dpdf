@@ -176,8 +176,15 @@ void main() {
 
     expect(document.wasRepaired, isTrue);
     expect(document.pageTotal(), 1);
+    final inventory = await PdfImageInventory.inspect(document);
+    expect(inventory.images, hasLength(1));
+    expect(inventory.images.single.objectNumber, 4);
+    expect(inventory.images.single.encodedLength,
+        SparseDamagedPdfSource.streamLength);
+    expect(inventory.images.single.width, 1);
+    expect(inventory.images.single.height, 1);
     expect(source.bytesRead, lessThan(2 * 1024 * 1024),
-        reason: 'o payload de 3 GiB deve ser saltado por /Length');
+        reason: 'abrir e listar não deve ler o payload de 3 GiB');
     expect(watch.elapsed, lessThan(const Duration(seconds: 5)));
     await document.close();
   });

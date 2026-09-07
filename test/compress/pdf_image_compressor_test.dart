@@ -72,6 +72,33 @@ Future<Uint8List> _scan({
   return output.takeBytes();
 }
 
+Future<Uint8List> _twoRepeatedScans() async {
+  const width = 800, height = 1000;
+  final samples = _scannedPage(width: width, height: height, noisy: false);
+  final output = BytesBuilder(copy: false);
+  final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
+  for (var index = 0; index < 2; index++) {
+    final page = await document.appendBlankPage();
+    final image = buildBilevelImage(
+        width: width, height: height, packedRows: Uint8List.fromList(samples))
+      ..attachToDocument(document);
+    page.pdfRepresentation()
+      ..put(
+          PdfName.resources,
+          PdfDictionary()
+            ..put(PdfName.xObject,
+                PdfDictionary()..put(PdfName('Im0'), image.indirectHandle()!)))
+      ..put(
+          PdfName.contents,
+          PdfStream.withBytes(
+              Uint8List.fromList(
+                  ascii.encode('q 595 0 0 842 0 0 cm /Im0 Do Q')),
+              0));
+  }
+  await document.close();
+  return output.takeBytes();
+}
+
 /// Reads the image back and returns its decoded samples in PDF polarity.
 Future<Uint8List> _samplesOf(Uint8List pdf) async {
   final document = await PdfDocument.open(PdfReader.fromBytes(pdf));
@@ -113,6 +140,40 @@ void main() {
       expect(result.report.images.imagesRecompressed, equals(1));
       expect(latin1.decode(result.bytes, allowInvalid: true),
           contains('/JBIG2Decode'));
+    });
+
+    test('shares one JBIG2Globals dictionary between repeated PDF images',
+        () async {
+      final source = await _twoRepeatedScans();
+      final expected = _scannedPage(width: 800, height: 1000, noisy: false);
+      final result = await PdfCompressor.compress(source,
+          options: const PdfCompressionOptions(
+              images:
+                  PdfImageCompressionOptions(bilevel: PdfBilevelCodec.jbig2)));
+
+      expect(result.report.images.imagesRecompressed, equals(2));
+      final document =
+          await PdfDocument.open(PdfReader.fromBytes(result.bytes));
+      try {
+        PdfObject? globals;
+        for (var pageNumber = 1; pageNumber <= 2; pageNumber++) {
+          final page = (await document.pageAt(pageNumber))!;
+          final resources =
+              await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+          final objects = await resources!.dictionaryEntry(PdfName.xObject);
+          final image = await objects!.streamEntry(PdfName('Im0'));
+          expect(
+              await image!.nameEntry(PdfName.filter), PdfName('JBIG2Decode'));
+          final parms = await image.dictionaryEntry(PdfName('DecodeParms'));
+          final current = await parms!.get(PdfName('JBIG2Globals'), false);
+          expect(current, isNotNull);
+          globals ??= current;
+          expect(current, same(globals));
+          expect(await image.getBytes(), expected);
+        }
+      } finally {
+        await document.close();
+      }
     });
 
     test('the re-encoded image decodes back to the same pixels', () async {

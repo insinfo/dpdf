@@ -6,6 +6,7 @@ import 'package:jbig2/jbig2.dart';
 
 import '../kernel/pdf/pdf_array.dart';
 import '../kernel/pdf/pdf_boolean.dart';
+import '../kernel/pdf/pdf_dictionary.dart';
 import '../kernel/pdf/pdf_name.dart';
 import '../kernel/pdf/pdf_number.dart';
 import '../kernel/pdf/pdf_object.dart';
@@ -178,11 +179,19 @@ abstract final class PdfImageCompressor {
     var skipped = 0;
     var saved = 0;
 
+    final shared = await _trySharedJbig2(objects, options);
+    final sharedImages = shared?.images ?? const <PdfStream>{};
+    if (shared != null) {
+      recompressed += shared.images.length;
+      saved += shared.bytesSaved;
+    }
+
     for (final object in objects) {
       if (object is! PdfStream) continue;
       if ((await object.nameEntry(PdfName.subtype))?.getValue() != 'Image') {
         continue;
       }
+      if (sharedImages.contains(object)) continue;
 
       final outcome = await _recompress(object, options, usages[object]);
       switch (outcome) {
@@ -201,6 +210,104 @@ abstract final class PdfImageCompressor {
       imagesSkipped: skipped,
       bytesSaved: saved,
     );
+  }
+
+  static Future<_SharedJbig2Result?> _trySharedJbig2(
+      List<PdfObject> objects, PdfImageCompressionOptions options) async {
+    if (options.bilevel != PdfBilevelCodec.auto &&
+        options.bilevel != PdfBilevelCodec.jbig2) {
+      return null;
+    }
+    final candidates = <_BilevelImage>[];
+    for (final object in objects) {
+      if (object is! PdfStream ||
+          (await object.nameEntry(PdfName.subtype))?.getValue() != 'Image') {
+        continue;
+      }
+      final width = await object.integerEntry(PdfName.width);
+      final height = await object.integerEntry(PdfName.height);
+      final mask = await object.flagEntry(PdfName('ImageMask')) ?? false;
+      final bits = await object.integerEntry(PdfName('BitsPerComponent'));
+      if (width == null ||
+          height == null ||
+          width <= 0 ||
+          height <= 0 ||
+          (!mask && bits != 1) ||
+          width * height < options.minimumPixels ||
+          object.containsKey(PdfName('SMask')) ||
+          object.containsKey(PdfName('Decode'))) {
+        continue;
+      }
+      try {
+        final raw = await object.getRawBytes();
+        final samples = await object.getBytes();
+        final stride = (width + 7) >> 3;
+        if (raw == null ||
+            samples == null ||
+            samples.length < stride * height) {
+          continue;
+        }
+        final black = Uint8List(stride * height);
+        for (var i = 0; i < black.length; i++) {
+          black[i] = ~samples[i] & 0xff;
+        }
+        candidates.add(_BilevelImage(
+            object,
+            raw,
+            samples,
+            Jbig2Image.fromPacked(
+                width: width, height: height, rowStride: stride, data: black)));
+      } on Object {
+        continue;
+      }
+    }
+    if (candidates.length < 2) return null;
+
+    final encoded = encodeJbig2EmbeddedPages(
+        [for (final candidate in candidates) candidate.image],
+        options:
+            const Jbig2EncodeOptions(mode: Jbig2EncodeMode.symbolDictionary));
+    if (!encoded.usesGlobalDictionary) return null;
+
+    var alternative = 0;
+    for (final candidate in candidates) {
+      var best = candidate.raw.length;
+      try {
+        final individual = encodeJbig2Embedded(candidate.image,
+            options: const Jbig2EncodeOptions());
+        if (individual.length < best) best = individual.length;
+      } on Object {
+        // Keep the original size as the comparison baseline.
+      }
+      if (options.bilevel == PdfBilevelCodec.auto) {
+        final deflated = Uint8List.fromList(
+            ZLibEncoder(level: 9).convert(candidate.samples));
+        if (deflated.length < best) best = deflated.length;
+      }
+      alternative += best;
+    }
+    if (encoded.totalLength >= alternative) return null;
+
+    final document = candidates.first.stream.indirectHandle()?.getDocument();
+    if (document == null) return null;
+    final globals = PdfStream.withBytes(encoded.globals, 0);
+    globals.attachToDocument(document);
+    for (var i = 0; i < candidates.length; i++) {
+      final stream = candidates[i].stream;
+      stream
+        ..setData(encoded.pages[i])
+        ..put(PdfName.filter, PdfName('JBIG2Decode'))
+        ..put(
+            PdfName('DecodeParms'),
+            PdfDictionary()
+              ..put(PdfName('JBIG2Globals'), globals.indirectHandle()!))
+        ..markChanged();
+    }
+    final original =
+        candidates.fold<int>(0, (total, item) => total + item.raw.length);
+    return _SharedJbig2Result(
+        {for (final candidate in candidates) candidate.stream},
+        original - encoded.totalLength);
   }
 
   /// Returns the bytes saved, 0 when the image was examined and left alone,
@@ -483,6 +590,22 @@ abstract final class PdfImageCompressor {
     }
     return false;
   }
+}
+
+class _BilevelImage {
+  final PdfStream stream;
+  final Uint8List raw;
+  final Uint8List samples;
+  final Jbig2Image image;
+
+  const _BilevelImage(this.stream, this.raw, this.samples, this.image);
+}
+
+class _SharedJbig2Result {
+  final Set<PdfStream> images;
+  final int bytesSaved;
+
+  const _SharedJbig2Result(this.images, this.bytesSaved);
 }
 
 /// Interleaved 8-bit samples with the geometry they were decoded at.

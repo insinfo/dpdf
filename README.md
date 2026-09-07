@@ -84,7 +84,10 @@ final result = await PdfCompressor.compress(
 XObject transformations; a reused image keeps the resolution needed by its
 largest occurrence. `maxDimension` can additionally impose an absolute pixel
 cap. Bi-level images are re-encoded losslessly and the smaller JBIG2 or Flate
-representation is kept.
+representation is kept. When several eligible images repeat the same symbols,
+the compressor can store one shared `/JBIG2Globals` dictionary and reference it
+from each image's `/DecodeParms`; its aggregate size is included in `auto`
+selection.
 
 ## Inspect and validate
 

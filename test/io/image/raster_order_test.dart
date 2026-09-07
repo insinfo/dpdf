@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/image/image_data_factory.dart';
+import 'package:dpdf/src/io/image/image_data_factory.dart';
 
 Uint8List bitmap(int bits, bool topDown, int width) {
   const height = 3;

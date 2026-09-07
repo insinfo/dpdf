@@ -1,15 +1,15 @@
-import 'package:pdfcraft/src/kernel/geom/affine_transform.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas_constants.dart';
-import 'package:pdfcraft/src/kernel/colors/color.dart';
-import 'package:pdfcraft/src/kernel/colors/device_gray.dart';
-import 'package:pdfcraft/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/font/pdf_font.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/geom/affine_transform.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas_constants.dart';
+import 'package:dpdf/src/kernel/colors/color.dart';
+import 'package:dpdf/src/kernel/colors/device_gray.dart';
+import 'package:dpdf/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/font/pdf_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
 
 /// Represents the graphics state for the canvas.
 class CraftCanvasGraphicsState {

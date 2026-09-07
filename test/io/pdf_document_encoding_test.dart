@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/font/pdf_encodings.dart';
+import 'package:dpdf/src/io/font/pdf_encodings.dart';
 import 'package:test/test.dart';
 
 void main() {

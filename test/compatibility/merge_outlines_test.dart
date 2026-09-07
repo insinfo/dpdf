@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
 
 typedef MutateOutline = void Function(List<CraftPdfDictionary> nodes);

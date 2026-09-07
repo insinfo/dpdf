@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:pdfcraft/src/io/font/cid_font_properties.dart';
-import 'package:pdfcraft/src/io/font/cjk_resource_loader.dart';
-import 'package:pdfcraft/src/io/font/cjk_resource_provider.dart';
+import 'package:dpdf/src/io/font/cid_font_properties.dart';
+import 'package:dpdf/src/io/font/cjk_resource_loader.dart';
+import 'package:dpdf/src/io/font/cjk_resource_provider.dart';
 import 'package:test/test.dart';
 
 List<int> _bytes(String value) => utf8.encode(value);
@@ -27,12 +27,17 @@ void main() {
   });
 
   test('memory provider is browser-safe and does not expose mutable bytes', () {
-    final provider = CraftCjkMemoryResourceProvider({'program': [1, 2]});
+    final provider = CraftCjkMemoryResourceProvider({
+      'program': [1, 2]
+    });
     final first = provider.readSync('program')!;
     first[0] = 99;
     expect(provider.readSync('program'), [1, 2]);
     expect(() => provider.readSync('../program'), throwsArgumentError);
-    expect(() => CraftCjkMemoryResourceProvider({'a/b': [1]}),
+    expect(
+        () => CraftCjkMemoryResourceProvider({
+              'a/b': [1]
+            }),
         throwsArgumentError);
   });
 }

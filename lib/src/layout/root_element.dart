@@ -1,16 +1,16 @@
-import 'package:pdfcraft/src/layout/element_property_container.dart';
-import 'package:pdfcraft/src/layout/properties/leading.dart';
-import 'package:pdfcraft/src/layout/element/block_content.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/layout/renderer/root_renderer.dart';
-import 'package:pdfcraft/src/layout/property_container.dart';
-import 'package:pdfcraft/src/layout/element/paragraph.dart';
-import 'package:pdfcraft/src/layout/element/text.dart';
-import 'package:pdfcraft/src/layout/element/div.dart';
-import 'package:pdfcraft/src/layout/properties/text_alignment.dart';
-import 'package:pdfcraft/src/layout/properties/vertical_alignment.dart';
-import 'package:pdfcraft/src/layout/properties/horizontal_alignment.dart';
-import 'package:pdfcraft/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/element_property_container.dart';
+import 'package:dpdf/src/layout/properties/leading.dart';
+import 'package:dpdf/src/layout/element/block_content.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/layout/renderer/root_renderer.dart';
+import 'package:dpdf/src/layout/property_container.dart';
+import 'package:dpdf/src/layout/element/paragraph.dart';
+import 'package:dpdf/src/layout/element/text.dart';
+import 'package:dpdf/src/layout/element/div.dart';
+import 'package:dpdf/src/layout/properties/text_alignment.dart';
+import 'package:dpdf/src/layout/properties/vertical_alignment.dart';
+import 'package:dpdf/src/layout/properties/horizontal_alignment.dart';
+import 'package:dpdf/src/layout/properties/property.dart';
 
 abstract class CraftRootElement<T extends CraftPropertyContainer>
     extends CraftElementPropertyContainer<T> {

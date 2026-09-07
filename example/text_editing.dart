@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 
 /// Demonstrates the restricted Courier editing API on a document created here.
 /// Run with an optional output path to save the resulting PDF.

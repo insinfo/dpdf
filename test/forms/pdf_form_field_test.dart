@@ -1,8 +1,8 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/forms/fields/pdf_form_field.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/forms/fields/pdf_form_field.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 
 void main() {
   group('PdfFormField Tests', () {

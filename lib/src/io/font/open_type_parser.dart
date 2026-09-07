@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 import '../../platform/io.dart';
-import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
-import 'package:pdfcraft/src/io/font/font_names.dart';
-import 'package:pdfcraft/src/commons/utils/tuple2.dart';
-import 'package:pdfcraft/src/io/font/true_type_font_subsetter.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/io/font/font_names.dart';
+import 'package:dpdf/src/commons/utils/tuple2.dart';
+import 'package:dpdf/src/io/font/true_type_font_subsetter.dart';
 
 class HeaderTable {
   int flags = 0;

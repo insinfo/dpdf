@@ -1,16 +1,16 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/io/font/font_program.dart';
-import 'package:pdfcraft/src/io/font/otf/glyph.dart';
-import 'package:pdfcraft/src/io/font/otf/glyph_line.dart';
-import 'package:pdfcraft/src/io/util/text_util.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object_wrapper.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/io/font/font_program.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/io/font/otf/glyph_line.dart';
+import 'package:dpdf/src/io/util/text_util.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object_wrapper.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 
 abstract class CraftPdfFont extends CraftPdfObjectWrapper<CraftPdfDictionary> {
   static const int SIMPLE_FONT_MAX_CHAR_CODE_VALUE = 255;

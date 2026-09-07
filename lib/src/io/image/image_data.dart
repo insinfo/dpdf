@@ -1,7 +1,7 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/layout/properties/image_type.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:dpdf/src/layout/properties/image_type.dart';
+import 'package:dpdf/src/io/exceptions/io_exception.dart';
+import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
 import '../colors/icc_profile.dart';
 
 abstract class CraftImageData {

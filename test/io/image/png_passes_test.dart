@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/platform/compression.dart';
-import 'package:pdfcraft/src/io/image/image_data_factory.dart';
+import 'package:dpdf/src/platform/compression.dart';
+import 'package:dpdf/src/io/image/image_data_factory.dart';
 
 Uint8List pngFixture(int model, int depth, int width, int height,
     {bool interlace = true, bool truncate = false}) {

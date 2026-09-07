@@ -1,6 +1,6 @@
-import 'package:pdfcraft/src/kernel/colors/color.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:pdfcraft/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
+import 'package:dpdf/src/kernel/colors/color.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
 
 /// Represents a color with the specified opacity.
 class CraftTransparentColor {

@@ -1,9 +1,9 @@
 import 'package:test/test.dart';
 
-import 'package:pdfcraft/src/layout/style.dart';
-import 'package:pdfcraft/src/layout/properties/property.dart';
-import 'package:pdfcraft/src/layout/properties/unit_value.dart';
-import 'package:pdfcraft/src/layout/properties/vertical_alignment.dart';
+import 'package:dpdf/src/layout/style.dart';
+import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:dpdf/src/layout/properties/vertical_alignment.dart';
 
 void main() {
   group('Style Tests', () {

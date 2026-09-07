@@ -1,7 +1,7 @@
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/layout/minmaxwidth/min_max_width.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
 class CraftMinMaxWidthLayoutResult extends CraftLayoutResult {
   CraftMinMaxWidth? minMaxWidth;

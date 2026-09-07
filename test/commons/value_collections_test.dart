@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/commons/utils/value_collections.dart';
-import 'package:pdfcraft/src/kernel/numbering/alphabet_numbering.dart';
+import 'package:dpdf/src/commons/utils/value_collections.dart';
+import 'package:dpdf/src/kernel/numbering/alphabet_numbering.dart';
 import 'package:test/test.dart';
 
 void main() {

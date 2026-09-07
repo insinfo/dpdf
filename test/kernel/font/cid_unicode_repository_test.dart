@@ -2,21 +2,21 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/io/font/cmap/cmap_location.dart';
-import 'package:pdfcraft/src/io/font/cmap_encoding.dart';
-import 'package:pdfcraft/src/io/source/pdf_tokenizer.dart';
-import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
-import 'package:pdfcraft/src/kernel/font/cid_unicode_repository.dart';
-import 'package:pdfcraft/src/kernel/font/cid_unicode_table.dart';
-import 'package:pdfcraft/src/kernel/font/unicode_code_map.dart';
-import 'package:pdfcraft/src/kernel/font/pdf_type0_font.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_location.dart';
+import 'package:dpdf/src/io/font/cmap_encoding.dart';
+import 'package:dpdf/src/io/source/pdf_tokenizer.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/kernel/font/cid_unicode_repository.dart';
+import 'package:dpdf/src/kernel/font/cid_unicode_table.dart';
+import 'package:dpdf/src/kernel/font/unicode_code_map.dart';
+import 'package:dpdf/src/kernel/font/pdf_type0_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 
 Uint8List bytes(String value) => Uint8List.fromList(ascii.encode(value));
 const program = '''begincmap

@@ -1,9 +1,9 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/font/font_program.dart';
-import 'package:pdfcraft/src/io/font/true_type_font.dart';
-import 'package:pdfcraft/src/io/font/type1_font.dart';
-import 'package:pdfcraft/src/io/font/constants/standard_fonts.dart';
-import 'package:pdfcraft/src/io/font/font_cache.dart';
+import 'package:dpdf/src/io/font/font_program.dart';
+import 'package:dpdf/src/io/font/true_type_font.dart';
+import 'package:dpdf/src/io/font/type1_font.dart';
+import 'package:dpdf/src/io/font/constants/standard_fonts.dart';
+import 'package:dpdf/src/io/font/font_cache.dart';
 
 class CraftFontProgramFactory {
   static const bool DEFAULT_CACHED = true;

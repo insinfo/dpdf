@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/io/util/text_util.dart';
+import 'package:dpdf/src/io/util/text_util.dart';
 
 class CraftSvgTextUtil {
   CraftSvgTextUtil._();

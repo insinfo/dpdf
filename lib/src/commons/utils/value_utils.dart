@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'dart:math' as math;
-import 'package:pdfcraft/src/commons/utils/value_collections.dart';
+import 'package:dpdf/src/commons/utils/value_collections.dart';
 
 /// Value conversions, collection comparisons and numeric bit representations.
 class ValueUtils {

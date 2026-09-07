@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
 
-import 'package:pdfcraft/src/kernel/pdf/navigation/pdf_destination.dart';
+import 'package:dpdf/src/kernel/pdf/navigation/pdf_destination.dart';
 
 void main() {
   group('PdfPages Tests', () {

@@ -188,6 +188,7 @@ Uint8List _sha1(Iterable<List<int>> pieces) {
   }
   return DigestBytes.compute('SHA-1', buffer.takeBytes());
 }
+
 bool _equal(List<int> first, List<int> second) {
   if (first.length != second.length) return false;
   var difference = 0;

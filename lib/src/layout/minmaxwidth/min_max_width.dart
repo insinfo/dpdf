@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:pdfcraft/src/layout/minmaxwidth/min_max_width_utils.dart';
+import 'package:dpdf/src/layout/minmaxwidth/min_max_width_utils.dart';
 
 class CraftMinMaxWidth {
   double childrenMinWidth;

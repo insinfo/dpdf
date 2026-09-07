@@ -1,15 +1,15 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/font/true_type_font.dart';
-import 'package:pdfcraft/src/kernel/font/pdf_true_type_font.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/layout/element/text.dart';
-import 'package:pdfcraft/src/layout/renderer/text_renderer.dart';
-import 'package:pdfcraft/src/layout/layout/layout_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
-import 'package:pdfcraft/src/layout/properties/property.dart';
-import 'package:pdfcraft/src/layout/properties/unit_value.dart';
-import 'package:pdfcraft/src/layout/minmaxwidth/min_max_width.dart';
+import 'package:dpdf/src/io/font/true_type_font.dart';
+import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/layout/element/text.dart';
+import 'package:dpdf/src/layout/renderer/text_renderer.dart';
+import 'package:dpdf/src/layout/layout/layout_context.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
 void main() {
   group('TextLayout Test', () {

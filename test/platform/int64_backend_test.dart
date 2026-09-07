@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'dart:typed_data';
-import 'package:pdfcraft/src/platform/int64.dart' as selected;
-import 'package:pdfcraft/src/platform/int64_js.dart' as js;
-import 'package:pdfcraft/src/platform/int64_portable.dart' as portable;
+import 'package:dpdf/src/platform/int64.dart' as selected;
+import 'package:dpdf/src/platform/int64_js.dart' as js;
+import 'package:dpdf/src/platform/int64_portable.dart' as portable;
 import 'package:test/test.dart';
 
 void main() {

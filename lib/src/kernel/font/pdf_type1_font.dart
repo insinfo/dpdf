@@ -1,14 +1,14 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/io/font/font_encoding.dart';
-import 'package:pdfcraft/src/io/font/otf/glyph.dart';
-import 'package:pdfcraft/src/io/font/type1_font.dart';
-import 'package:pdfcraft/src/kernel/font/pdf_simple_font.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/io/font/font_encoding.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/io/font/type1_font.dart';
+import 'package:dpdf/src/kernel/font/pdf_simple_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 
 class CraftPdfType1Font extends CraftPdfSimpleFont<CraftType1Font> {
   CraftPdfType1Font(CraftType1Font type1Font,

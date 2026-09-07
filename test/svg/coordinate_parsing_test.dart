@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/svg/utils/svg_coordinate_utils.dart';
-import 'package:pdfcraft/src/svg/utils/svg_text_util.dart';
+import 'package:dpdf/src/svg/utils/svg_coordinate_utils.dart';
+import 'package:dpdf/src/svg/utils/svg_text_util.dart';
 import 'package:test/test.dart';
 
 void main() {

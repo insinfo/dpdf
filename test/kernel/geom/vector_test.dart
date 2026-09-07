@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/geom/vector.dart';
+import 'package:dpdf/src/kernel/geom/vector.dart';
 
 void main() {
   group('Vector', () {

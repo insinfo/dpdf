@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 
 import 'changelog_merge_regression_test.dart' show source;
 import 'form_merge_policy_test.dart' as forms;

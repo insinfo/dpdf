@@ -1,6 +1,6 @@
-import 'package:pdfcraft/src/kernel/geom/matrix.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/canvas_graphics_state.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/kernel/geom/matrix.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/canvas_graphics_state.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 
 import 'event_data.dart';
 

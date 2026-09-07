@@ -1,12 +1,12 @@
 import 'dart:math' as math;
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/kernel/geom/vector.dart';
-import 'package:pdfcraft/src/layout/properties/unit_value.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_types_validation_utils.dart';
-import 'package:pdfcraft/src/svg/exceptions/svg_exception_message_constant.dart';
-import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
-import 'package:pdfcraft/src/svg/svg_constants.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/kernel/geom/vector.dart';
+import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_types_validation_utils.dart';
+import 'package:dpdf/src/svg/exceptions/svg_exception_message_constant.dart';
+import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
+import 'package:dpdf/src/svg/svg_constants.dart';
 
 class CraftSvgCoordinateUtils {
   CraftSvgCoordinateUtils._();

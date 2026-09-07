@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/xmp/xmp_meta.dart';
-import 'package:pdfcraft/src/kernel/xmp/xmp_const.dart';
+import 'package:dpdf/src/kernel/xmp/xmp_meta.dart';
+import 'package:dpdf/src/kernel/xmp/xmp_const.dart';
 
 void main() {
   test('Unicode element and attribute names preserve spelling and namespaces',

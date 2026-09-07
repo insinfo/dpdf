@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/kernel/colors/color.dart';
-import 'package:pdfcraft/src/kernel/colors/device_rgb.dart';
+import 'package:dpdf/src/kernel/colors/color.dart';
+import 'package:dpdf/src/kernel/colors/device_rgb.dart';
 
 class CraftColorConstants {
   static final CraftColor BLACK = CraftDeviceRgb.BLACK;

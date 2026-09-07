@@ -1,11 +1,11 @@
-import 'package:pdfcraft/src/layout/property_container.dart';
-import 'package:pdfcraft/src/layout/properties/property.dart';
-import 'package:pdfcraft/src/layout/properties/unit_value.dart';
-import 'package:pdfcraft/src/layout/properties/vertical_alignment.dart';
-import 'package:pdfcraft/src/layout/properties/text_alignment.dart';
-import 'package:pdfcraft/src/layout/properties/horizontal_alignment.dart';
-import 'package:pdfcraft/src/layout/properties/layout_position.dart';
-import 'package:pdfcraft/src/kernel/colors/device_gray.dart';
+import 'package:dpdf/src/layout/property_container.dart';
+import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:dpdf/src/layout/properties/vertical_alignment.dart';
+import 'package:dpdf/src/layout/properties/text_alignment.dart';
+import 'package:dpdf/src/layout/properties/horizontal_alignment.dart';
+import 'package:dpdf/src/layout/properties/layout_position.dart';
+import 'package:dpdf/src/kernel/colors/device_gray.dart';
 
 abstract class CraftElementPropertyContainer<T extends CraftPropertyContainer>
     implements CraftPropertyContainer {

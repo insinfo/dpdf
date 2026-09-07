@@ -2,19 +2,19 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/font/adobe_glyph_list.dart';
-import 'package:pdfcraft/src/io/resources/embedded_font_resources.dart';
+import 'package:dpdf/src/io/font/adobe_glyph_list.dart';
+import 'package:dpdf/src/io/resources/embedded_font_resources.dart';
 
 void main() {
   test(
       'Embedded glyph and metric resources preserve exact source bytes and aliases',
       () async {
     final glyphUri = await Isolate.resolvePackageUri(
-        Uri.parse('package:pdfcraft/src/io/resources/AdobeGlyphList.txt'));
+        Uri.parse('package:dpdf/src/io/resources/AdobeGlyphList.txt'));
     final source = File.fromUri(glyphUri!).readAsStringSync();
     expect(EmbeddedFontResources.glyphList, source);
     final afmUri = await Isolate.resolvePackageUri(
-        Uri.parse('package:pdfcraft/src/io/resources/afm/Helvetica.afm'));
+        Uri.parse('package:dpdf/src/io/resources/afm/Helvetica.afm'));
     expect(EmbeddedFontResources.metrics('Helvetica'),
         File.fromUri(afmUri!).readAsBytesSync());
     final forward = <String, int>{}, reverse = <int, String>{};
@@ -43,12 +43,12 @@ void main() {
     final script = File('${temporary.path}/consumer.dart');
     script.writeAsStringSync(r'''
 import 'dart:io';
-import 'package:pdfcraft/src/io/font/adobe_glyph_list.dart';
-import 'package:pdfcraft/src/io/font/type1_font.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/layout/document.dart';
-import 'package:pdfcraft/src/layout/element/paragraph.dart';
+import 'package:dpdf/src/io/font/adobe_glyph_list.dart';
+import 'package:dpdf/src/io/font/type1_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/layout/document.dart';
+import 'package:dpdf/src/layout/element/paragraph.dart';
 Future<void> main() async {
   if (CraftAdobeGlyphList.nameToUnicode('A') != 65 ||
       CraftAdobeGlyphList.nameToUnicode('Delta') != 0x394 ||

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/codec/ccitt_g4_encoder.dart';
-import 'package:pdfcraft/src/io/codec/tiff_fax_decoder.dart';
+import 'package:dpdf/src/io/codec/ccitt_g4_encoder.dart';
+import 'package:dpdf/src/io/codec/tiff_fax_decoder.dart';
 
 void main() {
   test('Group4 uncompressed words reset white run between samples', () {

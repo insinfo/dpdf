@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/barcodes/barcode_ean.dart';
+import 'package:dpdf/src/barcodes/barcode_ean.dart';
 import 'package:test/test.dart';
 
 void main() {

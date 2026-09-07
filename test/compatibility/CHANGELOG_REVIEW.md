@@ -13,7 +13,7 @@ Nenhum engine da referência foi transplantado nesta revisão.
 
 ## Resultado por grupo do changelog
 
-| Cenário | Situação no pdfcraft e evidência |
+| Cenário | Situação no dpdf e evidência |
 | --- | --- |
 | Desenhar em página importada substitui recursos e corrompe fontes | Não reproduzido na API `PdfPageOverlay`; novo teste de merge seguido de overlay preserva texto original e recursos herdados. |
 | Carimbo desaparece ao salvar destino carregado | Não reproduzido; novo teste reabre o destino, aplica overlay, salva e reabre novamente. |

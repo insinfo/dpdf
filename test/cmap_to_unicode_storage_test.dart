@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_to_unicode.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_object.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_to_unicode.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_object.dart';
 
 void main() {
   test('all code widths and sliced defaults use unsigned codes', () {

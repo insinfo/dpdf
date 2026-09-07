@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/kernel/crypto/arcfour_encryption.dart';
-import 'package:pdfcraft/src/kernel/crypto/decryptor.dart';
+import 'package:dpdf/src/kernel/crypto/arcfour_encryption.dart';
+import 'package:dpdf/src/kernel/crypto/decryptor.dart';
 
 /// Standard decryptor implementation (RC4).
 class CraftStandardDecryptor implements CraftDecryptor {

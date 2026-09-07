@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_page.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/geom/page_size.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_page.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/geom/page_size.dart';
 
 void main() {
   group('PdfDocument Tests', () {

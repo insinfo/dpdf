@@ -1,8 +1,8 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
-import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/io/exceptions/io_exception.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 
 /// Reads JBIG2 segment headers and organization,
 /// associating segments with their pages and determining

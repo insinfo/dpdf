@@ -1,9 +1,9 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/commons/utils/message_format_util.dart';
-import 'package:pdfcraft/src/commons/utils/date_time_util.dart';
-import 'package:pdfcraft/src/commons/utils/mathematic_util.dart';
-import 'package:pdfcraft/src/commons/utils/string_util.dart';
-import 'package:pdfcraft/src/commons/utils/collection_utils.dart';
+import 'package:dpdf/src/commons/utils/message_format_util.dart';
+import 'package:dpdf/src/commons/utils/date_time_util.dart';
+import 'package:dpdf/src/commons/utils/mathematic_util.dart';
+import 'package:dpdf/src/commons/utils/string_util.dart';
+import 'package:dpdf/src/commons/utils/collection_utils.dart';
 
 void main() {
   group('MessageFormatUtil', () {

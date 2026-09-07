@@ -1,6 +1,6 @@
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 import 'pdf_action.dart';
 
 class PdfActionURI extends CraftPdfAction {

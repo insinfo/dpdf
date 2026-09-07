@@ -1,15 +1,15 @@
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/layout/layout/layout_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
-import 'package:pdfcraft/src/layout/renderer/draw_context.dart';
-import 'package:pdfcraft/src/layout/element/element.dart';
-import 'package:pdfcraft/src/layout/element/area_break.dart';
-import 'package:pdfcraft/src/commons/pdfcraft_log_manager.dart';
-import 'package:pdfcraft/src/layout/logs/layout_log_message_constant.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/layout/layout_context.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/layout/renderer/draw_context.dart';
+import 'package:dpdf/src/layout/element/element.dart';
+import 'package:dpdf/src/layout/element/area_break.dart';
+import 'package:dpdf/src/commons/dpdf_log_manager.dart';
+import 'package:dpdf/src/layout/logs/layout_log_message_constant.dart';
 
-import 'package:pdfcraft/src/layout/minmaxwidth/min_max_width.dart';
+import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
-import 'package:pdfcraft/src/layout/renderer/abstract_renderer.dart';
+import 'package:dpdf/src/layout/renderer/abstract_renderer.dart';
 
 class CraftAreaBreakRenderer extends CraftAbstractRenderer {
   static final _logger = LogManager.getLoggerByName('AreaBreakRenderer');

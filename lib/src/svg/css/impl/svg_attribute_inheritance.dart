@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/styledxmlparser/css/resolve/style_inheritance.dart';
-import 'package:pdfcraft/src/svg/svg_constants.dart';
+import 'package:dpdf/src/styledxmlparser/css/resolve/style_inheritance.dart';
+import 'package:dpdf/src/svg/svg_constants.dart';
 
 /// Determines whether an SVG attribute can be inherited.
 class CraftSvgAttributeInheritance implements CraftStyleInheritance {

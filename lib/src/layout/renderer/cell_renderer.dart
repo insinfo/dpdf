@@ -1,7 +1,7 @@
-import 'package:pdfcraft/src/layout/renderer/block_renderer.dart';
-import 'package:pdfcraft/src/layout/element/cell.dart';
-import 'package:pdfcraft/src/layout/layout/layout_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/layout/renderer/block_renderer.dart';
+import 'package:dpdf/src/layout/element/cell.dart';
+import 'package:dpdf/src/layout/layout/layout_context.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
 
 class CraftCellRenderer extends CraftBlockRenderer {
   CraftCellRenderer(CraftCell modelElement) : super(modelElement);

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 
 /// Creates a minimal valid PDF for testing
 Uint8List createMinimalPdf() {
@@ -79,7 +79,7 @@ Uint8List createPdfWithInfo() {
   // Object 4: Info
   final obj4Start = buffer.length;
   buffer.write('4 0 obj\n');
-  buffer.write('<< /Title (Test Document) /Author (pdfcraft Dart) >>\n');
+  buffer.write('<< /Title (Test Document) /Author (dpdf Dart) >>\n');
   buffer.write('endobj\n');
 
   // xref table
@@ -192,7 +192,7 @@ void main() {
         expect(title?.getValue(), equals('Test Document'));
 
         final author = await info.stringEntry(CraftPdfName('Author'));
-        expect(author?.getValue(), equals('pdfcraft Dart'));
+        expect(author?.getValue(), equals('dpdf Dart'));
 
         reader.close();
       });

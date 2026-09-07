@@ -2,7 +2,7 @@
 
 `form_field_roundtrip_test.dart` adapta cenários de
 `C:/MyDartProjects/insinfo_dart_pdf/test/forms/form_field_types_test.dart`
-aos construtores e métodos assíncronos de pdfcraft. Os casos são reexpressos
+aos construtores e métodos assíncronos de dpdf. Os casos são reexpressos
 com APIs Craft e dicionários PDF públicos; não usam aliases que simulem a API
 original. Nenhum engine ou asset da biblioteca de origem foi copiado.
 

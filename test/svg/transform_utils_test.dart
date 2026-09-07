@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/svg/exceptions/svg_processing_exception.dart';
-import 'package:pdfcraft/src/svg/utils/transform_utils.dart';
+import 'package:dpdf/src/svg/exceptions/svg_processing_exception.dart';
+import 'package:dpdf/src/svg/utils/transform_utils.dart';
 import 'package:test/test.dart';
 
 void main() {

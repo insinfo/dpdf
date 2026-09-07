@@ -4,9 +4,9 @@ export 'rsa.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 
-import 'package:pdfcraft/src/pki/rsa.dart';
-import 'package:pdfcraft/src/sign/asn1_utils.dart' as DpdfAsn1;
-import 'package:pdfcraft/src/sign/der_objects.dart';
+import 'package:dpdf/src/pki/rsa.dart';
+import 'package:dpdf/src/sign/asn1_utils.dart' as DpdfAsn1;
+import 'package:dpdf/src/sign/der_objects.dart';
 
 class PkiUtils {
   static Uint8List generateRandomBytes(int length) =>

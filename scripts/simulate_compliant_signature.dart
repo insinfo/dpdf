@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 import 'package:crypto/crypto.dart';
 
 void main() async {
@@ -34,7 +34,7 @@ void main() async {
 
   // 4. Add OutputIntent with real ICC profile
   final iccFile = File(
-      'referencias/pdfcraft-dotnet-develop/pdfcraft.tests/pdfcraft.layout.tests/resources/pdfcraft/layout/ImageColorProfileTest/sRGB_v4_ICC_preference.icc');
+      'referencias/dpdf-dotnet-develop/dpdf.tests/dpdf.layout.tests/resources/dpdf/layout/ImageColorProfileTest/sRGB_v4_ICC_preference.icc');
   if (iccFile.existsSync()) {
     final iccStream = CraftPdfStream();
     iccStream.setData(iccFile.readAsBytesSync());

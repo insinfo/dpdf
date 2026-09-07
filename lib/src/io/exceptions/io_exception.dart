@@ -1,8 +1,8 @@
-import '../../commons/exceptions/pdfcraft_exception.dart';
+import '../../commons/exceptions/dpdf_exception.dart';
 import 'io_exception_message_constant.dart';
 
 /// Exception class for exceptions in io module.
-class IoException extends PdfcraftException {
+class IoException extends DpdfException {
   /// Object for more details.
   Object? obj;
 

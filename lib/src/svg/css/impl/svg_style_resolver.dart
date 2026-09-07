@@ -1,23 +1,23 @@
-import 'package:pdfcraft/src/styledxmlparser/css/common_css_constants.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/css_style_sheet.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/css_resolver.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/media/media_device_description.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/resolve/abstract_css_context.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/resolve/css_inheritance.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/resolve/style_inheritance.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_types_validation_utils.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_variable_util.dart';
-import 'package:pdfcraft/src/styledxmlparser/node/attribute.dart';
-import 'package:pdfcraft/src/styledxmlparser/node/markup_node.dart';
-import 'package:pdfcraft/src/styledxmlparser/node/styles_container.dart';
-import 'package:pdfcraft/src/styledxmlparser/resolver/resource/resource_resolver.dart';
-import 'package:pdfcraft/src/styledxmlparser/util/style_util.dart';
-import 'package:pdfcraft/src/svg/css/impl/svg_attribute_inheritance.dart';
-import 'package:pdfcraft/src/svg/css/svg_css_context.dart';
-import 'package:pdfcraft/src/svg/exceptions/svg_processing_exception.dart';
-import 'package:pdfcraft/src/svg/processors/impl/svg_processor_context.dart';
-import 'package:pdfcraft/src/svg/svg_constants.dart';
+import 'package:dpdf/src/styledxmlparser/css/common_css_constants.dart';
+import 'package:dpdf/src/styledxmlparser/css/css_style_sheet.dart';
+import 'package:dpdf/src/styledxmlparser/css/css_resolver.dart';
+import 'package:dpdf/src/styledxmlparser/css/media/media_device_description.dart';
+import 'package:dpdf/src/styledxmlparser/css/resolve/abstract_css_context.dart';
+import 'package:dpdf/src/styledxmlparser/css/resolve/css_inheritance.dart';
+import 'package:dpdf/src/styledxmlparser/css/resolve/style_inheritance.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_types_validation_utils.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_variable_util.dart';
+import 'package:dpdf/src/styledxmlparser/node/attribute.dart';
+import 'package:dpdf/src/styledxmlparser/node/markup_node.dart';
+import 'package:dpdf/src/styledxmlparser/node/styles_container.dart';
+import 'package:dpdf/src/styledxmlparser/resolver/resource/resource_resolver.dart';
+import 'package:dpdf/src/styledxmlparser/util/style_util.dart';
+import 'package:dpdf/src/svg/css/impl/svg_attribute_inheritance.dart';
+import 'package:dpdf/src/svg/css/svg_css_context.dart';
+import 'package:dpdf/src/svg/exceptions/svg_processing_exception.dart';
+import 'package:dpdf/src/svg/processors/impl/svg_processor_context.dart';
+import 'package:dpdf/src/svg/svg_constants.dart';
 
 /// Default implementation of SVG's styles and attribute resolver.
 class CraftSvgStyleResolver implements CraftCssResolver {

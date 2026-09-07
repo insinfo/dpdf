@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
 import 'package:pointycastle/export.dart' as oracle;
-import 'package:pdfcraft/src/pki/triple_des.dart';
+import 'package:dpdf/src/pki/triple_des.dart';
 
 void main() {
   final key = Uint8List.fromList(List.generate(24, (n) => n * 11 + 3));

@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/kernel/colors/color.dart';
+import 'package:dpdf/src/kernel/colors/color.dart';
 
 abstract class CraftBorder {
   static const int SOLID = 0;

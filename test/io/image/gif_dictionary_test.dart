@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/image/image_data_factory.dart';
+import 'package:dpdf/src/io/image/image_data_factory.dart';
 
 void main() {
   test(

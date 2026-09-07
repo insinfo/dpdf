@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/layout/properties/image_type.dart';
+import 'package:dpdf/src/layout/properties/image_type.dart';
 
 class CraftImageTypeDetector {
   static const List<int> _gif = [71, 73, 70]; // GIF

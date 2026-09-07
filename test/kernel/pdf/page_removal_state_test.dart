@@ -1,9 +1,9 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/commons/actions/event_manager.dart';
-import 'package:pdfcraft/src/kernel/pdf/event/pdf_document_event.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/commons/actions/event_manager.dart';
+import 'package:dpdf/src/kernel/pdf/event/pdf_document_event.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
 import 'package:test/test.dart';
 
 class _Observer implements CraftEventHandler {

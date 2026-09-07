@@ -1,6 +1,6 @@
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
-import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_color_space.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
 
 /// Abstract class for special color spaces (Pattern, Indexed, Separation, DeviceN).
 abstract class CraftPdfSpecialCs extends CraftPdfColorSpace {

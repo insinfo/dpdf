@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/kernel/geom/point.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/kernel/geom/point.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
 
 /// A rectangle adapted for working with text elements.
 class CraftTextRectangle extends CraftRectangle {

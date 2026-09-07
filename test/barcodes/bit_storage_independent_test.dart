@@ -1,7 +1,7 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/bit_array.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/bit_matrix.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/bit_vector.dart';
+import 'package:dpdf/src/barcodes/qrcode/bit_array.dart';
+import 'package:dpdf/src/barcodes/qrcode/bit_matrix.dart';
+import 'package:dpdf/src/barcodes/qrcode/bit_vector.dart';
 
 void main() {
   test('fixed bits preserve word layout and reverse odd lengths', () {

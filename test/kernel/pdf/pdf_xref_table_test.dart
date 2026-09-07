@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_xref_table.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_xref_table.dart';
 import 'package:test/test.dart';
 
 void main() {

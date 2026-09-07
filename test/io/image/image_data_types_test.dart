@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/image/raw_image_data.dart';
-import 'package:pdfcraft/src/io/image/bmp_image_data.dart';
-import 'package:pdfcraft/src/io/image/tiff_image_data.dart';
-import 'package:pdfcraft/src/layout/properties/image_type.dart';
+import 'package:dpdf/src/io/image/raw_image_data.dart';
+import 'package:dpdf/src/io/image/bmp_image_data.dart';
+import 'package:dpdf/src/io/image/tiff_image_data.dart';
+import 'package:dpdf/src/layout/properties/image_type.dart';
 
 void main() {
   group('RawImageData', () {

@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/io/util/text_util.dart';
+import 'package:dpdf/src/io/util/text_util.dart';
 
 class CraftWhiteSpaceUtil {
   static const Set<int> EM_SPACES = {

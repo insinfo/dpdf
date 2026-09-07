@@ -3,18 +3,18 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/sign/oid.dart';
-import 'package:pdfcraft/src/sign/signature_mechanisms.dart';
-import 'package:pdfcraft/src/sign/digest_algorithms.dart';
-import 'package:pdfcraft/src/sign/crypto_digest.dart';
-import 'package:pdfcraft/src/sign/access_permissions.dart';
-import 'package:pdfcraft/src/sign/signer_properties.dart';
-import 'package:pdfcraft/src/sign/pdf_pkcs7.dart';
-import 'package:pdfcraft/src/sign/pdf_signer.dart';
-import 'package:pdfcraft/src/sign/external_signature_container.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/sign/oid.dart';
+import 'package:dpdf/src/sign/signature_mechanisms.dart';
+import 'package:dpdf/src/sign/digest_algorithms.dart';
+import 'package:dpdf/src/sign/crypto_digest.dart';
+import 'package:dpdf/src/sign/access_permissions.dart';
+import 'package:dpdf/src/sign/signer_properties.dart';
+import 'package:dpdf/src/sign/pdf_pkcs7.dart';
+import 'package:dpdf/src/sign/pdf_signer.dart';
+import 'package:dpdf/src/sign/external_signature_container.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 
 void main() {
   group('OID', () {

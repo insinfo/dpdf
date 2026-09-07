@@ -1,6 +1,6 @@
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object_wrapper.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object_wrapper.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'pdf_action_uri.dart';
 import 'pdf_action_goto.dart';
 

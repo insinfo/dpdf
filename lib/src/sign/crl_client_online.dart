@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'certificate_util.dart';
 import 'crl_client.dart';
 import 'certificate_details.dart';
-import 'package:pdfcraft/src/commons/pdfcraft_log_manager.dart';
+import 'package:dpdf/src/commons/dpdf_log_manager.dart';
 
 /// An implementation of [ICrlClient] that fetches the CRL bytes from a URL.
 class CraftCrlClientOnline implements CraftCrlClient {

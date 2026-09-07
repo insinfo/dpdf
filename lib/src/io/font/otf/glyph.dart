@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/commons/utils/value_collections.dart';
-import 'package:pdfcraft/src/io/util/text_util.dart';
+import 'package:dpdf/src/commons/utils/value_collections.dart';
+import 'package:dpdf/src/io/util/text_util.dart';
 
 class CraftGlyph {
   static const int REPLACEMENT_CHARACTER = 0xFFFD;

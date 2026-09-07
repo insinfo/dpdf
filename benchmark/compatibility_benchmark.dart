@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:pdfcraft/src/editing/pdf_page_assembly.dart';
-import 'package:pdfcraft/src/editing/pdf_text_extraction.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/editing/pdf_page_assembly.dart';
+import 'package:dpdf/src/editing/pdf_text_extraction.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
 
 Future<int> inspect(Uint8List bytes, int pages) async {
   final doc = await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
@@ -58,7 +58,7 @@ Future<void> main(List<String> args) async {
   }
 
   print(jsonEncode({
-    'engine': 'pdfcraft',
+    'engine': 'dpdf',
     'runtime': Platform.version,
     'os': Platform.operatingSystem,
     'warmup': warmup,

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/pdf/writer_properties.dart';
+import 'package:dpdf/src/kernel/pdf/writer_properties.dart';
 
 Uint8List bytes(String text) => Uint8List.fromList(latin1.encode(text));
 String source({String suffix = '', String extras = '', int generation = 0}) =>

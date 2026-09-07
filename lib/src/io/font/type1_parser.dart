@@ -1,8 +1,8 @@
 import '../../platform/io.dart';
 import 'dart:typed_data';
 import '../resources/embedded_font_resources.dart';
-import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
-import 'package:pdfcraft/src/io/font/constants/standard_fonts.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/io/font/constants/standard_fonts.dart';
 
 class CraftType1Parser {
   static const String AFM_HEADER = "StartFontMetrics";

@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/font/cmap/abstract_cmap.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_object.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_parser.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_location.dart';
-import 'package:pdfcraft/src/io/source/pdf_tokenizer.dart';
-import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/io/font/cmap/abstract_cmap.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_object.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_parser.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_location.dart';
+import 'package:dpdf/src/io/source/pdf_tokenizer.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 
 class _Map extends CraftAbstractCMap {
   final entries = <String, String>{};

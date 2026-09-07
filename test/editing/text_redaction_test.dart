@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/editing/pdf_text_extraction.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/editing/pdf_text_extraction.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 
 Uint8List bytes(String s) => Uint8List.fromList(ascii.encode(s));
 List<PdfPositionedCharacter> positions(Uint8List content) =>

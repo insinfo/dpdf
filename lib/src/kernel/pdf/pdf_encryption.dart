@@ -1,15 +1,15 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/kernel/crypto/securityhandler/standard_handler_using_standard_40.dart';
+import 'package:dpdf/src/kernel/crypto/securityhandler/standard_handler_using_standard_40.dart';
 
-import 'package:pdfcraft/src/commons/utils/encoding_util.dart';
-import 'package:pdfcraft/src/commons/utils/system_util.dart';
-import 'package:pdfcraft/src/kernel/crypto/digest_algorithms.dart';
-import 'package:pdfcraft/src/kernel/crypto/output_stream_encryption.dart';
-import 'package:pdfcraft/src/kernel/crypto/securityhandler/security_handler.dart';
-import 'package:pdfcraft/src/kernel/pdf/encryption_constants.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object_wrapper.dart';
+import 'package:dpdf/src/commons/utils/encoding_util.dart';
+import 'package:dpdf/src/commons/utils/system_util.dart';
+import 'package:dpdf/src/kernel/crypto/digest_algorithms.dart';
+import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
+import 'package:dpdf/src/kernel/crypto/securityhandler/security_handler.dart';
+import 'package:dpdf/src/kernel/pdf/encryption_constants.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object_wrapper.dart';
 
 /// Class responsible for PDF encryption.
 class CraftPdfEncryption extends CraftPdfObjectWrapper<CraftPdfDictionary> {

@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/kernel/crypto/arcfour_encryption.dart';
-import 'package:pdfcraft/src/kernel/crypto/output_stream_encryption.dart';
+import 'package:dpdf/src/kernel/crypto/arcfour_encryption.dart';
+import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
 
 /// Standard encryption output stream (RC4).
 class CraftOutputStreamStandardEncryption extends CraftOutputStreamEncryption {

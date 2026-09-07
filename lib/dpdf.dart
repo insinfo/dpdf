@@ -1,7 +1,7 @@
 ///
 ///
-/// pdfcraft a dart PDF library
-library pdfcraft;
+/// dpdf a dart PDF library
+library dpdf;
 
 export 'src/editing/pdf_page_assembly.dart';
 export 'src/editing/pdf_page_overlay.dart';
@@ -14,7 +14,7 @@ export 'src/editing/pdf_simple_encoding.dart';
 export 'src/editing/pdf_standard_font_metrics.dart';
 export 'src/html/html_to_pdf.dart';
 
-export 'src/commons/exceptions/pdfcraft_exception.dart';
+export 'src/commons/exceptions/dpdf_exception.dart';
 
 export 'src/io/exceptions/io_exception.dart';
 export 'src/io/exceptions/io_exception_message_constant.dart';

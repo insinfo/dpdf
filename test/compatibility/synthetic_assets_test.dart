@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/editing/pdf_text_extraction.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/editing/pdf_text_extraction.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
 
 void main() {
   for (final (file, pages, texts) in [

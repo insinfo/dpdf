@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 
 void main() {
   group('PdfDocument Info Tests', () {

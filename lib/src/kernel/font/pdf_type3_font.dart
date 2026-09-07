@@ -1,8 +1,8 @@
-import 'package:pdfcraft/src/io/font/type3_font.dart';
-import 'package:pdfcraft/src/kernel/font/pdf_simple_font.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/io/font/type3_font.dart';
+import 'package:dpdf/src/kernel/font/pdf_simple_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
 
 class CraftPdfType3Font extends CraftPdfSimpleFont<CraftType3Font> {
   CraftPdfType3Font(CraftPdfDictionary dictionary) : super(dictionary) {

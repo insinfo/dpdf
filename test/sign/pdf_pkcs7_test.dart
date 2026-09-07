@@ -1,14 +1,14 @@
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/sign/pdf_pkcs7.dart';
+import 'package:dpdf/src/sign/pdf_pkcs7.dart';
 
-import 'package:pdfcraft/src/sign/external_digest.dart';
-import 'package:pdfcraft/src/sign/tsa_client.dart';
-import 'package:pdfcraft/src/sign/digest_algorithms.dart';
-import 'package:pdfcraft/src/sign/asn1_utils.dart';
-import 'package:pdfcraft/src/pki/pki_utils.dart';
-import 'package:pdfcraft/src/pki/rsa.dart' as rsa;
+import 'package:dpdf/src/sign/external_digest.dart';
+import 'package:dpdf/src/sign/tsa_client.dart';
+import 'package:dpdf/src/sign/digest_algorithms.dart';
+import 'package:dpdf/src/sign/asn1_utils.dart';
+import 'package:dpdf/src/pki/pki_utils.dart';
+import 'package:dpdf/src/pki/rsa.dart' as rsa;
 
 void main() {
   group('PdfPKCS7', () {
@@ -62,8 +62,8 @@ void main() {
 
       await pkcs7.getEncodedPKCS7(Uint8List(32), tsaClient: tsa);
 
-      expect(tsa.imprint,
-          CraftDigestAlgorithms.digestBytes(signature, 'SHA-256'));
+      expect(
+          tsa.imprint, CraftDigestAlgorithms.digestBytes(signature, 'SHA-256'));
     });
 
     // Add more tests as we have mocks for Certificates and Keys

@@ -20,7 +20,7 @@ import 'pdf_writer.dart';
 import 'pdf_xref_table.dart';
 import 'pdf_version.dart';
 import 'pdf_output_intent.dart';
-import 'package:pdfcraft/src/commons/pdfcraft_log_manager.dart';
+import 'package:dpdf/src/commons/dpdf_log_manager.dart';
 import 'stamping_properties.dart';
 import '../geom/page_size.dart';
 import '../exceptions/pdf_exception.dart';

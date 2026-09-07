@@ -1,9 +1,9 @@
-import 'package:pdfcraft/src/layout/element/block_element.dart';
-import 'package:pdfcraft/src/layout/element/cell.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/table_renderer.dart';
-import 'package:pdfcraft/src/kernel/pdf/tagutils/accessibility_properties.dart';
-import 'package:pdfcraft/src/layout/properties/unit_value.dart';
+import 'package:dpdf/src/layout/element/block_element.dart';
+import 'package:dpdf/src/layout/element/cell.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/renderer/table_renderer.dart';
+import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
+import 'package:dpdf/src/layout/properties/unit_value.dart';
 
 class CraftTable extends CraftBlockElement<CraftTable> {
   List<CraftUnitValue>? columnWidths;

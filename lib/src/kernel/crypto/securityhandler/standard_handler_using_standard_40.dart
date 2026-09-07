@@ -1,17 +1,17 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/kernel/crypto/arcfour_encryption.dart';
-import 'package:pdfcraft/src/kernel/crypto/decryptor.dart';
-import 'package:pdfcraft/src/kernel/crypto/output_stream_encryption.dart';
-import 'package:pdfcraft/src/kernel/crypto/output_stream_standard_encryption.dart';
-import 'package:pdfcraft/src/kernel/crypto/securityhandler/standard_security_handler.dart';
-import 'package:pdfcraft/src/kernel/crypto/standard_decryptor.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
-import 'package:pdfcraft/src/kernel/exceptions/pdf_exception.dart';
-import 'package:pdfcraft/src/kernel/exceptions/kernel_exception_message_constant.dart';
+import 'package:dpdf/src/kernel/crypto/arcfour_encryption.dart';
+import 'package:dpdf/src/kernel/crypto/decryptor.dart';
+import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
+import 'package:dpdf/src/kernel/crypto/output_stream_standard_encryption.dart';
+import 'package:dpdf/src/kernel/crypto/securityhandler/standard_security_handler.dart';
+import 'package:dpdf/src/kernel/crypto/standard_decryptor.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
+import 'package:dpdf/src/kernel/exceptions/kernel_exception_message_constant.dart';
 
 /// Standard security handler using Standard 40 algorithm (RC4).
 class CraftStandardHandlerUsingStandard40 extends CraftStandardSecurityHandler {

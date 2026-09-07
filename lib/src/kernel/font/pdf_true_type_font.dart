@@ -1,15 +1,15 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/font/font_encoding.dart';
-import 'package:pdfcraft/src/io/font/true_type_font.dart';
-import 'package:pdfcraft/src/io/font/otf/glyph.dart';
-import 'package:pdfcraft/src/io/font/font_names.dart';
-import 'package:pdfcraft/src/kernel/font/pdf_font.dart';
-import 'package:pdfcraft/src/kernel/font/pdf_simple_font.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/io/font/font_encoding.dart';
+import 'package:dpdf/src/io/font/true_type_font.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/io/font/font_names.dart';
+import 'package:dpdf/src/kernel/font/pdf_font.dart';
+import 'package:dpdf/src/kernel/font/pdf_simple_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 
 class CraftPdfTrueTypeFont extends CraftPdfSimpleFont<CraftTrueTypeFont> {
   CraftPdfTrueTypeFont(CraftTrueTypeFont ttf,

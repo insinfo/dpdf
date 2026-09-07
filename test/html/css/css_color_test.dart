@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/html/css/css_color.dart';
+import 'package:dpdf/src/html/css/css_color.dart';
 import 'package:test/test.dart';
 
 void main() {

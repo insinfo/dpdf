@@ -1,12 +1,12 @@
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
-import 'package:pdfcraft/src/layout/layout/layout_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
-import 'package:pdfcraft/src/layout/renderer/block_renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/layout/element/paragraph.dart';
-import 'package:pdfcraft/src/layout/renderer/line_renderer.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/layout/layout/layout_context.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/layout/renderer/block_renderer.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/element/paragraph.dart';
+import 'package:dpdf/src/layout/renderer/line_renderer.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/layout/properties/property.dart';
 
 class CraftParagraphRenderer extends CraftBlockRenderer {
   List<CraftRenderer>? _originalChildren;

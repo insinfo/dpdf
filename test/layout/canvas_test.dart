@@ -1,14 +1,14 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
 
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/layout/canvas.dart';
-import 'package:pdfcraft/src/layout/element/paragraph.dart';
-import 'package:pdfcraft/src/layout/element/text.dart';
-import 'package:pdfcraft/src/layout/properties/text_alignment.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/layout/canvas.dart';
+import 'package:dpdf/src/layout/element/paragraph.dart';
+import 'package:dpdf/src/layout/element/text.dart';
+import 'package:dpdf/src/layout/properties/text_alignment.dart';
 
 void main() {
   group('Canvas Tests', () {

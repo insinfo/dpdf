@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_variable_util.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_variable_util.dart';
 import 'package:test/test.dart';
 
 void main() {

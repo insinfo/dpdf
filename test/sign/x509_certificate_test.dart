@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/sign/x509_certificate.dart';
+import 'package:dpdf/src/sign/x509_certificate.dart';
 
 void main() {
   group('X509Certificate', () {

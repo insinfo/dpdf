@@ -1,19 +1,19 @@
-import 'package:pdfcraft/src/sign/pdf_pkcs7.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/sign/pdf_pkcs7.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
-import 'package:pdfcraft/src/pki/pki_utils.dart';
-import 'package:pdfcraft/src/sign/pdf_signer.dart';
-import 'package:pdfcraft/src/sign/external_signature.dart';
-import 'package:pdfcraft/src/sign/signature_mechanism_params.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/layout/document.dart';
-import 'package:pdfcraft/src/layout/element/paragraph.dart';
-import 'package:pdfcraft/src/pki/rsa.dart' as pc;
+import 'package:dpdf/src/pki/pki_utils.dart';
+import 'package:dpdf/src/sign/pdf_signer.dart';
+import 'package:dpdf/src/sign/external_signature.dart';
+import 'package:dpdf/src/sign/signature_mechanism_params.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/layout/document.dart';
+import 'package:dpdf/src/layout/element/paragraph.dart';
+import 'package:dpdf/src/pki/rsa.dart' as pc;
 import 'package:test/test.dart';
 
 class LocalExternalSignature implements CraftExternalSignature {

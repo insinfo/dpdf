@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_date.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_date.dart';
 
 void main() {
   group('PdfDate', () {

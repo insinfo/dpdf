@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 
 /// Synthetic AES key protected by an independent test encoder.
 /// These bytes are public test material, never credentials for real services.

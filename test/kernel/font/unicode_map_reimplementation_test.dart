@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 import 'dart:convert';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
-import 'package:pdfcraft/src/kernel/font/unicode_code_map.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_object.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/font/unicode_code_map.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_object.dart';
 import 'package:test/test.dart';
 
 void main() {

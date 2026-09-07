@@ -1,6 +1,6 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/font/open_type_parser.dart';
-import 'package:pdfcraft/src/io/font/true_type_font.dart';
+import 'package:dpdf/src/io/font/open_type_parser.dart';
+import 'package:dpdf/src/io/font/true_type_font.dart';
 import 'package:test/test.dart';
 
 CraftOpenTypeParser parser(int revision, int size, {int? declaredSize}) {

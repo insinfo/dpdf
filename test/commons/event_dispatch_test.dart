@@ -1,8 +1,8 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/commons/actions/event_manager.dart';
-import 'package:pdfcraft/src/commons/exceptions/pdfcraft_exception.dart';
-import 'package:pdfcraft/src/commons/logger.dart';
-import 'package:pdfcraft/src/commons/pdfcraft_log_manager.dart';
+import 'package:dpdf/src/commons/actions/event_manager.dart';
+import 'package:dpdf/src/commons/exceptions/dpdf_exception.dart';
+import 'package:dpdf/src/commons/logger.dart';
+import 'package:dpdf/src/commons/dpdf_log_manager.dart';
 
 class _Notification extends AbstractEvent {}
 
@@ -111,7 +111,7 @@ void main() {
 
   test('base and aggregate diagnostics retain original causes', () {
     final cause = StateError('disk full');
-    final error = PdfcraftException('write failed', cause);
+    final error = DpdfException('write failed', cause);
     expect(error.getCause(), same(cause));
     expect(error.getMessage(), 'write failed');
     expect(error.toString(), contains('disk full'));
@@ -119,6 +119,6 @@ void main() {
         CraftAggregatedException('multiple failures', [error], cause);
     expect(aggregate.toString(), contains('[0] Exception: write failed'));
     expect(aggregate.toString(), contains('Caused by: Bad state: disk full'));
-    expect(PdfcraftException.withDefaultMessage().getMessage(), isNotEmpty);
+    expect(DpdfException.withDefaultMessage().getMessage(), isNotEmpty);
   });
 }

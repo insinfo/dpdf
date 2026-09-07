@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 import 'package:pointycastle/export.dart' as oracle;
 import 'package:test/test.dart';
 

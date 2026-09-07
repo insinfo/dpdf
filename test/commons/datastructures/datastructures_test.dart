@@ -1,8 +1,8 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/commons/datastructures/bi_map.dart';
-import 'package:pdfcraft/src/commons/datastructures/null_unlimited_list.dart';
-import 'package:pdfcraft/src/commons/datastructures/simple_array_list.dart';
-import 'package:pdfcraft/src/commons/datastructures/tuple.dart';
+import 'package:dpdf/src/commons/datastructures/bi_map.dart';
+import 'package:dpdf/src/commons/datastructures/null_unlimited_list.dart';
+import 'package:dpdf/src/commons/datastructures/simple_array_list.dart';
+import 'package:dpdf/src/commons/datastructures/tuple.dart';
 
 void main() {
   group('BiMap', () {

@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 
 class CraftDrawContext {
   CraftPdfDocument document;

@@ -1,4 +1,4 @@
-/// Diagnostic templates for PDFCraft. Public identifiers and format slots are stable.
+/// Diagnostic templates for DPDF. Public identifiers and format slots are stable.
 class CraftCommonsLogMessageConstant {
   CraftCommonsLogMessageConstant._();
 

@@ -1,7 +1,7 @@
-import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_cie_based_cs.dart';
-import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_special_cs.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_cie_based_cs.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_special_cs.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:test/test.dart';
 
 void main() {

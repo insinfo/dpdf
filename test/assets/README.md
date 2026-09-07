@@ -12,7 +12,7 @@ página sintética com dois retângulos. image.jb2 exercita região genérica MM
 sem representar cobertura completa do formato JBIG2.
 
 rootRsa.cer é um certificado RSA-2048 autoassinado de teste, de nome
-PDFCraft Synthetic Test CA e serial 1491571158. Não contém chave privada.
+DPDF Synthetic Test CA e serial 1491571158. Não contém chave privada.
 Foi gerado para a fixture; não representa confiança pública ou ICP-Brasil.
 
 Os campos source do manifesto registram o gerador usado originalmente,

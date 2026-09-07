@@ -1,6 +1,6 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/font/cmap/abstract_cmap.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_object.dart';
+import 'package:dpdf/src/io/font/cmap/abstract_cmap.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_object.dart';
 import 'package:test/test.dart';
 
 class _RecordedMap extends CraftAbstractCMap {

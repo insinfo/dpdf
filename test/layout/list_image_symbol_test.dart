@@ -1,20 +1,20 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/layout/element/list.dart' as pdfcraft;
-import 'package:pdfcraft/src/layout/element/image.dart';
-import 'package:pdfcraft/src/io/image/image_data_factory.dart';
-import 'package:pdfcraft/src/layout/renderer/list_renderer.dart';
-import 'package:pdfcraft/src/layout/layout/layout_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/layout/renderer/list_item_renderer.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
-import 'package:pdfcraft/src/io/font/true_type_font.dart';
-import 'package:pdfcraft/src/kernel/font/pdf_true_type_font.dart';
+import 'package:dpdf/src/layout/element/list.dart' as dpdf;
+import 'package:dpdf/src/layout/element/image.dart';
+import 'package:dpdf/src/io/image/image_data_factory.dart';
+import 'package:dpdf/src/layout/renderer/list_renderer.dart';
+import 'package:dpdf/src/layout/layout/layout_context.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/layout/renderer/list_item_renderer.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/io/font/true_type_font.dart';
+import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
 
 void main() {
   test('List with Image Symbol Layout', () async {
-    final imagePath = r'C:\MyDartProjects\pdfcraft\test\assets\Desert.jpg';
+    final imagePath = r'C:\MyDartProjects\dpdf\test\assets\Desert.jpg';
     if (!File(imagePath).existsSync()) {
       // Skip test if image not available
       markTestSkipped('Test image not found at $imagePath');
@@ -28,7 +28,7 @@ void main() {
     final ttf = CraftTrueTypeFont.fromFile(ttfPath);
     final font = CraftPdfTrueTypeFont(ttf);
 
-    final list = pdfcraft.CraftList()
+    final list = dpdf.CraftList()
         .setListSymbol(image)
         .setFont(font)
         .add("Item 1")

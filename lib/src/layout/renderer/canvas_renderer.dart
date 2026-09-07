@@ -1,11 +1,11 @@
-import 'package:pdfcraft/src/layout/renderer/root_renderer.dart';
-import 'package:pdfcraft/src/layout/canvas.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
-import 'package:pdfcraft/src/layout/layout/layout_context.dart';
-import 'package:pdfcraft/src/layout/renderer/draw_context.dart';
-import 'package:pdfcraft/src/layout/layout/root_layout_area.dart';
+import 'package:dpdf/src/layout/renderer/root_renderer.dart';
+import 'package:dpdf/src/layout/canvas.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/layout/layout/layout_context.dart';
+import 'package:dpdf/src/layout/renderer/draw_context.dart';
+import 'package:dpdf/src/layout/layout/root_layout_area.dart';
 
 /// Places children in the fixed rectangle supplied by a canvas.
 class CraftCanvasRenderer extends CraftRootRenderer {

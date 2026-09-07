@@ -1,7 +1,7 @@
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:pdfcraft/src/svg/svg_constants.dart';
-import 'package:pdfcraft/src/kernel/geom/affine_transform.dart';
-import 'package:pdfcraft/src/io/source/byte_utils.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/svg/svg_constants.dart';
+import 'package:dpdf/src/kernel/geom/affine_transform.dart';
+import 'package:dpdf/src/io/source/byte_utils.dart';
 
 /// Small utility class that contains methods for drawing shapes.
 class CraftDrawUtils {

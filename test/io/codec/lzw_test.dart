@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/codec/lzw_compressor.dart';
-import 'package:pdfcraft/src/io/codec/lzw_string_table.dart';
-import 'package:pdfcraft/src/io/codec/tiff_lzw_decoder.dart';
+import 'package:dpdf/src/io/codec/lzw_compressor.dart';
+import 'package:dpdf/src/io/codec/lzw_string_table.dart';
+import 'package:dpdf/src/io/codec/tiff_lzw_decoder.dart';
 
 void main() {
   group('LZWStringTable', () {

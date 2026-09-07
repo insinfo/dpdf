@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/kernel/colors/color.dart';
-import 'package:pdfcraft/src/kernel/colors/device_gray.dart';
+import 'package:dpdf/src/kernel/colors/color.dart';
+import 'package:dpdf/src/kernel/colors/device_gray.dart';
 
 /// This class represents text and tspan SVG elements properties identifying their graphics state.
 class SvgTextProperties {

@@ -1,7 +1,7 @@
-import 'package:pdfcraft/src/layout/element/block_element.dart';
-import 'package:pdfcraft/src/layout/renderer/div_renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/kernel/pdf/tagutils/accessibility_properties.dart';
+import 'package:dpdf/src/layout/element/block_element.dart';
+import 'package:dpdf/src/layout/renderer/div_renderer.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
 
 class CraftDiv extends CraftBlockElement<CraftDiv> {
   @override

@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/geom/affine_transform.dart';
+import 'package:dpdf/src/kernel/geom/affine_transform.dart';
 
 void main() {
   group('AffineTransform', () {

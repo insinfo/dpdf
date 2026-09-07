@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/svg/marker_vertex_type.dart';
-import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
+import 'package:dpdf/src/svg/marker_vertex_type.dart';
+import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 
 /// Interface implemented by elements that support marker drawing.
 abstract class CraftMarkerCapable {

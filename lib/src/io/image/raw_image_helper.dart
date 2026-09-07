@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/io/codec/ccitt_g4_encoder.dart';
-import 'package:pdfcraft/src/io/codec/tiff_fax_decoder.dart';
-import 'package:pdfcraft/src/io/image/raw_image_data.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:dpdf/src/io/codec/ccitt_g4_encoder.dart';
+import 'package:dpdf/src/io/codec/tiff_fax_decoder.dart';
+import 'package:dpdf/src/io/image/raw_image_data.dart';
+import 'package:dpdf/src/io/exceptions/io_exception.dart';
+import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
 
 class CraftRawImageHelper {
   static void updateImageAttributes(

@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_date.dart';
-import 'package:pdfcraft/src/commons/utils/date_time_util.dart';
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_date.dart';
+import 'package:dpdf/src/commons/utils/date_time_util.dart';
+import 'package:dpdf/dpdf.dart';
 
 void main() {
   test(

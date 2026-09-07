@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/pki/pkcs12_derivation.dart';
+import 'package:dpdf/src/pki/pkcs12_derivation.dart';
 import 'package:pointycastle/digests/sha1.dart';
 import 'package:pointycastle/key_derivators/pkcs12_parameter_generator.dart';
 import 'package:test/test.dart';

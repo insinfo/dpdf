@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/kernel/crypto/securityhandler/standard_handler_using_standard_40.dart';
-import 'package:pdfcraft/src/kernel/crypto/securityhandler/standard_security_handler.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_boolean.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/kernel/crypto/securityhandler/standard_handler_using_standard_40.dart';
+import 'package:dpdf/src/kernel/crypto/securityhandler/standard_security_handler.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_boolean.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 
 /// Standard security handler using Standard 128 algorithm (RC4).
 class CraftStandardHandlerUsingStandard128

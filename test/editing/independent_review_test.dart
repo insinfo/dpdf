@@ -1,13 +1,13 @@
 import 'dart:convert';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/editing/pdf_text_extraction.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object_copier.dart';
+import 'package:dpdf/src/editing/pdf_text_extraction.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object_copier.dart';
 import 'text_redaction_test.dart' as fixture;
 
 void main() {

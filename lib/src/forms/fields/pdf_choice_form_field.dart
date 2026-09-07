@@ -4,7 +4,7 @@ import '../../kernel/pdf/pdf_number.dart';
 import '../../kernel/pdf/pdf_name.dart';
 import '../../kernel/pdf/pdf_object.dart';
 import '../../kernel/pdf/pdf_string.dart';
-import '../../commons/pdfcraft_log_manager.dart';
+import '../../commons/dpdf_log_manager.dart';
 import 'pdf_form_field.dart';
 
 class CraftPdfChoiceFormField extends CraftPdfFormField {

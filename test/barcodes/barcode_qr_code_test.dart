@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:pdfcraft/src/barcodes/barcode_qr_code.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/encode_hint_type.dart';
-import 'package:pdfcraft/src/kernel/colors/device_gray.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/barcodes/barcode_qr_code.dart';
+import 'package:dpdf/src/barcodes/qrcode/encode_hint_type.dart';
+import 'package:dpdf/src/kernel/colors/device_gray.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -18,10 +18,10 @@ void main() {
       final page = await pdf.appendBlankPage();
       final canvas = await CraftPdfCanvas.fromPage(page);
 
-      final barcode = CraftBarcodeQRCode("https://pdfcraftpdf.com");
+      final barcode = CraftBarcodeQRCode("https://dpdfpdf.com");
 
       // Test basic getters
-      expect(barcode.getCode(), equals("https://pdfcraftpdf.com"));
+      expect(barcode.getCode(), equals("https://dpdfpdf.com"));
 
       final rect = barcode.placeBarcode(canvas, CraftDeviceGray(0));
 

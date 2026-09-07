@@ -1,12 +1,12 @@
 import 'dart:io';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
 
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
 
 void main() async {
-  final filePath = r'C:\MyDartProjects\pdfcraft\documento_assinado.pdf';
+  final filePath = r'C:\MyDartProjects\dpdf\documento_assinado.pdf';
   final file = File(filePath);
   if (!file.existsSync()) {
     print('File not found: $filePath');

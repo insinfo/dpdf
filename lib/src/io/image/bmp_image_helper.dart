@@ -1,14 +1,14 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
-import 'package:pdfcraft/src/io/image/bmp_image_data.dart';
-import 'package:pdfcraft/src/io/image/image_data.dart';
-import 'package:pdfcraft/src/io/image/raw_image_helper.dart';
-import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
-import 'package:pdfcraft/src/io/font/pdf_encodings.dart';
+import 'package:dpdf/src/io/exceptions/io_exception.dart';
+import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:dpdf/src/io/image/bmp_image_data.dart';
+import 'package:dpdf/src/io/image/image_data.dart';
+import 'package:dpdf/src/io/image/raw_image_helper.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/io/font/pdf_encodings.dart';
 
-import 'package:pdfcraft/src/layout/properties/image_type.dart';
+import 'package:dpdf/src/layout/properties/image_type.dart';
 
 class CraftBmpImageHelper {
   // BMP Image types

@@ -1,9 +1,9 @@
-import 'package:pdfcraft/src/layout/renderer/abstract_renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/layout/layout/layout_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/layout/renderer/abstract_renderer.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/layout/layout_context.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
 
 /// Places list markers and inline children in a single horizontal row.
 /// Bidirectional shaping, floating elements and tab stops are not handled here.

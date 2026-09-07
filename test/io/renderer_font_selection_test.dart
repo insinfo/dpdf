@@ -1,15 +1,15 @@
-import 'package:pdfcraft/src/kernel/geom/affine_transform.dart';
-import 'package:pdfcraft/src/kernel/font/pdf_type1_font.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/io/font/type1_font.dart';
-import 'package:pdfcraft/src/io/font/font_encoding.dart';
-import 'package:pdfcraft/src/io/font/otf/glyph.dart';
-import 'package:pdfcraft/src/layout/element/list.dart';
-import 'package:pdfcraft/src/layout/element/list_item.dart';
-import 'package:pdfcraft/src/layout/properties/list_numbering_type.dart';
-import 'package:pdfcraft/src/layout/renderer/list_renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/list_item_renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/text_renderer.dart';
+import 'package:dpdf/src/kernel/geom/affine_transform.dart';
+import 'package:dpdf/src/kernel/font/pdf_type1_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/io/font/type1_font.dart';
+import 'package:dpdf/src/io/font/font_encoding.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/layout/element/list.dart';
+import 'package:dpdf/src/layout/element/list_item.dart';
+import 'package:dpdf/src/layout/properties/list_numbering_type.dart';
+import 'package:dpdf/src/layout/renderer/list_renderer.dart';
+import 'package:dpdf/src/layout/renderer/list_item_renderer.dart';
+import 'package:dpdf/src/layout/renderer/text_renderer.dart';
 import 'package:test/test.dart';
 
 class GlyphFixture extends CraftPdfType1Font {

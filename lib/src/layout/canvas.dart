@@ -1,10 +1,10 @@
-import 'package:pdfcraft/src/layout/root_element.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_page.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/layout/renderer/root_renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/canvas_renderer.dart';
+import 'package:dpdf/src/layout/root_element.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_page.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/layout/renderer/root_renderer.dart';
+import 'package:dpdf/src/layout/renderer/canvas_renderer.dart';
 
 class CraftCanvas extends CraftRootElement<CraftCanvas> {
   CraftPdfCanvas? pdfCanvas;

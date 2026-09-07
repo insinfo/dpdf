@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
-import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_color_space.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
 
 /// Abstract class for CIE-based color spaces.
 abstract class CraftPdfCieBasedCs extends CraftPdfColorSpace {

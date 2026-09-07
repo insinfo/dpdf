@@ -1,8 +1,8 @@
-import 'package:pdfcraft/src/layout/element/abstract_element.dart';
-import 'package:pdfcraft/src/layout/element/leaf_content.dart';
-import 'package:pdfcraft/src/layout/properties/property.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/text_renderer.dart';
+import 'package:dpdf/src/layout/element/abstract_element.dart';
+import 'package:dpdf/src/layout/element/leaf_content.dart';
+import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/renderer/text_renderer.dart';
 import 'dart:math' as math;
 
 class CraftText extends CraftAbstractElement<CraftText>

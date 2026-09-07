@@ -1,9 +1,9 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/font/type1_font.dart';
-import 'package:pdfcraft/src/io/font/otf/glyph.dart';
-import 'package:pdfcraft/src/commons/utils/value_utils.dart';
-import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
-import 'package:pdfcraft/src/io/source/byte_utils.dart';
+import 'package:dpdf/src/io/font/type1_font.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/commons/utils/value_utils.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/io/source/byte_utils.dart';
 import 'package:test/test.dart';
 
 void main() {

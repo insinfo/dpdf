@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 
 /// Contract for rendering an SVG node onto a PDF canvas.
 /// passed in SvgDrawContext, applying styling (CSS and attributes).

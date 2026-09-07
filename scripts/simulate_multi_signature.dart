@@ -1,20 +1,20 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:pdfcraft/src/pki/pki_utils.dart';
+import 'package:dpdf/src/pki/pki_utils.dart';
 
-import 'package:pdfcraft/src/sign/pdf_signer.dart';
-import 'package:pdfcraft/src/sign/external_signature.dart';
-import 'package:pdfcraft/src/sign/signature_mechanism_params.dart';
+import 'package:dpdf/src/sign/pdf_signer.dart';
+import 'package:dpdf/src/sign/external_signature.dart';
+import 'package:dpdf/src/sign/signature_mechanism_params.dart';
 
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/layout/document.dart';
-import 'package:pdfcraft/src/layout/element/paragraph.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/layout/document.dart';
+import 'package:dpdf/src/layout/element/paragraph.dart';
 
-import 'package:pdfcraft/src/layout/properties/property.dart';
-import 'package:pdfcraft/src/layout/properties/unit_value.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart' as DpdfGeom;
+import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart' as DpdfGeom;
 //C:\mupdf\mutool.exe info .\documento_assinado_04_02_2026.pdf
 //C:\mupdf\mutool.exe draw -o page1.png -r 72 documento_assinado_04_02_2026.pdf 1
 
@@ -45,8 +45,7 @@ class LocalExternalSignature implements CraftExternalSignature {
 void main() async {
   print('--- Simulação Refinada (Assinatura Visível) ---');
 
-  final filePath =
-      r'C:\MyDartProjects\pdfcraft\documento_assinado_04_02_2026.pdf';
+  final filePath = r'C:\MyDartProjects\dpdf\documento_assinado_04_02_2026.pdf';
   final file = File(filePath);
   if (file.existsSync()) file.deleteSync();
 

@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/styledxmlparser/css/resolve/abstract_css_context.dart';
-import 'package:pdfcraft/src/styledxmlparser/node/markup_node.dart';
+import 'package:dpdf/src/styledxmlparser/css/resolve/abstract_css_context.dart';
+import 'package:dpdf/src/styledxmlparser/node/markup_node.dart';
 
 /// Interface for CSS resolvers.
 abstract class CraftCssResolver {

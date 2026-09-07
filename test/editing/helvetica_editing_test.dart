@@ -1,15 +1,15 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/editing/pdf_text_extraction.dart';
-import 'package:pdfcraft/src/editing/pdf_simple_encoding.dart';
-import 'package:pdfcraft/src/editing/pdf_standard_font_metrics.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/editing/pdf_text_extraction.dart';
+import 'package:dpdf/src/editing/pdf_simple_encoding.dart';
+import 'package:dpdf/src/editing/pdf_standard_font_metrics.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 
 Future<Uint8List> source(String content, String encoding) async {
   final data = BytesBuilder();

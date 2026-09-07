@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/commons/utils/encoding_util.dart';
-import 'package:pdfcraft/src/commons/utils/system_util.dart';
-import 'package:pdfcraft/src/kernel/crypto/arcfour_encryption.dart';
+import 'package:dpdf/src/commons/utils/encoding_util.dart';
+import 'package:dpdf/src/commons/utils/system_util.dart';
+import 'package:dpdf/src/kernel/crypto/arcfour_encryption.dart';
 
 /// An initialization vector generator for a CBC block encryption.
 class CraftIVGenerator {

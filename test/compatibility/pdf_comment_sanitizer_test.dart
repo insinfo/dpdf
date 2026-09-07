@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/compatibility/pdf_percent_comments.dart';
+import 'package:dpdf/src/compatibility/pdf_percent_comments.dart';
 import 'package:test/test.dart';
 
 void main() {

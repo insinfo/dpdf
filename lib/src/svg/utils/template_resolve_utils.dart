@@ -1,8 +1,8 @@
-import 'package:pdfcraft/src/svg/renderers/branch_svg_node_renderer.dart';
-import 'package:pdfcraft/src/svg/renderers/svg_node_renderer.dart';
-import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
-import 'package:pdfcraft/src/svg/svg_constants.dart';
-import 'package:pdfcraft/src/svg/utils/svg_text_util.dart';
+import 'package:dpdf/src/svg/renderers/branch_svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
+import 'package:dpdf/src/svg/svg_constants.dart';
+import 'package:dpdf/src/svg/utils/svg_text_util.dart';
 
 /// Utility class which contains methods related to href resolving
 class TemplateResolveUtils {

@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart' as oracle;
-import 'package:pdfcraft/src/pki/jks_key_store.dart';
-import 'package:pdfcraft/src/sign/x509_certificate.dart';
+import 'package:dpdf/src/pki/jks_key_store.dart';
+import 'package:dpdf/src/sign/x509_certificate.dart';
 import 'package:test/test.dart';
 
 void main() {

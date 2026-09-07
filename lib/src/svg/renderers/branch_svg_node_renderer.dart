@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/svg/renderers/svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 
 /// Interface that defines branches in the NodeRenderer structure.
 /// Differs from a leaf renderer in that a branch has children and as such

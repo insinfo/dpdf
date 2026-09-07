@@ -1,19 +1,19 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/editing/pdf_page_assembly.dart';
-import 'package:pdfcraft/src/forms/pdf_acro_form.dart';
-import 'package:pdfcraft/src/forms/fields/pdf_form_field.dart';
-import 'package:pdfcraft/src/forms/fields/pdf_text_form_field.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
-import 'package:pdfcraft/src/kernel/pdf/annot/pdf_widget_annotation.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/editing/pdf_page_assembly.dart';
+import 'package:dpdf/src/forms/pdf_acro_form.dart';
+import 'package:dpdf/src/forms/fields/pdf_form_field.dart';
+import 'package:dpdf/src/forms/fields/pdf_text_form_field.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/pdf/annot/pdf_widget_annotation.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
 
 Future<Uint8List> source(
     {bool signature = false,

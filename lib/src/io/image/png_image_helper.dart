@@ -1,11 +1,11 @@
 import '../../platform/compression.dart';
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/image/png_image_data.dart';
-import 'package:pdfcraft/src/io/image/image_data.dart';
+import 'package:dpdf/src/io/image/png_image_data.dart';
+import 'package:dpdf/src/io/image/image_data.dart';
 import 'raw_image_data.dart';
-import 'package:pdfcraft/src/layout/properties/image_type.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:dpdf/src/layout/properties/image_type.dart';
+import 'package:dpdf/src/io/exceptions/io_exception.dart';
+import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
 
 class PngParameters {
   final CraftPngImageData image;

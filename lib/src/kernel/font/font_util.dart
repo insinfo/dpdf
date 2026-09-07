@@ -1,7 +1,7 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/font/otf/glyph.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_content_parser.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_content_parser.dart';
 
 class CraftFontUtil {
   static CraftPdfStream? getToUnicodeStream(Iterable<CraftGlyph> glyphs) {

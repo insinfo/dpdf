@@ -1,11 +1,11 @@
 /// An operation failure carrying a readable diagnosis and its optional cause.
-class PdfcraftException implements Exception {
+class DpdfException implements Exception {
   final String message;
   final Object? cause;
 
-  PdfcraftException(this.message, [this.cause]);
+  DpdfException(this.message, [this.cause]);
 
-  PdfcraftException.withDefaultMessage()
+  DpdfException.withDefaultMessage()
       : this('PDF processing failed without a diagnostic message.');
 
   String getMessage() => message;
@@ -19,7 +19,7 @@ class PdfcraftException implements Exception {
 }
 
 /// Several failures reported together while retaining each individual error.
-class CraftAggregatedException extends PdfcraftException {
+class CraftAggregatedException extends DpdfException {
   final List<Exception> innerExceptions;
 
   CraftAggregatedException(super.message, this.innerExceptions, [super.cause]);

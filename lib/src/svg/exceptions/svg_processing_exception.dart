@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/kernel/exceptions/pdf_exception.dart';
+import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
 
 /// Exception thrown by ISvgProcessor when it cannot process an SVG
 class CraftSvgProcessingException extends CraftPdfException {

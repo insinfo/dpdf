@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart' as reference;
-import 'package:pdfcraft/src/commons/digest/digest_bytes.dart';
+import 'package:dpdf/src/commons/digest/digest_bytes.dart';
 import 'package:test/test.dart';
 
 void main() {

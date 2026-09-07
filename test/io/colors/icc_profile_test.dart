@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/colors/icc_profile.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:dpdf/src/io/colors/icc_profile.dart';
+import 'package:dpdf/src/io/exceptions/io_exception.dart';
 
 void main() {
   group('IccProfile', () {

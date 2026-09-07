@@ -1,11 +1,11 @@
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:pdfcraft/src/kernel/pdf/xobject/pdf_form_x_object.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/svg/renderers/svg_node_renderer.dart';
-import 'package:pdfcraft/src/svg/renderers/branch_svg_node_renderer.dart';
-import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
-import 'package:pdfcraft/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
-import 'package:pdfcraft/src/svg/renderers/impl/marker_svg_node_renderer.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/kernel/pdf/xobject/pdf_form_x_object.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/branch_svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
+import 'package:dpdf/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/impl/marker_svg_node_renderer.dart';
 
 abstract class CraftAbstractBranchSvgNodeRenderer
     extends CraftAbstractSvgNodeRenderer implements CraftBranchSvgNodeRenderer {

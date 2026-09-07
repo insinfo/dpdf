@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/kernel/colors/color.dart';
+import 'package:dpdf/src/kernel/colors/color.dart';
 
 class CraftBackground {
   CraftColor? color;

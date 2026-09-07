@@ -1,7 +1,7 @@
-import 'package:pdfcraft/src/layout/element_property_container.dart';
-import 'package:pdfcraft/src/layout/element/element.dart';
-import 'package:pdfcraft/src/layout/element/element_model.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/element_property_container.dart';
+import 'package:dpdf/src/layout/element/element.dart';
+import 'package:dpdf/src/layout/element/element_model.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
 
 abstract class CraftAbstractElement<T extends CraftElement>
     extends CraftElementPropertyContainer<T> implements CraftElementModel {

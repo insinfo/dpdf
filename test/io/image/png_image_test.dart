@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/image/png_image_helper.dart';
-import 'package:pdfcraft/src/io/image/png_image_data.dart';
-import 'package:pdfcraft/src/layout/properties/image_type.dart';
+import 'package:dpdf/src/io/image/png_image_helper.dart';
+import 'package:dpdf/src/io/image/png_image_data.dart';
+import 'package:dpdf/src/layout/properties/image_type.dart';
 
 void main() {
   group('PngImageHelper Tests', () {

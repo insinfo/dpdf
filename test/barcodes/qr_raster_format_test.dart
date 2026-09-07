@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/barcodes/qrcode/format_information.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/qr_code_writer.dart';
+import 'package:dpdf/src/barcodes/qrcode/format_information.dart';
+import 'package:dpdf/src/barcodes/qrcode/qr_code_writer.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,14 +1,14 @@
-import 'package:pdfcraft/src/layout/document.dart';
-import 'package:pdfcraft/src/layout/renderer/root_renderer.dart';
-import 'package:pdfcraft/src/layout/layout/layout_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_page.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:pdfcraft/src/layout/renderer/draw_context.dart';
-import 'package:pdfcraft/src/kernel/geom/page_size.dart';
+import 'package:dpdf/src/layout/document.dart';
+import 'package:dpdf/src/layout/renderer/root_renderer.dart';
+import 'package:dpdf/src/layout/layout/layout_context.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_page.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/layout/renderer/draw_context.dart';
+import 'package:dpdf/src/kernel/geom/page_size.dart';
 
 class CraftDocumentRenderer extends CraftRootRenderer {
   final CraftDocument document;

@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/kernel/crypto/aes_cipher.dart';
-import 'package:pdfcraft/src/kernel/crypto/iv_generator.dart';
-import 'package:pdfcraft/src/kernel/crypto/output_stream_encryption.dart';
-import 'package:pdfcraft/src/kernel/exceptions/kernel_exception_message_constant.dart';
-import 'package:pdfcraft/src/kernel/exceptions/pdf_exception.dart';
+import 'package:dpdf/src/kernel/crypto/aes_cipher.dart';
+import 'package:dpdf/src/kernel/crypto/iv_generator.dart';
+import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
+import 'package:dpdf/src/kernel/exceptions/kernel_exception_message_constant.dart';
+import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
 
 /// AES encryption output stream.
 class CraftOutputStreamAesEncryption extends CraftOutputStreamEncryption {

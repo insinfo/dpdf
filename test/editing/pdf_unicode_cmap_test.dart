@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/editing/pdf_unicode_cmap.dart';
+import 'package:dpdf/src/editing/pdf_unicode_cmap.dart';
 import 'package:test/test.dart';
 
 PdfUnicodeCMap parse(String body) =>

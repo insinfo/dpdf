@@ -1,10 +1,10 @@
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_types_validation_utils.dart';
-import 'package:pdfcraft/src/svg/renderers/svg_node_renderer.dart';
-import 'package:pdfcraft/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
-import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
-import 'package:pdfcraft/src/svg/svg_constants.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_types_validation_utils.dart';
+import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
+import 'package:dpdf/src/svg/svg_constants.dart';
 
 class CraftSvgCssUtils {
   CraftSvgCssUtils._();

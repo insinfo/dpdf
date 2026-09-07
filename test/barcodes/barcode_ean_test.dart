@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:pdfcraft/src/barcodes/barcode_ean.dart';
-import 'package:pdfcraft/src/kernel/colors/device_gray.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/barcodes/barcode_ean.dart';
+import 'package:dpdf/src/kernel/colors/device_gray.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 
 import 'package:test/test.dart';
 

@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/layout/element_property_container.dart';
+import 'package:dpdf/src/layout/element_property_container.dart';
 
 class CraftStyle extends CraftElementPropertyContainer<CraftStyle> {
   CraftStyle();

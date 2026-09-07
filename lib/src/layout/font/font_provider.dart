@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/kernel/font/pdf_font.dart';
+import 'package:dpdf/src/kernel/font/pdf_font.dart';
 
 class CraftFontInfo {
   // Stub

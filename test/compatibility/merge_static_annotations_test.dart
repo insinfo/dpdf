@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
 
 typedef Configure = void Function(CraftPdfDocument document,

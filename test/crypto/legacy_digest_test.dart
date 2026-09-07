@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
 import 'package:pointycastle/export.dart' as pc;
-import 'package:pdfcraft/src/commons/digest/legacy_digest.dart';
+import 'package:dpdf/src/commons/digest/legacy_digest.dart';
 
 void main() {
   for (final name in ['MD2', 'RIPEMD-128', 'RIPEMD-160', 'RIPEMD-256']) {

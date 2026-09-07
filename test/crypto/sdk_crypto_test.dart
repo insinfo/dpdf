@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:test/test.dart';
 import 'package:pointycastle/export.dart' as oracle;
-import 'package:pdfcraft/src/pki/pki_utils.dart';
-import 'package:pdfcraft/src/kernel/crypto/aes_cipher.dart';
-import 'package:pdfcraft/src/sign/der_objects.dart';
-import 'package:pdfcraft/src/sign/x509_certificate.dart';
+import 'package:dpdf/src/pki/pki_utils.dart';
+import 'package:dpdf/src/kernel/crypto/aes_cipher.dart';
+import 'package:dpdf/src/sign/der_objects.dart';
+import 'package:dpdf/src/sign/x509_certificate.dart';
 
 Uint8List hex(String s) => Uint8List.fromList(List.generate(
     s.length ~/ 2, (i) => int.parse(s.substring(i * 2, i * 2 + 2), radix: 16)));

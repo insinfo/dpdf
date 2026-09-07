@@ -1,7 +1,7 @@
 import 'package:html/parser.dart' show parse;
-import 'package:pdfcraft/src/html/css/html_style_sheet.dart';
-import 'package:pdfcraft/src/html/dom/html_box_builder.dart';
-import 'package:pdfcraft/src/html/layout/html_layout_engine.dart';
+import 'package:dpdf/src/html/css/html_style_sheet.dart';
+import 'package:dpdf/src/html/dom/html_box_builder.dart';
+import 'package:dpdf/src/html/layout/html_layout_engine.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,13 +1,13 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/font/true_type_font.dart';
-import 'package:pdfcraft/src/kernel/font/pdf_true_type_font.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/layout/document.dart';
-import 'package:pdfcraft/src/layout/element/paragraph.dart';
-import 'package:pdfcraft/src/layout/element/text.dart';
-import 'package:pdfcraft/src/layout/properties/property.dart';
-import 'package:pdfcraft/src/layout/properties/unit_value.dart';
+import 'package:dpdf/src/io/font/true_type_font.dart';
+import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/layout/document.dart';
+import 'package:dpdf/src/layout/element/paragraph.dart';
+import 'package:dpdf/src/layout/element/text.dart';
+import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/properties/unit_value.dart';
 import 'dart:io';
 
 void main() {

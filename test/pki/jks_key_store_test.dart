@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart' as oracle;
-import 'package:pdfcraft/src/pki/jks_key_store.dart';
+import 'package:dpdf/src/pki/jks_key_store.dart';
 import 'package:test/test.dart';
 
 List<int> integer(int value, int width) => [

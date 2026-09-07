@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:pdfcraft/pdfcraft.dart';
-import 'package:pdfcraft/src/pki/pki_utils.dart';
-import 'package:pdfcraft/src/sign/signature_mechanism_params.dart';
-import 'package:pdfcraft/src/sign/signature_util.dart';
+import 'package:dpdf/dpdf.dart';
+import 'package:dpdf/src/pki/pki_utils.dart';
+import 'package:dpdf/src/sign/signature_mechanism_params.dart';
+import 'package:dpdf/src/sign/signature_util.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,7 +1,7 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/xmp/xmp_meta.dart';
-import 'package:pdfcraft/src/kernel/xmp/xmp_const.dart';
-import 'package:pdfcraft/src/kernel/xmp/pdf_const.dart';
+import 'package:dpdf/src/kernel/xmp/xmp_meta.dart';
+import 'package:dpdf/src/kernel/xmp/xmp_const.dart';
+import 'package:dpdf/src/kernel/xmp/pdf_const.dart';
 
 void main() {
   group('XMPMeta Tests', () {

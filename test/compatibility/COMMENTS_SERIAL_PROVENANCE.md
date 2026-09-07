@@ -6,7 +6,7 @@ em `C:/MyDartProjects/insinfo_dart_pdf/test`, por solicitação expressa do usu�
 Não foi encontrado LICENSE na raiz da origem durante esta etapa. Este registro
 identifica a origem, sem atribuir uma licença presumida a esses arquivos.
 
-Alterações: imports apontam explicitamente para os módulos novos de pdfcraft;
+Alterações: imports apontam explicitamente para os módulos novos de dpdf;
 formatação Dart; o teste sanitizer usa uma sequência própria de bytes em lugar
 do arquivo externo `slow_pdf.pdf`. As expectativas originais foram preservadas.
 `comment_serial_guards_test.dart` contém testes novos de fronteiras e integridade.

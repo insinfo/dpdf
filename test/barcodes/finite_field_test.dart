@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/barcodes/qrcode/gf_256.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/reed_solomon_encoder.dart';
+import 'package:dpdf/src/barcodes/qrcode/gf_256.dart';
+import 'package:dpdf/src/barcodes/qrcode/reed_solomon_encoder.dart';
 import 'package:test/test.dart';
 
 void main() {

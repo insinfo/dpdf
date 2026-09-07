@@ -1,8 +1,8 @@
-import 'package:pdfcraft/src/barcodes/qrcode/bit_vector.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/byte_matrix.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/error_correction_level.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/matrix_util.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/version.dart';
+import 'package:dpdf/src/barcodes/qrcode/bit_vector.dart';
+import 'package:dpdf/src/barcodes/qrcode/byte_matrix.dart';
+import 'package:dpdf/src/barcodes/qrcode/error_correction_level.dart';
+import 'package:dpdf/src/barcodes/qrcode/matrix_util.dart';
+import 'package:dpdf/src/barcodes/qrcode/version.dart';
 import 'package:test/test.dart';
 
 int asNumber(CraftBitVector bits) {

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/platform/compression.dart';
-import 'package:pdfcraft/src/io/image/image_data_factory.dart';
+import 'package:dpdf/src/platform/compression.dart';
+import 'package:dpdf/src/io/image/image_data_factory.dart';
 import 'raster_order_test.dart' show bitmap;
 
 Uint8List rle(int depth, List<int> commands) {

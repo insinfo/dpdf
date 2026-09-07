@@ -1,6 +1,6 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/sign/asn1_utils.dart';
-import 'package:pdfcraft/src/sign/timestamp_client.dart';
+import 'package:dpdf/src/sign/asn1_utils.dart';
+import 'package:dpdf/src/sign/timestamp_client.dart';
 import 'package:test/test.dart';
 
 void main() {

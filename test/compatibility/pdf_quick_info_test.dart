@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/compatibility/pdf_quick_info.dart';
+import 'package:dpdf/src/compatibility/pdf_quick_info.dart';
 
 void main() {
   test('header-only reads version and offset without claiming a document',

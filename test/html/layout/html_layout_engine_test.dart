@@ -1,6 +1,6 @@
-import 'package:pdfcraft/src/html/layout/html_layout_engine.dart';
-import 'package:pdfcraft/src/html/layout/html_layout_plan.dart';
-import 'package:pdfcraft/src/html/model/html_box.dart';
+import 'package:dpdf/src/html/layout/html_layout_engine.dart';
+import 'package:dpdf/src/html/layout/html_layout_plan.dart';
+import 'package:dpdf/src/html/model/html_box.dart';
 import 'package:test/test.dart';
 
 CraftHtmlBox _text(String text) => CraftHtmlBox(

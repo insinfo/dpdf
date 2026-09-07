@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/font/open_type_parser.dart';
-import 'package:pdfcraft/src/io/font/type1_font.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_cid_uni.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_uni_cid.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_object.dart';
+import 'package:dpdf/src/io/font/open_type_parser.dart';
+import 'package:dpdf/src/io/font/type1_font.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_cid_uni.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_uni_cid.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_object.dart';
 import 'package:test/test.dart';
 
 CraftOpenTypeParser grouped(List<(int, int, int)> groups) {

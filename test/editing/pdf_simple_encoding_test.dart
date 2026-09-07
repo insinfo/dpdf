@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/editing/pdf_simple_encoding.dart';
+import 'package:dpdf/src/editing/pdf_simple_encoding.dart';
 import 'package:test/test.dart';
 
 void main() {

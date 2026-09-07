@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/kernel/crypto/aes_cipher.dart';
-import 'package:pdfcraft/src/kernel/crypto/decryptor.dart';
+import 'package:dpdf/src/kernel/crypto/aes_cipher.dart';
+import 'package:dpdf/src/kernel/crypto/decryptor.dart';
 
 /// AES decryptor implementation.
 class CraftAesDecryptor implements CraftDecryptor {

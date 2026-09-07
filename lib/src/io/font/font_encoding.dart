@@ -1,9 +1,9 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/font/adobe_glyph_list.dart';
-import 'package:pdfcraft/src/io/font/pdf_encodings.dart';
-import 'package:pdfcraft/src/io/font/otf/glyph_line.dart';
+import 'package:dpdf/src/io/font/adobe_glyph_list.dart';
+import 'package:dpdf/src/io/font/pdf_encodings.dart';
+import 'package:dpdf/src/io/font/otf/glyph_line.dart';
 
-import 'package:pdfcraft/src/io/util/text_util.dart';
+import 'package:dpdf/src/io/util/text_util.dart';
 
 class CraftFontEncoding {
   static const String NOTDEF = ".notdef";

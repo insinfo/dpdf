@@ -8,7 +8,7 @@ import 'tsa_client.dart';
 import 'oid.dart';
 import 'digest_algorithms.dart';
 import 'signature_mechanisms.dart';
-import 'package:pdfcraft/src/pki/rsa.dart';
+import 'package:dpdf/src/pki/rsa.dart';
 
 import 'sign_utils.dart';
 import 'x509_certificate.dart';
@@ -947,8 +947,7 @@ class CraftPdfPKCS7 {
       // RFC 3161 timestamps the digest of the signature value, never the raw
       // signature bytes. The TSA client controls the digest it advertised in
       // its request's MessageImprint algorithm identifier.
-      final tsaDigest = tsaClient.getMessageDigest()
-        ..update(_signatureValue!);
+      final tsaDigest = tsaClient.getMessageDigest()..update(_signatureValue!);
       final tsaToken = await tsaClient.getTimeStampToken(tsaDigest.digest());
 
       final attrContent = <Uint8List>[];

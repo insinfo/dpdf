@@ -1,7 +1,7 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/codec/lzw_compressor.dart';
-import 'package:pdfcraft/src/io/codec/tiff_lzw_decoder.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:dpdf/src/io/codec/lzw_compressor.dart';
+import 'package:dpdf/src/io/codec/tiff_lzw_decoder.dart';
+import 'package:dpdf/src/io/exceptions/io_exception.dart';
 import 'package:test/test.dart';
 
 Uint8List fixedNineBitCodes(List<int> codes) {

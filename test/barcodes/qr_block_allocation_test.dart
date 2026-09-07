@@ -1,8 +1,8 @@
-import 'package:pdfcraft/src/barcodes/qrcode/encoder.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/encode_hint_type.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/error_correction_level.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/qr_code.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/version.dart';
+import 'package:dpdf/src/barcodes/qrcode/encoder.dart';
+import 'package:dpdf/src/barcodes/qrcode/encode_hint_type.dart';
+import 'package:dpdf/src/barcodes/qrcode/error_correction_level.dart';
+import 'package:dpdf/src/barcodes/qrcode/qr_code.dart';
+import 'package:dpdf/src/barcodes/qrcode/version.dart';
 import 'package:test/test.dart';
 
 void main() {

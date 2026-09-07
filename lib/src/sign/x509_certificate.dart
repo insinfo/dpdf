@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/sign/der_objects.dart';
+import 'package:dpdf/src/sign/der_objects.dart';
 
 import 'certificate_details.dart';
 import 'oid.dart';

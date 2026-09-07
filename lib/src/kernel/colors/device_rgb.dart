@@ -1,6 +1,6 @@
 import 'dart:math';
-import 'package:pdfcraft/src/kernel/colors/color.dart';
-import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_device_cs.dart';
+import 'package:dpdf/src/kernel/colors/color.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_device_cs.dart';
 
 /// RGB device color components.
 class CraftDeviceRgb extends CraftColor {

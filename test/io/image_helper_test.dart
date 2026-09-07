@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/image/image_data_factory.dart';
-import 'package:pdfcraft/src/io/image/bmp_image_data.dart';
-import 'package:pdfcraft/src/io/image/jbig2_image_data.dart';
-import 'package:pdfcraft/src/io/image/raw_image_data.dart';
+import 'package:dpdf/src/io/image/image_data_factory.dart';
+import 'package:dpdf/src/io/image/bmp_image_data.dart';
+import 'package:dpdf/src/io/image/jbig2_image_data.dart';
+import 'package:dpdf/src/io/image/raw_image_data.dart';
 
 void main() {
   group('Image Helper Tests', () {

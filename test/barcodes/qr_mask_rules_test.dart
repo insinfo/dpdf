@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/barcodes/qrcode/byte_matrix.dart';
-import 'package:pdfcraft/src/barcodes/qrcode/mask_util.dart';
+import 'package:dpdf/src/barcodes/qrcode/byte_matrix.dart';
+import 'package:dpdf/src/barcodes/qrcode/mask_util.dart';
 import 'package:test/test.dart';
 
 CraftByteMatrix grid(List<String> rows) {

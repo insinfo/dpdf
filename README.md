@@ -1,9 +1,9 @@
-# pdfcraft
+# dpdf
 
 Biblioteca PDF em Dart, sem dependências externas de execução ou FFI.
-Importe `package:pdfcraft/pdfcraft.dart`. Arquivos e rede usam abstrações de
+Importe `package:dpdf/dpdf.dart`. Arquivos e rede usam abstrações de
 plataforma; no navegador, arquivos locais são representados pelo registro em
-memória exposto em `pdfcraft_web.dart`.
+memória exposto em `dpdf_web.dart`.
 
 O teste `example/platform_smoke.dart` exercita criação, edição com múltiplas
 fontes, extração com ActualText e Form XObjects, merge, assinatura RSA/CMS e
@@ -42,7 +42,7 @@ Os leitores públicos operam sobre `Uint8List`, sem acesso obrigatório a arquiv
 ou dependências de execução:
 
 ```dart
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 
 final jks = JksKeyStore.read(jksBytes, password: storePassword);
 final entry = jks.entries[alias] as JksPrivateKey;

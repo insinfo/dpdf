@@ -1,7 +1,7 @@
-import 'package:pdfcraft/src/kernel/geom/matrix.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_literal.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/kernel/geom/matrix.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_literal.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 
 import 'data/text_render_info.dart';
 import 'event_type.dart';

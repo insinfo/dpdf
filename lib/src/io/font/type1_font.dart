@@ -1,11 +1,11 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/font/adobe_glyph_list.dart';
-import 'package:pdfcraft/src/io/font/constants/font_weights.dart';
+import 'package:dpdf/src/io/font/adobe_glyph_list.dart';
+import 'package:dpdf/src/io/font/constants/font_weights.dart';
 
-import 'package:pdfcraft/src/io/font/font_program.dart';
+import 'package:dpdf/src/io/font/font_program.dart';
 
-import 'package:pdfcraft/src/io/font/otf/glyph.dart';
-import 'package:pdfcraft/src/io/font/type1_parser.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/io/font/type1_parser.dart';
 
 class CraftType1Font extends CraftFontProgram {
   static final List<int> PFB_TYPES = [1, 2, 1];

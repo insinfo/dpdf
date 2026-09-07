@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/io/font/font_program.dart';
+import 'package:dpdf/src/io/font/font_program.dart';
 import 'font_metrics.dart';
-import 'package:pdfcraft/src/io/font/otf/glyph.dart';
-import 'package:pdfcraft/src/io/font/open_type_parser.dart';
-import 'package:pdfcraft/src/commons/utils/tuple2.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:dpdf/src/io/font/otf/glyph.dart';
+import 'package:dpdf/src/io/font/open_type_parser.dart';
+import 'package:dpdf/src/commons/utils/tuple2.dart';
+import 'package:dpdf/src/io/exceptions/io_exception.dart';
+import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
 
 class CraftTrueTypeFont extends CraftFontProgram {
   late CraftOpenTypeParser fontParser;

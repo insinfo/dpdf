@@ -4,7 +4,7 @@ import 'pdf_object_wrapper.dart';
 import 'pdf_string.dart';
 import '../../io/font/pdf_encodings.dart';
 // import 'pdf_document.dart';
-import 'package:pdfcraft/src/commons/utils/date_time_util.dart';
+import 'package:dpdf/src/commons/utils/date_time_util.dart';
 
 /// Document information dictionary.
 class CraftPdfDocumentInfo extends CraftPdfObjectWrapper<CraftPdfDictionary> {

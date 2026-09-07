@@ -1,6 +1,6 @@
-import 'package:pdfcraft/src/styledxmlparser/css/common_css_constants.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/resolve/style_inheritance.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_variable_util.dart';
+import 'package:dpdf/src/styledxmlparser/css/common_css_constants.dart';
+import 'package:dpdf/src/styledxmlparser/css/resolve/style_inheritance.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_variable_util.dart';
 
 class CraftCssInheritance implements CraftStyleInheritance {
   static const Set<String> _INHERITABLE_PROPERTIES = {

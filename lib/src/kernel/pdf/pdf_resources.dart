@@ -2,9 +2,9 @@ import 'pdf_object.dart';
 import 'pdf_dictionary.dart';
 import 'pdf_name.dart';
 import 'pdf_object_wrapper.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/font/pdf_font.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/font/pdf_font.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 
 /// Wrapper class that represent resource dictionary.
 class CraftPdfResources extends CraftPdfObjectWrapper<CraftPdfDictionary> {

@@ -1,13 +1,13 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/kernel/exceptions/kernel_exception_message_constant.dart';
-import 'package:pdfcraft/src/kernel/exceptions/pdf_exception.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_output_stream.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/exceptions/kernel_exception_message_constant.dart';
+import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_output_stream.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 
 /// internal class PdfObjectStream : PdfStream
 class CraftPdfObjectStream extends CraftPdfStream {

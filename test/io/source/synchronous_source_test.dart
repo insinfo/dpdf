@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/io/source/array_random_access_source.dart';
-import 'package:pdfcraft/src/io/source/independent_random_access_source.dart';
-import 'package:pdfcraft/src/io/source/random_access_source.dart';
-import 'package:pdfcraft/src/io/source/thread_safe_random_access_source.dart';
+import 'package:dpdf/src/io/source/array_random_access_source.dart';
+import 'package:dpdf/src/io/source/independent_random_access_source.dart';
+import 'package:dpdf/src/io/source/random_access_source.dart';
+import 'package:dpdf/src/io/source/thread_safe_random_access_source.dart';
 import 'package:test/test.dart';
 
 void main() {

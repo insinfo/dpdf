@@ -1,9 +1,9 @@
-import 'package:pdfcraft/src/commons/utils/value_collections.dart';
-import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_color_space.dart';
-import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_device_cs.dart';
-import 'package:pdfcraft/src/kernel/colors/device_gray.dart';
-import 'package:pdfcraft/src/kernel/colors/device_rgb.dart';
-import 'package:pdfcraft/src/kernel/colors/device_cmyk.dart';
+import 'package:dpdf/src/commons/utils/value_collections.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_color_space.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_device_cs.dart';
+import 'package:dpdf/src/kernel/colors/device_gray.dart';
+import 'package:dpdf/src/kernel/colors/device_rgb.dart';
+import 'package:dpdf/src/kernel/colors/device_cmyk.dart';
 
 /// Represents a color.
 class CraftColor {

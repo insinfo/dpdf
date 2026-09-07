@@ -1,7 +1,7 @@
-import 'package:pdfcraft/src/layout/properties/unit_value.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/common_css_constants.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_types_validation_utils.dart';
-import 'package:pdfcraft/src/styledxmlparser/exceptions/styled_xml_parser_exception.dart';
+import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:dpdf/src/styledxmlparser/css/common_css_constants.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_types_validation_utils.dart';
+import 'package:dpdf/src/styledxmlparser/exceptions/styled_xml_parser_exception.dart';
 
 /// Utilities class for CSS dimension parsing operations.
 class CraftCssDimensionParsingUtils {

@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'pdf_object.dart';
 import 'pdf_name.dart';
 import 'pdf_number.dart';

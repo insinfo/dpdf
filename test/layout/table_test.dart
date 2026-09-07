@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/layout/document.dart';
-import 'package:pdfcraft/src/layout/element/cell.dart';
-import 'package:pdfcraft/src/layout/element/paragraph.dart';
-import 'package:pdfcraft/src/layout/element/table.dart';
-import 'package:pdfcraft/src/layout/element/text.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/layout/document.dart';
+import 'package:dpdf/src/layout/element/cell.dart';
+import 'package:dpdf/src/layout/element/paragraph.dart';
+import 'package:dpdf/src/layout/element/table.dart';
+import 'package:dpdf/src/layout/element/text.dart';
 import 'package:test/test.dart';
 
 void main() {

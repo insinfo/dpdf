@@ -1,15 +1,15 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/pki/pki_utils.dart';
-import 'package:pdfcraft/src/sign/der_objects.dart';
-import 'package:pdfcraft/src/sign/asn1_utils.dart';
-import 'package:pdfcraft/src/sign/x509_certificate.dart';
-import 'package:pdfcraft/src/sign/pdf_pkcs7.dart';
-import 'package:pdfcraft/src/sign/oid.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/commons/digest/digest_bytes.dart';
-import 'package:pdfcraft/src/kernel/crypto/aes_cipher.dart';
+import 'package:dpdf/src/pki/pki_utils.dart';
+import 'package:dpdf/src/sign/der_objects.dart';
+import 'package:dpdf/src/sign/asn1_utils.dart';
+import 'package:dpdf/src/sign/x509_certificate.dart';
+import 'package:dpdf/src/sign/pdf_pkcs7.dart';
+import 'package:dpdf/src/sign/oid.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/commons/digest/digest_bytes.dart';
+import 'package:dpdf/src/kernel/crypto/aes_cipher.dart';
 
 void main() {
   late RSAPrivateKey private;

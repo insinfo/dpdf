@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/kernel/numbering/greek_alphabet_numbering.dart';
-import 'package:pdfcraft/src/kernel/numbering/roman_numbering.dart';
+import 'package:dpdf/src/kernel/numbering/greek_alphabet_numbering.dart';
+import 'package:dpdf/src/kernel/numbering/roman_numbering.dart';
 import 'package:test/test.dart';
 
 void main() {

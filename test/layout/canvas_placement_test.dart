@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/layout/canvas.dart';
-import 'package:pdfcraft/src/layout/renderer/canvas_renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/abstract_renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/draw_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/layout/canvas.dart';
+import 'package:dpdf/src/layout/renderer/canvas_renderer.dart';
+import 'package:dpdf/src/layout/renderer/abstract_renderer.dart';
+import 'package:dpdf/src/layout/renderer/draw_context.dart';
+import 'package:dpdf/src/layout/layout/layout_context.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
 
 class _Probe extends CraftAbstractRenderer {
   int layouts = 0;

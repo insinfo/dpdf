@@ -7,7 +7,7 @@ A API síncrona original foi substituída explicitamente por
 `CraftPdfDocument.open(CraftPdfReader.fromBytes(...))`, com fechamento assíncrono.
 Foram acrescentados três casos próprios de xref truncado ou fora dos limites.
 
-O contrato adaptado aceita exceções recuperáveis de pdfcraft; não aceita `Error`
+O contrato adaptado aceita exceções recuperáveis de dpdf; não aceita `Error`
 e não captura genericamente erros da implementação. Não houve transplante de
 arquivos PDF nem leitura/cópia do engine da biblioteca de origem. A autorização
 para usar os testes veio da solicitação do usuário; não foi presumida uma licença

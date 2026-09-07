@@ -1,7 +1,7 @@
-import '../../commons/exceptions/pdfcraft_exception.dart';
+import '../../commons/exceptions/dpdf_exception.dart';
 
 /// Exception thrown when a PDF processing error occurs in the kernel module.
-class CraftPdfException extends PdfcraftException {
+class CraftPdfException extends DpdfException {
   /// Object that was being processed when the exception occurred.
   final Object? pdfObject;
 

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:pdfcraft/src/html/dom/html_data_image.dart';
-import 'package:pdfcraft/src/layout/properties/image_type.dart';
+import 'package:dpdf/src/html/dom/html_data_image.dart';
+import 'package:dpdf/src/layout/properties/image_type.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/styledxmlparser/css/common_css_constants.dart';
+import 'package:dpdf/src/styledxmlparser/css/common_css_constants.dart';
 
 /// Utilities class for CSS types validating operations.
 class CraftCssTypesValidationUtils {

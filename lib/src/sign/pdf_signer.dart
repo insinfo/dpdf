@@ -2,7 +2,7 @@ import '../platform/io.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 
-import 'package:pdfcraft/src/kernel/pdf/stamping_properties.dart';
+import 'package:dpdf/src/kernel/pdf/stamping_properties.dart';
 
 import '../kernel/pdf/pdf_document.dart';
 import '../kernel/pdf/pdf_reader.dart';

@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/styledxmlparser/node/attribute.dart';
+import 'package:dpdf/src/styledxmlparser/node/attribute.dart';
 
 abstract class CraftMarkupNode {
   CraftMarkupNode? get parentNode;

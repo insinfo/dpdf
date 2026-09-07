@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/commons/digest/message_digest.dart';
-import 'package:pdfcraft/src/kernel/crypto/digest_algorithms.dart';
-import 'package:pdfcraft/src/kernel/crypto/decryptor.dart';
-import 'package:pdfcraft/src/kernel/crypto/output_stream_encryption.dart';
+import 'package:dpdf/src/commons/digest/message_digest.dart';
+import 'package:dpdf/src/kernel/crypto/digest_algorithms.dart';
+import 'package:dpdf/src/kernel/crypto/decryptor.dart';
+import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
 
 /// Base class for security handlers.
 abstract class CraftSecurityHandler {

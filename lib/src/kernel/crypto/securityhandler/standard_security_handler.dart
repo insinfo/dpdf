@@ -1,16 +1,16 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/io/source/byte_utils.dart';
-import 'package:pdfcraft/src/kernel/crypto/digest_algorithms.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_encryption.dart';
-import 'package:pdfcraft/src/kernel/crypto/securityhandler/security_handler.dart';
-import 'package:pdfcraft/src/kernel/exceptions/kernel_exception_message_constant.dart';
-import 'package:pdfcraft/src/kernel/exceptions/pdf_exception.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_literal.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/io/source/byte_utils.dart';
+import 'package:dpdf/src/kernel/crypto/digest_algorithms.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_encryption.dart';
+import 'package:dpdf/src/kernel/crypto/securityhandler/security_handler.dart';
+import 'package:dpdf/src/kernel/exceptions/kernel_exception_message_constant.dart';
+import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_literal.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 
 /// Base class for standard security handlers.
 abstract class CraftStandardSecurityHandler extends CraftSecurityHandler {

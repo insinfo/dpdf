@@ -4,15 +4,15 @@ import 'dart:convert';
 
 import 'package:test/test.dart';
 
-import 'package:pdfcraft/src/pki/pki_utils.dart';
+import 'package:dpdf/src/pki/pki_utils.dart';
 
-import 'package:pdfcraft/src/sign/pdf_signer.dart';
-import 'package:pdfcraft/src/sign/external_signature.dart';
-import 'package:pdfcraft/src/sign/signature_mechanism_params.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_reader.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_document.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_writer.dart';
-import 'package:pdfcraft/src/kernel/geom/page_size.dart';
+import 'package:dpdf/src/sign/pdf_signer.dart';
+import 'package:dpdf/src/sign/external_signature.dart';
+import 'package:dpdf/src/sign/signature_mechanism_params.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_writer.dart';
+import 'package:dpdf/src/kernel/geom/page_size.dart';
 
 /// Simulates the Backend Service which handles keys, certificates and signing
 class SimulatedBackend {

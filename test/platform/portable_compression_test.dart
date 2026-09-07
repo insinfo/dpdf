@@ -1,6 +1,6 @@
 import 'dart:io' as native;
 import 'dart:math';
-import 'package:pdfcraft/src/platform/compression_portable.dart' as portable;
+import 'package:dpdf/src/platform/compression_portable.dart' as portable;
 import 'package:test/test.dart';
 
 void main() {

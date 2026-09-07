@@ -1,7 +1,7 @@
 import 'dart:math';
-import 'package:pdfcraft/src/kernel/colors/color.dart';
-import 'package:pdfcraft/src/kernel/colors/device_rgb.dart';
-import 'package:pdfcraft/src/kernel/pdf/colorspace/pdf_device_cs.dart';
+import 'package:dpdf/src/kernel/colors/color.dart';
+import 'package:dpdf/src/kernel/colors/device_rgb.dart';
+import 'package:dpdf/src/kernel/pdf/colorspace/pdf_device_cs.dart';
 
 /// CMYK device color components.
 class CraftDeviceCmyk extends CraftColor {

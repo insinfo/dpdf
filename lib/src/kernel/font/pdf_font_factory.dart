@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/io/font/font_program.dart';
-import 'package:pdfcraft/src/io/font/font_program_factory.dart';
+import 'package:dpdf/src/io/font/font_program.dart';
+import 'package:dpdf/src/io/font/font_program_factory.dart';
 
 import '../pdf/pdf_dictionary.dart';
 import '../pdf/pdf_name.dart';

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart' as oracle;
-import 'package:pdfcraft/src/commons/digest/sdk_message_digest.dart';
-import 'package:pdfcraft/src/kernel/crypto/digest_algorithms.dart';
+import 'package:dpdf/src/commons/digest/sdk_message_digest.dart';
+import 'package:dpdf/src/kernel/crypto/digest_algorithms.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,9 +1,9 @@
 import '../platform/io.dart';
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/kernel/crypto/digest_algorithms.dart';
-import 'package:pdfcraft/src/sign/der_objects.dart';
-import 'package:pdfcraft/src/commons/pdfcraft_log_manager.dart';
+import 'package:dpdf/src/kernel/crypto/digest_algorithms.dart';
+import 'package:dpdf/src/sign/der_objects.dart';
+import 'package:dpdf/src/commons/dpdf_log_manager.dart';
 
 import 'certificate_util.dart';
 import 'ocsp_client.dart';

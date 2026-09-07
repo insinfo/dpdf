@@ -1,9 +1,9 @@
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
-import 'package:pdfcraft/src/svg/renderers/svg_draw_context.dart';
-import 'package:pdfcraft/src/svg/svg_constants.dart';
-import 'package:pdfcraft/src/svg/utils/svg_coordinate_utils.dart';
-import 'package:pdfcraft/src/svg/utils/svg_css_utils.dart';
-import 'package:pdfcraft/src/commons/utils/value_collections.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
+import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
+import 'package:dpdf/src/svg/svg_constants.dart';
+import 'package:dpdf/src/svg/utils/svg_coordinate_utils.dart';
+import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
+import 'package:dpdf/src/commons/utils/value_collections.dart';
 
 /// This class converts stroke related SVG parameters and attributes into those from PDF specification.
 class SvgStrokeParameterConverter {

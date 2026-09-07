@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:pdfcraft/pdfcraft.dart';
-import 'package:pdfcraft/src/kernel/pdf/writer_properties.dart';
+import 'package:dpdf/dpdf.dart';
+import 'package:dpdf/src/kernel/pdf/writer_properties.dart';
 import 'package:test/test.dart';
 
 // Round-trip requirements adapted from loaded_document_round_trip_test.dart.

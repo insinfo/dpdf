@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/kernel/pdf/canvas/parser/content_operator.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/parser/data/event_data.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/parser/event_type.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/parser/listener/event_listener.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/parser/pdf_canvas_processor.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_literal.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/parser/content_operator.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/parser/data/event_data.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/parser/event_type.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/parser/listener/event_listener.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/parser/pdf_canvas_processor.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_literal.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
 import 'package:test/test.dart';
 
 class _Listener implements CraftEventListener {

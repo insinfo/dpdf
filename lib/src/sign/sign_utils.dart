@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/sign/der_objects.dart';
-import 'package:pdfcraft/src/pki/rsa.dart';
+import 'package:dpdf/src/sign/der_objects.dart';
+import 'package:dpdf/src/pki/rsa.dart';
 
 import 'certificate_details.dart';
 import '../commons/digest/digest_bytes.dart';

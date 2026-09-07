@@ -1,9 +1,9 @@
-import 'package:pdfcraft/src/layout/element/block_element.dart';
-import 'package:pdfcraft/src/layout/element/element.dart';
-import 'package:pdfcraft/src/layout/element/text.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/paragraph_renderer.dart';
-import 'package:pdfcraft/src/kernel/pdf/tagutils/accessibility_properties.dart';
+import 'package:dpdf/src/layout/element/block_element.dart';
+import 'package:dpdf/src/layout/element/element.dart';
+import 'package:dpdf/src/layout/element/text.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/renderer/paragraph_renderer.dart';
+import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
 
 class CraftParagraph extends CraftBlockElement<CraftParagraph> {
   CraftParagraph([String? text]) {

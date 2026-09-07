@@ -1,7 +1,7 @@
-import 'package:pdfcraft/src/layout/renderer/abstract_renderer.dart';
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/renderer/abstract_renderer.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
 
 abstract class CraftRootRenderer extends CraftAbstractRenderer {
   bool immediateFlush = true;

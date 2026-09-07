@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
-import 'package:pdfcraft/src/io/codec/tiff_field.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/io/codec/tiff_field.dart';
+import 'package:dpdf/src/io/exceptions/io_exception.dart';
 
 class TiffDirectory {
   bool isBigEndian = false;

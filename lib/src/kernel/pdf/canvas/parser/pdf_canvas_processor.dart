@@ -1,18 +1,18 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/io/source/pdf_tokenizer.dart';
-import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
-import 'package:pdfcraft/src/kernel/geom/matrix.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/canvas_graphics_state.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_literal.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_object.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_page.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_resources.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/io/source/pdf_tokenizer.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/kernel/geom/matrix.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/canvas_graphics_state.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_literal.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_page.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_resources.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 
 import 'content_operator.dart';
 import 'listener/event_listener.dart';

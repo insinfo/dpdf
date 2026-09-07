@@ -1,4 +1,4 @@
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
 import 'form_merge_policy_test.dart' as fixtures;
 

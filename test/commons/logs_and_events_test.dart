@@ -1,8 +1,8 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/commons/logs/commons_log_message_constant.dart';
-import 'package:pdfcraft/src/commons/actions/event_manager.dart';
-import 'package:pdfcraft/src/io/logs/io_log_message_constant.dart';
-import 'package:pdfcraft/src/kernel/logs/kernel_log_message_constant.dart';
+import 'package:dpdf/src/commons/logs/commons_log_message_constant.dart';
+import 'package:dpdf/src/commons/actions/event_manager.dart';
+import 'package:dpdf/src/io/logs/io_log_message_constant.dart';
+import 'package:dpdf/src/kernel/logs/kernel_log_message_constant.dart';
 
 void main() {
   group('CommonsLogMessageConstant', () {

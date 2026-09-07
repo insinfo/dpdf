@@ -1,6 +1,6 @@
-import 'package:pdfcraft/src/commons/digest/message_digest.dart';
-import 'package:pdfcraft/src/commons/digest/sdk_message_digest.dart';
-import 'package:pdfcraft/src/kernel/crypto/oid.dart';
+import 'package:dpdf/src/commons/digest/message_digest.dart';
+import 'package:dpdf/src/commons/digest/sdk_message_digest.dart';
+import 'package:dpdf/src/kernel/crypto/oid.dart';
 
 /// Digest algorithm identifier registry.
 class CraftDigestAlgorithms {

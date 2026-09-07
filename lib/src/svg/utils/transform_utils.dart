@@ -1,9 +1,9 @@
 import 'dart:math' as math;
-import 'package:pdfcraft/src/kernel/geom/affine_transform.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
-import 'package:pdfcraft/src/svg/exceptions/svg_exception_message_constant.dart';
-import 'package:pdfcraft/src/svg/exceptions/svg_processing_exception.dart';
-import 'package:pdfcraft/src/svg/utils/svg_css_utils.dart';
+import 'package:dpdf/src/kernel/geom/affine_transform.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
+import 'package:dpdf/src/svg/exceptions/svg_exception_message_constant.dart';
+import 'package:dpdf/src/svg/exceptions/svg_processing_exception.dart';
+import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 
 class CraftTransformUtils {
   CraftTransformUtils._();

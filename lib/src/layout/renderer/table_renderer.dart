@@ -1,16 +1,16 @@
 import 'dart:math';
 
-import 'package:pdfcraft/src/layout/renderer/abstract_renderer.dart';
-import 'package:pdfcraft/src/layout/element/table.dart';
-import 'package:pdfcraft/src/layout/element/cell.dart';
-import 'package:pdfcraft/src/layout/layout/layout_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
-import 'package:pdfcraft/src/layout/renderer/draw_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/layout/properties/unit_value.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/cell_renderer.dart';
+import 'package:dpdf/src/layout/renderer/abstract_renderer.dart';
+import 'package:dpdf/src/layout/element/table.dart';
+import 'package:dpdf/src/layout/element/cell.dart';
+import 'package:dpdf/src/layout/layout/layout_context.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/layout/renderer/draw_context.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/renderer/cell_renderer.dart';
 
 class CraftTableRenderer extends CraftAbstractRenderer {
   List<double>? columns;

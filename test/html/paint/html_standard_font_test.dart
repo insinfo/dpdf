@@ -1,8 +1,8 @@
 import 'package:html/parser.dart' show parse;
-import 'package:pdfcraft/src/html/css/html_style_sheet.dart';
-import 'package:pdfcraft/src/html/dom/html_box_builder.dart';
-import 'package:pdfcraft/src/html/model/html_box.dart';
-import 'package:pdfcraft/src/html/paint/html_standard_font.dart';
+import 'package:dpdf/src/html/css/html_style_sheet.dart';
+import 'package:dpdf/src/html/dom/html_box_builder.dart';
+import 'package:dpdf/src/html/model/html_box.dart';
+import 'package:dpdf/src/html/paint/html_standard_font.dart';
 import 'package:test/test.dart';
 
 CraftHtmlTextStyle _style(String css) {

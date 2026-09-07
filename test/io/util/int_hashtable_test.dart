@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/util/int_hashtable.dart';
+import 'package:dpdf/src/io/util/int_hashtable.dart';
 
 void main() {
   group('IntHashtable', () {

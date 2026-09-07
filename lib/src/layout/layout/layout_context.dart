@@ -1,6 +1,6 @@
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
-import 'package:pdfcraft/src/layout/margincollapse/margins_collapse_info.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/layout/margincollapse/margins_collapse_info.dart';
 
 class CraftLayoutContext {
   CraftLayoutArea area;

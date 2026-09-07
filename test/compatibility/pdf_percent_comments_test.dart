@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/compatibility/pdf_percent_comments.dart';
+import 'package:dpdf/src/compatibility/pdf_percent_comments.dart';
 
 void main() {
   group('PdfPercentCommentLine', () {

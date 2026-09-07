@@ -1,14 +1,14 @@
 import 'dart:collection';
-import 'package:pdfcraft/src/kernel/geom/affine_transform.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:pdfcraft/src/layout/font/font_provider.dart';
-import 'package:pdfcraft/src/styledxmlparser/resolver/resource/resource_resolver.dart';
-import 'package:pdfcraft/src/svg/css/svg_css_context.dart';
-import 'package:pdfcraft/src/svg/exceptions/svg_exception_message_constant.dart';
-import 'package:pdfcraft/src/svg/exceptions/svg_processing_exception.dart';
-import 'package:pdfcraft/src/svg/renderers/svg_node_renderer.dart';
-import 'package:pdfcraft/src/svg/utils/svg_text_properties.dart';
+import 'package:dpdf/src/kernel/geom/affine_transform.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/layout/font/font_provider.dart';
+import 'package:dpdf/src/styledxmlparser/resolver/resource/resource_resolver.dart';
+import 'package:dpdf/src/svg/css/svg_css_context.dart';
+import 'package:dpdf/src/svg/exceptions/svg_exception_message_constant.dart';
+import 'package:dpdf/src/svg/exceptions/svg_processing_exception.dart';
+import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
+import 'package:dpdf/src/svg/utils/svg_text_properties.dart';
 
 /// The SvgDrawContext keeps a stack of PdfCanvas instances, which
 /// track the nested XObjects associated with the root canvas.

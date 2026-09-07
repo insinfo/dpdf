@@ -1,9 +1,9 @@
 /// Serialization and value semantics for PDF primitives.
-/// See: pdfcraft.tests/pdfcraft.kernel.tests/pdfcraft/kernel/pdf/PdfPrimitivesTest.cs
+/// See: dpdf.tests/dpdf.kernel.tests/dpdf/kernel/pdf/PdfPrimitivesTest.cs
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 
 void main() {
   group('PdfPrimitives', () {

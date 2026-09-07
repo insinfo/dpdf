@@ -1,7 +1,7 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/layout/properties/image_type.dart';
-import 'package:pdfcraft/src/io/codec/tiff_directory.dart';
-import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/layout/properties/image_type.dart';
+import 'package:dpdf/src/io/codec/tiff_directory.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 import 'raw_image_data.dart';
 
 /// TIFF image data class.

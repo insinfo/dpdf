@@ -1,6 +1,6 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/commons/digest/digest_bytes.dart';
-import 'package:pdfcraft/src/commons/digest/keccak_digest.dart';
+import 'package:dpdf/src/commons/digest/digest_bytes.dart';
+import 'package:dpdf/src/commons/digest/keccak_digest.dart';
 import 'package:pointycastle/export.dart' as reference;
 import 'package:test/test.dart';
 

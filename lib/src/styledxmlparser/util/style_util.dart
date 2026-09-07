@@ -1,7 +1,7 @@
-import 'package:pdfcraft/src/styledxmlparser/css/common_css_constants.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/resolve/style_inheritance.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/util/css_types_validation_utils.dart';
+import 'package:dpdf/src/styledxmlparser/css/common_css_constants.dart';
+import 'package:dpdf/src/styledxmlparser/css/resolve/style_inheritance.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
+import 'package:dpdf/src/styledxmlparser/css/util/css_types_validation_utils.dart';
 
 class CraftStyleUtil {
   CraftStyleUtil._();

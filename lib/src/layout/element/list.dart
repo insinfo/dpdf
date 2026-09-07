@@ -1,14 +1,14 @@
-import 'package:pdfcraft/src/layout/element/block_element.dart';
-import 'package:pdfcraft/src/layout/element/list_item.dart';
-import 'package:pdfcraft/src/layout/element/text.dart';
-import 'package:pdfcraft/src/layout/properties/property.dart';
-import 'package:pdfcraft/src/layout/properties/list_numbering_type.dart';
-import 'package:pdfcraft/src/layout/properties/list_symbol_alignment.dart';
-import 'package:pdfcraft/src/layout/properties/list_symbol_position.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
-import 'package:pdfcraft/src/layout/renderer/list_renderer.dart';
-import 'package:pdfcraft/src/layout/element/image.dart';
-import 'package:pdfcraft/src/kernel/pdf/tagutils/accessibility_properties.dart';
+import 'package:dpdf/src/layout/element/block_element.dart';
+import 'package:dpdf/src/layout/element/list_item.dart';
+import 'package:dpdf/src/layout/element/text.dart';
+import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/properties/list_numbering_type.dart';
+import 'package:dpdf/src/layout/properties/list_symbol_alignment.dart';
+import 'package:dpdf/src/layout/properties/list_symbol_position.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/renderer/list_renderer.dart';
+import 'package:dpdf/src/layout/element/image.dart';
+import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
 
 class CraftList extends CraftBlockElement<CraftList> {
   static const String DEFAULT_LIST_SYMBOL = "- ";

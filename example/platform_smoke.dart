@@ -1,17 +1,17 @@
 import 'dart:convert';
 import 'keystore_smoke.dart' as keystores;
-import 'package:pdfcraft/src/kernel/pdf/pdf_date.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_date.dart';
 import 'dart:typed_data';
 
-import 'package:pdfcraft/pdfcraft.dart';
-import 'package:pdfcraft/pdfcraft_platform.dart';
-import 'package:pdfcraft/src/io/codec/ccitt_g4_encoder.dart';
-import 'package:pdfcraft/src/io/codec/tiff_fax_decoder.dart';
-import 'package:pdfcraft/src/io/codec/png_writer.dart';
-import 'package:pdfcraft/src/io/image/image_data_factory.dart';
-import 'package:pdfcraft/src/pki/pki_utils.dart';
-import 'package:pdfcraft/src/sign/signature_mechanism_params.dart';
-import 'package:pdfcraft/src/sign/signature_util.dart';
+import 'package:dpdf/dpdf.dart';
+import 'package:dpdf/dpdf_platform.dart';
+import 'package:dpdf/src/io/codec/ccitt_g4_encoder.dart';
+import 'package:dpdf/src/io/codec/tiff_fax_decoder.dart';
+import 'package:dpdf/src/io/codec/png_writer.dart';
+import 'package:dpdf/src/io/image/image_data_factory.dart';
+import 'package:dpdf/src/pki/pki_utils.dart';
+import 'package:dpdf/src/sign/signature_mechanism_params.dart';
+import 'package:dpdf/src/sign/signature_util.dart';
 
 /// Portable integration check. No filesystem or browser DOM is required.
 Future<void> main() async {
@@ -91,7 +91,7 @@ Future<void> main() async {
   await _checkRecoveryAndFlatten(edited);
   await _checkSigning(edited);
   print(
-      'PDFCraft $pdfcraftRuntime: codecs, creation, multifont editing, extraction, merge and RSA signing OK');
+      'DPDF $dpdfRuntime: codecs, creation, multifont editing, extraction, merge and RSA signing OK');
 }
 
 Future<void> _checkCompatibility(Uint8List input) async {
@@ -155,8 +155,8 @@ Future<void> _checkSigning(Uint8List input) async {
   final keys = PkiUtils.generateRSAKeyPair(bitStrength: 1024);
   final privateKey = keys.privateKey as RSAPrivateKey;
   final certificate = PkiUtils.createCertificate(
-    subjectDN: 'CN=PDFCraft platform test',
-    issuerDN: 'CN=PDFCraft platform test',
+    subjectDN: 'CN=DPDF platform test',
+    issuerDN: 'CN=DPDF platform test',
     issuerPrivateKey: privateKey,
     subjectPublicKey: keys.publicKey as RSAPublicKey,
     serialNumber: BigInt.one,

@@ -5,7 +5,7 @@
 
 # Migração comportamental de dart_pdf
 
-Os testes desta pasta adaptam chamadas para a API assíncrona de pdfcraft,
+Os testes desta pasta adaptam chamadas para a API assíncrona de dpdf,
 conforme autorizado pelo usuário. `migration_inventory.json` registra os 89
 arquivos de testes da referência, hashes e o estado de migração. A contagem de
 545 declarações na referência é lexical; não significa 545 testes aprovados.
@@ -22,15 +22,15 @@ os testes completos podem ser executados a partir deste repositório.
 
 ## Chamadas equivalentes nesta etapa
 
-| Operação na referência | API em pdfcraft |
+| Operação na referência | API em dpdf |
 | --- | --- |
 | `appendGraphics()` | `await PdfPageOverlay.create(page)` |
 | Merge de anotações estáticas | `PdfPageAssembly.merge(..., includeAnnotations: true)` |
 | Merge de marcadores com destinos locais explícitos | `PdfPageAssembly.merge(..., preserveOutlines: true)` |
 | Inspeção de cabeçalho | `await PdfQuickInfo.fromBytes(bytes, readDocument: false)` |
 | DocMDP declarado | `await PdfQuickInfo.fromBytes(bytes)` |
-| Formulários | `CraftPdfAcroForm` e campos exportados por `pdfcraft.dart` |
-| Comentários e serial de certificado | Exports correspondentes em `pdfcraft.dart` |
+| Formulários | `CraftPdfAcroForm` e campos exportados por `dpdf.dart` |
+| Comentários e serial de certificado | Exports correspondentes em `dpdf.dart` |
 
 O overlay utiliza coordenadas PDF, com origem inferior esquerda, e Forms com
 recursos separados. Seus testes verificam sobrevivência após reabertura,

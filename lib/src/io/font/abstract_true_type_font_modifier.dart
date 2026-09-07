@@ -1,9 +1,9 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/io/source/random_access_file_or_array.dart';
-import 'package:pdfcraft/src/io/font/pdf_encodings.dart';
-import 'package:pdfcraft/src/commons/utils/tuple2.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception.dart';
-import 'package:pdfcraft/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
+import 'package:dpdf/src/io/font/pdf_encodings.dart';
+import 'package:dpdf/src/commons/utils/tuple2.dart';
+import 'package:dpdf/src/io/exceptions/io_exception.dart';
+import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
 
 abstract class AbstractTrueTypeFontModifier {
   static const List<String> TABLE_NAMES_SUBSET = [

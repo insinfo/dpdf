@@ -1,4 +1,4 @@
-import 'package:pdfcraft/src/io/font/font_program.dart';
+import 'package:dpdf/src/io/font/font_program.dart';
 import 'dart:typed_data';
 import '../../commons/digest/digest_bytes.dart';
 

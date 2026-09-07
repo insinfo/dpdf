@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:test/test.dart';
-import 'package:pdfcraft/src/io/codec/tiff_writer.dart';
+import 'package:dpdf/src/io/codec/tiff_writer.dart';
 
 void main() {
   group('TiffWriter', () {
@@ -44,7 +44,7 @@ void main() {
     });
 
     test('FieldAscii includes null terminator', () {
-      final field = FieldAscii(305, 'pdfcraft');
+      final field = FieldAscii(305, 'dpdf');
       expect(field.count, equals(9)); // 8 ASCII characters + terminator
       expect(field.data.length, equals(9));
       expect(field.data[8], equals(0));

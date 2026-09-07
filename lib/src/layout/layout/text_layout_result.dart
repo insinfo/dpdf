@@ -1,6 +1,6 @@
-import 'package:pdfcraft/src/layout/layout/min_max_width_layout_result.dart';
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/layout/min_max_width_layout_result.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
 
 class CraftTextLayoutResult extends CraftMinMaxWidthLayoutResult {
   bool wordHasBeenSplit = false;

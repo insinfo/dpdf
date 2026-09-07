@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:pdfcraft/src/layout/properties/image_type.dart';
+import 'package:dpdf/src/layout/properties/image_type.dart';
 import 'image_data.dart';
 
 /// Raw image data class for images that need processing.

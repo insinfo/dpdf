@@ -1,3 +1,3 @@
-import 'package:pdfcraft/src/layout/element/element_model.dart';
+import 'package:dpdf/src/layout/element/element_model.dart';
 
 abstract class CraftBlockContent implements CraftElementModel {}

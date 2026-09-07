@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:pdfcraft/pdfcraft.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_content_parser.dart';
-import 'package:pdfcraft/src/io/font/cmap/cmap_object.dart';
+import 'package:dpdf/dpdf.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_content_parser.dart';
+import 'package:dpdf/src/io/font/cmap/cmap_object.dart';
 import 'package:test/test.dart';
 
 CraftCMapContentParser parser(String text) =>

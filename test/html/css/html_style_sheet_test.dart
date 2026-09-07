@@ -1,6 +1,6 @@
 import 'package:html/parser.dart' show parse;
-import 'package:pdfcraft/src/html/css/css_syntax.dart';
-import 'package:pdfcraft/src/html/css/html_style_sheet.dart';
+import 'package:dpdf/src/html/css/css_syntax.dart';
+import 'package:dpdf/src/html/css/html_style_sheet.dart';
 import 'package:test/test.dart';
 
 void main() {

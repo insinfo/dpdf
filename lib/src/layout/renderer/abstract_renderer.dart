@@ -1,18 +1,18 @@
-import 'package:pdfcraft/src/layout/property_container.dart';
-import 'package:pdfcraft/src/layout/renderer/renderer.dart';
+import 'package:dpdf/src/layout/property_container.dart';
+import 'package:dpdf/src/layout/renderer/renderer.dart';
 
-import 'package:pdfcraft/src/layout/layout/layout_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_result.dart';
-import 'package:pdfcraft/src/layout/renderer/draw_context.dart';
-import 'package:pdfcraft/src/layout/layout/layout_area.dart';
+import 'package:dpdf/src/layout/layout/layout_context.dart';
+import 'package:dpdf/src/layout/layout/layout_result.dart';
+import 'package:dpdf/src/layout/renderer/draw_context.dart';
+import 'package:dpdf/src/layout/layout/layout_area.dart';
 
-import 'package:pdfcraft/src/layout/properties/unit_value.dart';
-import 'package:pdfcraft/src/layout/properties/property.dart';
-import 'package:pdfcraft/src/layout/properties/background.dart';
-import 'package:pdfcraft/src/layout/borders/border.dart';
-import 'package:pdfcraft/src/kernel/geom/rectangle.dart';
-import 'package:pdfcraft/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:pdfcraft/src/layout/minmaxwidth/min_max_width.dart';
+import 'package:dpdf/src/layout/properties/unit_value.dart';
+import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:dpdf/src/layout/properties/background.dart';
+import 'package:dpdf/src/layout/borders/border.dart';
+import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
+import 'package:dpdf/src/layout/minmaxwidth/min_max_width.dart';
 
 abstract class CraftAbstractRenderer implements CraftRenderer {
   CraftPropertyContainer? modelElement;

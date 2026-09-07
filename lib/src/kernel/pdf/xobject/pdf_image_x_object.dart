@@ -1,11 +1,11 @@
-import 'package:pdfcraft/src/kernel/pdf/xobject/pdf_x_object.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_stream.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_array.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/io/image/image_data.dart';
-import 'package:pdfcraft/src/io/image/png_image_data.dart';
+import 'package:dpdf/src/kernel/pdf/xobject/pdf_x_object.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/io/image/image_data.dart';
+import 'package:dpdf/src/io/image/png_image_data.dart';
 
 class CraftPdfImageXObject extends CraftPdfXObject {
   late final double _width;

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:pdfcraft/pdfcraft.dart';
+import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
 
 Uint8List largePdf() {
@@ -33,8 +33,7 @@ Uint8List largePdf() {
 
 void main() {
   late Directory temp;
-  setUp(
-      () => temp = Directory.systemTemp.createTempSync('pdfcraft-block-test-'));
+  setUp(() => temp = Directory.systemTemp.createTempSync('dpdf-block-test-'));
   tearDown(() => temp.deleteSync(recursive: true));
   test('file cache crosses blocks, evicts, and preserves independent cursors',
       () {

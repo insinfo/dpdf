@@ -1,5 +1,5 @@
-import 'package:pdfcraft/src/styledxmlparser/node/markup_node.dart';
-import 'package:pdfcraft/src/styledxmlparser/css/media/media_device_description.dart';
+import 'package:dpdf/src/styledxmlparser/node/markup_node.dart';
+import 'package:dpdf/src/styledxmlparser/css/media/media_device_description.dart';
 
 class CraftCssStyleSheet {
   void appendCssStyleSheet(CraftCssStyleSheet other) {}

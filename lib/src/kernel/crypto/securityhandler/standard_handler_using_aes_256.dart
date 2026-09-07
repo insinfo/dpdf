@@ -1,21 +1,21 @@
 import 'dart:typed_data';
 
-import 'package:pdfcraft/src/kernel/crypto/aes_cipher.dart';
-import 'package:pdfcraft/src/kernel/crypto/aes_decryptor.dart';
-import 'package:pdfcraft/src/kernel/crypto/digest_algorithms.dart';
-import 'package:pdfcraft/src/kernel/crypto/decryptor.dart';
-import 'package:pdfcraft/src/kernel/crypto/iv_generator.dart';
-import 'package:pdfcraft/src/kernel/crypto/output_stream_aes_encryption.dart';
-import 'package:pdfcraft/src/kernel/crypto/output_stream_encryption.dart';
-import 'package:pdfcraft/src/kernel/crypto/securityhandler/standard_security_handler.dart';
-import 'package:pdfcraft/src/kernel/exceptions/kernel_exception_message_constant.dart';
-import 'package:pdfcraft/src/kernel/exceptions/pdf_exception.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_boolean.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_dictionary.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_name.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_number.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_string.dart';
-import 'package:pdfcraft/src/kernel/pdf/pdf_version.dart';
+import 'package:dpdf/src/kernel/crypto/aes_cipher.dart';
+import 'package:dpdf/src/kernel/crypto/aes_decryptor.dart';
+import 'package:dpdf/src/kernel/crypto/digest_algorithms.dart';
+import 'package:dpdf/src/kernel/crypto/decryptor.dart';
+import 'package:dpdf/src/kernel/crypto/iv_generator.dart';
+import 'package:dpdf/src/kernel/crypto/output_stream_aes_encryption.dart';
+import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
+import 'package:dpdf/src/kernel/crypto/securityhandler/standard_security_handler.dart';
+import 'package:dpdf/src/kernel/exceptions/kernel_exception_message_constant.dart';
+import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_boolean.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_version.dart';
 
 /// Standard security handler using AES-256 algorithm.
 class CraftStandardHandlerUsingAes256 extends CraftStandardSecurityHandler {

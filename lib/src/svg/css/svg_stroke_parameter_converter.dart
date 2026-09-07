@@ -16,7 +16,7 @@ class SvgStrokeParameterConverter {
       double fontSize,
       CraftSvgDrawContext context) {
     if (strokeDashArray != null &&
-        strokeDashArray.toLowerCase() != CraftSvgConstants.Values.NONE) {
+        strokeDashArray.toLowerCase() != SvgValues.NONE) {
       double rem = context.getCssContext().getRootFontSize();
       double percentBaseValue =
           CraftSvgCoordinateUtils.calculateNormalizedDiagonalLength(context);
@@ -40,7 +40,7 @@ class SvgStrokeParameterConverter {
         double dashPhase = 0.0;
         if (strokeDashOffset != null &&
             strokeDashOffset.isNotEmpty &&
-            strokeDashOffset.toLowerCase() != CraftSvgConstants.Values.NONE) {
+            strokeDashOffset.toLowerCase() != SvgValues.NONE) {
           dashPhase = CraftCssDimensionParsingUtils.parseLength(
               strokeDashOffset, percentBaseValue, 1.0, fontSize, rem);
         }

@@ -150,7 +150,13 @@ abstract final class PdfImageDecoder {
 
   static Future<PdfDecodedImage?> _decodeJpeg(
       CraftPdfStream image, int width, int height) async {
-    final raw = await image.getRawBytes();
+    // `getBytes` e não `getRawBytes`: um `/Filter` pode ser uma cadeia, como
+    // `[/FlateDecode /DCTDecode]`, e o codec de imagem é sempre o último. A
+    // cadeia de filtros deixa DCT e JPX passarem intactos, então isto entrega
+    // exatamente os bytes do JPEG, com o Flate já desfeito. Ler os bytes crus
+    // entregava dados deflacionados ao decodificador, e a imagem era
+    // silenciosamente descartada.
+    final raw = await image.getBytes();
     if (raw == null) return null;
     final jpeg = JpegDecoder.decode(raw);
     final rgba = Uint8List(jpeg.width * jpeg.height * 4);
@@ -197,7 +203,8 @@ abstract final class PdfImageDecoder {
 
   static Future<PdfDecodedImage?> _decodeJpx(
       CraftPdfStream image, int width, int height) async {
-    final raw = await image.getRawBytes();
+    // Veja a nota em `_decodeJpeg`: o codec é o último filtro da cadeia.
+    final raw = await image.getBytes();
     if (raw == null) return null;
     final decoded = j2k.decodeJpeg2000(raw);
     final count = decoded.width * decoded.height;

@@ -1,14 +1,13 @@
 /// A class containing constant values signifying the property names of tags, attribute, CSS-style
 /// and certain values in SVG XML.
+///
+/// As constantes propriamente ditas vivem em [SvgTags], [SvgAttributes] e
+/// [SvgValues]. Esta classe existia apenas para agrupá-las sob um nome, mas
+/// os agrupadores eram getters que devolviam um `Type`: cada acesso virava
+/// uma chamada dinâmica que só falhava em tempo de execução. Referencie as
+/// classes diretamente.
 class CraftSvgConstants {
   CraftSvgConstants._();
-
-  /// Names of SVG elements.
-  static get Tags => SvgTags;
-
-  static get Attributes => SvgAttributes;
-
-  static get Values => SvgValues;
 }
 
 /// Names of SVG elements.

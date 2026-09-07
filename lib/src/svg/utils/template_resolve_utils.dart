@@ -11,8 +11,8 @@ class TemplateResolveUtils {
   /// Resolve href to other object within svg and fills renderer with its properties and children if needed.
   static void resolve(
       CraftBranchSvgNodeRenderer renderer, CraftSvgDrawContext context) {
-    String? href = renderer.getAttribute(CraftSvgConstants.Attributes.HREF);
-    href ??= renderer.getAttribute(CraftSvgConstants.Attributes.XLINK_HREF);
+    String? href = renderer.getAttribute(SvgAttributes.HREF);
+    href ??= renderer.getAttribute(SvgAttributes.XLINK_HREF);
     if (href == null || href.isEmpty || href[0] != '#') {
       return;
     }

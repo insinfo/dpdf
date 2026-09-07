@@ -4,7 +4,6 @@ import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 import 'package:dpdf/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
-import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 import 'package:dpdf/src/layout/properties/transparent_color.dart';
 import 'package:dpdf/src/styledxmlparser/css/common_css_constants.dart';
 import 'package:dpdf/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
@@ -18,7 +17,9 @@ import 'package:dpdf/src/svg/renderers/svg_paint_server.dart';
 import 'package:dpdf/src/svg/renderers/svg_text_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
+import 'package:dpdf/src/svg/utils/svg_color_utils.dart';
 import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
+import 'package:dpdf/src/svg/utils/transform_utils.dart';
 import 'package:dpdf/src/svg/renderers/impl/abstract_container_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/clip_path_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/css/impl/svg_node_renderer_inheritance_resolver.dart';
@@ -74,14 +75,25 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
       if (isHidden()) {
         return;
       }
-      String? transformString =
-          getAttribute(CraftSvgConstants.Attributes.TRANSFORM);
-      if (transformString != null && transformString.isNotEmpty) {
-        // TODO: Port transform parsing more accurately and apply to canvas
+      String? transformString = getAttribute(SvgAttributes.TRANSFORM);
+      if (transformString != null && transformString.trim().isNotEmpty) {
+        // O `cm` fica sem q/Q próprio: quem empilha o estado é o renderizador
+        // do galho, que envolve cada filho, para uma transformação declarada
+        // num `<g>` alcançar toda a sua subárvore.
+        final transformation =
+            CraftTransformUtils.parseTransform(transformString);
+        if (!transformation.isIdentity) {
+          context.getCurrentCanvas().concatMatrix(
+              transformation.m00,
+              transformation.m10,
+              transformation.m01,
+              transformation.m11,
+              transformation.m02,
+              transformation.m12);
+        }
       }
-      if (_attributesAndStyles!.containsKey(CraftSvgConstants.Attributes.ID)) {
-        context
-            .addUsedId(_attributesAndStyles![CraftSvgConstants.Attributes.ID]!);
+      if (_attributesAndStyles!.containsKey(SvgAttributes.ID)) {
+        context.addUsedId(_attributesAndStyles![SvgAttributes.ID]!);
       }
     }
 
@@ -92,9 +104,8 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
     }
 
     if (_attributesAndStyles != null &&
-        _attributesAndStyles!.containsKey(CraftSvgConstants.Attributes.ID)) {
-      context.removeUsedId(
-          _attributesAndStyles![CraftSvgConstants.Attributes.ID]!);
+        _attributesAndStyles!.containsKey(SvgAttributes.ID)) {
+      context.removeUsedId(_attributesAndStyles![SvgAttributes.ID]!);
     }
   }
 
@@ -110,8 +121,7 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
   bool canConstructViewPort() => false;
 
   double getCurrentFontSize(CraftSvgDrawContext context) {
-    String? fontSizeAttribute =
-        getAttribute(CraftSvgConstants.Attributes.FONT_SIZE);
+    String? fontSizeAttribute = getAttribute(SvgAttributes.FONT_SIZE);
     if (CraftCssTypesValidationUtils.isRemValue(fontSizeAttribute)) {
       return CraftCssDimensionParsingUtils.parseRelativeValue(
           fontSizeAttribute!, context.getCssContext().getRootFontSize());
@@ -137,8 +147,7 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
     if (this is CraftAbstractContainerSvgNodeRenderer) {
       List<double>? viewBoxValues = CraftSvgCssUtils.parseViewBox(this);
       if (viewBoxValues == null ||
-          viewBoxValues.length <
-              CraftSvgConstants.Values.VIEWBOX_VALUES_NUMBER) {
+          viewBoxValues.length < SvgValues.VIEWBOX_VALUES_NUMBER) {
         CraftRectangle? currentViewPort = context.getCurrentViewPort();
         if (currentViewPort == null) return CraftRectangle(0, 0, 0, 0);
         return CraftRectangle(
@@ -173,8 +182,7 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
 
       if (getParentClipPath() == null) {
         if (doFill && canElementFill()) {
-          String fillRule =
-              getAttributeOrDefault(CraftSvgConstants.Attributes.FILL_RULE, "");
+          String fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, "");
           _doStrokeOrFill(fillRule, currentCanvas);
         } else {
           if (doStroke) {
@@ -184,10 +192,8 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
           }
         }
       } else {
-        String clipRule =
-            getAttributeOrDefault(CraftSvgConstants.Attributes.CLIP_RULE, "");
-        if (clipRule.toLowerCase() ==
-            CraftSvgConstants.Values.FILL_RULE_EVEN_ODD) {
+        String clipRule = getAttributeOrDefault(SvgAttributes.CLIP_RULE, "");
+        if (clipRule.toLowerCase() == SvgValues.FILL_RULE_EVEN_ODD) {
           currentCanvas.eoClip();
         } else {
           currentCanvas.clip();
@@ -206,7 +212,7 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
   }
 
   void _doStrokeOrFill(String fillRule, CraftPdfCanvas currentCanvas) {
-    if (fillRule.toLowerCase() == CraftSvgConstants.Values.FILL_RULE_EVEN_ODD) {
+    if (fillRule.toLowerCase() == SvgValues.FILL_RULE_EVEN_ODD) {
       if (doStroke) {
         currentCanvas.eoFillStroke();
       } else {
@@ -234,37 +240,40 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
     }
 
     if (strokeProps != null) {
-      if (strokeProps.lineDashParameters != null) {
-        var dash = strokeProps.lineDashParameters!;
-        CraftPdfArray dashArray = CraftPdfArray();
-        for (var d in dash.getDashArray()) {
-          dashArray.add(CraftPdfNumber(d));
-        }
-        currentCanvas.setDashPattern(dashArray, dash.getDashPhase());
-      }
       if (strokeProps.color != null) {
         currentCanvas.setStrokeColor(strokeProps.color!);
       }
       currentCanvas.setLineWidth(strokeProps.width);
+      final dash = strokeProps.lineDashParameters;
+      if (dash != null && dash.getDashArray().isNotEmpty) {
+        currentCanvas.setDashPattern(
+            CraftPdfArray.fromDoubles(dash.getDashArray()),
+            dash.getDashPhase());
+      }
       if (!CraftCssUtils.compareFloats(strokeProps.opacity, 1.0)) {
         opacityGState.setStrokeOpacity(strokeProps.opacity);
       }
     }
 
-    if (!opacityGState.pdfRepresentation().isEmpty()) {
+    // O ExtGState precisa de dicionário de recursos e de documento para virar
+    // um nome. Desenhar num canvas solto (sem documento) é legítimo — e é o
+    // que os testes fazem — então a transparência é simplesmente omitida em
+    // vez de derrubar a conversão inteira.
+    final canUseExtGState =
+        currentCanvas.resources != null && currentCanvas.getDocument() != null;
+    if (canUseExtGState && !opacityGState.pdfRepresentation().isEmpty()) {
       await currentCanvas.setExtGState(opacityGState);
     }
   }
 
   FillProperties? _calculateFillProperties(CraftSvgDrawContext context) {
     double generalOpacity = _getOpacity();
-    String fillRaw =
-        getAttributeOrDefault(CraftSvgConstants.Attributes.FILL, "black");
-    doFill = fillRaw.toLowerCase() != CraftSvgConstants.Values.NONE;
+    String fillRaw = getAttributeOrDefault(SvgAttributes.FILL, "black");
+    doFill = fillRaw.toLowerCase() != SvgValues.NONE;
 
     if (doFill && canElementFill()) {
-      double fillOpacity = _getOpacityByAttribute(
-          CraftSvgConstants.Attributes.FILL_OPACITY, generalOpacity);
+      double fillOpacity =
+          _getOpacityByAttribute(SvgAttributes.FILL_OPACITY, generalOpacity);
       CraftColor fillColor = CraftColorConstants.BLACK;
       CraftTransparentColor? tc =
           _getColorFromAttribute(context, fillRaw, 0, fillOpacity);
@@ -278,18 +287,17 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
   }
 
   StrokeProperties? _calculateStrokeProperties(CraftSvgDrawContext context) {
-    String strokeRaw = getAttributeOrDefault(
-        CraftSvgConstants.Attributes.STROKE, CraftSvgConstants.Values.NONE);
-    if (strokeRaw.toLowerCase() != CraftSvgConstants.Values.NONE) {
-      String? widthRaw =
-          getAttribute(CraftSvgConstants.Attributes.STROKE_WIDTH);
+    String strokeRaw =
+        getAttributeOrDefault(SvgAttributes.STROKE, SvgValues.NONE);
+    if (strokeRaw.toLowerCase() != SvgValues.NONE) {
+      String? widthRaw = getAttribute(SvgAttributes.STROKE_WIDTH);
       double width =
           widthRaw != null ? parseHorizontalLength(widthRaw, context) : 0.75;
       if (width < 0) width = 0.75;
 
       double generalOpacity = _getOpacity();
-      double opacity = _getOpacityByAttribute(
-          CraftSvgConstants.Attributes.STROKE_OPACITY, generalOpacity);
+      double opacity =
+          _getOpacityByAttribute(SvgAttributes.STROKE_OPACITY, generalOpacity);
       CraftColor? strokeColor;
       CraftTransparentColor? tc =
           _getColorFromAttribute(context, strokeRaw, width / 2.0, opacity);
@@ -298,10 +306,8 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
         opacity = tc.getOpacity();
       }
 
-      String? dashArrayRaw =
-          getAttribute(CraftSvgConstants.Attributes.STROKE_DASHARRAY);
-      String? dashOffsetRaw =
-          getAttribute(CraftSvgConstants.Attributes.STROKE_DASHOFFSET);
+      String? dashArrayRaw = getAttribute(SvgAttributes.STROKE_DASHARRAY);
+      String? dashOffsetRaw = getAttribute(SvgAttributes.STROKE_DASHOFFSET);
       PdfLineDashParameters? dashParams =
           SvgStrokeParameterConverter.convertStrokeDashParameters(dashArrayRaw,
               dashOffsetRaw, getCurrentFontSize(context), context);
@@ -316,8 +322,8 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
 
   double _getOpacity() {
     double result = 1.0;
-    String? val = getAttribute(CraftSvgConstants.Attributes.OPACITY);
-    if (val != null && val.toLowerCase() != CraftSvgConstants.Values.NONE) {
+    String? val = getAttribute(SvgAttributes.OPACITY);
+    if (val != null && val.toLowerCase() != SvgValues.NONE) {
       result = double.tryParse(val) ?? 1.0;
     }
     final parent = getParent();
@@ -330,7 +336,7 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
   double _getOpacityByAttribute(String attrName, double generalOpacity) {
     double opacity = generalOpacity;
     String? val = getAttribute(attrName);
-    if (val != null && val.toLowerCase() != CraftSvgConstants.Values.NONE) {
+    if (val != null && val.toLowerCase() != SvgValues.NONE) {
       double valNum;
       if (CraftCssTypesValidationUtils.isPercentageValue(val)) {
         valNum = CraftCssDimensionParsingUtils.parseRelativeValue(val, 1.0);
@@ -368,10 +374,13 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
       return CraftTransparentColor(CraftColorConstants.BLACK, 0.0);
     }
 
-    if (raw.toLowerCase() == CraftSvgConstants.Values.NONE) return null;
+    if (raw.toLowerCase() == SvgValues.NONE) return null;
 
-    // TODO: Use full CSS color parsing.
-    return CraftTransparentColor(CraftColorConstants.BLACK, parentOpacity);
+    // Um valor incompreensível equivale a preto: a especificação manda tratar
+    // a cor inválida como o padrão herdado, nunca abortar o desenho.
+    final parsed = CraftSvgColorUtils.parse(raw);
+    return CraftTransparentColor(
+        parsed ?? CraftColorConstants.BLACK, parentOpacity);
   }
 
   double parseHorizontalLength(String length, CraftSvgDrawContext context) {
@@ -385,7 +394,7 @@ abstract class CraftAbstractSvgNodeRenderer implements CraftSvgNodeRenderer {
   }
 
   Future<bool> _drawInClipPath(CraftSvgDrawContext context) async {
-    String? clipPathName = getAttribute(CraftSvgConstants.Attributes.CLIP_PATH);
+    String? clipPathName = getAttribute(SvgAttributes.CLIP_PATH);
     if (clipPathName != null) {
       String id =
           clipPathName.replaceAll("url(#", "").replaceAll(")", "").trim();

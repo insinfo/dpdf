@@ -54,10 +54,8 @@ class CraftSvgCssUtils {
   }
 
   static List<double>? parseViewBox(CraftSvgNodeRenderer svgRenderer) {
-    String? vbString =
-        svgRenderer.getAttribute(CraftSvgConstants.Attributes.VIEWBOX);
-    vbString ??= svgRenderer
-        .getAttribute(CraftSvgConstants.Attributes.VIEWBOX.toLowerCase());
+    String? vbString = svgRenderer.getAttribute(SvgAttributes.VIEWBOX);
+    vbString ??= svgRenderer.getAttribute(SvgAttributes.VIEWBOX.toLowerCase());
 
     if (vbString == null) return null;
 
@@ -67,7 +65,7 @@ class CraftSvgCssUtils {
       doubleValues.add(CraftCssDimensionParsingUtils.parseAbsoluteLength(s));
     }
 
-    if (doubleValues.length != CraftSvgConstants.Values.VIEWBOX_VALUES_NUMBER) {
+    if (doubleValues.length != SvgValues.VIEWBOX_VALUES_NUMBER) {
       // logger warning: SvgLogMessageConstant.VIEWBOX_VALUE_MUST_BE_FOUR_NUMBERS
       return null;
     }
@@ -89,8 +87,8 @@ class CraftSvgCssUtils {
     if (customViewport == null) {
       List<double>? viewBox = parseViewBox(svgRenderer);
       if (viewBox == null) {
-        percentHorizontalBase = CraftSvgConstants.Values.DEFAULT_VIEWPORT_WIDTH;
-        percentVerticalBase = CraftSvgConstants.Values.DEFAULT_VIEWPORT_HEIGHT;
+        percentHorizontalBase = SvgValues.DEFAULT_VIEWPORT_WIDTH;
+        percentVerticalBase = SvgValues.DEFAULT_VIEWPORT_HEIGHT;
       } else {
         percentHorizontalBase = viewBox[2];
         percentVerticalBase = viewBox[3];
@@ -101,13 +99,11 @@ class CraftSvgCssUtils {
     }
 
     double rem = context.getCssContext().getRootFontSize();
-    String? widthStr =
-        svgRenderer.getAttribute(CraftSvgConstants.Attributes.WIDTH);
+    String? widthStr = svgRenderer.getAttribute(SvgAttributes.WIDTH);
     double finalWidth = _calculateFinalSvgRendererLength(
         widthStr, em, rem, percentHorizontalBase);
 
-    String? heightStr =
-        svgRenderer.getAttribute(CraftSvgConstants.Attributes.HEIGHT);
+    String? heightStr = svgRenderer.getAttribute(SvgAttributes.HEIGHT);
     double finalHeight = _calculateFinalSvgRendererLength(
         heightStr, em, rem, percentVerticalBase);
 
@@ -116,7 +112,7 @@ class CraftSvgCssUtils {
 
   static double _calculateFinalSvgRendererLength(
       String? length, double em, double rem, double percentBase) {
-    final l = length ?? CraftSvgConstants.Values.DEFAULT_WIDTH_AND_HEIGHT_VALUE;
+    final l = length ?? SvgValues.DEFAULT_WIDTH_AND_HEIGHT_VALUE;
 
     if (CraftCssTypesValidationUtils.isRemValue(l)) {
       return CraftCssDimensionParsingUtils.parseRelativeValue(l, rem);

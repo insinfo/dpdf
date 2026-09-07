@@ -9,6 +9,7 @@ import 'package:dpdf/src/kernel/font/pdf_font.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 import 'package:dpdf/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
 import 'package:dpdf/src/kernel/pdf/colorspace/pdf_shading.dart';
 import 'package:dpdf/src/io/image/image_data.dart';
@@ -586,11 +587,25 @@ class CraftPdfCanvas {
   }
 
   CraftPdfCanvas setDashPattern(CraftPdfArray dashPattern, [double phase = 0]) {
-    contentStream!.getOutputStream()
-      ..writePdfObject(dashPattern)
-      ..writeBytes(CraftByteUtils.getIsoBytes(" "))
+    // O array é serializado aqui, e não por `writePdfObject`, porque aquele
+    // método devolve um Future. Chamá-lo nesta cascata síncrona fazia os bytes
+    // do array chegarem ao fluxo DEPOIS dos operadores seguintes: a saída era
+    // `[ 1 d` sem o conteúdo, e o resto do conteúdo saía corrompido.
+    //
+    // Um padrão de tracejado é sempre um array raso de números, então
+    // escrevê-lo direto é completo, e não um atalho.
+    final output = contentStream!.getOutputStream();
+    output.writeBytes(CraftByteUtils.getIsoBytes('['));
+    final entries = dashPattern.toList();
+    for (var i = 0; i < entries.length; i++) {
+      if (i > 0) output.writeBytes(CraftByteUtils.getIsoBytes(' '));
+      final entry = entries[i];
+      output.writeDouble(entry is CraftPdfNumber ? entry.doubleValue() : 0);
+    }
+    output
+      ..writeBytes(CraftByteUtils.getIsoBytes('] '))
       ..writeDouble(phase)
-      ..writeBytes(CraftByteUtils.getIsoBytes(" d\n"));
+      ..writeBytes(CraftByteUtils.getIsoBytes(' d\n'));
     return this;
   }
 

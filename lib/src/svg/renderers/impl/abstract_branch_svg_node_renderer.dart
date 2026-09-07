@@ -1,39 +1,33 @@
-import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
-import 'package:dpdf/src/kernel/pdf/xobject/pdf_form_x_object.dart';
-import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/branch_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/marker_svg_node_renderer.dart';
 
+/// Base dos elementos que só existem para conter outros (`<g>`, `<svg>`).
 abstract class CraftAbstractBranchSvgNodeRenderer
     extends CraftAbstractSvgNodeRenderer implements CraftBranchSvgNodeRenderer {
   final List<CraftSvgNodeRenderer> _children = [];
 
+  /// Os filhos são desenhados no próprio fluxo de conteúdo, cada um entre
+  /// `q`/`Q`.
+  ///
+  /// O iText encapsula cada galho num Form XObject para poder recortar o
+  /// viewport com a BBox. Aqui isso custaria caro sem entregar nada: o XObject
+  /// exige um documento aberto (impedindo desenhar num canvas solto),
+  /// esconde a geometria atrás de uma indireção e, no subconjunto suportado,
+  /// só o `<svg>` estabelece viewport — e esse recorte é emitido
+  /// explicitamente com `re W n`.
   @override
   Future<void> doDraw(CraftSvgDrawContext context) async {
-    if (_children.isNotEmpty) {
-      CraftRectangle currentViewPort = context.getCurrentViewPort()!;
-      CraftPdfFormXObject xObject = CraftPdfFormXObject(currentViewPort);
-      CraftPdfCanvas newCanvas = await CraftPdfCanvas.fromFormXObject(
-          xObject, context.getCurrentCanvas().getDocument()!);
-
-      // TODO: Apply ViewBox
-
-      context.pushCanvas(newCanvas);
-
-      for (var child in _children) {
-        if (child is! CraftMarkerSvgNodeRenderer) {
-          await child.draw(context);
-        }
-      }
-
-      context.popCanvas();
-
-      await context
-          .getCurrentCanvas()
-          .addXObject(xObject, currentViewPort.getX(), currentViewPort.getY());
+    final canvas = context.getCurrentCanvas();
+    for (final child in _children) {
+      // Marcadores não se desenham na posição em que foram declarados; quem os
+      // instancia é o elemento marcável, no vértice correspondente.
+      if (child is CraftMarkerSvgNodeRenderer) continue;
+      canvas.saveState();
+      await child.draw(context);
+      canvas.restoreState();
     }
   }
 

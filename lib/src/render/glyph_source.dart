@@ -4,6 +4,9 @@ import 'package:dgfx/dgfx.dart';
 
 import '../editing/pdf_simple_encoding.dart';
 import '../editing/pdf_standard_font_metrics.dart';
+import '../io/font/cmap/cmap_cid_to_codepoint.dart';
+import '../io/font/cmap/cmap_location_from_bytes.dart';
+import '../io/font/cmap/cmap_parser.dart';
 import '../io/font/adobe_glyph_list.dart';
 import '../kernel/pdf/pdf_array.dart';
 import '../kernel/pdf/pdf_dictionary.dart';
@@ -100,6 +103,17 @@ class PdfGlyphSource {
   /// Null means the identity mapping.
   final Uint16List? _cidToGid;
 
+  /// CMap embutida que traduz bytes em CIDs, quando `/Encoding` é um stream.
+  /// Null significa Identity, onde o código de dois bytes já é o CID.
+  final _EmbeddedCMap? _cmap;
+
+  /// True quando o programa embutido não traz `cmap` utilizável.
+  ///
+  /// Um subconjunto de fonte embutido frequentemente omite a tabela `cmap`,
+  /// porque o produtor já sabe qual glifo cada código designa. A ISO 32000-1
+  /// §9.6.6.4 diz que nesse caso o código de caractere É o índice do glifo.
+  final bool _codeIsGlyphIndex;
+
   final Map<int, int?> _glyphCache = <int, int?>{};
 
   PdfGlyphSource._({
@@ -110,7 +124,11 @@ class PdfGlyphSource {
     required double defaultWidth,
     required Map<int, int> codeToUnicode,
     required Uint16List? cidToGid,
-  })  : _widths = widths,
+    _EmbeddedCMap? cmap,
+    bool codeIsGlyphIndex = false,
+  })  : _cmap = cmap,
+        _codeIsGlyphIndex = codeIsGlyphIndex,
+        _widths = widths,
         _defaultWidth = defaultWidth,
         _codeToUnicode = codeToUnicode,
         _cidToGid = cidToGid;
@@ -125,6 +143,9 @@ class PdfGlyphSource {
   /// this far, because [resolve] refuses it rather than decode it wrongly.
   List<int> codes(Uint8List bytes) {
     if (!composite) return bytes;
+    final cmap = _cmap;
+    if (cmap != null) return cmap.split(bytes);
+
     final out = <int>[];
     for (var i = 0; i + 1 < bytes.length; i += 2) {
       out.add((bytes[i] << 8) | bytes[i + 1]);
@@ -135,8 +156,17 @@ class PdfGlyphSource {
     return out;
   }
 
+  /// CID para [code], que é o próprio código sob uma CMap Identity.
+  int _cidFor(int code) => _cmap?.cid(code) ?? code;
+
   /// Advance for [code], in text space units (already divided by 1000).
-  double width(int code) => (_widths[code] ?? _defaultWidth) / 1000.0;
+  ///
+  /// `/W` de uma fonte composta é indexado por CID, não pelo código, então a
+  /// CMap tem de ser aplicada antes da consulta.
+  double width(int code) {
+    final key = composite ? _cidFor(code) : code;
+    return (_widths[key] ?? _defaultWidth) / 1000.0;
+  }
 
   /// Glyph index for [code], or null when the program has no glyph for it.
   int? glyph(int code) {
@@ -147,11 +177,12 @@ class PdfGlyphSource {
   int? _resolveGlyph(int code) {
     final font = face!;
     if (composite) {
-      // With Identity-H the code is the CID. `/CIDToGIDMap` then says which
-      // glyph in the program that CID is.
+      // A CMap traduz o código em CID; sob Identity os dois coincidem.
+      // `/CIDToGIDMap` então diz qual glifo do programa é aquele CID.
+      final cid = _cidFor(code);
       final map = _cidToGid;
-      if (map == null) return code;
-      return code < map.length ? map[code] : 0;
+      if (map == null) return cid;
+      return cid < map.length ? map[cid] : 0;
     }
 
     final unicode = _codeToUnicode[code];
@@ -166,7 +197,13 @@ class PdfGlyphSource {
     if (symbolic != 0) return symbolic;
 
     final direct = font.mapCodePoint(code);
-    return direct != 0 ? direct : null;
+    if (direct != 0) return direct;
+
+    // Sem `cmap` utilizável o código é o próprio índice do glifo. Só vale
+    // quando a fonte de fato não mapeia nada: aplicar isso a uma fonte com
+    // `cmap` funcional desenharia glifos errados em vez de nenhum, que é pior.
+    if (_codeIsGlyphIndex && code > 0 && code < font.glyphCount) return code;
+    return null;
   }
 
   /// Resolves the `/Font` entry named [name] in [resources].
@@ -231,17 +268,31 @@ class PdfGlyphSource {
       defaultWidth: missing,
       codeToUnicode: codeToUnicode,
       cidToGid: null,
+      codeIsGlyphIndex: _lacksUsableCmap(resolved.face),
     );
   }
 
   static Future<PdfGlyphSource> _resolveComposite(
       CraftPdfDictionary font, PdfFontFallback? fallback) async {
-    // Only the Identity CMaps are decoded here. Anything else would need the
-    // full CMap machinery, and guessing would place glyphs at wrong codes —
-    // worse than reporting the font as unsupported.
+    // `/Encoding` diz como os bytes da cadeia viram CIDs. As Identity são a
+    // identidade em dois bytes; um stream é um programa CMap que traz os
+    // próprios intervalos, e é parseado. Uma CMap predefinida que não seja
+    // Identity — as CJK — exige tabelas que este pacote não embute, e é
+    // recusada em vez de adivinhada: posicionar glifos em códigos errados
+    // seria pior do que relatar a fonte como não suportada.
     final encoding =
         (await font.nameEntry(CraftPdfName('Encoding')))?.getValue();
-    if (encoding != 'Identity-H' && encoding != 'Identity-V') {
+    _EmbeddedCMap? embedded;
+    if (encoding == null) {
+      final stream = await font.streamEntry(CraftPdfName('Encoding'));
+      final bytes = await stream?.getBytes();
+      if (bytes != null && bytes.isNotEmpty) {
+        embedded = _EmbeddedCMap.parse(bytes);
+      }
+    }
+    if (embedded == null &&
+        encoding != 'Identity-H' &&
+        encoding != 'Identity-V') {
       return PdfGlyphSource._(
         face: null,
         failure: PdfGlyphFailure.unsupportedCMap,
@@ -292,6 +343,7 @@ class PdfGlyphSource {
       defaultWidth: defaultWidth,
       codeToUnicode: const {},
       cidToGid: cidToGid,
+      cmap: embedded,
     );
   }
 
@@ -384,9 +436,14 @@ class PdfGlyphSource {
           if (text.isNotEmpty) table[code] = text.runes.first;
         } on FormatException {
           // Undefined slot in this encoding.
+        } on UnsupportedError {
+          // Uma codificação que este pacote não tabela — MacExpertEncoding, ou
+          // um nome fora do padrão. Deixar a tabela vazia faz a resolução cair
+          // no cmap da própria fonte, que é melhor do que descartar a fonte
+          // inteira: antes esta exceção subia e todo o texto do documento
+          // deixava de ser desenhado.
+          break;
         } on ArgumentError {
-          // Unknown encoding name; leave the table empty and fall back to the
-          // font's own cmap lookups.
           break;
         }
       }
@@ -419,6 +476,21 @@ class PdfGlyphSource {
       }
     }
     return out;
+  }
+
+
+  /// True quando [face] não mapeia ponto de código nenhum.
+  ///
+  /// Sonda a faixa que qualquer texto latino usa. Uma fonte com `cmap` real
+  /// responde a pelo menos um destes; um subconjunto sem a tabela responde a
+  /// nenhum, e aí o código de caractere é o índice do glifo.
+  static bool _lacksUsableCmap(BLFontFace? face) {
+    if (face == null) return false;
+    for (var code = 0x20; code <= 0x7E; code++) {
+      if (face.mapCodePoint(code) != 0) return false;
+      if (face.mapCodePoint(0xF000 + code) != 0) return false;
+    }
+    return true;
   }
 
   /// Preenche [widths] com as métricas AFM de uma das catorze fontes padrão.
@@ -531,5 +603,104 @@ class PdfGlyphSource {
       return (face: null, failure: PdfGlyphFailure.unreadableProgram);
     }
     return (face: null, failure: PdfGlyphFailure.notEmbedded);
+  }
+}
+
+/// A CMap carried inside the PDF, as `/Encoding` of a Type0 font.
+///
+/// It is a PostScript-like program declaring which byte sequences are valid
+/// codes (`codespacerange`) and how those codes map to CIDs (`cidrange` and
+/// `cidchar`). Unlike Identity, the codes are not necessarily two bytes: a
+/// single CMap can mix one and two byte codes, and splitting the string wrong
+/// shifts every glyph after the mistake.
+class _EmbeddedCMap {
+  /// Comprimentos de código válidos, do menor para o maior, com os intervalos
+  /// de cada um como pares `(baixo, alto)` já convertidos para inteiros.
+  final Map<int, List<(int, int)>> _spans;
+
+  /// Código para CID.
+  final Map<int, int> _toCid;
+
+  const _EmbeddedCMap._(this._spans, this._toCid);
+
+  /// Parseia [bytes], ou devolve null se o programa não for legível.
+  static _EmbeddedCMap? parse(Uint8List bytes) {
+    final collector = CraftCMapCidToCodepoint();
+    try {
+      CraftCMapParser.loadCidMappingsSync(
+          'embedded', collector, CraftCMapLocationFromBytes(bytes));
+    } catch (_) {
+      // Um programa malformado não pode derrubar a página; a fonte volta a
+      // ser relatada como não suportada.
+      return null;
+    }
+
+    final spans = <int, List<(int, int)>>{};
+    final ranges = collector.getCodeSpaceRanges();
+    for (var i = 0; i + 1 < ranges.length; i += 2) {
+      final low = ranges[i];
+      final high = ranges[i + 1];
+      if (low.isEmpty || low.length != high.length) continue;
+      (spans[low.length] ??= []).add((_toInt(low), _toInt(high)));
+    }
+
+    final toCid = <int, int>{};
+    collector.map.forEach((cid, code) {
+      if (code.isNotEmpty) toCid[_toInt(code)] = cid;
+    });
+
+    if (spans.isEmpty && toCid.isEmpty) return null;
+    // Sem `codespacerange` declarado, dois bytes é o que praticamente todo
+    // Type0 usa, e é o que a Identity faz.
+    if (spans.isEmpty) spans[2] = [(0, 0xFFFF)];
+    return _EmbeddedCMap._(spans, toCid);
+  }
+
+  static int _toInt(List<int> bytes) {
+    var value = 0;
+    for (final b in bytes) {
+      value = (value << 8) | (b & 0xFF);
+    }
+    return value;
+  }
+
+  int cid(int code) => _toCid[code] ?? code;
+
+  /// Quebra [bytes] em códigos, respeitando os comprimentos declarados.
+  List<int> split(Uint8List bytes) {
+    final lengths = _spans.keys.toList()..sort();
+    final out = <int>[];
+    var i = 0;
+    while (i < bytes.length) {
+      var taken = 0;
+      for (final length in lengths) {
+        if (i + length > bytes.length) continue;
+        var value = 0;
+        for (var k = 0; k < length; k++) {
+          value = (value << 8) | bytes[i + k];
+        }
+        final within =
+            _spans[length]!.any((span) => value >= span.$1 && value <= span.$2);
+        if (within) {
+          out.add(value);
+          taken = length;
+          break;
+        }
+      }
+      if (taken == 0) {
+        // Byte que nenhum intervalo aceita. Consumir o menor comprimento
+        // declarado mantém o resto da cadeia alinhado, que é o que os leitores
+        // fazem; parar aqui perderia todo o texto seguinte.
+        final fallback = lengths.first;
+        var value = 0;
+        for (var k = 0; k < fallback && i + k < bytes.length; k++) {
+          value = (value << 8) | bytes[i + k];
+        }
+        out.add(value);
+        taken = fallback;
+      }
+      i += taken;
+    }
+    return out;
   }
 }

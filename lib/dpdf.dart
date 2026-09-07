@@ -14,6 +14,9 @@ export 'src/editing/pdf_simple_encoding.dart';
 export 'src/editing/pdf_standard_font_metrics.dart';
 export 'src/html/html_to_pdf.dart';
 
+// SVG: desenho vetorial em cima do canvas do kernel.
+export 'src/svg/svg_converter.dart';
+
 export 'src/commons/exceptions/dpdf_exception.dart';
 
 export 'src/io/exceptions/io_exception.dart';

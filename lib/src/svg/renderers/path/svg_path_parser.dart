@@ -18,322 +18,386 @@ class CraftSvgPathSegment {
   const CraftSvgPathSegment(this.op, this.coordinates);
 
   @override
-  String toString() => '$op$coordinates';
+  String toString() => '${op.name}$coordinates';
 }
 
 /// Converte o atributo `d` de `<path>` numa lista de segmentos absolutos.
 ///
 /// O iText modela cada operador como uma classe própria; aqui um único
 /// autômato resolve o mesmo problema, porque a gramática do caminho é
-/// estritamente linear e todo o estado que importa cabe em cinco variáveis
+/// estritamente linear e todo o estado que importa cabe em poucas variáveis
 /// (ponto corrente, início do subcaminho e último ponto de controle).
+///
+/// A varredura por deslocamento e a conversão de arco elíptico em cúbicas
+/// seguem de perto `dart_ui/lib/src/graphics/svg/svg_path.dart`, do mesmo
+/// autor, adaptadas ao modelo de segmentos usado aqui.
 class CraftSvgPathParser {
   CraftSvgPathParser._();
 
-  /// Comandos e números; os números aceitam a notação exponencial e a forma
-  /// `.5` que o SVG permite colar sem separador (`1.5.5` são dois números).
-  static final RegExp _token = RegExp(
-      r'[MmLlHhVvCcSsQqTtAaZz]|[+-]?(?:\d*\.\d+|\d+\.?)(?:[eE][+-]?\d+)?');
-
   /// [unitScale] converte unidades de usuário do SVG para pontos do PDF; é
-  /// aplicada uma única vez, na emissão, para o autômato trabalhar sempre no
-  /// espaço em que o arquivo foi escrito.
+  /// aplicada só na emissão, para o autômato trabalhar sempre no espaço em
+  /// que o arquivo foi escrito.
   ///
-  /// Um `d` malformado não interrompe o desenho: devolve-se o que foi
-  /// entendido até o erro, como fazem os agentes de usuário.
+  /// Um `d` malformado não interrompe a conversão do documento: devolve-se o
+  /// prefixo entendido até o erro, que é o comportamento dos agentes de
+  /// usuário — um atributo truncado ainda desenha o que dava para desenhar.
   static List<CraftSvgPathSegment> parse(String? pathData,
       {double unitScale = 1.0}) {
-    final segments = <CraftSvgPathSegment>[];
-    if (pathData == null || pathData.trim().isEmpty) return segments;
+    if (pathData == null || pathData.trim().isEmpty) {
+      return const <CraftSvgPathSegment>[];
+    }
+    return _SvgPathScanner(pathData, unitScale).run();
+  }
+}
 
-    final tokens =
-        _token.allMatches(pathData).map((match) => match.group(0)!).toList();
+/// Sinaliza que o resto do `d` não é interpretável; o prefixo já lido vale.
+class _PathTruncated implements Exception {
+  const _PathTruncated();
+}
 
-    // Ponto corrente, início do subcaminho e controles refletidos por S/T.
-    var x = 0.0, y = 0.0, startX = 0.0, startY = 0.0;
-    var cubicX = 0.0, cubicY = 0.0, quadX = 0.0, quadY = 0.0;
-    var lastWasCubic = false, lastWasQuad = false;
+class _SvgPathScanner {
+  _SvgPathScanner(this._data, this._unitScale);
 
+  static final RegExp _number =
+      RegExp(r'[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?');
+
+  final String _data;
+  final double _unitScale;
+  final List<CraftSvgPathSegment> _segments = [];
+
+  int _offset = 0;
+  double _x = 0, _y = 0;
+  double _startX = 0, _startY = 0;
+  double _cubicX = 0, _cubicY = 0;
+  double _quadX = 0, _quadY = 0;
+  String? _previous;
+
+  List<CraftSvgPathSegment> run() {
+    try {
+      _parse();
+    } on _PathTruncated {
+      // Prefixo válido já está em _segments.
+    }
+    return _segments;
+  }
+
+  void _parse() {
     String? command;
-    var index = 0;
-
-    double? number() {
-      if (index >= tokens.length) return null;
-      final value = double.tryParse(tokens[index]);
-      if (value == null) return null;
-      index++;
-      return value;
-    }
-
-    void emit(CraftSvgPathOp op, List<double> coordinates) {
-      segments.add(CraftSvgPathSegment(
-          op, coordinates.map((value) => value * unitScale).toList()));
-    }
-
-    while (index < tokens.length) {
-      final token = tokens[index];
-      if (double.tryParse(token) == null) {
-        command = token;
-        index++;
-        // Um `M`/`m` isolado passa a valer como `L`/`l` nas repetições
-        // implícitas, conforme a especificação.
-        if (command == 'Z' || command == 'z') {
-          emit(CraftSvgPathOp.close, const []);
-          x = startX;
-          y = startY;
-          lastWasCubic = false;
-          lastWasQuad = false;
-          continue;
-        }
-      } else if (command == null) {
-        // Números antes de qualquer comando são lixo: não há como interpretá-los.
-        break;
+    while (true) {
+      _skipSeparators();
+      if (_offset >= _data.length) return;
+      if (_isCommand(_data.codeUnitAt(_offset))) {
+        command = _data[_offset++];
+      } else if (command == null || command.toUpperCase() == 'Z') {
+        // Números sem comando anterior utilizável não têm interpretação.
+        throw const _PathTruncated();
       }
-
-      final current = command!;
+      final current = command;
       final relative = current == current.toLowerCase();
-      final upper = current.toUpperCase();
-      final originX = relative ? x : 0.0;
-      final originY = relative ? y : 0.0;
-      var isCubic = false;
-      var isQuad = false;
-
-      switch (upper) {
+      switch (current.toUpperCase()) {
         case 'M':
-          final px = number(), py = number();
-          if (px == null || py == null) return segments;
-          x = originX + px;
-          y = originY + py;
-          startX = x;
-          startY = y;
-          emit(CraftSvgPathOp.moveTo, [x, y]);
-          command = relative ? 'l' : 'L';
+          _move(relative);
+          // Coordenadas extras depois de um `M` valem como `L`, e é o `L`
+          // que passa a valer nas repetições implícitas seguintes.
+          final lineCommand = relative ? 'l' : 'L';
+          while (_hasNumber) {
+            _line(relative);
+            _previous = lineCommand;
+          }
+          command = lineCommand;
           break;
         case 'L':
-          final px = number(), py = number();
-          if (px == null || py == null) return segments;
-          x = originX + px;
-          y = originY + py;
-          emit(CraftSvgPathOp.lineTo, [x, y]);
+          _repeat(current, () => _line(relative));
           break;
         case 'H':
-          final px = number();
-          if (px == null) return segments;
-          x = originX + px;
-          emit(CraftSvgPathOp.lineTo, [x, y]);
+          _repeat(current, () {
+            _x = _coordinate(_readNumber(), _x, relative);
+            _emit(CraftSvgPathOp.lineTo, [_x, _y]);
+          });
           break;
         case 'V':
-          final py = number();
-          if (py == null) return segments;
-          y = originY + py;
-          emit(CraftSvgPathOp.lineTo, [x, y]);
+          _repeat(current, () {
+            _y = _coordinate(_readNumber(), _y, relative);
+            _emit(CraftSvgPathOp.lineTo, [_x, _y]);
+          });
           break;
         case 'C':
-          final x1 = number(), y1 = number();
-          final x2 = number(), y2 = number();
-          final px = number(), py = number();
-          if (px == null || py == null || x1 == null || y1 == null) {
-            return segments;
-          }
-          if (x2 == null || y2 == null) return segments;
-          final c1x = originX + x1, c1y = originY + y1;
-          final c2x = originX + x2, c2y = originY + y2;
-          x = originX + px;
-          y = originY + py;
-          emit(CraftSvgPathOp.curveTo, [c1x, c1y, c2x, c2y, x, y]);
-          cubicX = c2x;
-          cubicY = c2y;
-          isCubic = true;
+          _repeat(current, () => _cubic(relative));
           break;
         case 'S':
-          final x2 = number(), y2 = number();
-          final px = number(), py = number();
-          if (x2 == null || y2 == null || px == null || py == null) {
-            return segments;
-          }
-          // Sem cúbica anterior o primeiro controle coincide com o ponto
-          // corrente, e não com um reflexo inexistente.
-          final c1x = lastWasCubic ? 2 * x - cubicX : x;
-          final c1y = lastWasCubic ? 2 * y - cubicY : y;
-          final c2x = originX + x2, c2y = originY + y2;
-          x = originX + px;
-          y = originY + py;
-          emit(CraftSvgPathOp.curveTo, [c1x, c1y, c2x, c2y, x, y]);
-          cubicX = c2x;
-          cubicY = c2y;
-          isCubic = true;
+          _repeat(current, () => _smoothCubic(relative));
           break;
         case 'Q':
-          final qx = number(), qy = number();
-          final px = number(), py = number();
-          if (qx == null || qy == null || px == null || py == null) {
-            return segments;
-          }
-          final controlX = originX + qx, controlY = originY + qy;
-          final endX = originX + px, endY = originY + py;
-          emit(CraftSvgPathOp.curveTo,
-              _quadraticToCubic(x, y, controlX, controlY, endX, endY));
-          quadX = controlX;
-          quadY = controlY;
-          x = endX;
-          y = endY;
-          isQuad = true;
+          _repeat(current, () => _quadratic(relative));
           break;
         case 'T':
-          final px = number(), py = number();
-          if (px == null || py == null) return segments;
-          final controlX = lastWasQuad ? 2 * x - quadX : x;
-          final controlY = lastWasQuad ? 2 * y - quadY : y;
-          final endX = originX + px, endY = originY + py;
-          emit(CraftSvgPathOp.curveTo,
-              _quadraticToCubic(x, y, controlX, controlY, endX, endY));
-          quadX = controlX;
-          quadY = controlY;
-          x = endX;
-          y = endY;
-          isQuad = true;
+          _repeat(current, () => _smoothQuadratic(relative));
           break;
         case 'A':
-          final rx = number(), ry = number();
-          final rotation = number();
-          final largeArc = number(), sweep = number();
-          final px = number(), py = number();
-          if (rx == null ||
-              ry == null ||
-              rotation == null ||
-              largeArc == null ||
-              sweep == null ||
-              px == null ||
-              py == null) {
-            return segments;
-          }
-          final endX = originX + px, endY = originY + py;
-          for (final curve in _arcToCurves(x, y, rx, ry, rotation,
-              largeArc != 0, sweep != 0, endX, endY)) {
-            emit(CraftSvgPathOp.curveTo, curve);
-          }
-          x = endX;
-          y = endY;
+          _repeat(current, () => _arc(relative));
+          break;
+        case 'Z':
+          _emit(CraftSvgPathOp.close, const []);
+          _x = _startX;
+          _y = _startY;
+          _previous = current;
           break;
         default:
-          // Comando desconhecido: nada mais pode ser interpretado com segurança.
-          return segments;
+          throw const _PathTruncated();
       }
-
-      lastWasCubic = isCubic;
-      lastWasQuad = isQuad;
     }
-    return segments;
   }
 
-  /// Eleva uma quadrática ao grau três, única forma de curva que o PDF aceita.
-  static List<double> _quadraticToCubic(double x0, double y0, double cx,
-      double cy, double x1, double y1) {
-    return [
-      x0 + 2 / 3 * (cx - x0),
-      y0 + 2 / 3 * (cy - y0),
-      x1 + 2 / 3 * (cx - x1),
-      y1 + 2 / 3 * (cy - y1),
-      x1,
-      y1,
-    ];
+  void _emit(CraftSvgPathOp op, List<double> coordinates) {
+    _segments.add(CraftSvgPathSegment(
+        op, coordinates.map((value) => value * _unitScale).toList()));
   }
 
-  /// Converte o arco elíptico da parametrização por extremos (a do SVG) em
-  /// cúbicas de Bézier, seguindo o apêndice F.6 da especificação SVG 1.1.
-  static List<List<double>> _arcToCurves(double x1, double y1, double rx,
-      double ry, double rotation, bool largeArc, bool sweep, double x2,
-      double y2) {
-    // Extremos coincidentes anulam o arco; raio nulo degenera em reta. Ambos
-    // os casos estão previstos na especificação e não são erro.
-    if (x1 == x2 && y1 == y2) return const [];
+  void _move(bool relative) {
+    if (!_hasNumber) throw const _PathTruncated();
+    _x = _coordinate(_readNumber(), _x, relative);
+    _y = _coordinate(_readNumber(), _y, relative);
+    _startX = _x;
+    _startY = _y;
+    _emit(CraftSvgPathOp.moveTo, [_x, _y]);
+    _previous = relative ? 'm' : 'M';
+  }
+
+  void _line(bool relative) {
+    _x = _coordinate(_readNumber(), _x, relative);
+    _y = _coordinate(_readNumber(), _y, relative);
+    _emit(CraftSvgPathOp.lineTo, [_x, _y]);
+  }
+
+  void _cubic(bool relative) {
+    final x1 = _coordinate(_readNumber(), _x, relative);
+    final y1 = _coordinate(_readNumber(), _y, relative);
+    final x2 = _coordinate(_readNumber(), _x, relative);
+    final y2 = _coordinate(_readNumber(), _y, relative);
+    final x = _coordinate(_readNumber(), _x, relative);
+    final y = _coordinate(_readNumber(), _y, relative);
+    _emit(CraftSvgPathOp.curveTo, [x1, y1, x2, y2, x, y]);
+    _cubicX = x2;
+    _cubicY = y2;
+    _x = x;
+    _y = y;
+  }
+
+  void _smoothCubic(bool relative) {
+    // Sem uma cúbica imediatamente antes não há o que refletir, e o primeiro
+    // controle coincide com o ponto corrente.
+    final reflects = _previous == 'C' ||
+        _previous == 'c' ||
+        _previous == 'S' ||
+        _previous == 's';
+    final x1 = reflects ? 2 * _x - _cubicX : _x;
+    final y1 = reflects ? 2 * _y - _cubicY : _y;
+    final x2 = _coordinate(_readNumber(), _x, relative);
+    final y2 = _coordinate(_readNumber(), _y, relative);
+    final x = _coordinate(_readNumber(), _x, relative);
+    final y = _coordinate(_readNumber(), _y, relative);
+    _emit(CraftSvgPathOp.curveTo, [x1, y1, x2, y2, x, y]);
+    _cubicX = x2;
+    _cubicY = y2;
+    _x = x;
+    _y = y;
+  }
+
+  void _quadratic(bool relative) {
+    final cx = _coordinate(_readNumber(), _x, relative);
+    final cy = _coordinate(_readNumber(), _y, relative);
+    final x = _coordinate(_readNumber(), _x, relative);
+    final y = _coordinate(_readNumber(), _y, relative);
+    _emitQuadratic(cx, cy, x, y);
+  }
+
+  void _smoothQuadratic(bool relative) {
+    final reflects = _previous == 'Q' ||
+        _previous == 'q' ||
+        _previous == 'T' ||
+        _previous == 't';
+    final cx = reflects ? 2 * _x - _quadX : _x;
+    final cy = reflects ? 2 * _y - _quadY : _y;
+    final x = _coordinate(_readNumber(), _x, relative);
+    final y = _coordinate(_readNumber(), _y, relative);
+    _emitQuadratic(cx, cy, x, y);
+  }
+
+  /// O PDF não tem curva de grau dois: a quadrática é elevada exatamente a
+  /// uma cúbica equivalente, sem perda de precisão.
+  void _emitQuadratic(double cx, double cy, double x, double y) {
+    _emit(CraftSvgPathOp.curveTo, [
+      _x + 2 / 3 * (cx - _x),
+      _y + 2 / 3 * (cy - _y),
+      x + 2 / 3 * (cx - x),
+      y + 2 / 3 * (cy - y),
+      x,
+      y,
+    ]);
+    _quadX = cx;
+    _quadY = cy;
+    _x = x;
+    _y = y;
+  }
+
+  void _arc(bool relative) {
+    final rx = _readNumber().abs();
+    final ry = _readNumber().abs();
+    final rotation = _readNumber();
+    // Os sinalizadores são um único dígito e podem vir colados ao número
+    // seguinte (`a1 1 0 011 1`), então não passam pelo leitor de números.
+    final largeArc = _readFlag();
+    final sweep = _readFlag();
+    final x = _coordinate(_readNumber(), _x, relative);
+    final y = _coordinate(_readNumber(), _y, relative);
+    _appendArc(rx, ry, rotation, largeArc, sweep, x, y);
+    _x = x;
+    _y = y;
+  }
+
+  /// Converte o arco elíptico da parametrização por extremos (a do SVG) na
+  /// parametrização por centro e aproxima cada quarto de volta por uma
+  /// cúbica, conforme o apêndice F.6 da especificação SVG 1.1.
+  void _appendArc(double rx, double ry, double degrees, bool largeArc,
+      bool sweep, double x1, double y1) {
+    final x0 = _x, y0 = _y;
+    // Extremos coincidentes anulam o arco; raio nulo degenera em reta. Os dois
+    // casos estão previstos na especificação e não são erro.
+    if (x0 == x1 && y0 == y1) return;
     if (rx == 0 || ry == 0) {
-      return [
-        [x1, y1, x2, y2, x2, y2]
-      ];
+      _emit(CraftSvgPathOp.lineTo, [x1, y1]);
+      return;
     }
-    rx = rx.abs();
-    ry = ry.abs();
-    final phi = rotation * math.pi / 180.0;
-    final cosPhi = math.cos(phi), sinPhi = math.sin(phi);
 
-    final dx = (x1 - x2) / 2, dy = (y1 - y2) / 2;
-    final x1p = cosPhi * dx + sinPhi * dy;
-    final y1p = -sinPhi * dx + cosPhi * dy;
+    final phi = degrees.remainder(360) * math.pi / 180;
+    final cosPhi = math.cos(phi);
+    final sinPhi = math.sin(phi);
+    final dx = (x0 - x1) / 2;
+    final dy = (y0 - y1) / 2;
+    final xp = cosPhi * dx + sinPhi * dy;
+    final yp = -sinPhi * dx + cosPhi * dy;
 
-    // Raios menores que a corda são ampliados até caberem, em vez de gerarem
-    // uma raiz negativa mais adiante.
-    final lambda = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+    // Raios pequenos demais para alcançar o destino são ampliados até caberem,
+    // em vez de produzirem uma raiz negativa adiante.
+    var actualRx = rx, actualRy = ry;
+    final lambda = xp * xp / (rx * rx) + yp * yp / (ry * ry);
     if (lambda > 1) {
       final enlargement = math.sqrt(lambda);
-      rx *= enlargement;
-      ry *= enlargement;
+      actualRx *= enlargement;
+      actualRy *= enlargement;
     }
 
-    final numerator =
-        rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p;
-    final denominator = rx * rx * y1p * y1p + ry * ry * x1p * x1p;
-    var center = denominator == 0
-        ? 0.0
-        : math.sqrt(math.max(0, numerator) / denominator);
-    if (largeArc == sweep) center = -center;
+    final rx2 = actualRx * actualRx;
+    final ry2 = actualRy * actualRy;
+    final numerator = math.max(0.0, rx2 * ry2 - rx2 * yp * yp - ry2 * xp * xp);
+    final denominator = rx2 * yp * yp + ry2 * xp * xp;
+    final sign = largeArc == sweep ? -1.0 : 1.0;
+    final factor =
+        denominator == 0 ? 0.0 : sign * math.sqrt(numerator / denominator);
+    final cxp = factor * actualRx * yp / actualRy;
+    final cyp = factor * -actualRy * xp / actualRx;
+    final cx = cosPhi * cxp - sinPhi * cyp + (x0 + x1) / 2;
+    final cy = sinPhi * cxp + cosPhi * cyp + (y0 + y1) / 2;
 
-    final cxp = center * rx * y1p / ry;
-    final cyp = -center * ry * x1p / rx;
-    final cx = cosPhi * cxp - sinPhi * cyp + (x1 + x2) / 2;
-    final cy = sinPhi * cxp + cosPhi * cyp + (y1 + y2) / 2;
+    final ux = (xp - cxp) / actualRx;
+    final uy = (yp - cyp) / actualRy;
+    final vx = (-xp - cxp) / actualRx;
+    final vy = (-yp - cyp) / actualRy;
+    final start = math.atan2(uy, ux);
+    var delta = math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
+    if (!sweep && delta > 0) delta -= math.pi * 2;
+    if (sweep && delta < 0) delta += math.pi * 2;
 
-    final theta1 = math.atan2((y1p - cyp) / ry, (x1p - cxp) / rx);
-    final theta2 = math.atan2((-y1p - cyp) / ry, (-x1p - cxp) / rx);
-    var delta = theta2 - theta1;
-    if (!sweep && delta > 0) {
-      delta -= 2 * math.pi;
-    } else if (sweep && delta < 0) {
-      delta += 2 * math.pi;
-    }
-
-    // Uma cúbica só aproxima bem até um quarto de volta; daí a fatia de 90°.
-    final count = math.max(1, (delta.abs() / (math.pi / 2)).ceil());
-    final step = delta / count;
-    final alpha = 4 / 3 * math.tan(step / 4);
-
-    final curves = <List<double>>[];
-    var theta = theta1;
+    // Uma cúbica só aproxima bem até um quarto de volta.
+    final count = (delta.abs() / (math.pi / 2)).ceil();
+    final step = count == 0 ? 0.0 : delta / count;
+    var angle = start;
     for (var i = 0; i < count; i++) {
-      final next = theta + step;
-      final start = _ellipsePoint(cx, cy, rx, ry, cosPhi, sinPhi, theta);
-      final end = _ellipsePoint(cx, cy, rx, ry, cosPhi, sinPhi, next);
-      final startSlope =
-          _ellipseSlope(rx, ry, cosPhi, sinPhi, theta);
-      final endSlope = _ellipseSlope(rx, ry, cosPhi, sinPhi, next);
-      curves.add([
-        start[0] + alpha * startSlope[0],
-        start[1] + alpha * startSlope[1],
-        end[0] - alpha * endSlope[0],
-        end[1] - alpha * endSlope[1],
-        end[0],
-        end[1],
+      final next = angle + step;
+      final alpha = 4 / 3 * math.tan(step / 4);
+      final cos0 = math.cos(angle), sin0 = math.sin(angle);
+      final cos1 = math.cos(next), sin1 = math.sin(next);
+
+      double mapX(double a, double b) =>
+          cx + actualRx * cosPhi * a - actualRy * sinPhi * b;
+      double mapY(double a, double b) =>
+          cy + actualRx * sinPhi * a + actualRy * cosPhi * b;
+
+      final last = i == count - 1;
+      _emit(CraftSvgPathOp.curveTo, [
+        mapX(cos0 - alpha * sin0, sin0 + alpha * cos0),
+        mapY(cos0 - alpha * sin0, sin0 + alpha * cos0),
+        mapX(cos1 + alpha * sin1, sin1 - alpha * cos1),
+        mapY(cos1 + alpha * sin1, sin1 - alpha * cos1),
+        // O último ponto vem do atributo, não da trigonometria: assim o fim
+        // do arco coincide exatamente com o início do próximo comando.
+        last ? x1 : mapX(cos1, sin1),
+        last ? y1 : mapY(cos1, sin1),
       ]);
-      theta = next;
+      angle = next;
     }
-    return curves;
   }
 
-  static List<double> _ellipsePoint(double cx, double cy, double rx, double ry,
-      double cosPhi, double sinPhi, double theta) {
-    final cosTheta = math.cos(theta), sinTheta = math.sin(theta);
-    return [
-      cx + rx * cosPhi * cosTheta - ry * sinPhi * sinTheta,
-      cy + rx * sinPhi * cosTheta + ry * cosPhi * sinTheta,
-    ];
+  void _repeat(String command, void Function() read) {
+    var count = 0;
+    while (_hasNumber) {
+      read();
+      count++;
+      _previous = command;
+    }
+    if (count == 0) throw const _PathTruncated();
   }
 
-  static List<double> _ellipseSlope(double rx, double ry, double cosPhi,
-      double sinPhi, double theta) {
-    final cosTheta = math.cos(theta), sinTheta = math.sin(theta);
-    return [
-      -rx * cosPhi * sinTheta - ry * sinPhi * cosTheta,
-      -rx * sinPhi * sinTheta + ry * cosPhi * cosTheta,
-    ];
+  bool get _hasNumber {
+    _skipSeparators();
+    if (_offset >= _data.length) return false;
+    final code = _data.codeUnitAt(_offset);
+    return code == 0x2B || code == 0x2D || code == 0x2E || _isDigit(code);
   }
+
+  double _readNumber() {
+    _skipSeparators();
+    final match = _number.matchAsPrefix(_data, _offset);
+    if (match == null) throw const _PathTruncated();
+    _offset = match.end;
+    final value = double.tryParse(match.group(0)!);
+    if (value == null || !value.isFinite) throw const _PathTruncated();
+    return value;
+  }
+
+  bool _readFlag() {
+    _skipSeparators();
+    if (_offset >= _data.length) throw const _PathTruncated();
+    final code = _data.codeUnitAt(_offset);
+    if (code != 0x30 && code != 0x31) throw const _PathTruncated();
+    _offset++;
+    return code == 0x31;
+  }
+
+  void _skipSeparators() {
+    while (_offset < _data.length) {
+      final code = _data.codeUnitAt(_offset);
+      const comma = 0x2C, space = 0x20, tab = 0x09, lf = 0x0A, cr = 0x0D;
+      if (code == comma ||
+          code == space ||
+          code == tab ||
+          code == lf ||
+          code == cr) {
+        _offset++;
+      } else {
+        break;
+      }
+    }
+  }
+
+  static double _coordinate(double value, double current, bool relative) =>
+      relative ? current + value : value;
+
+  static bool _isDigit(int code) => code >= 0x30 && code <= 0x39;
+
+  static bool _isCommand(int code) => switch (code | 0x20) {
+        0x6D || 0x7A || 0x6C || 0x68 || 0x76 => true,
+        0x63 || 0x73 || 0x71 || 0x74 || 0x61 => true,
+        _ => false,
+      };
 }

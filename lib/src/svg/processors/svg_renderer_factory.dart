@@ -2,6 +2,7 @@ import 'package:dpdf/src/svg/renderers/impl/circle_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/clip_path_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/ellipse_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/group_svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/impl/gradient_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/image_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/line_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/no_op_svg_node_renderer.dart';
@@ -42,6 +43,9 @@ class SvgRendererFactory {
     SvgTags.USE: UseSvgNodeRenderer.new,
     SvgTags.TEXT: () => TextSvgNodeRenderer(root: true),
     SvgTags.TSPAN: TextSvgNodeRenderer.new,
+    SvgTags.LINEAR_GRADIENT: LinearGradientSvgNodeRenderer.new,
+    SvgTags.RADIAL_GRADIENT: RadialGradientSvgNodeRenderer.new,
+    SvgTags.STOP: GradientStopSvgNodeRenderer.new,
     // Reconhecidos e explicitamente sem pintura própria.
     SvgTags.DEFS: NoOpSvgNodeRenderer.new,
     SvgTags.TITLE: NoOpSvgNodeRenderer.new,

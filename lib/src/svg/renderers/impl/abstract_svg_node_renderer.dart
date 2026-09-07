@@ -14,6 +14,7 @@ import 'package:dpdf/src/svg/marker_vertex_type.dart';
 import 'package:dpdf/src/svg/renderers/marker_capable.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_paint_server.dart';
+import 'package:dpdf/src/svg/renderers/svg_shading_paint_server.dart';
 import 'package:dpdf/src/svg/renderers/svg_text_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
@@ -185,6 +186,30 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
         return;
       }
 
+      final shading = _shadingPaintServer(context);
+      if (doFill && shading != null) {
+        final fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, '');
+        currentCanvas.saveState();
+        if (fillRule.toLowerCase() == SvgValues.FILL_RULE_EVEN_ODD) {
+          currentCanvas.eoClip();
+        } else {
+          currentCanvas.clip();
+        }
+        currentCanvas.newPath();
+        await shading.paintShading(
+            context, getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0));
+        currentCanvas.restoreState();
+        if (doStroke) {
+          // O operador de clip consome o caminho; reconstrua apenas para o
+          // traço, mantendo shading e stroke semanticamente independentes.
+          await doDraw(context);
+          currentCanvas.stroke();
+        } else {
+          currentCanvas.newPath();
+        }
+        return;
+      }
+
       if (getParentClipPath() == null) {
         if (doFill && canElementFill()) {
           String fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, "");
@@ -214,6 +239,14 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
         }
       }
     }
+  }
+
+  SvgShadingPaintServer? _shadingPaintServer(SvgDrawContext context) {
+    final raw = getAttribute(SvgAttributes.FILL);
+    if (raw == null || !raw.startsWith('url(')) return null;
+    final id = raw.replaceAll('url(#', '').replaceAll(')', '').trim();
+    final renderer = context.getNamedObject(CssUtils.extractUnquotedString(id));
+    return renderer is SvgShadingPaintServer ? renderer : null;
   }
 
   void _doStrokeOrFill(String fillRule, PdfCanvas currentCanvas) {
@@ -274,6 +307,11 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
     double generalOpacity = _getOpacity();
     String fillRaw = getAttributeOrDefault(SvgAttributes.FILL, "black");
     doFill = fillRaw.toLowerCase() != SvgValues.NONE;
+
+    // Shadings pintam o preenchimento depois de o caminho virar clipping.
+    // Não os converta no fallback transparente de um paint server comum:
+    // esse alfa também tornaria invisível o operador `sh` subsequente.
+    if (doFill && _shadingPaintServer(context) != null) return null;
 
     if (doFill && canElementFill()) {
       double fillOpacity =

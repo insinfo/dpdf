@@ -8,6 +8,7 @@ import 'package:dpdf/src/kernel/geom/page_size.dart';
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_document.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_reader.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
@@ -436,6 +437,62 @@ void main() {
             await (await document.pageAt(1))!.contentPayload());
         expect(content, contains('7.5 0 0 6 1.5 2.25 cm\n'));
         expect(content, contains(' Do\n'));
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('linearGradient com três stops vira shading recortado', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="100" height="30">
+          <defs>
+            <linearGradient id="paint" x1="0%" x2="100%">
+              <stop offset="0%" stop-color="red"/>
+              <stop offset="40%" stop-color="#00ff00"/>
+              <stop offset="100%" stop-color="blue"/>
+            </linearGradient>
+          </defs>
+          <rect x="10" y="5" width="80" height="20" fill="url(#paint)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final content = String.fromCharCodes(
+            await (await document.pageAt(1))!.contentPayload());
+        expect(content, contains('7.5 3.75 60 15 re\n'));
+        expect(content, contains('W\n'));
+        expect(content, contains(' sh\n'));
+        expect(content, isNot(contains('0 0 0 rg\n')),
+            reason: 'o gradiente não deve virar o fallback preto');
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('radialGradient gera shading radial', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="40" height="40">
+          <radialGradient id="g">
+            <stop offset="0" stop-color="white"/>
+            <stop offset="1" stop-color="black"/>
+          </radialGradient>
+          <circle cx="20" cy="20" r="15" fill="url(#g)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final shadings = await resources?.dictionaryEntry(PdfName.shading);
+        expect(shadings, isNotNull);
+        final values = await shadings!.values();
+        final first = values.first;
+        expect(first, isA<PdfDictionary>());
+        expect(
+            (await (first as PdfDictionary).numberEntry(PdfName.shadingType))!
+                .intValue(),
+            3);
       } finally {
         await document.close();
       }

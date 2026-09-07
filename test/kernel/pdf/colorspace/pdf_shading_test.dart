@@ -42,6 +42,33 @@ void main() {
         () => PdfShading.axialRgb(0, 0, 1, 1, const [2, 0, 0], const [1, 1, 1]),
         throwsArgumentError);
   });
+
+  test('várias paradas produzem função de stitching tipo 3', () async {
+    final shading = PdfShading.axialRgbStops(
+      0,
+      0,
+      100,
+      0,
+      const [0, 0.25, 1],
+      const [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+      ],
+    );
+    final function = await shading
+        .pdfRepresentation()
+        .dictionaryEntry(PdfName.function) as PdfDictionary;
+    expect(
+        (await function.numberEntry(PdfName.intern('FunctionType')))!
+            .intValue(),
+        3);
+    expect(await _numbers(await function.arrayEntry(PdfName.intern('Bounds'))),
+        [0.25]);
+    expect((await function.arrayEntry(PdfName.intern('Functions')))!.size(), 2);
+    expect(await _numbers(await function.arrayEntry(PdfName.intern('Encode'))),
+        [0, 1, 0, 1]);
+  });
 }
 
 Future<List<double>> _numbers(PdfArray? array) async {

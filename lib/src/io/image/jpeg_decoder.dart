@@ -52,13 +52,14 @@ class JpegDecodeException implements Exception {
   String toString() => 'JpegDecodeException: $message';
 }
 
-/// A baseline sequential JPEG decoder.
+/// A Huffman-coded JPEG decoder, sequential and progressive.
 ///
 /// It reads the DCT-based sequential mode of ITU-T T.81 — the mode PDF's
-/// `/DCTDecode` filter carries in practice — with Huffman coding, restart
-/// intervals, and any component sampling factors, so 4:4:4, 4:2:2 and 4:2:0
-/// files all decode. Progressive and arithmetic-coded files are rejected with
-/// a clear message rather than decoded wrongly.
+/// `/DCTDecode` filter carries most often — and the progressive mode of T.81
+/// §G, with restart intervals and any component sampling factors, so 4:4:4,
+/// 4:2:2 and 4:2:0 files all decode. Arithmetic-coded, lossless and
+/// hierarchical files are rejected with a clear message rather than decoded
+/// wrongly.
 ///
 /// The IDCT is the AAN float algorithm with the scale factors folded into the
 /// dequantisation tables, which is what makes a block cost 8 butterflies per
@@ -81,8 +82,8 @@ class JpegInfo {
   final int height;
   final int components;
 
-  /// False for progressive, arithmetic-coded, hierarchical or lossless files,
-  /// which [JpegDecoder.decode] refuses.
+  /// False for arithmetic-coded, hierarchical or lossless files, which
+  /// [JpegDecoder.decode] refuses. Progressive files are decodable.
   final bool decodable;
 
   /// Why it is not decodable, when it is not.
@@ -111,14 +112,30 @@ class _Component {
   final int v;
   final int quantTable;
 
-  /// Blocks per MCU row and column for this component.
+  /// Blocks per MCU row and column for this component: the padded grid, big
+  /// enough for whole MCUs, which is what the coefficient store is sized to.
   late int blocksPerLine;
   late int blocksPerColumn;
+
+  /// Blocks a *non-interleaved* scan walks, per T.81 A.2.3. A single-component
+  /// scan is tiled over the component's own rounded-up size, not over the
+  /// padded MCU grid, so for some widths it visits fewer blocks per row than
+  /// [blocksPerLine]. Getting this wrong shears every progressive scan that
+  /// carries one component, which is nearly all of them.
+  late int blocksPerLineForScan;
+  late int blocksPerColumnForScan;
 
   /// Full-resolution-free plane: one byte per sample at this component's own
   /// resolution, `blocksPerLine * 8` wide.
   late Uint8List plane;
   late int planeStride;
+
+  /// Quantised coefficients in natural (de-zigzagged) order, 64 per block,
+  /// row-major over the padded grid. Only progressive files need it: their
+  /// scans each contribute some bits of some coefficients, so nothing can be
+  /// dequantised or transformed until the last scan has been read. A
+  /// sequential file goes straight from block to plane and leaves this null.
+  Int32List? coefficients;
 
   int dcTable = 0;
   int acTable = 0;
@@ -158,6 +175,15 @@ class _Huffman {
         continue;
       }
       for (var i = 0; i < count; i++) {
+        // A canonical code of n bits cannot exceed n bits. A corrupt DHT can
+        // declare more codes of a length than that length has room for, and
+        // then the lookahead fill would run past its 256 entries; say so
+        // instead of throwing a range error the caller cannot classify.
+        if (code >= (1 << length)) {
+          throw const JpegDecodeException(
+              'A Huffman table is over-subscribed: its code lengths do not '
+              'form a prefix code.');
+        }
         if (length <= 8) {
           // Every 8-bit prefix that starts with this code resolves to it.
           final shift = 8 - length;
@@ -199,6 +225,14 @@ class _Decoder {
   bool progressive = false;
   String? refusal;
 
+  /// Geometry and buffers are laid out once, at the first scan, and every later
+  /// scan of a progressive file adds to them.
+  bool prepared = false;
+
+  /// Run of end-of-band blocks still owed, per T.81 G.1.2.2. It survives from
+  /// block to block inside one AC scan and is cleared at every restart.
+  int eobrun = 0;
+
   /// Adobe APP14 colour transform: -1 when absent, otherwise 0, 1 or 2.
   int adobeTransform = -1;
   bool sawAdobe = false;
@@ -227,6 +261,9 @@ class _Decoder {
   JpegImage decode() {
     _readFrameHeader(stopAtScan: false);
     if (refusal != null) throw JpegDecodeException(refusal!);
+    // A progressive file only has complete coefficients once every scan is in,
+    // so dequantisation and the IDCT run here rather than per block.
+    if (progressive) _reconstructProgressive();
     return _assemble();
   }
 
@@ -268,9 +305,8 @@ class _Decoder {
         case 0xC0: // SOF0 baseline
         case 0xC1: // SOF1 extended sequential
           _readFrame(_u16());
-        case 0xC2:
+        case 0xC2: // SOF2 progressive
           progressive = true;
-          refusal ??= 'Progressive JPEG is not supported.';
           _readFrame(_u16());
         case 0xC3:
         case 0xC5:
@@ -298,8 +334,10 @@ class _Decoder {
         case 0xDA: // SOS
           if (stopAtScan || refusal != null) return;
           _readScan(_u16());
-          // A baseline file has one scan; anything after it is trailing data.
-          return;
+          // A sequential file has one scan; anything after it is trailing data.
+          // A progressive file has many, so keep walking markers: the scan
+          // reader left `offset` on the next real marker.
+          if (!progressive) return;
         default:
           if (marker >= 0xD0 && marker <= 0xD7) continue;
           final length = _u16();
@@ -432,15 +470,25 @@ class _Decoder {
       component.acTable = tables & 0x0F;
       scan.add(component);
     }
+    // Spectral selection and successive approximation. A sequential scan writes
+    // 0/63/0/0 here and the values are then inert, so they are read
+    // unconditionally and only the progressive path acts on them.
+    final spectralStart = _u8();
+    final spectralEnd = _u8();
+    final approximation = _u8();
     offset = headerEnd;
 
-    for (final component in components) {
-      component.blocksPerLine = mcusPerLine * component.h;
-      component.blocksPerColumn = mcusPerColumn * component.v;
-      component.planeStride = component.blocksPerLine * 8;
-      component.plane =
-          Uint8List(component.planeStride * component.blocksPerColumn * 8);
-      component.prediction = 0;
+    _prepareComponents();
+
+    if (progressive) {
+      _readProgressiveScan(
+        scan,
+        spectralStart,
+        spectralEnd,
+        approximation >> 4,
+        approximation & 0x0F,
+      );
+      return;
     }
 
     bitBuffer = 0;
@@ -474,6 +522,336 @@ class _Decoder {
       if (mcu < total) {
         if (!_skipRestart()) break;
       }
+    }
+  }
+
+  /// Sizes the per-component grids, planes and — for a progressive file — the
+  /// coefficient store.
+  ///
+  /// It runs once, at the first scan, because a progressive file's later scans
+  /// refine what the earlier ones wrote: reallocating per scan, which is safe
+  /// for a single sequential scan, would throw away every earlier bit.
+  void _prepareComponents() {
+    if (prepared) return;
+    prepared = true;
+    for (final component in components) {
+      component.blocksPerLine = mcusPerLine * component.h;
+      component.blocksPerColumn = mcusPerColumn * component.v;
+
+      // T.81 A.2.3: a non-interleaved scan tiles the component's own size,
+      // ceil(frame * sampling / max) rounded up to whole blocks, which can be
+      // narrower than the MCU-padded grid above.
+      final width = (frameWidth * component.h + maxH - 1) ~/ maxH;
+      final height = (frameHeight * component.v + maxV - 1) ~/ maxV;
+      component.blocksPerLineForScan = (width + 7) ~/ 8;
+      component.blocksPerColumnForScan = (height + 7) ~/ 8;
+
+      component.planeStride = component.blocksPerLine * 8;
+      component.plane =
+          Uint8List(component.planeStride * component.blocksPerColumn * 8);
+      component.prediction = 0;
+      if (progressive) {
+        component.coefficients =
+            Int32List(component.blocksPerLine * component.blocksPerColumn * 64);
+      }
+    }
+  }
+
+  /// Moves [offset] onto the `0xFF` of the next real marker, stepping over
+  /// stuffed `0xFF00` pairs, fill bytes and restart markers.
+  ///
+  /// A progressive file needs this between scans: the bit reader stops as soon
+  /// as it has the bits it wanted, which can be several bytes short of the end
+  /// of the entropy-coded segment, and the marker walk must not mistake
+  /// leftover compressed bytes for segment headers.
+  void _alignToMarker() {
+    while (offset + 1 < data.length) {
+      if (data[offset] != 0xFF) {
+        offset++;
+        continue;
+      }
+      final next = data[offset + 1];
+      if (next == 0xFF) {
+        offset++; // Fill byte; the marker may still be further along.
+        continue;
+      }
+      if (next == 0x00 || (next >= 0xD0 && next <= 0xD7)) {
+        offset += 2; // Stuffing or a restart: still entropy-coded data.
+        continue;
+      }
+      return;
+    }
+    offset = data.length;
+  }
+
+  // --- progressive scans (T.81 G.1.2) ---------------------------------------
+
+  /// Reads one progressive scan into the coefficient store.
+  ///
+  /// [spectralStart]/[spectralEnd] are Ss/Se, the band of zig-zag positions the
+  /// scan carries; [ah]/[al] are the successive-approximation bit positions.
+  /// `ah == 0` is a first scan, which sets bits; otherwise it is a refinement,
+  /// which appends one bit to what is already there.
+  void _readProgressiveScan(
+    List<_Component> scan,
+    int spectralStart,
+    int spectralEnd,
+    int ah,
+    int al,
+  ) {
+    if (spectralStart > spectralEnd || spectralEnd > 63) {
+      throw const JpegDecodeException(
+          'A progressive scan declares a spectral band outside 0..63.');
+    }
+    if (spectralStart != 0 && scan.length != 1) {
+      throw const JpegDecodeException(
+          'An AC progressive scan must carry exactly one component.');
+    }
+
+    bitBuffer = 0;
+    bitCount = 0;
+    hitMarker = false;
+    eobrun = 0;
+
+    // Only a DC scan may interleave components; an AC scan is always a single
+    // component walked block by block in its own raster order.
+    final interleaved = scan.length > 1;
+    final int total;
+    if (interleaved) {
+      total = mcusPerLine * mcusPerColumn;
+    } else {
+      final component = scan.first;
+      total = component.blocksPerLineForScan * component.blocksPerColumnForScan;
+    }
+    final interval = (restartInterval == 0 || restartInterval > total)
+        ? total
+        : restartInterval;
+
+    var mcu = 0;
+    while (mcu < total) {
+      // A restart resets the DC predictors and the end-of-band run, so the
+      // interval that follows decodes independently of the one before it.
+      for (final component in components) {
+        component.prediction = 0;
+      }
+      eobrun = 0;
+
+      final stop = mcu + interval < total ? mcu + interval : total;
+      for (; mcu < stop; mcu++) {
+        if (interleaved) {
+          final row = mcu ~/ mcusPerLine;
+          final column = mcu % mcusPerLine;
+          for (final component in scan) {
+            for (var v = 0; v < component.v; v++) {
+              for (var h = 0; h < component.h; h++) {
+                _decodeProgressiveBlock(
+                  component,
+                  row * component.v + v,
+                  column * component.h + h,
+                  spectralStart,
+                  spectralEnd,
+                  ah,
+                  al,
+                );
+              }
+            }
+          }
+        } else {
+          final component = scan.first;
+          _decodeProgressiveBlock(
+            component,
+            mcu ~/ component.blocksPerLineForScan,
+            mcu % component.blocksPerLineForScan,
+            spectralStart,
+            spectralEnd,
+            ah,
+            al,
+          );
+        }
+      }
+      if (mcu < total) {
+        if (!_skipRestart()) break;
+      }
+    }
+
+    _alignToMarker();
+  }
+
+  void _decodeProgressiveBlock(
+    _Component component,
+    int blockRow,
+    int blockColumn,
+    int spectralStart,
+    int spectralEnd,
+    int ah,
+    int al,
+  ) {
+    final coefficients = component.coefficients!;
+    final base = (blockRow * component.blocksPerLine + blockColumn) * 64;
+    if (base < 0 || base + 64 > coefficients.length) return;
+
+    if (spectralStart == 0) {
+      if (spectralEnd != 0) {
+        throw const JpegDecodeException(
+            'A progressive DC scan must have Se = 0.');
+      }
+      if (ah == 0) {
+        _decodeDcFirst(component, coefficients, base, al);
+      } else {
+        // Refinement: one more bit of the DC value, at position Al.
+        if (_bit() != 0) coefficients[base] |= 1 << al;
+      }
+      return;
+    }
+
+    if (ah == 0) {
+      _decodeAcFirst(
+          component, coefficients, base, spectralStart, spectralEnd, al);
+    } else {
+      _decodeAcRefine(
+          component, coefficients, base, spectralStart, spectralEnd, al);
+    }
+  }
+
+  void _decodeDcFirst(
+      _Component component, Int32List coefficients, int base, int al) {
+    final dc = dcTables[component.dcTable];
+    if (dc == null) {
+      throw const JpegDecodeException(
+          'The scan uses a Huffman table the file never defined.');
+    }
+    final size = _decodeSymbol(dc);
+    final diff = size == 0 ? 0 : _extend(_bits(size), size);
+    component.prediction += diff;
+    coefficients[base] = component.prediction << al;
+  }
+
+  void _decodeAcFirst(_Component component, Int32List coefficients, int base,
+      int spectralStart, int spectralEnd, int al) {
+    // An end-of-band run swallows whole blocks: the band is all zero here and
+    // nothing is read from the stream for this block at all.
+    if (eobrun > 0) {
+      eobrun--;
+      return;
+    }
+
+    final ac = acTables[component.acTable];
+    if (ac == null) {
+      throw const JpegDecodeException(
+          'The scan uses a Huffman table the file never defined.');
+    }
+
+    var k = spectralStart;
+    while (k <= spectralEnd) {
+      final symbol = _decodeSymbol(ac);
+      final run = symbol >> 4;
+      final magnitude = symbol & 0x0F;
+      if (magnitude != 0) {
+        k += run;
+        if (k > spectralEnd) break;
+        coefficients[base + _zigZag[k]] =
+            _extend(_bits(magnitude), magnitude) << al;
+        k++;
+        continue;
+      }
+      if (run != 15) {
+        // EOBn: 2^n plus n appended bits blocks end here, this one included,
+        // which is why the run is decremented straight away.
+        eobrun = 1 << run;
+        if (run != 0) eobrun += _bits(run);
+        eobrun--;
+        return;
+      }
+      k += 16; // ZRL: sixteen zero coefficients.
+    }
+  }
+
+  void _decodeAcRefine(_Component component, Int32List coefficients, int base,
+      int spectralStart, int spectralEnd, int al) {
+    final ac = acTables[component.acTable];
+    if (ac == null) {
+      throw const JpegDecodeException(
+          'The scan uses a Huffman table the file never defined.');
+    }
+
+    final positive = 1 << al;
+    final negative = -positive;
+
+    var k = spectralStart;
+    if (eobrun == 0) {
+      while (k <= spectralEnd) {
+        final symbol = _decodeSymbol(ac);
+        var run = symbol >> 4;
+        final magnitude = symbol & 0x0F;
+        var value = 0;
+        if (magnitude != 0) {
+          // A refinement only ever introduces coefficients of magnitude one at
+          // this bit position, so the stream carries just the sign.
+          value = _bit() != 0 ? positive : negative;
+        } else if (run != 15) {
+          eobrun = 1 << run;
+          if (run != 0) eobrun += _bits(run);
+          break; // The correction bits below finish the block.
+        }
+        // Walk forward over coefficients that were already nonzero, appending
+        // a correction bit to each, and over `run` positions that are still
+        // zero. The new coefficient, if any, lands on the position after them.
+        while (k <= spectralEnd) {
+          final at = base + _zigZag[k];
+          if (coefficients[at] != 0) {
+            if (_bit() != 0 && (coefficients[at] & positive) == 0) {
+              coefficients[at] += coefficients[at] >= 0 ? positive : negative;
+            }
+          } else {
+            if (--run < 0) break;
+          }
+          k++;
+        }
+        if (magnitude != 0 && k <= spectralEnd) {
+          coefficients[base + _zigZag[k]] = value;
+        }
+        k++;
+      }
+    }
+
+    if (eobrun > 0) {
+      // Inside an end-of-band run no new coefficients appear, but every
+      // already-nonzero one in the rest of the band still gets its correction
+      // bit. Forgetting these desynchronises the whole scan.
+      while (k <= spectralEnd) {
+        final at = base + _zigZag[k];
+        if (coefficients[at] != 0) {
+          if (_bit() != 0 && (coefficients[at] & positive) == 0) {
+            coefficients[at] += coefficients[at] >= 0 ? positive : negative;
+          }
+        }
+        k++;
+      }
+      eobrun--;
+    }
+  }
+
+  /// Dequantises and transforms every block once all progressive scans are in.
+  void _reconstructProgressive() {
+    for (final component in components) {
+      final coefficients = component.coefficients;
+      if (coefficients == null) continue;
+      final quant = quantTables[component.quantTable];
+      if (quant == null) {
+        throw const JpegDecodeException(
+            'The frame uses a quantisation table the file never defined.');
+      }
+      for (var row = 0; row < component.blocksPerColumn; row++) {
+        for (var column = 0; column < component.blocksPerLine; column++) {
+          final base = (row * component.blocksPerLine + column) * 64;
+          for (var i = 0; i < 64; i++) {
+            _coefficients[i] = coefficients[base + i];
+          }
+          _idct(quant, component, row, column);
+        }
+      }
+      // The planes are all that _assemble needs; let the coefficients go.
+      component.coefficients = null;
     }
   }
 
@@ -772,7 +1150,7 @@ class _Decoder {
   // --- colour assembly ------------------------------------------------------
 
   JpegImage _assemble() {
-    if (components.isEmpty || components.first.plane.isEmpty) {
+    if (components.isEmpty || !prepared || components.first.plane.isEmpty) {
       throw const JpegDecodeException('The file has no entropy-coded scan.');
     }
 

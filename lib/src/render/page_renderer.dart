@@ -978,6 +978,12 @@ class _Renderer {
     // Glyph space to text space, then the text state parameters, then the
     // text matrix, then the CTM. Composing once and mapping each vertex is
     // what keeps the curve flattening in device resolution.
+    //
+    // `glyphOutlineUnits` returns y growing downwards, because its rasterizer
+    // works in screen coordinates. A PDF page is y-up, so the device matrix
+    // built by `_deviceMatrix` already flips the axis — and the two flips
+    // cancel, which is why the glyphs come out the right way up. Changing
+    // either convention alone turns the text upside down.
     final scale = state.fontSize / face.unitsPerEm;
     final parameters = BLMatrix2D(
       scale * state.horizontalScale,

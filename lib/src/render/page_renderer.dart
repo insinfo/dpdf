@@ -59,6 +59,51 @@ class PdfRenderOptions {
   final PdfFontFallback? fontFallback;
 }
 
+class _MeshBitReader {
+  final Uint8List bytes;
+  int bitOffset = 0;
+  _MeshBitReader(this.bytes);
+
+  int get remaining => bytes.length * 8 - bitOffset;
+
+  int read(int count) {
+    var value = 0;
+    for (var i = 0; i < count; i++) {
+      value =
+          (value << 1) | ((bytes[bitOffset >> 3] >> (7 - (bitOffset & 7))) & 1);
+      bitOffset++;
+    }
+    return value;
+  }
+}
+
+class _MeshVertex {
+  final double x, y, r, g, b;
+  const _MeshVertex(this.x, this.y, this.r, this.g, this.b);
+
+  _MeshVertex transform(BLMatrix2D matrix) {
+    final point = matrix.mapPoint(x, y);
+    return _MeshVertex(point.$1, point.$2, r, g, b);
+  }
+
+  double distanceTo(_MeshVertex other) =>
+      math.sqrt(math.pow(x - other.x, 2) + math.pow(y - other.y, 2));
+
+  static _MeshVertex interpolate(_MeshVertex a, _MeshVertex b, _MeshVertex c,
+      int alongB, int alongC, int divisions) {
+    final wb = alongB / divisions;
+    final wc = alongC / divisions;
+    final wa = 1 - wb - wc;
+    return _MeshVertex(
+      a.x * wa + b.x * wb + c.x * wc,
+      a.y * wa + b.y * wb + c.y * wc,
+      a.r * wa + b.r * wb + c.r * wc,
+      a.g * wa + b.g * wb + c.g * wc,
+      a.b * wa + b.b * wb + c.b * wc,
+    );
+  }
+}
+
 /// What the renderer could not draw.
 ///
 /// A page renders as far as it can and reports the rest, because a single
@@ -1030,6 +1075,15 @@ class _Renderer {
     final colorSpace = colorObject == null
         ? null
         : await PdfColorSpace.makeColorSpace(colorObject);
+    if (shadingType == 5 && shading is PdfStream && colorSpace != null) {
+      if (await _fillLatticeShading(
+          path, rule, pattern, shading, colorSpace, function,
+          stroke: stroke)) {
+        return;
+      }
+      _note('scn:unsupported-shading-pattern');
+      return;
+    }
     if (expectedCoords == 0 ||
         coordsArray == null ||
         coordsArray.size() != expectedCoords ||
@@ -1101,6 +1155,129 @@ class _Renderer {
     }
     await context.fillPath(path, rule: rule);
     context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
+  }
+
+  Future<bool> _fillLatticeShading(
+    BLPath clipPath,
+    BLFillRule rule,
+    PdfDictionary pattern,
+    PdfStream shading,
+    PdfColorSpace colorSpace,
+    PdfFunction? function, {
+    required bool stroke,
+  }) async {
+    final bitsCoordinate =
+        await shading.integerEntry(PdfName('BitsPerCoordinate'));
+    final bitsComponent =
+        await shading.integerEntry(PdfName('BitsPerComponent'));
+    final verticesPerRow =
+        await shading.integerEntry(PdfName('VerticesPerRow'));
+    final decodeArray = await shading.arrayEntry(PdfName('Decode'));
+    final inputCount =
+        function?.inputCount ?? colorSpace.getNumberOfComponents();
+    if (bitsCoordinate == null ||
+        bitsComponent == null ||
+        verticesPerRow == null ||
+        bitsCoordinate < 1 ||
+        bitsCoordinate > 32 ||
+        bitsComponent < 1 ||
+        bitsComponent > 16 ||
+        verticesPerRow < 2 ||
+        inputCount < 1 ||
+        decodeArray == null ||
+        decodeArray.size() != 4 + inputCount * 2) {
+      return false;
+    }
+    final decode = await decodeArray.toDoubleArray();
+    final bytes = await shading.getBytes();
+    if (bytes == null) return false;
+    final reader = _MeshBitReader(bytes);
+    final bitsPerVertex = bitsCoordinate * 2 + bitsComponent * inputCount;
+    final vertices = <_MeshVertex>[];
+    final coordinateMax = (1 << bitsCoordinate) - 1;
+    final componentMax = (1 << bitsComponent) - 1;
+    while (reader.remaining >= bitsPerVertex && vertices.length < 100000) {
+      final x = _meshDecode(
+          reader.read(bitsCoordinate), coordinateMax, decode[0], decode[1]);
+      final y = _meshDecode(
+          reader.read(bitsCoordinate), coordinateMax, decode[2], decode[3]);
+      final inputs = <double>[];
+      for (var i = 0; i < inputCount; i++) {
+        inputs.add(_meshDecode(reader.read(bitsComponent), componentMax,
+            decode[4 + i * 2], decode[5 + i * 2]));
+      }
+      final components = function?.evaluate(inputs) ?? inputs;
+      final rgb = colorSpace.toRgb(components);
+      vertices.add(_MeshVertex(x, y, rgb[0], rgb[1], rgb[2]));
+    }
+    if (reader.remaining >= bitsPerVertex) return false;
+    if (vertices.length < verticesPerRow * 2 ||
+        vertices.length % verticesPerRow != 0) {
+      return false;
+    }
+    var matrix = BLMatrix2D.identity;
+    final matrixArray = await pattern.arrayEntry(PdfName.matrix);
+    if (matrixArray != null && matrixArray.size() == 6) {
+      final values = await matrixArray.toDoubleArray();
+      matrix = BLMatrix2D(
+          values[0], values[1], values[2], values[3], values[4], values[5]);
+    }
+    final toDevice = matrix.multiply(state.ctm);
+    final transformed = <_MeshVertex>[
+      for (final vertex in vertices) vertex.transform(toDevice)
+    ];
+    final alpha = stroke ? state.strokeAlpha : state.fillAlpha;
+    context.save();
+    context.clipToPath(clipPath, rule: rule);
+    try {
+      final rows = transformed.length ~/ verticesPerRow;
+      for (var row = 0; row + 1 < rows; row++) {
+        for (var column = 0; column + 1 < verticesPerRow; column++) {
+          final topLeft = transformed[row * verticesPerRow + column];
+          final topRight = transformed[row * verticesPerRow + column + 1];
+          final bottomLeft = transformed[(row + 1) * verticesPerRow + column];
+          final bottomRight =
+              transformed[(row + 1) * verticesPerRow + column + 1];
+          await _fillMeshTriangle(topLeft, topRight, bottomLeft, alpha);
+          await _fillMeshTriangle(topRight, bottomRight, bottomLeft, alpha);
+        }
+      }
+    } finally {
+      context.restore();
+      context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
+    }
+    return true;
+  }
+
+  static double _meshDecode(int sample, int maximum, double low, double high) =>
+      maximum == 0 ? low : low + sample * (high - low) / maximum;
+
+  Future<void> _fillMeshTriangle(
+      _MeshVertex a, _MeshVertex b, _MeshVertex c, double alpha) async {
+    final longest =
+        math.max(a.distanceTo(b), math.max(b.distanceTo(c), c.distanceTo(a)));
+    final divisions = (longest / 4).ceil().clamp(1, 16);
+    for (var i = 0; i < divisions; i++) {
+      for (var j = 0; j < divisions - i; j++) {
+        final p00 = _MeshVertex.interpolate(a, b, c, i, j, divisions);
+        final p10 = _MeshVertex.interpolate(a, b, c, i + 1, j, divisions);
+        final p01 = _MeshVertex.interpolate(a, b, c, i, j + 1, divisions);
+        await _paintMeshFacet(p00, p10, p01, alpha);
+        if (j + i + 1 < divisions) {
+          final p11 = _MeshVertex.interpolate(a, b, c, i + 1, j + 1, divisions);
+          await _paintMeshFacet(p10, p11, p01, alpha);
+        }
+      }
+    }
+  }
+
+  Future<void> _paintMeshFacet(
+      _MeshVertex a, _MeshVertex b, _MeshVertex c, double alpha) async {
+    context.setFillStyle(_withAlpha(
+        _rgb((a.r + b.r + c.r) / 3, (a.g + b.g + c.g) / 3,
+            (a.b + b.b + c.b) / 3),
+        alpha));
+    await context.fillPolygon(<double>[a.x, a.y, b.x, b.y, c.x, c.y]);
   }
 
   // --- graphics state dictionary --------------------------------------------

@@ -131,8 +131,8 @@ subsampling.
 
 ## Known limitations
 
-- SVG patterns, masks and markers are not rendered yet. Gradient opacity and
-  some advanced paint-server inheritance cases remain partial.
+- SVG patterns and masks are not rendered yet. Gradient opacity and some
+  advanced paint-server inheritance and marker viewport cases remain partial.
 - PDF rendering may require a supplied fallback for fonts that are not embedded;
   some advanced CFF/CID and pattern cases remain partial.
 - Area redaction of shared, transparent or Form-nested images still covers

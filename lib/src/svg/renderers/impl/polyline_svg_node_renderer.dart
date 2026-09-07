@@ -1,14 +1,18 @@
+import 'dart:math' as math;
+
 import 'package:dpdf/src/kernel/geom/point.dart';
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/styledxmlparser/css/util/css_dimension_parsing_utils.dart';
 import 'package:dpdf/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/marker_capable.dart';
 import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 
 /// Renderizador de `<polyline>`, e base de `<polygon>`.
-class PolylineSvgNodeRenderer extends AbstractSvgNodeRenderer {
+class PolylineSvgNodeRenderer extends AbstractSvgNodeRenderer
+    implements MarkerCapable {
   final List<Point> points = [];
 
   /// Lê o atributo `points`. Uma coordenada solta no fim é descartada em vez
@@ -35,6 +39,45 @@ class PolylineSvgNodeRenderer extends AbstractSvgNodeRenderer {
 
   /// `<polygon>` difere apenas por fechar o contorno.
   bool get closesPath => false;
+
+  @override
+  List<SvgMarkerVertex> markerVertices(SvgDrawContext context) {
+    setPoints(getAttribute(SvgAttributes.POINTS));
+    if (points.length < 2) return const [];
+    double angle(int from, int to) => math.atan2(
+        points[to].getY() - points[from].getY(),
+        points[to].getX() - points[from].getX());
+    if (closesPath) {
+      final result = <SvgMarkerVertex>[];
+      for (var i = 0; i < points.length; i++) {
+        result.add(SvgMarkerVertex(
+            points[i].getX(),
+            points[i].getY(),
+            angle((i - 1 + points.length) % points.length, i),
+            angle(i, (i + 1) % points.length),
+            isStart: i == 0));
+      }
+      // Um subcaminho fechado possui marker-start e marker-end no mesmo ponto.
+      result.add(SvgMarkerVertex(result.first.x, result.first.y,
+          result.first.incomingAngle, result.first.outgoingAngle,
+          isEnd: true));
+      return result;
+    }
+    return [
+      SvgMarkerVertex(
+          points.first.getX(), points.first.getY(), angle(0, 1), angle(0, 1),
+          isStart: true),
+      for (var i = 1; i + 1 < points.length; i++)
+        SvgMarkerVertex(points[i].getX(), points[i].getY(), angle(i - 1, i),
+            angle(i, i + 1)),
+      SvgMarkerVertex(
+          points.last.getX(),
+          points.last.getY(),
+          angle(points.length - 2, points.length - 1),
+          angle(points.length - 2, points.length - 1),
+          isEnd: true),
+    ];
+  }
 
   @override
   Future<void> doDraw(SvgDrawContext context) async {

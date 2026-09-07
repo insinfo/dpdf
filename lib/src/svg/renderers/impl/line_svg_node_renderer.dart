@@ -2,12 +2,14 @@ import 'dart:math' as math;
 
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/marker_capable.dart';
 import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 
 /// Renderizador de `<line>`.
-class LineSvgNodeRenderer extends AbstractSvgNodeRenderer {
+class LineSvgNodeRenderer extends AbstractSvgNodeRenderer
+    implements MarkerCapable {
   double x1 = 0;
   double y1 = 0;
   double x2 = 0;
@@ -33,6 +35,16 @@ class LineSvgNodeRenderer extends AbstractSvgNodeRenderer {
   /// Uma reta não tem área, então `fill` nunca se aplica a ela.
   @override
   bool canElementFill() => false;
+
+  @override
+  List<SvgMarkerVertex> markerVertices(SvgDrawContext context) {
+    _setParameters(context);
+    final angle = math.atan2(y2 - y1, x2 - x1);
+    return [
+      SvgMarkerVertex(x1, y1, angle, angle, isStart: true),
+      SvgMarkerVertex(x2, y2, angle, angle, isEnd: true),
+    ];
+  }
 
   @override
   Rectangle? getObjectBoundingBox(SvgDrawContext context) {

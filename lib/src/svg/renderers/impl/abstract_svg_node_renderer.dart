@@ -23,6 +23,7 @@ import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 import 'package:dpdf/src/svg/utils/transform_utils.dart';
 import 'package:dpdf/src/svg/renderers/impl/abstract_container_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/clip_path_svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/impl/marker_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/css/impl/svg_node_renderer_inheritance_resolver.dart';
 
 abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
@@ -207,6 +208,7 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
         } else {
           currentCanvas.newPath();
         }
+        await _drawMarkers(context);
         return;
       }
 
@@ -231,12 +233,30 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
         currentCanvas.newPath();
       }
 
-      if (this is MarkerCapable) {
-        for (var markerType in _MARKER_VERTEX_TYPES) {
-          if (_attributesAndStyles!.containsKey(markerType.toString())) {
-            (this as MarkerCapable).drawMarker(context, markerType);
-          }
-        }
+      await _drawMarkers(context);
+    }
+  }
+
+  Future<void> _drawMarkers(SvgDrawContext context) async {
+    if (this is! MarkerCapable || _attributesAndStyles == null) return;
+    final vertices = (this as MarkerCapable).markerVertices(context);
+    if (vertices.isEmpty) return;
+    final strokeWidth = parseHorizontalLength(
+        getAttributeOrDefault(SvgAttributes.STROKE_WIDTH, '1'), context);
+    for (final type in _MARKER_VERTEX_TYPES) {
+      final raw =
+          getAttribute(type.toString()) ?? getAttribute(SvgAttributes.MARKER);
+      if (raw == null || !raw.startsWith('url(')) continue;
+      final id = raw.replaceAll('url(#', '').replaceAll(')', '').trim();
+      final marker = context.getNamedObject(CssUtils.extractUnquotedString(id));
+      if (marker is! MarkerSvgNodeRenderer) continue;
+      final selected = type == MarkerVertexType.MARKER_START
+          ? vertices.where((vertex) => vertex.isStart)
+          : type == MarkerVertexType.MARKER_END
+              ? vertices.where((vertex) => vertex.isEnd)
+              : vertices.where((vertex) => !vertex.isStart && !vertex.isEnd);
+      for (final vertex in selected) {
+        await marker.drawAt(context, vertex, type, strokeWidth);
       }
     }
   }

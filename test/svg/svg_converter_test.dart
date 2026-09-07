@@ -295,6 +295,59 @@ void main() {
       expect(content, contains('W*\n'));
     });
 
+    test('marker-end desenha e orienta a seta no fim da linha', () async {
+      final content = await _render('''
+        <svg width="50" height="30">
+          <defs>
+            <marker id="arrow" markerWidth="4" markerHeight="4"
+                    refX="4" refY="2" orient="auto" viewBox="0 0 4 4">
+              <path d="M0 0 L4 2 L0 4 Z" fill="black"/>
+            </marker>
+          </defs>
+          <line x1="10" y1="10" x2="30" y2="10"
+                stroke="black" marker-end="url(#arrow)"/>
+        </svg>
+      ''');
+      expect(content, contains('1 0 0 1 22.5 7.5 cm\n'));
+      expect(_count(content, ' m\n'), equals(2),
+          reason: 'uma linha e o path da seta devem ser emitidos');
+    });
+
+    test('marker shorthand desenha início, meios e fim da polyline', () async {
+      final content = await _render('''
+        <svg width="50" height="30">
+          <defs>
+            <marker id="dot" markerUnits="userSpaceOnUse">
+              <circle cx="0" cy="0" r="1" fill="red"/>
+            </marker>
+          </defs>
+          <polyline points="5 5 15 5 15 15 25 15"
+                    fill="none" stroke="black" marker="url(#dot)"/>
+        </svg>
+      ''');
+      expect(_count(content, ' cm\n'), greaterThanOrEqualTo(4),
+          reason: 'cada um dos quatro vértices recebe um marcador');
+    });
+
+    test('path aplica markers em cada subcaminho e nas curvas', () async {
+      final content = await _render('''
+        <svg width="50" height="30">
+          <defs>
+            <marker id="dot" markerUnits="userSpaceOnUse"
+                    orient="auto-start-reverse">
+              <circle r="1" fill="blue"/>
+            </marker>
+          </defs>
+          <path d="M5 5 C8 2 12 2 15 5 M20 10 L20 20"
+                fill="none" stroke="black" marker="url(#dot)"/>
+        </svg>
+      ''');
+      expect(_count(content, ' c\n'), equals(17),
+          reason: 'a curva original e quatro markers circulares');
+      expect(content, contains('1 0 0 1 3.75 3.75 cm\n'));
+      expect(content, contains('1 0 0 1 15 15 cm\n'));
+    });
+
     test('aceita cor nomeada, hexadecimal curto e rgb percentual', () async {
       final named = await _render(
           '<svg width="20" height="20"><rect width="4" height="4" fill="yellow"/></svg>');

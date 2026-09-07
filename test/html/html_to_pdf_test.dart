@@ -31,7 +31,8 @@ void main() {
       expect(text, contains('Relatório'));
       expect(text, contains('mundo'));
       expect(text, contains('primeiro item'));
-      expect(text, contains('Chave | Valor'));
+      expect(text, contains('Chave'));
+      expect(text, contains('Valor'));
     } finally {
       await document.close();
     }
@@ -89,6 +90,28 @@ void main() {
       final text =
           await PdfTextExtraction.fromPage((await document.pageAt(1))!);
       expect(text, contains('conteúdo colorido'));
+    } finally {
+      await document.close();
+    }
+  });
+
+  test('writes ordered list markers including start reversed and li value',
+      () async {
+    final bytes = await CraftHtmlConverter.convertToBytes('''
+      <ol start="3"><li>três</li><li value="9">nove</li><li>dez</li></ol>
+      <ol reversed><li>fim</li><li value="7">sete</li><li>seis</li></ol>
+    ''');
+    final document =
+        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    try {
+      final text =
+          await PdfTextExtraction.fromPage((await document.pageAt(1))!);
+      expect(text, contains('3. três'));
+      expect(text, contains('9. nove'));
+      expect(text, contains('10. dez'));
+      expect(text, contains('3. fim'));
+      expect(text, contains('7. sete'));
+      expect(text, contains('6. seis'));
     } finally {
       await document.close();
     }
@@ -155,6 +178,43 @@ void main() {
       expect((await action.stringEntry(CraftPdfName.uri))!.getValue(),
           'https://example.test/manual');
       expect(await annotation.arrayEntry(CraftPdfName.rect), isNotNull);
+    } finally {
+      await document.close();
+    }
+  });
+
+  test('embeds a PNG data URI as a PDF image XObject', () async {
+    const pixel =
+        'iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAAAAACEICPDAAAAXElEQVR4nO3QwQmAABDEQBWT/hsWLCKPBfEKGLJ3Xke7mwr4F9wfeCIVcF5ABZwXUAHnBVTAeQEVcF5ABZwXUAHnBVTAeQEVcF5ABZwXUAHnBVTAeQEVqBPOJwIv4oUCsFqUwOcAAAAASUVORK5CYII=';
+    final bytes = await CraftHtmlConverter.convertToBytes(
+        '<img src="data:image/png;base64,$pixel" width="20" height="10" alt="ignored">');
+    final document =
+        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    try {
+      final content = await (await document.pageAt(1))!.contentPayload();
+      expect(String.fromCharCodes(content), contains(' Do'));
+      expect(String.fromCharCodes(bytes), contains('/Subtype /Image'));
+    } finally {
+      await document.close();
+    }
+  });
+
+  test('places structured table cells in PDF columns and rows', () async {
+    final bytes = await CraftHtmlConverter.convertToBytes('''
+      <table><thead><tr><th>NorthCell</th><th>EastCell</th></tr></thead>
+      <tbody><tr><td>LowerCell</td><td>TailCell</td></tr></tbody></table>
+    ''');
+    final document =
+        await CraftPdfDocument.open(CraftPdfReader.fromBytes(bytes));
+    try {
+      final positions = await _positions(document);
+      final north = _firstCharacter(positions, 'N');
+      final east = _firstCharacter(positions, 'E');
+      final lower = _firstCharacter(positions, 'L');
+      expect(east.x, greaterThan(north.x + 100));
+      expect(east.y, closeTo(north.y, .001));
+      expect(lower.x, closeTo(north.x, .001));
+      expect(lower.y, lessThan(north.y - 10));
     } finally {
       await document.close();
     }

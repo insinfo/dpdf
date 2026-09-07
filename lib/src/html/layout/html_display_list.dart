@@ -1,11 +1,25 @@
 import '../css/css_color.dart';
 import '../model/html_box.dart';
+import '../model/html_raster_image.dart';
 
 /// Platform-neutral output of the HTML layout stage, consumed by PDF paint.
 class CraftHtmlDisplayList {
   final List<CraftHtmlTextFragment> textFragments;
   final List<CraftHtmlBoxDecoration> boxDecorations;
-  const CraftHtmlDisplayList(this.textFragments, this.boxDecorations);
+  final List<CraftHtmlImageFragment> imageFragments;
+  const CraftHtmlDisplayList(this.textFragments, this.boxDecorations,
+      [this.imageFragments = const []]);
+}
+
+/// Positioned raster image command. Images are atomic in the flow profile.
+class CraftHtmlImageFragment {
+  final CraftHtmlRasterImage image;
+  final double x;
+  final double top;
+  final double width;
+  final double height;
+  const CraftHtmlImageFragment(
+      this.image, this.x, this.top, this.width, this.height);
 }
 
 class CraftHtmlTextFragment {

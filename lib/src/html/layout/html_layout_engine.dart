@@ -12,6 +12,7 @@ class CraftHtmlLayoutEngine {
   final double availableWidth;
   final List<CraftHtmlTextFragment> _fragments = [];
   final List<CraftHtmlBoxDecoration> _decorations = [];
+  final List<CraftHtmlImageFragment> _images = [];
   double _cursor = 0;
 
   CraftHtmlLayoutEngine(this.availableWidth) : assert(availableWidth > 0);
@@ -24,11 +25,13 @@ class CraftHtmlLayoutEngine {
     for (final box in boxes) {
       _layout(box, 0, availableWidth);
     }
-    return CraftHtmlDisplayList(
-        List.unmodifiable(_fragments), List.unmodifiable(_decorations));
+    return CraftHtmlDisplayList(List.unmodifiable(_fragments),
+        List.unmodifiable(_decorations), List.unmodifiable(_images));
   }
 
   double _layout(CraftHtmlBox box, double x, double width) {
+    if (box.role == CraftHtmlBoxRole.table) return _table(box, x, width);
+    if (box.isImage) return _image(box, x, width);
     if (box.isText) {
       return _paragraph(box.text!, box.style.text, x, width,
           linkTarget: box.linkTarget);
@@ -44,6 +47,17 @@ class CraftHtmlLayoutEngine {
       case CraftHtmlDisplay.block:
         return _flow(box, x, width);
     }
+  }
+
+  double _image(CraftHtmlBox box, double x, double width) {
+    final source = box.image!;
+    final resolvedWidth = source.width.clamp(1.0, width).toDouble();
+    final resolvedHeight = source.height * resolvedWidth / source.width;
+    final top = _cursor;
+    _images.add(
+        CraftHtmlImageFragment(source, x, top, resolvedWidth, resolvedHeight));
+    _cursor += resolvedHeight;
+    return resolvedHeight;
   }
 
   double _flow(CraftHtmlBox box, double x, double width) {
@@ -82,6 +96,7 @@ class CraftHtmlLayoutEngine {
 
   List<CraftHtmlBox>? _inlineLeaves(CraftHtmlBox box) {
     if (box.isText) return [box];
+    if (box.isImage) return null;
     if (box.style.display != CraftHtmlDisplay.inline) return null;
     final result = <CraftHtmlBox>[];
     for (final child in box.children) {
@@ -246,6 +261,43 @@ class CraftHtmlLayoutEngine {
         _layout(row.items[column], geometry.x + offset, widths[column]);
         if (_cursor > bottom) bottom = _cursor;
         offset += widths[column] + box.style.gap;
+      }
+      _cursor = bottom + box.style.gap;
+    }
+    _cursor += box.style.text.fontSize * .35 + geometry.paddingBottom;
+    _addDecoration(box, geometry, start + geometry.marginTop, _cursor);
+    _cursor += geometry.marginBottom;
+    return _cursor - start;
+  }
+
+  /// Lays out semantic table rows and cells in equal physical columns.
+  /// Cell content still passes through the ordinary flow routine, preserving
+  /// its own wrapping and inherited text style while every cell in a row
+  /// shares the same starting baseline.
+  double _table(CraftHtmlBox box, double x, double width) {
+    final rows = box.children
+        .where((child) => child.role == CraftHtmlBoxRole.tableRow)
+        .toList(growable: false);
+    if (rows.isEmpty) return 0;
+    var columns = 0;
+    for (final row in rows) {
+      if (row.children.length > columns) columns = row.children.length;
+    }
+    if (columns == 0) return 0;
+    final geometry = CraftHtmlBoxGeometry.resolve(box.style, x, width);
+    final columnWidth =
+        (geometry.contentWidth - box.style.gap * (columns - 1)) / columns;
+    final start = _cursor;
+    _cursor += geometry.marginTop + geometry.paddingTop;
+    for (final row in rows) {
+      final rowStart = _cursor;
+      var bottom = rowStart;
+      var offset = 0.0;
+      for (final cell in row.children) {
+        _cursor = rowStart;
+        _layout(cell, geometry.x + offset, columnWidth);
+        if (_cursor > bottom) bottom = _cursor;
+        offset += columnWidth + box.style.gap;
       }
       _cursor = bottom + box.style.gap;
     }

@@ -1,5 +1,6 @@
 import '../css/css_values.dart';
 import '../css/css_color.dart';
+import 'html_raster_image.dart';
 
 /// The normalized box tree consumed by the HTML layout engines.
 ///
@@ -11,6 +12,9 @@ enum CraftHtmlDisplay { inline, block, flex, grid, none }
 enum CraftHtmlJustifyContent { start, center, end, spaceBetween }
 
 enum CraftHtmlTextAlign { start, center, end, justify }
+
+/// Structural roles consumed by the portable table layout pass.
+enum CraftHtmlBoxRole { normal, table, tableRow, tableHeaderCell, tableCell }
 
 class CraftHtmlTextStyle {
   final double fontSize;
@@ -75,16 +79,21 @@ class CraftHtmlBox {
 
   /// URI inherited from an HTML anchor for visible link content.
   final String? linkTarget;
+  final CraftHtmlRasterImage? image;
+  final CraftHtmlBoxRole role;
   final List<CraftHtmlBox> children;
 
   const CraftHtmlBox({
     required this.style,
     this.text,
     this.linkTarget,
+    this.image,
+    this.role = CraftHtmlBoxRole.normal,
     this.children = const [],
   });
 
   bool get isText => text != null;
+  bool get isImage => image != null;
 
   String get textContent =>
       text ?? children.map((child) => child.textContent).join(' ');

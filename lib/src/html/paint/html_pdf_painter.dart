@@ -67,6 +67,19 @@ class CraftHtmlPdfPainter {
         top += segmentHeight;
       }
     }
+    for (final fragment in displayList.imageFragments) {
+      final pageIndex = (fragment.top / usableHeight).floor();
+      final canvas = await canvasAt(pageIndex);
+      final localTop = fragment.top - pageIndex * usableHeight;
+      await canvas.addImageWithTransformationMatrix(
+          fragment.image.image,
+          fragment.width,
+          0,
+          0,
+          fragment.height,
+          margin + fragment.x,
+          pageSize.height - margin - localTop - fragment.height);
+    }
     for (final fragment in displayList.textFragments) {
       final pageIndex = (fragment.baseline / usableHeight).floor();
       final canvas = await canvasAt(pageIndex);

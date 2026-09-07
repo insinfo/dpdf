@@ -1,11 +1,13 @@
 import 'package:html/dom.dart' as dom;
 
 import '../css/css_values.dart';
+import 'html_data_image.dart';
 import '../css/css_border.dart';
 import '../css/css_color.dart';
 import '../css/html_style_sheet.dart';
 import '../model/html_box.dart';
 import '../model/html_text.dart';
+import 'html_list_context.dart';
 
 /// Turns a parsed HTML DOM into a platform-neutral, normalized box tree.
 class CraftHtmlBoxBuilder {
@@ -15,7 +17,9 @@ class CraftHtmlBoxBuilder {
   const CraftHtmlBoxBuilder(this.styleSheet, this.baseFontSize);
 
   List<CraftHtmlBox> build(Iterable<dom.Node> nodes,
-      [CraftHtmlTextStyle? inherited, String? inheritedLink]) {
+      [CraftHtmlTextStyle? inherited,
+      String? inheritedLink,
+      CraftHtmlListContext? listContext]) {
     final textStyle = inherited ?? CraftHtmlTextStyle(baseFontSize);
     final result = <CraftHtmlBox>[];
     for (final node in nodes) {
@@ -39,15 +43,25 @@ class CraftHtmlBoxBuilder {
         result.add(_text('\n', style.text, linkTarget: linkTarget));
       } else if (tag == 'img') {
         final alternative = node.attributes['alt'];
-        if (alternative != null && alternative.isNotEmpty)
+        final image = CraftHtmlDataImage.tryParse(node.attributes['src'],
+            width: node.attributes['width'], height: node.attributes['height']);
+        if (image != null) {
+          result.add(CraftHtmlBox(style: style, image: image));
+        } else if (alternative != null && alternative.isNotEmpty) {
           result.add(_text(alternative, style.text, linkTarget: linkTarget));
+        }
       } else if (tag == 'table') {
-        result.addAll(_tableRows(node, style, linkTarget));
+        result.add(_table(node, style, linkTarget));
       } else {
-        var children = build(node.nodes, style.text, linkTarget);
+        final childListContext = tag == 'ol' || tag == 'ul'
+            ? CraftHtmlListContext.fromElement(node)
+            : null;
+        var children =
+            build(node.nodes, style.text, linkTarget, childListContext);
         if (tag == 'li' && children.isNotEmpty) {
           children = [
-            _text('• ', style.text, linkTarget: linkTarget),
+            _text(listContext?.markerFor(node) ?? '• ', style.text,
+                linkTarget: linkTarget),
             ...children
           ];
         }
@@ -57,20 +71,47 @@ class CraftHtmlBoxBuilder {
     return result;
   }
 
-  List<CraftHtmlBox> _tableRows(
-          dom.Element table, CraftHtmlBoxStyle style, String? linkTarget) =>
-      [
-        for (final row in table.querySelectorAll('tr'))
-          _text(
-              row
-                  .querySelectorAll('th, td')
-                  .map((cell) =>
-                      CraftHtmlText.collapseWhitespace(cell.text).trim())
-                  .where((cell) => cell.isNotEmpty)
-                  .join(' | '),
-              style.text,
-              linkTarget: linkTarget),
-      ].where((box) => box.textContent.isNotEmpty).toList();
+  CraftHtmlBox _table(
+      dom.Element table, CraftHtmlBoxStyle style, String? linkTarget) {
+    final rows = <CraftHtmlBox>[];
+    for (final row in _rows(table)) {
+      final rowStyle = _styleFor('tr', styleSheet.resolve(row), style.text);
+      final cells = <CraftHtmlBox>[];
+      for (final cell in row.children) {
+        final tag = cell.localName?.toLowerCase();
+        if (tag != 'td' && tag != 'th') continue;
+        final cellStyle =
+            _styleFor(tag!, styleSheet.resolve(cell), rowStyle.text);
+        final children = build(cell.nodes, cellStyle.text, linkTarget);
+        if (children.isEmpty) continue;
+        cells.add(CraftHtmlBox(
+            style: cellStyle,
+            role: tag == 'th'
+                ? CraftHtmlBoxRole.tableHeaderCell
+                : CraftHtmlBoxRole.tableCell,
+            children: children));
+      }
+      if (cells.isNotEmpty) {
+        rows.add(CraftHtmlBox(
+            style: rowStyle, role: CraftHtmlBoxRole.tableRow, children: cells));
+      }
+    }
+    return CraftHtmlBox(
+        style: style, role: CraftHtmlBoxRole.table, children: rows);
+  }
+
+  Iterable<dom.Element> _rows(dom.Element table) sync* {
+    for (final child in table.children) {
+      final tag = child.localName?.toLowerCase();
+      if (tag == 'tr') {
+        yield child;
+      } else if (tag == 'thead' || tag == 'tbody' || tag == 'tfoot') {
+        for (final row in child.children) {
+          if (row.localName?.toLowerCase() == 'tr') yield row;
+        }
+      }
+    }
+  }
 
   CraftHtmlBox _text(String value, CraftHtmlTextStyle style,
           {String? linkTarget}) =>
@@ -100,6 +141,7 @@ class CraftHtmlBoxBuilder {
             inherited.bold ||
                 tag == 'strong' ||
                 tag == 'b' ||
+                tag == 'th' ||
                 tag.startsWith('h')),
         italic: _fontStyle(
             css['font-style'], inherited.italic || tag == 'em' || tag == 'i'),

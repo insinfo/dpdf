@@ -73,9 +73,34 @@ PdfFontFallback pdfFontFallbackFromCollection(BLFontCollection collection) {
           caseSensitive: false),
       '',
     );
+    final normalized = family.toLowerCase().replaceAll(' ', '');
+    final compatible =
+        normalized.startsWith('helvetica') || normalized.startsWith('arial')
+            ? const <String>[
+                'Arial',
+                'Liberation Sans',
+                'DejaVu Sans',
+                'Noto Sans',
+              ]
+            : normalized.startsWith('times')
+                ? const <String>[
+                    'Times New Roman',
+                    'Liberation Serif',
+                    'DejaVu Serif',
+                    'Noto Serif',
+                  ]
+                : normalized.startsWith('courier')
+                    ? const <String>[
+                        'Courier New',
+                        'Liberation Mono',
+                        'DejaVu Sans Mono',
+                        'Noto Sans Mono',
+                      ]
+                    : const <String>[];
     final face = await collection.resolve(BLFontQuery(
       <String>[
         family,
+        ...compatible,
         if (request.isFixedPitch) 'monospace',
         if (request.isSerif) 'serif' else 'sans-serif',
       ],

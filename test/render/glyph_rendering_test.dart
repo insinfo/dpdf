@@ -92,6 +92,18 @@ int _inked(PdfRenderedPage page) {
   return left == null ? null : (left, right!);
 }
 
+(int, int)? _inkVerticalExtent(PdfRenderedPage page) {
+  int? top, bottom;
+  for (var y = 0; y < page.height; y++) {
+    for (var x = 0; x < page.width; x++) {
+      if ((page.pixels[y * page.width + x] & 0xFF) >= 128) continue;
+      if (top == null || y < top) top = y;
+      if (bottom == null || y > bottom) bottom = y;
+    }
+  }
+  return top == null ? null : (top, bottom!);
+}
+
 /// A page whose text uses a standard font, which carries no program.
 Future<Uint8List> _pageWithStandardFont(String text) async {
   final output = BytesBuilder(copy: false);
@@ -207,6 +219,15 @@ void main() {
       // Text starts at x=200 in a 320-point page, so nothing may land left of
       // it. This is what catches a text matrix composed in the wrong order.
       expect(extent!.$1, greaterThanOrEqualTo(195));
+    });
+
+    test('keeps TrueType ascenders above the PDF baseline', () async {
+      final page = await _render(await _pageWithText('H'));
+      final extent = _inkVerticalExtent(page)!;
+
+      // PDF baseline y=40 maps to image row 60 on a 100-point page at 72 dpi.
+      expect(extent.$1, lessThan(50));
+      expect(extent.$2, lessThanOrEqualTo(61));
     });
 
     test('advances the text matrix, so a longer string is wider', () async {

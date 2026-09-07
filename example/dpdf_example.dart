@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dpdf/dpdf.dart';
+import 'package:dgfx/dgfx_io.dart';
 
 /// Um passeio pelas quatro coisas que a biblioteca faz com mais frequência:
 /// converter HTML, inspecionar um arquivo, verificar conformidade e redigir.
@@ -26,13 +27,19 @@ Future<void> main(List<String> arguments) async {
 
   final redigido = await _redigirPorArea();
   await _salvar(destination, 'redigido.pdf', redigido);
+  final fonts = BLFontCollection();
+  final loadedFonts = await const BLFontLoader().loadSystemFonts(fonts);
+  print('fontes do sistema ...: $loadedFonts');
   final document = await PdfDocument.open(PdfReader.fromBytes(redigido));
   final page = await document.pageAt(1);
   if (page == null) {
     await document.close();
     throw StateError('O PDF redigido não contém a primeira página.');
   }
-  final result = await PdfPageRenderer.render(page);
+  final result = await PdfPageRenderer.render(page,
+      options:
+          PdfRenderOptions(fontFallback: pdfFontFallbackFromCollection(fonts)));
+  print('texto ignorado ......: ${result.report.glyphsSkipped}');
   final png = result.toPng();
   await document.close();
   await _salvar(destination, 'redigido.png', png);

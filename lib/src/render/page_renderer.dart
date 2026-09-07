@@ -79,11 +79,13 @@ class _MeshBitReader {
 
 class _MeshVertex {
   final double x, y, r, g, b;
-  const _MeshVertex(this.x, this.y, this.r, this.g, this.b);
+  final List<double>? functionInputs;
+  const _MeshVertex(this.x, this.y, this.r, this.g, this.b,
+      [this.functionInputs]);
 
   _MeshVertex transform(BLMatrix2D matrix) {
     final point = matrix.mapPoint(x, y);
-    return _MeshVertex(point.$1, point.$2, r, g, b);
+    return _MeshVertex(point.$1, point.$2, r, g, b, functionInputs);
   }
 
   double distanceTo(_MeshVertex other) =>
@@ -94,12 +96,23 @@ class _MeshVertex {
     final wb = alongB / divisions;
     final wc = alongC / divisions;
     final wa = 1 - wb - wc;
+    final inputs = a.functionInputs == null ||
+            b.functionInputs == null ||
+            c.functionInputs == null
+        ? null
+        : <double>[
+            for (var i = 0; i < a.functionInputs!.length; i++)
+              a.functionInputs![i] * wa +
+                  b.functionInputs![i] * wb +
+                  c.functionInputs![i] * wc,
+          ];
     return _MeshVertex(
       a.x * wa + b.x * wb + c.x * wc,
       a.y * wa + b.y * wb + c.y * wc,
       a.r * wa + b.r * wb + c.r * wc,
       a.g * wa + b.g * wb + c.g * wc,
       a.b * wa + b.b * wb + c.b * wc,
+      inputs,
     );
   }
 }
@@ -1219,8 +1232,11 @@ class _Renderer {
         }
         final components = function?.evaluate(inputs) ?? inputs;
         final rgb = colorSpace.toRgb(components);
-        records.add(
-            (flag: flag, vertex: _MeshVertex(x, y, rgb[0], rgb[1], rgb[2])));
+        records.add((
+          flag: flag,
+          vertex: _MeshVertex(
+              x, y, rgb[0], rgb[1], rgb[2], function == null ? null : inputs),
+        ));
       }
     } on Object {
       return false;
@@ -1269,7 +1285,9 @@ class _Renderer {
             triangle[0].transform(toDevice),
             triangle[1].transform(toDevice),
             triangle[2].transform(toDevice),
-            alpha);
+            alpha,
+            function: function,
+            colorSpace: colorSpace);
       }
     } finally {
       context.restore();
@@ -1329,7 +1347,8 @@ class _Renderer {
       }
       final components = function?.evaluate(inputs) ?? inputs;
       final rgb = colorSpace.toRgb(components);
-      vertices.add(_MeshVertex(x, y, rgb[0], rgb[1], rgb[2]));
+      vertices.add(_MeshVertex(
+          x, y, rgb[0], rgb[1], rgb[2], function == null ? null : inputs));
     }
     if (reader.remaining >= bitsPerVertex) return false;
     if (vertices.length < verticesPerRow * 2 ||
@@ -1359,8 +1378,10 @@ class _Renderer {
           final bottomLeft = transformed[(row + 1) * verticesPerRow + column];
           final bottomRight =
               transformed[(row + 1) * verticesPerRow + column + 1];
-          await _fillMeshTriangle(topLeft, topRight, bottomLeft, alpha);
-          await _fillMeshTriangle(topRight, bottomRight, bottomLeft, alpha);
+          await _fillMeshTriangle(topLeft, topRight, bottomLeft, alpha,
+              function: function, colorSpace: colorSpace);
+          await _fillMeshTriangle(topRight, bottomRight, bottomLeft, alpha,
+              function: function, colorSpace: colorSpace);
         }
       }
     } finally {
@@ -1374,7 +1395,8 @@ class _Renderer {
       maximum == 0 ? low : low + sample * (high - low) / maximum;
 
   Future<void> _fillMeshTriangle(
-      _MeshVertex a, _MeshVertex b, _MeshVertex c, double alpha) async {
+      _MeshVertex a, _MeshVertex b, _MeshVertex c, double alpha,
+      {PdfFunction? function, PdfColorSpace? colorSpace}) async {
     final longest =
         math.max(a.distanceTo(b), math.max(b.distanceTo(c), c.distanceTo(a)));
     final divisions = (longest / 4).ceil().clamp(1, 16);
@@ -1383,21 +1405,35 @@ class _Renderer {
         final p00 = _MeshVertex.interpolate(a, b, c, i, j, divisions);
         final p10 = _MeshVertex.interpolate(a, b, c, i + 1, j, divisions);
         final p01 = _MeshVertex.interpolate(a, b, c, i, j + 1, divisions);
-        await _paintMeshFacet(p00, p10, p01, alpha);
+        await _paintMeshFacet(p00, p10, p01, alpha,
+            function: function, colorSpace: colorSpace);
         if (j + i + 1 < divisions) {
           final p11 = _MeshVertex.interpolate(a, b, c, i + 1, j + 1, divisions);
-          await _paintMeshFacet(p10, p11, p01, alpha);
+          await _paintMeshFacet(p10, p11, p01, alpha,
+              function: function, colorSpace: colorSpace);
         }
       }
     }
   }
 
   Future<void> _paintMeshFacet(
-      _MeshVertex a, _MeshVertex b, _MeshVertex c, double alpha) async {
-    context.setFillStyle(_withAlpha(
-        _rgb((a.r + b.r + c.r) / 3, (a.g + b.g + c.g) / 3,
-            (a.b + b.b + c.b) / 3),
-        alpha));
+      _MeshVertex a, _MeshVertex b, _MeshVertex c, double alpha,
+      {PdfFunction? function, PdfColorSpace? colorSpace}) async {
+    var red = (a.r + b.r + c.r) / 3;
+    var green = (a.g + b.g + c.g) / 3;
+    var blue = (a.b + b.b + c.b) / 3;
+    if (function != null && colorSpace != null && a.functionInputs != null) {
+      final inputs = <double>[
+        for (var i = 0; i < a.functionInputs!.length; i++)
+          (a.functionInputs![i] + b.functionInputs![i] + c.functionInputs![i]) /
+              3,
+      ];
+      final rgb = colorSpace.toRgb(function.evaluate(inputs));
+      red = rgb[0];
+      green = rgb[1];
+      blue = rgb[2];
+    }
+    context.setFillStyle(_withAlpha(_rgb(red, green, blue), alpha));
     await context.fillPolygon(<double>[a.x, a.y, b.x, b.y, c.x, c.y]);
   }
 

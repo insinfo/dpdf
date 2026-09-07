@@ -446,6 +446,48 @@ void main() {
       expect(page.report.unsupportedOperators, isEmpty);
     });
 
+    test('interpolates mesh function inputs before evaluating the function',
+        () async {
+      final function = PdfDictionary()
+        ..put(PdfName('FunctionType'), PdfNumber.fromInt(2))
+        ..put(PdfName('Domain'), PdfArray.fromDoubles(const [0, 1]))
+        ..put(PdfName('C0'), PdfArray.fromDoubles(const [0]))
+        ..put(PdfName('C1'), PdfArray.fromDoubles(const [1]))
+        ..put(PdfName('N'), PdfNumber(2));
+      final shading = PdfStream.withBytes(
+          Uint8List.fromList(const [
+            0,
+            0,
+            0,
+            255,
+            0,
+            255,
+            0,
+            255,
+            0,
+            255,
+            255,
+            255,
+          ]),
+          0)
+        ..put(PdfName.shadingType, PdfNumber.fromInt(5))
+        ..put(PdfName.colorSpace, PdfName.deviceGray)
+        ..put(PdfName('BitsPerCoordinate'), PdfNumber.fromInt(8))
+        ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+        ..put(PdfName('VerticesPerRow'), PdfNumber.fromInt(2))
+        ..put(PdfName('Decode'),
+            PdfArray.fromDoubles(const [0, 100, 0, 100, 0, 1]))
+        ..put(PdfName.function, function);
+      final resources = PdfDictionary()
+        ..put(PdfName.shading, PdfDictionary()..put(PdfName('Mesh'), shading));
+
+      final page = await _render('/Mesh sh', resources: resources);
+      final quarter = _at(page, 25, 53).r;
+      expect(quarter, lessThan(80),
+          reason: 't=0.25 must be evaluated as t², not interpolated RGB');
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
+
     test('renders type 4 free-form mesh connectivity flags', () async {
       final shading = PdfStream.withBytes(
           Uint8List.fromList(const [

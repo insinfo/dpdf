@@ -141,7 +141,8 @@ subsampling.
   tiling patterns and patterned strokes render, including asymmetric shading
   extension. Type 4 free-form and Type 5 lattice Gouraud meshes render with
   decoded vertex colours, including parameter interpolation before nonlinear
-  shading functions; Coons/tensor mesh types remain partial. Alpha and
+  shading functions. Type 7 tensor patches render with bicubic geometry and
+  implicit shared edges; Coons patches remain partial. Alpha and
   luminosity soft masks render; transfer functions and some advanced
   transparency-group replacement cases remain partial.
 - Area redaction rewrites direct and Form-nested opaque, transparent and shared

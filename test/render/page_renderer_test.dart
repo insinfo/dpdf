@@ -541,6 +541,101 @@ void main() {
       expect(page.report.unsupportedOperators, isEmpty);
     });
 
+    test('renders a type 7 bicubic tensor patch', () async {
+      final shading = PdfStream.withBytes(
+          Uint8List.fromList(const [
+            0,
+            0,
+            0,
+            0,
+            85,
+            0,
+            170,
+            0,
+            255,
+            85,
+            255,
+            170,
+            255,
+            255,
+            255,
+            255,
+            170,
+            255,
+            85,
+            255,
+            0,
+            170,
+            0,
+            85,
+            0,
+            85,
+            85,
+            85,
+            170,
+            170,
+            170,
+            170,
+            85,
+            255,
+            0,
+            0,
+            0,
+            0,
+            255,
+            255,
+            255,
+            255,
+            0,
+            255,
+            0,
+          ]),
+          0)
+        ..put(PdfName.shadingType, PdfNumber.fromInt(7))
+        ..put(PdfName.colorSpace, PdfName.deviceRgb)
+        ..put(PdfName('BitsPerFlag'), PdfNumber.fromInt(8))
+        ..put(PdfName('BitsPerCoordinate'), PdfNumber.fromInt(8))
+        ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+        ..put(PdfName('Decode'),
+            PdfArray.fromDoubles(const [0, 100, 0, 100, 0, 1, 0, 1, 0, 1]));
+      final resources = PdfDictionary()
+        ..put(PdfName.shading, PdfDictionary()..put(PdfName('Patch'), shading));
+
+      final page = await _render('/Patch sh', resources: resources);
+
+      expect(_at(page, 10, 50).g, lessThan(100));
+      expect(_at(page, 90, 50).g, greaterThan(160));
+      expect(_at(page, 50, 10).b, greaterThan(_at(page, 50, 90).b));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
+
+    test('accepts every type 7 implicit-edge connectivity flag', () async {
+      final data = <int>[
+        0,
+        ...List<int>.filled(32, 0),
+        ...List<int>.filled(12, 0)
+      ];
+      for (final flag in const [1, 2, 3]) {
+        data
+          ..add(flag)
+          ..addAll(List<int>.filled(24, 0))
+          ..addAll(List<int>.filled(6, 0));
+      }
+      final shading = PdfStream.withBytes(Uint8List.fromList(data), 0)
+        ..put(PdfName.shadingType, PdfNumber.fromInt(7))
+        ..put(PdfName.colorSpace, PdfName.deviceRgb)
+        ..put(PdfName('BitsPerFlag'), PdfNumber.fromInt(8))
+        ..put(PdfName('BitsPerCoordinate'), PdfNumber.fromInt(8))
+        ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+        ..put(PdfName('Decode'),
+            PdfArray.fromDoubles(const [0, 100, 0, 100, 0, 1, 0, 1, 0, 1]));
+      final resources = PdfDictionary()
+        ..put(PdfName.shading, PdfDictionary()..put(PdfName('Patch'), shading));
+
+      final page = await _render('/Patch sh', resources: resources);
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
+
     test('renders a named axial shading with the sh operator', () async {
       final function = PdfDictionary()
         ..put(PdfName('FunctionType'), PdfNumber.fromInt(2))

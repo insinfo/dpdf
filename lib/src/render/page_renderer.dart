@@ -117,6 +117,58 @@ class _MeshVertex {
   }
 }
 
+class _MeshPoint {
+  final double x, y;
+  const _MeshPoint(this.x, this.y);
+
+  _MeshPoint transform(BLMatrix2D matrix) {
+    final point = matrix.mapPoint(x, y);
+    return _MeshPoint(point.$1, point.$2);
+  }
+}
+
+class _TensorPatch {
+  /// Control points indexed as `column * 4 + row` (`p00` through `p33`).
+  final List<_MeshPoint> points;
+
+  /// Corner inputs in the PDF order c00, c03, c33, c30.
+  final List<List<double>> corners;
+  const _TensorPatch(this.points, this.corners);
+
+  _MeshPoint evaluate(double u, double v) {
+    final bu = _bernstein(u);
+    final bv = _bernstein(v);
+    var x = 0.0, y = 0.0;
+    for (var column = 0; column < 4; column++) {
+      for (var row = 0; row < 4; row++) {
+        final weight = bu[column] * bv[row];
+        final point = points[column * 4 + row];
+        x += point.x * weight;
+        y += point.y * weight;
+      }
+    }
+    return _MeshPoint(x, y);
+  }
+
+  List<double> inputs(double u, double v) => <double>[
+        for (var component = 0; component < corners[0].length; component++)
+          corners[0][component] * (1 - u) * (1 - v) +
+              corners[1][component] * (1 - u) * v +
+              corners[2][component] * u * v +
+              corners[3][component] * u * (1 - v),
+      ];
+
+  static List<double> _bernstein(double t) {
+    final inverse = 1 - t;
+    return <double>[
+      inverse * inverse * inverse,
+      3 * t * inverse * inverse,
+      3 * t * t * inverse,
+      t * t * t,
+    ];
+  }
+}
+
 /// What the renderer could not draw.
 ///
 /// A page renders as far as it can and reports the rest, because a single
@@ -1106,6 +1158,15 @@ class _Renderer {
       _note('scn:unsupported-shading-pattern');
       return;
     }
+    if (shadingType == 7 && shading is PdfStream && colorSpace != null) {
+      if (await _fillTensorPatchShading(
+          path, rule, pattern, shading, colorSpace, function,
+          stroke: stroke)) {
+        return;
+      }
+      _note('scn:unsupported-shading-pattern');
+      return;
+    }
     if (expectedCoords == 0 ||
         coordsArray == null ||
         coordsArray.size() != expectedCoords ||
@@ -1177,6 +1238,189 @@ class _Renderer {
     }
     await context.fillPath(path, rule: rule);
     context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
+  }
+
+  Future<bool> _fillTensorPatchShading(
+    BLPath clipPath,
+    BLFillRule rule,
+    PdfDictionary pattern,
+    PdfStream shading,
+    PdfColorSpace colorSpace,
+    PdfFunction? function, {
+    required bool stroke,
+  }) async {
+    final bitsCoordinate =
+        await shading.integerEntry(PdfName('BitsPerCoordinate'));
+    final bitsComponent =
+        await shading.integerEntry(PdfName('BitsPerComponent'));
+    final bitsFlag = await shading.integerEntry(PdfName('BitsPerFlag'));
+    final decodeArray = await shading.arrayEntry(PdfName('Decode'));
+    final inputCount =
+        function?.inputCount ?? colorSpace.getNumberOfComponents();
+    if (bitsCoordinate == null ||
+        bitsComponent == null ||
+        bitsFlag == null ||
+        bitsCoordinate < 1 ||
+        bitsCoordinate > 32 ||
+        bitsComponent < 1 ||
+        bitsComponent > 16 ||
+        (bitsFlag != 2 && bitsFlag != 4 && bitsFlag != 8) ||
+        inputCount < 1 ||
+        decodeArray == null ||
+        decodeArray.size() != 4 + inputCount * 2) {
+      return false;
+    }
+    final decode = await decodeArray.toDoubleArray();
+    final bytes = await shading.getBytes();
+    if (bytes == null) return false;
+    final reader = _MeshBitReader(bytes);
+    final coordinateMax = (1 << bitsCoordinate) - 1;
+    final componentMax = (1 << bitsComponent) - 1;
+    const streamOrder = <int>[
+      0,
+      1,
+      2,
+      3,
+      7,
+      11,
+      15,
+      14,
+      13,
+      12,
+      8,
+      4,
+      5,
+      6,
+      10,
+      9
+    ];
+    final patches = <_TensorPatch>[];
+    _TensorPatch? previous;
+    try {
+      while (reader.remaining >= bitsFlag && patches.length < 10000) {
+        final flag = reader.read(bitsFlag);
+        if (flag < 0 || flag > 3 || (flag != 0 && previous == null)) {
+          return false;
+        }
+        final pointCount = flag == 0 ? 16 : 12;
+        final colourCount = flag == 0 ? 4 : 2;
+        final payloadBits = pointCount * 2 * bitsCoordinate +
+            colourCount * inputCount * bitsComponent;
+        if (reader.remaining < payloadBits) {
+          // At most seven zero padding bits may close the stream.
+          if (patches.isNotEmpty && reader.remaining < 8) {
+            reader.bitOffset = bytes.length * 8;
+            break;
+          }
+          return false;
+        }
+        final points = List<_MeshPoint?>.filled(16, null);
+        final corners = List<List<double>?>.filled(4, null);
+        var orderOffset = 0;
+        if (flag != 0) {
+          final inheritedPoints = switch (flag) {
+            1 => <int>[3, 7, 11, 15],
+            2 => <int>[15, 14, 13, 12],
+            _ => <int>[12, 8, 4, 0],
+          };
+          for (var index = 0; index < 4; index++) {
+            points[streamOrder[index]] =
+                previous!.points[inheritedPoints[index]];
+          }
+          final inheritedColours = switch (flag) {
+            1 => <int>[1, 2],
+            2 => <int>[2, 3],
+            _ => <int>[3, 0],
+          };
+          corners[0] = previous!.corners[inheritedColours[0]];
+          corners[1] = previous.corners[inheritedColours[1]];
+          orderOffset = 4;
+        }
+        for (var index = 0; index < pointCount; index++) {
+          final x = _meshDecode(
+              reader.read(bitsCoordinate), coordinateMax, decode[0], decode[1]);
+          final y = _meshDecode(
+              reader.read(bitsCoordinate), coordinateMax, decode[2], decode[3]);
+          points[streamOrder[orderOffset + index]] = _MeshPoint(x, y);
+        }
+        final colourOffset = flag == 0 ? 0 : 2;
+        for (var corner = 0; corner < colourCount; corner++) {
+          corners[colourOffset + corner] = <double>[
+            for (var component = 0; component < inputCount; component++)
+              _meshDecode(reader.read(bitsComponent), componentMax,
+                  decode[4 + component * 2], decode[5 + component * 2]),
+          ];
+        }
+        if (points.any((point) => point == null) ||
+            corners.any((colour) => colour == null)) {
+          return false;
+        }
+        previous = _TensorPatch(
+            points.cast<_MeshPoint>(), corners.cast<List<double>>());
+        patches.add(previous);
+      }
+    } on Object {
+      return false;
+    }
+    if (reader.remaining >= bitsFlag || patches.isEmpty) return false;
+
+    var matrix = BLMatrix2D.identity;
+    final matrixArray = await pattern.arrayEntry(PdfName.matrix);
+    if (matrixArray != null && matrixArray.size() == 6) {
+      final values = await matrixArray.toDoubleArray();
+      matrix = BLMatrix2D(
+          values[0], values[1], values[2], values[3], values[4], values[5]);
+    }
+    final toDevice = matrix.multiply(state.ctm);
+    final alpha = stroke ? state.strokeAlpha : state.fillAlpha;
+    context.save();
+    context.clipToPath(clipPath, rule: rule);
+    try {
+      for (final patch in patches) {
+        await _paintTensorPatch(patch, toDevice, colorSpace, function, alpha);
+      }
+    } finally {
+      context.restore();
+      context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
+    }
+    return true;
+  }
+
+  Future<void> _paintTensorPatch(_TensorPatch patch, BLMatrix2D toDevice,
+      PdfColorSpace colorSpace, PdfFunction? function, double alpha) async {
+    final transformedControls =
+        patch.points.map((point) => point.transform(toDevice)).toList();
+    var left = transformedControls.first.x;
+    var right = left;
+    var top = transformedControls.first.y;
+    var bottom = top;
+    for (final point in transformedControls.skip(1)) {
+      left = math.min(left, point.x);
+      right = math.max(right, point.x);
+      top = math.min(top, point.y);
+      bottom = math.max(bottom, point.y);
+    }
+    final divisions =
+        (math.max(right - left, bottom - top) / 4).ceil().clamp(2, 24);
+    final grid = List<List<_MeshVertex>>.generate(divisions + 1, (uIndex) {
+      final u = uIndex / divisions;
+      return List<_MeshVertex>.generate(divisions + 1, (vIndex) {
+        final v = vIndex / divisions;
+        final point = patch.evaluate(u, v).transform(toDevice);
+        final inputs = patch.inputs(u, v);
+        final components = function?.evaluate(inputs) ?? inputs;
+        final rgb = colorSpace.toRgb(components);
+        return _MeshVertex(point.x, point.y, rgb[0], rgb[1], rgb[2]);
+      });
+    });
+    for (var u = 0; u < divisions; u++) {
+      for (var v = 0; v < divisions; v++) {
+        await _paintMeshFacet(
+            grid[u][v], grid[u + 1][v], grid[u][v + 1], alpha);
+        await _paintMeshFacet(
+            grid[u + 1][v], grid[u + 1][v + 1], grid[u][v + 1], alpha);
+      }
+    }
   }
 
   Future<bool> _fillFreeFormShading(

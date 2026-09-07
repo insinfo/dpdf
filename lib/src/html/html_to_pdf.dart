@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:dgfx/dgfx.dart';
 import 'package:html/parser.dart' show parse;
 
 import '../kernel/geom/page_size.dart';
@@ -16,10 +17,19 @@ class HtmlConverterProperties {
   final double margin;
   final double baseFontSize;
 
+  /// Catálogo opcional de fontes incorporáveis.
+  ///
+  /// Pode conter faces carregadas em memória ou provedores assíncronos para
+  /// fontes do sistema, URLs, Google Fonts ou uma integração web com
+  /// `FontFace`. Quando nenhuma face CSS é encontrada, o conversor conserva o
+  /// fallback para as fontes PDF padrão.
+  final BLFontCollection? fontCollection;
+
   const HtmlConverterProperties({
     this.pageSize,
     this.margin = 36,
     this.baseFontSize = 12,
+    this.fontCollection,
   })  : assert(margin >= 0),
         assert(baseFontSize > 0);
 
@@ -58,6 +68,8 @@ class HtmlConverter {
     final pageSize = options.resolvedPageSize;
     final fragments = HtmlLayoutEngine(pageSize.width - options.margin * 2)
         .layoutDisplayList(boxes);
-    await HtmlPdfPainter(document, pageSize, options.margin).paint(fragments);
+    await HtmlPdfPainter(document, pageSize, options.margin,
+            fontCollection: options.fontCollection)
+        .paint(fragments);
   }
 }

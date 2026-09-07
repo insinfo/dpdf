@@ -143,7 +143,12 @@ subsampling.
   transparency-group replacement cases remain partial.
 - Area redaction of shared, transparent or Form-nested images still covers
   rather than rewriting their source pixels.
-- HTML uses the 14 standard PDF fonts and does not discover system fonts.
+- HTML accepts a `BLFontCollection` and embeds matching TrueType/OpenType CSS
+  faces. Native applications can populate it with
+  `BLFontLoader.loadSystemFonts` from `package:dgfx/dgfx_io.dart`; web clients
+  can attach a `BLCallbackFontProvider` backed by URLs, Google Fonts or
+  `FontFace`. Automatic parsing of CSS `@font-face` declarations remains
+  partial and is delegated to the provider.
 - JBIG2 automatically chooses between generic regions and deduplicated symbol
   dictionaries with text regions; refinement and multi-page dictionaries remain
   partial.

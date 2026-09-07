@@ -48,7 +48,7 @@ class HtmlStandardFont {
 
   static String _family(String? source) {
     if (source == null) return 'Helvetica';
-    for (final candidate in _families(source)) {
+    for (final candidate in families(source)) {
       final name = candidate.toLowerCase();
       if (name == 'courier' || name == 'monospace') return 'Courier';
       if (name == 'times' || name == 'times new roman' || name == 'serif') {
@@ -65,7 +65,7 @@ class HtmlStandardFont {
   }
 
   /// Splits a CSS family list without treating quoted commas as separators.
-  static Iterable<String> _families(String source) sync* {
+  static Iterable<String> families(String source) sync* {
     var quote = 0;
     var start = 0;
     for (var index = 0; index <= source.length; index++) {

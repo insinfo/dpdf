@@ -447,20 +447,35 @@ class PdfCompressor {
     }
   }
 
-  /// A 64-bit FNV-1a digest, written out in hex.
+  /// Dois hashes Jenkins de 32 bits, escritos em hexadecimal.
   ///
   /// Collision resistance is not a security property here: two streams that
   /// collide would be merged wrongly, so the digest is combined with the exact
-  /// byte length by the caller, and the space is large enough that a document
+  /// byte length by the caller, and o par tem espaço suficiente para que um documento
   /// would need billions of distinct streams for a collision to be likely.
   static String _digest(Uint8List bytes) {
-    var hash = 0xcbf29ce484222325;
-    const prime = 0x100000001b3;
+    var first = 0;
+    var second = 0x9e3779b9;
     for (final byte in bytes) {
-      hash ^= byte;
-      hash = (hash * prime) & 0xffffffffffffffff;
+      first = _mixDigest(first, byte);
+      second = _mixDigest(second, byte ^ 0xa5);
     }
-    return hash.toRadixString(16);
+    first = _finishDigest(first);
+    second = _finishDigest(second);
+    return '${first.toRadixString(16).padLeft(8, '0')}'
+        '${second.toRadixString(16).padLeft(8, '0')}';
+  }
+
+  static int _mixDigest(int hash, int byte) {
+    hash = (hash + byte) & 0xffffffff;
+    hash = (hash + (hash << 10)) & 0xffffffff;
+    return (hash ^ (hash >> 6)) & 0xffffffff;
+  }
+
+  static int _finishDigest(int hash) {
+    hash = (hash + (hash << 3)) & 0xffffffff;
+    hash = (hash ^ (hash >> 11)) & 0xffffffff;
+    return (hash + (hash << 15)) & 0xffffffff;
   }
 
   // --- orphan removal -------------------------------------------------------

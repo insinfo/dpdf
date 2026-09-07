@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dpdf/dpdf.dart';
 import 'package:test/test.dart';
@@ -15,6 +16,41 @@ PdfPositionedCharacter _firstCharacter(
 }
 
 void main() {
+  test('incorpora fonte CSS resolvida pelo catálogo dgfx', () async {
+    final fontBytes =
+        await File('test/assets/ABeeZee-Regular.ttf').readAsBytes();
+    final fonts = BLFontCollection()
+      ..addBytes(fontBytes, familyName: 'ABeeZee');
+    final bytes = await HtmlConverter.convertToBytes(
+      '<p style="font-family: ABeeZee">Fonte incorporada</p>',
+      properties: HtmlConverterProperties(fontCollection: fonts),
+    );
+
+    final source = latin1.decode(bytes, allowInvalid: true);
+    expect(source, contains('/FontFile2'));
+    expect(source, contains('/Subtype /Type0'));
+  });
+
+  test('consulta provedor assíncrono para uma família HTML', () async {
+    final fontBytes =
+        await File('test/assets/ABeeZee-Regular.ttf').readAsBytes();
+    BLFontQuery? received;
+    final fonts = BLFontCollection()
+      ..addProvider(BLCallbackFontProvider((query) async {
+        received = query;
+        return fontBytes;
+      }));
+
+    final bytes = await HtmlConverter.convertToBytes(
+      '<strong style="font-family: Remote Sans">remota</strong>',
+      properties: HtmlConverterProperties(fontCollection: fonts),
+    );
+
+    expect(received?.families, ['Remote Sans']);
+    expect(received?.weight, 700);
+    expect(latin1.decode(bytes, allowInvalid: true), contains('/FontFile2'));
+  });
+
   test('converts text-flow HTML to an extractable PDF', () async {
     final bytes = await HtmlConverter.convertToBytes('''
       <h1>Relatório</h1><p>Olá <strong>mundo</strong>!</p>

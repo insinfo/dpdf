@@ -1,9 +1,15 @@
+import 'package:dgfx/dgfx.dart';
+
 import '../layout/html_display_list.dart';
 import '../layout/html_text_measure.dart';
+import '../model/html_box.dart';
 import '../css/css_color.dart';
 import '../../kernel/colors/device_rgb.dart';
 import 'html_standard_font.dart';
 import '../../kernel/font/pdf_font_factory.dart';
+import '../../kernel/font/pdf_font.dart';
+import '../../kernel/font/pdf_type0_font.dart';
+import '../../io/font/true_type_font.dart';
 import '../../kernel/geom/page_size.dart';
 import '../../kernel/geom/rectangle.dart';
 import '../../kernel/pdf/canvas/pdf_canvas.dart';
@@ -16,8 +22,11 @@ class HtmlPdfPainter {
   final PdfDocument document;
   final PageSize pageSize;
   final double margin;
+  final BLFontCollection? fontCollection;
+  final Map<BLFontFace, PdfFont> _embeddedFonts = <BLFontFace, PdfFont>{};
 
-  const HtmlPdfPainter(this.document, this.pageSize, this.margin);
+  HtmlPdfPainter(this.document, this.pageSize, this.margin,
+      {this.fontCollection});
 
   Future<void> paint(HtmlDisplayList displayList) async {
     final usableHeight = pageSize.height - margin * 2;
@@ -88,8 +97,7 @@ class HtmlPdfPainter {
       canvas.beginText();
       canvas.setFillColor(_pdfColor(fragment.style.color));
       await canvas.setFontAndSize(
-          PdfFontFactory.createFont(HtmlStandardFont.resolve(fragment.style)),
-          fragment.style.fontSize);
+          await _resolveFont(fragment.style), fragment.style.fontSize);
       canvas
           .moveText(margin + fragment.x, pageSize.height - margin - baseline)
           // Each display-list fragment is written separately to preserve its
@@ -117,4 +125,31 @@ class HtmlPdfPainter {
 
   DeviceRgb _pdfColor(CssColor color) =>
       DeviceRgb(color.red, color.green, color.blue);
+
+  Future<PdfFont> _resolveFont(HtmlTextStyle style) async {
+    final collection = fontCollection;
+    if (collection != null) {
+      final requested = style.fontFamily == null
+          ? const <String>['sans-serif']
+          : HtmlStandardFont.families(style.fontFamily!).toList();
+      final face = await collection.resolve(BLFontQuery(
+        requested.isEmpty ? const <String>['sans-serif'] : requested,
+        weight: style.bold ? 700 : 400,
+        slant: style.italic ? BLFontSlant.italic : BLFontSlant.normal,
+      ));
+      if (face != null && (face.hasTrueTypeOutlines || face.hasCFFOutlines)) {
+        final cached = _embeddedFonts[face];
+        if (cached != null) return cached;
+        try {
+          final font = PdfType0Font(TrueTypeFont.fromBytes(face.data));
+          _embeddedFonts[face] = font;
+          return font;
+        } on Object {
+          // Uma face legível pelo rasterizador pode usar uma variante que o
+          // incorporador PDF ainda não aceita. Nesse caso o HTML segue válido.
+        }
+      }
+    }
+    return PdfFontFactory.createFont(HtmlStandardFont.resolve(style));
+  }
 }

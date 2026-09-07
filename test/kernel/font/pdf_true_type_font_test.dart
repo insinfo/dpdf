@@ -16,7 +16,11 @@ void main() {
         return;
       }
 
-      File file = File('test_ttf.pdf');
+      // Escrever num diretório temporário, não na raiz do repositório: um
+      // teste que falha no meio não deve deixar lixo na árvore de trabalho.
+      final directory = Directory.systemTemp.createTempSync('dpdf_ttf_');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final file = File('${directory.path}/test_ttf.pdf');
       final writer = CraftPdfWriter.toFile(file.path);
       final doc = CraftPdfDocument.create(writer);
 
@@ -46,8 +50,11 @@ void main() {
       // Check if font resource is added is hard without parsing resource dictionary
       // But make sure no exception thrown.
 
-      writer.close();
-      if (await file.exists()) file.deleteSync();
+      // `close()` devolve um Future. Sem aguardá-lo, o arquivo continua aberto
+      // e o `deleteSync` abaixo falha no Windows com errno 32 — o POSIX deixa
+      // remover arquivo aberto, o Windows não. Era um teste que passava ou
+      // falhava conforme a plataforma e o escalonamento.
+      await writer.close();
     });
   });
 }

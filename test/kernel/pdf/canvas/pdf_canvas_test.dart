@@ -49,7 +49,11 @@ void main() {
     });
 
     test('Type1Font HELVETICA', () async {
-      File file = File('test_type1.pdf');
+      // Diretório temporário em vez da raiz do repositório: um teste que
+      // falha no meio não deve deixar lixo na árvore de trabalho.
+      final directory = Directory.systemTemp.createTempSync('dpdf_type1_');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final file = File('${directory.path}/test_type1.pdf');
       final writer = CraftPdfWriter.toFile(file.path);
       final doc = CraftPdfDocument.create(writer);
 
@@ -79,9 +83,9 @@ void main() {
       expect(content, contains('/F1 12 Tf'));
       expect(content, contains('(Hello Helvetica) Tj'));
 
-      // Cleanup optional, keeping it for inspection if failed, but normally delete
-      writer.close();
-      if (await file.exists()) file.deleteSync();
+      // `close()` devolve um Future. Sem aguardá-lo o arquivo fica aberto, e
+      // remover arquivo aberto funciona no POSIX mas falha no Windows.
+      await writer.close();
     });
   });
 }

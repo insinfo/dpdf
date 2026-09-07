@@ -283,6 +283,15 @@ class SvgAttributes {
   /// Vertical coordinate of a circle or ellipse center.
   static const String CY = "cy";
 
+  /// Horizontal focal coordinate of a radial gradient.
+  static const String FX = "fx";
+
+  /// Vertical focal coordinate of a radial gradient.
+  static const String FY = "fy";
+
+  /// Radius of the focal circle of an SVG 2 radial gradient.
+  static const String FR = "fr";
+
   /// Attribute defining the outline of a shape.
   static const String D = "d";
 

@@ -216,15 +216,26 @@ class RadialGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
         coordinate(SvgAttributes.CX, '50%', b.getX(), b.getWidth(), context);
     final cy =
         coordinate(SvgAttributes.CY, '50%', b.getY(), b.getHeight(), context);
-    final fx = coordinate('fx', '50%', b.getX(), b.getWidth(), context);
-    final fy = coordinate('fy', '50%', b.getY(), b.getHeight(), context);
-    final r = coordinate(SvgAttributes.R, '50%', 0,
-        math.max(b.getWidth(), b.getHeight()), context);
+    // SVG: omitted focal coordinates inherit the resolved centre, rather than
+    // reverting independently to 50%. This also matters for href inheritance.
+    final fx = getAttribute(SvgAttributes.FX) == null
+        ? cx
+        : coordinate(SvgAttributes.FX, '50%', b.getX(), b.getWidth(), context);
+    final fy = getAttribute(SvgAttributes.FY) == null
+        ? cy
+        : coordinate(SvgAttributes.FY, '50%', b.getY(), b.getHeight(), context);
+    final radiusBasis = math.max(b.getWidth(), b.getHeight());
+    final fr = coordinate(SvgAttributes.FR, '0', 0, radiusBasis, context);
+    final r = coordinate(SvgAttributes.R, '50%', 0, radiusBasis, context);
+    // SVG 2 requires a non-negative focal radius no larger than the outer
+    // radius. Clamping malformed author input keeps the emitted PDF valid.
+    final focalRadius = fr.clamp(0, math.max(0, r)).toDouble();
     await paintGradient(
         context,
         b,
-        PdfShading.radialRgbStops(fx, fy, 0, cx, cy, r, s.offsets, s.colors),
-        PdfShading.radialRgbStops(fx, fy, 0, cx, cy, r, s.offsets,
+        PdfShading.radialRgbStops(
+            fx, fy, focalRadius, cx, cy, r, s.offsets, s.colors),
+        PdfShading.radialRgbStops(fx, fy, focalRadius, cx, cy, r, s.offsets,
             s.opacities.map((v) => <double>[v, v, v]).toList()));
   }
 

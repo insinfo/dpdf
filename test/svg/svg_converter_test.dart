@@ -597,6 +597,38 @@ void main() {
       }
     });
 
+    test('radialGradient herda foco do centro e respeita fr do SVG 2',
+        () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="40" height="40">
+          <radialGradient id="g" cx="25%" cy="75%" r="50%" fr="10%">
+            <stop offset="0" stop-color="white"/>
+            <stop offset="1" stop-color="black"/>
+          </radialGradient>
+          <rect x="5" y="5" width="30" height="30" fill="url(#g)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final shadings = await resources!.dictionaryEntry(PdfName.shading);
+        final shading = (await shadings!.values()).single as PdfDictionary;
+        final coords =
+            await (await shading.arrayEntry(PdfName.coords))!.toDoubleArray();
+        expect(coords, hasLength(6));
+        expect(coords[0], closeTo(9.375, 1e-9));
+        expect(coords[1], closeTo(20.625, 1e-9));
+        expect(coords[2], closeTo(2.25, 1e-9));
+        expect(coords[3], closeTo(coords[0], 1e-9));
+        expect(coords[4], closeTo(coords[1], 1e-9));
+        expect(coords[5], closeTo(11.25, 1e-9));
+      } finally {
+        await document.close();
+      }
+    });
+
     test('gradientTransform transforma somente o shading', () async {
       final bytes = await SvgConverter.convertToBytes('''
         <svg width="40" height="20">

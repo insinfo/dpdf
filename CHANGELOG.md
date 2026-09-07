@@ -1,90 +1,55 @@
-
+# Changelog
 
 ## 1.0.0
 
-Primeira versão publicada. O pacote é Dart puro, sem FFI e sem binários
-externos, e compila para VM (JIT/AOT), `dart2js` e `dart2wasm`.
+Initial release. dpdf is implemented in pure Dart, uses no FFI or external
+binaries, and targets the Dart VM, `dart2js`, and `dart2wasm`.
 
-### Adicionado
+### Added
 
-- **Renderização de PDF para PNG** (`PdfPageRenderer`): interpreta o fluxo de
-  conteúdo e desenha caminhos (preenchimento, traço, ambas as regras de
-  enrolamento), recorte por caminho arbitrário, espaços de cor, imagens (XObject
-  e inline, com máscaras), e Form XObjects recursivamente. O relatório diz o que
-  não foi desenhado, em vez de entregar uma página silenciosamente incompleta.
-  Texto ainda não é desenhado como glifos.
-- **`PdfContentParser`**, analisador público de fluxo de conteúdo, incluindo
-  imagens inline — cujos bytes entre `ID` e `EI` os dois lexers existentes
-  liam como conteúdo.
-- **`PdfImageDecoder`**: XObject de imagem para RGBA, com amostras de 1 a 16
-  bits, `/Decode`, paletas Indexed, `/SMask` e `/Mask`.
-- **Funções PDF** (tipos 0, 2, 3 e 4) e **conversão de cor para RGB** em todos
-  os espaços, incluindo Indexed, Separation, DeviceN e Lab.
-- **`PngEncoder`** sobre o escritor PNG.
-- **Codec JPEG em Dart puro**: `JpegDecoder` (baseline sequencial, 4:4:4,
-  4:2:2 e 4:2:0, intervalos de reinício, cinza/RGB/CMYK, transformação Adobe)
-  e `JpegEncoder` (baseline, tabelas do Anexo K, qualidade 1-100, subamostragem
-  opcional). O filtro `/DCTDecode` antes só repassava os bytes.
-- **Reamostragem de imagens** (`ImageResampler`) com filtro de caixa, mais
-  `PdfImageCompressionOptions.lossy` para reencodar imagens de tom contínuo
-  como JPEG e limitar o lado maior a um número de pixels.
-- **Compressão de PDF**: `PdfCompressor` reescreve o documento menor sem mudar
-  o que ele desenha — object streams e xref stream, recompressão de fluxos,
-  deduplicação de objetos idênticos, remoção de objetos órfãos e poda opcional
-  de miniaturas, metadados e dados privados. Devolve o original quando a
-  reescrita ficaria maior.
-- **Recompressão de imagens bilevel** (`PdfImageCompressor`), sem perdas: cada
-  imagem é codificada em JBIG2 (via `package:jbig2`) e em Flate, e a menor
-  vence. Nenhum dos dois ganha sempre — medido numa página 800x1000, o Flate
-  faz 287 bytes contra 886 do JBIG2 quando as linhas se repetem exatamente, e
-  20304 contra 16519 quando há ruído de digitalização.
-- **Decodificação JBIG2 real** no filtro `/JBIG2Decode`, que antes apenas
-  concatenava os globals e devolvia os bytes crus.
-- **Verificação de integridade**: `PdfIntegrityChecker` inspeciona cabeçalho,
-  marcadores `%%EOF`, `startxref`, deslocamentos da tabela de referências
-  cruzadas conferidos byte a byte, `/Count` conferido contra as páginas
-  alcançáveis, ciclos na árvore de páginas, fluxos truncados e falhas de
-  filtro, com códigos estáveis por achado.
-- **Conformidade**: `PdfAVerifier` (PDF/A-1 a PDF/A-4) e `PdfUAVerifier`
-  (PDF/UA-1), com a cláusula da norma em cada achado e a lista explícita das
-  regras não avaliadas.
-- **Redação por área**: `PdfAreaRedaction` remove os caracteres dentro de
-  retângulos em documentos que o caminho estrito rejeita, preservando imagens,
-  páginas e o grafo de objetos, com tarja opaca e remoção de anotações.
-- **Métricas das 14 fontes padrão** embutidas, o que faz o conversor de HTML
-  medir o texto com a face que realmente desenha: quebra de linha e alinhamento
-  exatos, e seleção real de negrito, itálico, serifada e monoespaçada.
-- **Kernel PDF**: leitura e escrita de objetos, tabela xref (clássica e em
-  fluxo), fluxos de objetos, catálogo, árvore de páginas, incremental update,
-  criptografia padrão (RC4 40/128, AES-128, AES-256) e intents de saída.
-- **Fontes**: Type1, TrueType, Type0/CID e Type3, com subsetting TrueType,
-  CMaps `ToUnicode`, Adobe Glyph List e recursos CJK carregados pelo consumidor.
-- **Imagens e codecs**: PNG, JPEG, BMP, GIF, TIFF (incluindo LZW e CCITT G4) e
-  JBIG2, com escritores PNG/TIFF e filtros Flate, LZW, RunLength e ASCII.
-- **Layout**: `Document` com parágrafos, divs, listas, tabelas com
-  `colspan`/`rowspan`, imagens, quebras de área, colapso de margens e cálculo
-  de largura mínima/máxima.
-- **HTML para PDF**: `HtmlConverter` com pipeline independente de DOM,
-  CSS, layout e pintura, cobrindo texto, listas, tabelas, imagens e links.
-- **SVG**: processadores e renderizadores para as formas básicas, caminhos,
-  transformações e marcadores.
-- **Formulários**: `AcroForm` com campos de texto, botão, escolha e assinatura,
-  além de mesclagem de formulários entre documentos.
-- **Assinatura digital**: assinatura RSA/CMS, contêineres externos, carimbo do
-  tempo (RFC 3161), OCSP, CRL e leitura de repositórios de chaves JKS e BKS.
-- **Edição**: extração de texto com `ActualText` e Form XObjects, redação de
-  texto, sobreposição e montagem de páginas, e modos opcionais de leitura,
-  recuperação, mesclagem e assinatura.
-- **Códigos de barras**: Code 39, Code 128, EAN/UPC e QR Code.
+- PDF kernel with parsing, serialization, xref streams, object streams,
+  incremental updates, encryption, fonts, forms, and annotations.
+- High-level document layout and HTML-to-PDF conversion using embedded metrics
+  for the 14 standard PDF fonts.
+- SVG-to-PDF conversion for basic shapes and paths, transforms, `viewBox`,
+  fill/stroke styling, opacity, and inline inheritance.
+- PDF-to-PNG rendering through the web-safe `dgfx` rasterizer, including paths,
+  arbitrary clipping, color spaces, images, masks, Form XObjects, and embedded
+  TrueType/CFF glyph outlines. Rendering reports expose skipped work.
+- A reusable `PdfContentParser`, including inline-image boundaries, and a
+  `PdfImageDecoder` with 1-16-bit samples, `/Decode`, palettes, and masks.
+- PDF function types 0, 2, 3, and 4 and RGB conversion for Device, calibrated,
+  ICCBased, Lab, Indexed, Separation, and DeviceN color spaces.
+- Pure-Dart PNG encoding, baseline/progressive JPEG decoding, baseline JPEG
+  encoding, image resizing, and optional lossy image recompression.
+- Structural PDF compression, deduplication, unreachable-object removal, and
+  lossless bi-level image recompression using the smaller JBIG2 or Flate result.
+- Integrity inspection and explicit PDF/A-1 through PDF/A-4 and PDF/UA-1
+  verification reports.
+- Text extraction, text and area redaction, page overlays and assembly, form
+  merging, digital signatures, timestamps, OCSP, CRL, and JKS/BKS support.
+- Code 39, Code 128, EAN/UPC, and QR Code generation.
 
-### Corrigido
+### Fixed
 
-- O escritor PNG gravava um CRC inválido em todo chunk de todo arquivo que
-  produzia: o registrador partia de `-1` e usava `>>>` num inteiro de 64 bits
-  do Dart, então bits acima do 31 desciam para o CRC. O chunk IEND saía
-  `0xAE429F7D` onde todo PNG termina com `0xAE426082`.
-- O filtro `/JBIG2Decode` apenas concatenava os globals e devolvia os bytes
-  crus, de modo que nenhuma página digitalizada em JBIG2 era legível.
-- `PdfSpecialCsPattern` era sombreado por um stub vazio declarado em
-  `pdf_canvas.dart`, e `PdfCieBasedCsIccBased.getNumberOfComponents()`
-  devolvia 0.
+- Prevented xref-stream rewrites from copying a stale `/Index` entry from the
+  source trailer and corrupting externally produced or signed documents.
+- Rejected append mode combined with full compression with a clear error.
+- Corrected asynchronous dash-array serialization that could corrupt a content
+  stream, and applied filter chains before JPEG decoding.
+- Added MacRomanEncoding, embedded CMap support, standard-font AFM metrics, and
+  an application font-fallback hook.
+- Added complete progressive Huffman JPEG scans and made over-subscribed Huffman
+  tables throw `JpegDecodeException` instead of a range error.
+- Corrected PNG chunk CRCs and replaced `/JBIG2Decode` byte passthrough with real
+  decoding.
+- Removed a duplicate Pattern color-space stub and corrected ICC component
+  counts.
+
+### Breaking changes
+
+- Removed the legacy `Craft` prefix from 481 API identifiers before the first
+  publication. For example, `CraftPdfDocument`, `CraftPdfName`, and
+  `CraftSvgConverter` became `PdfDocument`, `PdfName`, and `SvgConverter`.
+- Renamed `CraftList` to `PdfList` instead of `List` to avoid shadowing Dart's
+  core collection type.

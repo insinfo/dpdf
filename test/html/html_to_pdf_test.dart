@@ -75,6 +75,33 @@ void main() {
     expect(latin1.decode(bytes, allowInvalid: true), contains('/FontFile2'));
   });
 
+  test('resolve local() e cria o alias declarado sem consultar a URL',
+      () async {
+    final fontBytes =
+        await File('test/assets/ABeeZee-Regular.ttf').readAsBytes();
+    final fonts = BLFontCollection()..addBytes(fontBytes);
+    var requests = 0;
+    final bytes = await HtmlConverter.convertToBytes('''
+      <style>
+        @font-face { font-family: "Document Face";
+                     src: local("ABeeZee"), url("fallback.ttf"); }
+        p { font-family: "Document Face"; }
+      </style>
+      <p>fonte local</p>
+    ''',
+        properties: HtmlConverterProperties(
+          fontCollection: fonts,
+          fontResourceLoader: (_) async {
+            requests++;
+            return null;
+          },
+        ));
+
+    expect(requests, 0);
+    expect(fonts.resolveLocal(const BLFontQuery(['Document Face'])), isNotNull);
+    expect(latin1.decode(bytes, allowInvalid: true), contains('/FontFile2'));
+  });
+
   test('converts text-flow HTML to an extractable PDF', () async {
     final bytes = await HtmlConverter.convertToBytes('''
       <h1>Relatório</h1><p>Olá <strong>mundo</strong>!</p>

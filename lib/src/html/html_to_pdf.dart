@@ -90,10 +90,18 @@ class HtmlConverter {
     for (final rule in sheet.fontFaces) {
       for (final source in rule.sources) {
         try {
+          if (source.kind == HtmlFontFaceSourceKind.local) {
+            final face = collection.resolveLocal(BLFontQuery([source.value]));
+            if (face != null) {
+              collection.addAlias(rule.family, face);
+              break;
+            }
+            continue;
+          }
           Uint8List? bytes;
-          final uri = Uri.parse(source);
+          final uri = Uri.parse(source.value);
           if (uri.scheme == 'data') {
-            bytes = UriData.parse(source).contentAsBytes();
+            bytes = UriData.parse(source.value).contentAsBytes();
           } else if (options.fontResourceLoader != null) {
             final resolved = options.baseUri?.resolveUri(uri) ?? uri;
             bytes = await options.fontResourceLoader!(resolved);

@@ -63,16 +63,24 @@ class HtmlStyleSheet {
 
 class HtmlFontFaceRule {
   final String family;
-  final List<String> sources;
+  final List<HtmlFontFaceSource> sources;
   const HtmlFontFaceRule(this.family, this.sources);
+}
+
+enum HtmlFontFaceSourceKind { local, url }
+
+class HtmlFontFaceSource {
+  final HtmlFontFaceSourceKind kind;
+  final String value;
+  const HtmlFontFaceSource(this.kind, this.value);
 }
 
 List<HtmlFontFaceRule> _parseFontFaces(String source) {
   final result = <HtmlFontFaceRule>[];
   final rulePattern = RegExp(r'@font-face\s*\{([^{}]*)\}',
       caseSensitive: false, multiLine: true);
-  final urlPattern = RegExp(
-      r'''url\(\s*(?:"([^"]*)"|'([^']*)'|([^\s\)]*))\s*\)''',
+  final sourcePattern = RegExp(
+      r'''(url|local)\(\s*(?:"([^"]*)"|'([^']*)'|([^\s\)]*))\s*\)''',
       caseSensitive: false);
   for (final match in rulePattern.allMatches(source)) {
     final declarations = HtmlStyleSheet.declarationsOf(match.group(1)!);
@@ -83,10 +91,16 @@ List<HtmlFontFaceRule> _parseFontFaces(String source) {
             (family.startsWith("'") && family.endsWith("'")))) {
       family = family.substring(1, family.length - 1);
     }
-    final sources = <String>[];
-    for (final url in urlPattern.allMatches(declarations['src'] ?? '')) {
-      final value = url.group(1) ?? url.group(2) ?? url.group(3);
-      if (value != null && value.isNotEmpty) sources.add(value);
+    final sources = <HtmlFontFaceSource>[];
+    for (final source in sourcePattern.allMatches(declarations['src'] ?? '')) {
+      final value = source.group(2) ?? source.group(3) ?? source.group(4);
+      if (value != null && value.isNotEmpty) {
+        sources.add(HtmlFontFaceSource(
+            source.group(1)!.toLowerCase() == 'local'
+                ? HtmlFontFaceSourceKind.local
+                : HtmlFontFaceSourceKind.url,
+            value));
+      }
     }
     if (sources.isNotEmpty) result.add(HtmlFontFaceRule(family, sources));
   }

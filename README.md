@@ -149,8 +149,9 @@ subsampling.
   `BLFontLoader.loadSystemFonts` from `package:dgfx/dgfx_io.dart`; web clients
   can attach a `BLCallbackFontProvider` backed by URLs, Google Fonts or
   `FontFace`. CSS `@font-face` URLs and data URIs can be loaded through
-  `HtmlConverterProperties.fontResourceLoader` and `baseUri`; `local()` and
-  WOFF/WOFF2 decoding remain delegated to the application/provider.
+  `HtmlConverterProperties.fontResourceLoader` and `baseUri`; `local()` resolves
+  installed/catalogued faces without downloading a fallback. WOFF/WOFF2
+  decoding remains delegated to the application/provider.
 - JBIG2 automatically chooses between generic regions and deduplicated symbol
   dictionaries with text regions; refinement and multi-page dictionaries remain
   partial.

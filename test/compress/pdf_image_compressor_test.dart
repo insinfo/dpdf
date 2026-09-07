@@ -102,17 +102,17 @@ void main() {
           reason: result.report.toString());
     });
 
-    test('picks deflate when the page is periodic enough for it to win',
+    test('symbol dictionaries beat deflate on the periodic text page',
         () async {
-      // A noise-free synthetic page repeats whole rows, which deflate encodes
-      // far more cheaply than JBIG2 can. Choosing per image is the point.
+      // Com regiões genéricas, o Flate vencia esta página. A deduplicação de
+      // símbolos repetidos torna JBIG2 menor e a seleção automática muda.
       final source = await _scan(noisy: false);
 
       final result = await PdfCompressor.compress(source);
 
       expect(result.report.images.imagesRecompressed, equals(1));
       expect(latin1.decode(result.bytes, allowInvalid: true),
-          contains('/FlateDecode'));
+          contains('/JBIG2Decode'));
     });
 
     test('the re-encoded image decodes back to the same pixels', () async {

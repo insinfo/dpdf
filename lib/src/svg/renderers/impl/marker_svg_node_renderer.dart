@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
+import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 import 'package:dpdf/src/svg/marker_vertex_type.dart';
 import 'package:dpdf/src/svg/renderers/marker_capable.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
@@ -65,16 +66,33 @@ class MarkerSvgNodeRenderer extends AbstractContainerSvgNodeRenderer {
         var scaleY = height / viewBox[3];
         final aspect = getAttribute(SvgAttributes.PRESERVE_ASPECT_RATIO) ??
             SvgValues.DEFAULT_ASPECT_RATIO;
-        if (!aspect.toLowerCase().startsWith('none')) {
-          final uniform = aspect.toLowerCase().contains(SvgValues.SLICE)
+        final parts = SvgCssUtils.splitValueList(aspect)
+            .where((part) => part.toLowerCase() != SvgValues.DEFER)
+            .toList();
+        final align = parts.isEmpty
+            ? SvgValues.DEFAULT_ASPECT_RATIO.toLowerCase()
+            : parts.first.toLowerCase();
+        final meetOrSlice = parts.length > 1 ? parts[1].toLowerCase() : '';
+        if (align != SvgValues.NONE.toLowerCase()) {
+          final uniform = meetOrSlice == SvgValues.SLICE
               ? math.max(scaleX, scaleY)
               : math.min(scaleX, scaleY);
           scaleX = scaleY = uniform;
         }
+        final spareX = width - viewBox[2] * scaleX;
+        final spareY = height - viewBox[3] * scaleY;
+        final offsetX = _alignmentOffset(align, spareX, horizontal: true);
+        final offsetY = _alignmentOffset(align, spareY, horizontal: false);
+        final mappedRefX = offsetX + (refX - viewBox[0]) * scaleX;
+        final mappedRefY = offsetY + (refY - viewBox[1]) * scaleY;
+        canvas.concatMatrix(1, 0, 0, 1, -mappedRefX, -mappedRefY);
+        _clipViewport(canvas, width, height);
+        canvas.concatMatrix(1, 0, 0, 1, offsetX, offsetY);
         canvas.concatMatrix(scaleX, 0, 0, scaleY, 0, 0);
-        canvas.concatMatrix(1, 0, 0, 1, -refX, -refY);
+        canvas.concatMatrix(1, 0, 0, 1, -viewBox[0], -viewBox[1]);
       } else {
         canvas.concatMatrix(1, 0, 0, 1, -refX, -refY);
+        _clipViewport(canvas, width, height);
       }
       for (final child in getChildren()) {
         canvas.saveState();
@@ -84,6 +102,25 @@ class MarkerSvgNodeRenderer extends AbstractContainerSvgNodeRenderer {
     } finally {
       canvas.restoreState();
     }
+  }
+
+  double _alignmentOffset(String align, double spare,
+      {required bool horizontal}) {
+    if (align == SvgValues.NONE.toLowerCase()) return 0;
+    if (horizontal) {
+      if (align.startsWith('xmax')) return spare;
+      if (align.startsWith('xmid')) return spare / 2;
+    } else {
+      if (align.endsWith('ymax')) return spare;
+      if (align.endsWith('ymid')) return spare / 2;
+    }
+    return 0;
+  }
+
+  void _clipViewport(PdfCanvas canvas, double width, double height) {
+    final overflow = (getAttribute('overflow') ?? 'hidden').toLowerCase();
+    if (overflow == 'visible') return;
+    canvas.rectangle(0.0, 0.0, width, height).clip();
   }
 
   @override

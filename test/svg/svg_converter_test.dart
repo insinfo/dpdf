@@ -314,6 +314,29 @@ void main() {
           reason: 'uma linha e o path da seta devem ser emitidos');
     });
 
+    test('marker alinha viewBox no viewport e recorta overflow por padrão',
+        () async {
+      Future<String> marker(String overflow) => _render('''
+        <svg width="50" height="30">
+          <defs>
+            <marker id="m" markerUnits="userSpaceOnUse"
+                    markerWidth="8" markerHeight="4" refX="5" refY="5"
+                    viewBox="0 0 10 10" preserveAspectRatio="xMidYMid meet"
+                    overflow="$overflow">
+              <rect width="10" height="10"/>
+            </marker>
+          </defs>
+          <line x1="2" y1="2" x2="20" y2="2" marker-end="url(#m)"/>
+        </svg>
+      ''');
+
+      final hidden = await marker('hidden');
+      final visible = await marker('visible');
+      expect(hidden, contains('1 0 0 1 -3 -1.5 cm\n'));
+      expect(hidden, contains('1 0 0 1 1.5 0 cm\n'));
+      expect(_count(hidden, 'W\n'), equals(_count(visible, 'W\n') + 1));
+    });
+
     test('marker shorthand desenha início, meios e fim da polyline', () async {
       final content = await _render('''
         <svg width="50" height="30">

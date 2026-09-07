@@ -27,8 +27,9 @@ import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 /// `style` inline e interno, herança de atributos, `transform`, `viewBox`,
 /// `preserveAspectRatio`, referências `use` e recortes por `clip-path`.
 ///
-/// Ainda fora do alcance, com os elementos correspondentes simplesmente
-/// ignorados: texto, imagens, gradientes, padrões, máscaras e marcadores.
+/// Também renderiza texto e `tspan`, imagens embutidas ou resolvidas por um
+/// carregador, gradientes, padrões, máscaras e marcadores. Casos avançados de
+/// servidores de pintura ainda podem exigir simplificação pelo chamador.
 ///
 /// `stroke-dasharray` não é emitido por causa de um defeito no canvas do
 /// kernel, e as opacidades parciais exigem um ExtGState — logo, só saem

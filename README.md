@@ -132,8 +132,8 @@ subsampling.
 
 - SVG colored tiling patterns and luminance/alpha masks are emitted as native
   PDF pattern and soft-mask resources. Gradient stop opacity uses an aligned
-  shading soft mask; some marker viewport and advanced paint-server cases
-  remain partial.
+  shading soft mask. Marker viewports support alignment, meet/slice and
+  overflow clipping; some advanced paint-server cases remain partial.
 - PDF rendering may require a supplied fallback for fonts that are not embedded.
   CID-keyed CFF supports FDArray/FDSelect and charset CID-to-GID mapping. CFF2
   outlines and the default instance of variable `blend` charstrings render;

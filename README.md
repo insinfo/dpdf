@@ -135,8 +135,9 @@ subsampling.
   PDF pattern and soft-mask resources. Gradient stop opacity uses an aligned
   shading soft mask; some marker viewport and advanced paint-server cases
   remain partial.
-- PDF rendering may require a supplied fallback for fonts that are not embedded;
-  some advanced CFF/CID and PatternType 2 shading-pattern cases remain partial.
+- PDF rendering may require a supplied fallback for fonts that are not embedded.
+  CID-keyed CFF supports FDArray/FDSelect and charset CID-to-GID mapping; CFF2
+  and PatternType 2 shading-pattern cases remain partial.
   Colored/uncolored tiling patterns and patterned strokes render. Alpha and
   luminosity soft masks render; transfer functions and some advanced
   transparency-group replacement cases remain partial.

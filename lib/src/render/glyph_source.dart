@@ -207,7 +207,15 @@ class PdfGlyphSource {
       // `/CIDToGIDMap` então diz qual glifo do programa é aquele CID.
       final cid = _cidFor(code);
       final map = _cidToGid;
-      if (map == null) return cid;
+      if (map == null) {
+        // CIDFontType0/CFF não usa o `/CIDToGIDMap` de CIDFontType2. Nesse
+        // caso o charset interno do CFF é que relaciona cada CID ao GID da
+        // CharStrings INDEX; assumir identidade funciona apenas por acaso em
+        // fontes não subsetadas.
+        final cff = font.cffInfo;
+        if (cff != null && cff.isCID) return cff.cidToGlyphId[cid] ?? 0;
+        return cid;
+      }
       return cid < map.length ? map[cid] : 0;
     }
 

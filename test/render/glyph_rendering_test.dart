@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -7,6 +8,8 @@ import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
 import 'package:test/test.dart';
 
 const _fontPath = 'test/assets/ABeeZee-Regular.ttf';
+const _cidCffBase64 =
+    'AQAEAgABAgABAAhUZXN0Q0lEAAECAAEALB0AAAAAHQAAAAAdAAAAAAweHQAAAEgPHQAAAFgRHQAAAGoMJB0AAABNDCUAAAAAAAAqASwDAAIAAAAAAgEAAwADAgABAAIABQAIDiAKDiAKDgACAgABAAwAFx0AAAAGHQAAAIkSHQAAAAYdAAAApBIdAAAABhMAAQIAAQAPlZ8V74sFi/dcBSeLBQsdAAAABhMAAQIAAQAS98CzFffAiwWL+CQF+8CLBQs=';
 
 /// Builds a one-page PDF whose text is drawn with an embedded TrueType font.
 Future<Uint8List> _pageWithText(
@@ -107,6 +110,60 @@ Future<Uint8List> _pageWithStandardFont(String text) async {
   return output.takeBytes();
 }
 
+Future<Uint8List> _pageWithCidCff() async {
+  final output = BytesBuilder(copy: false);
+  final pdf = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
+  final page = await pdf.appendBlankPage();
+  page
+      .pdfRepresentation()
+      .put(PdfName.mediaBox, PdfArray.fromDoubles([0, 0, 120, 100]));
+
+  final program = PdfStream.withBytes(base64Decode(_cidCffBase64), 0)
+    ..put(PdfName.subtype, PdfName('CIDFontType0C'));
+  final descriptor = PdfDictionary()
+    ..put(PdfName.type, PdfName('FontDescriptor'))
+    ..put(PdfName.fontName, PdfName('TestCID'))
+    ..put(PdfName.flags, PdfNumber.fromInt(4))
+    ..put(PdfName('FontBBox'), PdfArray.fromDoubles([0, 0, 600, 440]))
+    ..put(PdfName('ItalicAngle'), PdfNumber(0))
+    ..put(PdfName('Ascent'), PdfNumber(440))
+    ..put(PdfName('Descent'), PdfNumber(0))
+    ..put(PdfName('CapHeight'), PdfNumber(440))
+    ..put(PdfName('StemV'), PdfNumber(80))
+    ..put(PdfName('FontFile3'), program);
+  final descendant = PdfDictionary()
+    ..put(PdfName.type, PdfName.font)
+    ..put(PdfName.subtype, PdfName('CIDFontType0'))
+    ..put(PdfName.baseFont, PdfName('TestCID'))
+    ..put(
+        PdfName('CIDSystemInfo'),
+        PdfDictionary()
+          ..put(PdfName('Registry'), PdfString('Adobe'))
+          ..put(PdfName('Ordering'), PdfString('Identity'))
+          ..put(PdfName('Supplement'), PdfNumber(0)))
+    ..put(PdfName.fontDescriptor, descriptor)
+    ..put(PdfName('DW'), PdfNumber(1000));
+  final type0 = PdfDictionary()
+    ..put(PdfName.type, PdfName.font)
+    ..put(PdfName.subtype, PdfName('Type0'))
+    ..put(PdfName.baseFont, PdfName('TestCID'))
+    ..put(PdfName('Encoding'), PdfName('Identity-H'))
+    ..put(PdfName('DescendantFonts'), PdfArray.fromList([descendant]));
+  page.pdfRepresentation()
+    ..put(
+        PdfName.resources,
+        PdfDictionary()
+          ..put(PdfName.font, PdfDictionary()..put(PdfName('F0'), type0)))
+    ..put(
+        PdfName.contents,
+        PdfStream.withBytes(
+            Uint8List.fromList(latin1
+                .encode('BT /F0 30 Tf 1 0 0 1 20 50 Tm <002A012C> Tj ET')),
+            0));
+  await pdf.close();
+  return output.takeBytes();
+}
+
 void main() {
   // Without the font there is nothing to embed, and a test that silently
   // passes on a missing asset is worse than one that is absent.
@@ -126,6 +183,20 @@ void main() {
       expect(page.report.isComplete, isTrue);
       expect(_inked(page), greaterThan(200),
           reason: 'seven glyphs at 36pt have to put down real ink');
+    });
+
+    test('CIDFontType0 usa o charset CFF para mapear CID a GID', () async {
+      final page = await _render(await _pageWithCidCff());
+      final extent = _inkExtent(page);
+
+      expect(page.report.glyphsSkipped, isZero);
+      expect(page.report.isComplete, isTrue);
+      expect(extent, isNotNull);
+      expect(extent!.$1, lessThan(25),
+          reason: 'CID 42 deve selecionar o GID 1, cuja caixa começa em 10');
+      expect(extent.$2, greaterThan(58),
+          reason:
+              'CID 300 deve selecionar o GID 2 pelo charset não identidade');
     });
 
     test('puts the ink where the text was positioned', () async {

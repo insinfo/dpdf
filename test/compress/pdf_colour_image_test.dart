@@ -26,6 +26,10 @@ Future<Uint8List> _document({
   int height = 180,
   Uint8List? pixels,
   int channels = 3,
+  double displayWidth = 595,
+  double displayHeight = 842,
+  bool paintTwiceLarger = false,
+  bool insideScaledForm = false,
 }) async {
   final samples = pixels ?? _photo(width, height);
   final output = BytesBuilder(copy: false);
@@ -42,16 +46,43 @@ Future<Uint8List> _document({
         PdfName(channels == 1 ? 'DeviceGray' : 'DeviceRGB'));
   image.attachToDocument(document);
 
-  page.pdfRepresentation().put(
-      PdfName.resources,
-      PdfDictionary()
-        ..put(PdfName('XObject'),
-            PdfDictionary()..put(PdfName('Im0'), image.indirectHandle()!)));
-  page.pdfRepresentation().put(
-      PdfName.contents,
-      PdfStream.withBytes(
-          Uint8List.fromList(ascii.encode('q 595 0 0 842 0 0 cm /Im0 Do Q')),
-          0));
+  if (insideScaledForm) {
+    final form = PdfStream.withBytes(
+        Uint8List.fromList(ascii
+            .encode('q $displayWidth 0 0 $displayHeight 0 0 cm /Im0 Do Q')),
+        0)
+      ..put(PdfName.type, PdfName('XObject'))
+      ..put(PdfName.subtype, PdfName('Form'))
+      ..put(PdfName('BBox'), PdfArray.fromDoubles([0, 0, 100, 100]))
+      ..put(PdfName('Matrix'), PdfArray.fromDoubles([2, 0, 0, 2, 0, 0]))
+      ..put(
+          PdfName.resources,
+          PdfDictionary()
+            ..put(PdfName.xObject,
+                PdfDictionary()..put(PdfName('Im0'), image.indirectHandle()!)));
+    form.attachToDocument(document);
+    page.pdfRepresentation()
+      ..put(
+          PdfName.resources,
+          PdfDictionary()
+            ..put(PdfName.xObject,
+                PdfDictionary()..put(PdfName('Fm0'), form.indirectHandle()!)))
+      ..put(PdfName.contents,
+          PdfStream.withBytes(Uint8List.fromList(ascii.encode('/Fm0 Do')), 0));
+  } else {
+    page.pdfRepresentation().put(
+        PdfName.resources,
+        PdfDictionary()
+          ..put(PdfName.xObject,
+              PdfDictionary()..put(PdfName('Im0'), image.indirectHandle()!)));
+    page.pdfRepresentation().put(
+        PdfName.contents,
+        PdfStream.withBytes(
+            Uint8List.fromList(ascii.encode(
+                'q $displayWidth 0 0 $displayHeight 0 0 cm /Im0 Do Q '
+                '${paintTwiceLarger ? 'q ${displayWidth * 2} 0 0 ${displayHeight * 2} 0 0 cm /Im0 Do Q' : ''}')),
+            0));
+  }
   await document.close();
   return output.takeBytes();
 }
@@ -133,6 +164,88 @@ void main() {
       final decoded = JpegDecoder.decode((await image.getRawBytes())!);
       expect(decoded.width, equals(100));
       expect(decoded.height, equals(75));
+    });
+
+    test('are downsampled from their effective page DPI', () async {
+      final source = await _document(
+          width: 400, height: 300, displayWidth: 72, displayHeight: 54);
+
+      final result = await PdfCompressor.compress(
+        source,
+        options: const PdfCompressionOptions(
+          images: PdfImageCompressionOptions.lossy(targetDpi: 100),
+        ),
+      );
+
+      final image = await _imageOf(result.bytes);
+      expect(await image.integerEntry(PdfName.width), equals(100));
+      expect(await image.integerEntry(PdfName.height), equals(75));
+    });
+
+    test('a reused image keeps the pixels needed by its largest use', () async {
+      final source = await _document(
+          width: 400,
+          height: 300,
+          displayWidth: 72,
+          displayHeight: 54,
+          paintTwiceLarger: true);
+
+      final result = await PdfCompressor.compress(
+        source,
+        options: const PdfCompressionOptions(
+          images: PdfImageCompressionOptions.lossy(targetDpi: 100),
+        ),
+      );
+
+      final image = await _imageOf(result.bytes);
+      expect(await image.integerEntry(PdfName.width), equals(200));
+      expect(await image.integerEntry(PdfName.height), equals(150));
+    });
+
+    test('effective DPI follows image placement inside a transformed form',
+        () async {
+      final source = await _document(
+          width: 400,
+          height: 300,
+          displayWidth: 36,
+          displayHeight: 27,
+          insideScaledForm: true);
+
+      final result = await PdfCompressor.compress(
+        source,
+        options: const PdfCompressionOptions(
+          images: PdfImageCompressionOptions.lossy(targetDpi: 100),
+        ),
+      );
+
+      final document =
+          await PdfDocument.open(PdfReader.fromBytes(result.bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final forms = await resources!.dictionaryEntry(PdfName.xObject);
+        final form = await forms!.streamEntry(PdfName('Fm0'));
+        final formResources = await form!.dictionaryEntry(PdfName.resources);
+        final images = await formResources!.dictionaryEntry(PdfName.xObject);
+        final image = await images!.streamEntry(PdfName('Im0'));
+        expect(await image!.integerEntry(PdfName.width), equals(100));
+        expect(await image.integerEntry(PdfName.height), equals(75));
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('rejects a non-positive target DPI', () async {
+      final source = await _document();
+      expect(
+          () => PdfCompressor.compress(
+                source,
+                options: const PdfCompressionOptions(
+                  images: PdfImageCompressionOptions.lossy(targetDpi: 0),
+                ),
+              ),
+          throwsArgumentError);
     });
 
     test('a lower quality yields a smaller document', () async {

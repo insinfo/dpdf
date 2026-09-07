@@ -13,6 +13,7 @@ import '../kernel/pdf/writer_properties.dart';
 import '../platform/compression.dart';
 import 'pdf_compression_options.dart';
 import 'pdf_image_compressor.dart';
+import 'pdf_image_usage_analyzer.dart';
 
 /// The result of compressing one document.
 class PdfCompressionResult {
@@ -47,6 +48,10 @@ class PdfCompressor {
     if (options.compressionLevel < -1 || options.compressionLevel > 9) {
       throw ArgumentError.value(options.compressionLevel, 'compressionLevel',
           'must be between 0 and 9, or -1 for the deflate default');
+    }
+    if (options.images.targetDpi != null && options.images.targetDpi! <= 0) {
+      throw ArgumentError.value(
+          options.images.targetDpi, 'targetDpi', 'must be greater than zero');
     }
 
     final readerProperties = ReaderProperties();
@@ -83,7 +88,17 @@ class PdfCompressor {
       }
       await _pruneDictionaries(live, options, removed);
 
-      images = await PdfImageCompressor.run(live, options.images);
+      Map<PdfStream, PdfImageUsage> usages = const {};
+      if (options.images.targetDpi != null) {
+        try {
+          usages = await PdfImageUsageAnalyzer.analyze(document);
+        } on Object {
+          // DPI é uma otimização opcional. Se um conteúdo ou recurso danificado
+          // impedir uma medição completa, preserve as dimensões armazenadas.
+        }
+      }
+      images =
+          await PdfImageCompressor.run(live, options.images, usages: usages);
 
       if (options.recompressStreams) {
         final saved = await _recompressStreams(live, options.compressionLevel);

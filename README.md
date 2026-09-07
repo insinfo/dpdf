@@ -73,14 +73,18 @@ final result = await PdfCompressor.compress(
   options: const PdfCompressionOptions(
     images: PdfImageCompressionOptions.lossy(
       quality: 75,
-      maxDimension: 1600,
+      targetDpi: 150,
+      maxDimension: 2400,
     ),
   ),
 );
 ```
 
-`maxDimension` is a pixel limit, not a target DPI. Bi-level images are
-re-encoded losslessly and the smaller JBIG2 or Flate representation is kept.
+`targetDpi` follows each image's effective placement through page and Form
+XObject transformations; a reused image keeps the resolution needed by its
+largest occurrence. `maxDimension` can additionally impose an absolute pixel
+cap. Bi-level images are re-encoded losslessly and the smaller JBIG2 or Flate
+representation is kept.
 
 ## Inspect and validate
 
@@ -126,13 +130,12 @@ subsampling.
 
 ## Known limitations
 
-- SVG text, images, `use`, gradients, patterns, masks, `clip-path`, markers,
-  and CSS rules inside `<style>` are not rendered yet.
+- SVG patterns, masks and markers are not rendered yet. Gradient opacity and
+  some advanced paint-server inheritance cases remain partial.
 - PDF rendering may require a supplied fallback for fonts that are not embedded;
   some advanced CFF/CID and pattern cases remain partial.
 - Area redaction covers images but does not remove their source pixels.
 - HTML uses the 14 standard PDF fonts and does not discover system fonts.
-- Image downsampling is controlled by pixel dimensions, not effective page DPI.
 - JBIG2 encoding uses generic regions rather than symbol dictionaries.
 
 Optional reading, recovery, merge, and signing modes are documented in

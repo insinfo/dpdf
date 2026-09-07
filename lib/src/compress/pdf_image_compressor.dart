@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:j2k/j2k.dart' as j2k;
@@ -13,6 +14,7 @@ import '../io/image/image_resampler.dart';
 import '../io/image/jpeg_decoder.dart';
 import '../io/image/jpeg_encoder.dart';
 import '../platform/compression.dart';
+import 'pdf_image_usage_analyzer.dart';
 
 /// Which codec bi-level images are re-encoded with.
 ///
@@ -73,11 +75,14 @@ class PdfImageCompressionOptions {
 
   /// Downsample an image whose larger side exceeds this, keeping its aspect
   /// ratio. Null leaves every image at its stored resolution.
-  ///
-  /// This is a cap in **pixels**, not a target DPI: deciding a DPI needs the
-  /// transformation the page's content stream applies to the image, which
-  /// this pass does not read.
   final int? maxDimension;
+
+  /// Resolução máxima efetiva das imagens no tamanho em que são pintadas.
+  ///
+  /// Diferentemente de [maxDimension], considera a matriz de transformação de
+  /// cada `Do` na página e em Form XObjects. Uma imagem reutilizada conserva a
+  /// resolução exigida por sua maior ocorrência. Null desativa este limite.
+  final double? targetDpi;
 
   /// Skip images with fewer pixels than this. Re-encoding a small image rarely
   /// pays for the segment headers a codec adds.
@@ -88,6 +93,7 @@ class PdfImageCompressionOptions {
     this.colour = PdfColourCodec.keep,
     this.jpegQuality = 75,
     this.maxDimension,
+    this.targetDpi,
     this.minimumPixels = 4096,
   });
 
@@ -99,6 +105,7 @@ class PdfImageCompressionOptions {
     this.bilevel = PdfBilevelCodec.auto,
     int quality = 75,
     this.maxDimension,
+    this.targetDpi,
     this.minimumPixels = 4096,
   })  : colour = PdfColourCodec.jpeg,
         jpegQuality = quality;
@@ -159,8 +166,9 @@ abstract final class PdfImageCompressor {
   /// Re-encodes every image among [objects] that the options cover.
   static Future<PdfImageCompressionReport> run(
     List<PdfObject> objects,
-    PdfImageCompressionOptions options,
-  ) async {
+    PdfImageCompressionOptions options, {
+    Map<PdfStream, PdfImageUsage> usages = const {},
+  }) async {
     if (options.bilevel == PdfBilevelCodec.keep &&
         options.colour == PdfColourCodec.keep) {
       return PdfImageCompressionReport.empty;
@@ -176,7 +184,7 @@ abstract final class PdfImageCompressor {
         continue;
       }
 
-      final outcome = await _recompress(object, options);
+      final outcome = await _recompress(object, options, usages[object]);
       switch (outcome) {
         case null:
           break;
@@ -200,6 +208,7 @@ abstract final class PdfImageCompressor {
   static Future<int?> _recompress(
     PdfStream image,
     PdfImageCompressionOptions options,
+    PdfImageUsage? usage,
   ) async {
     final width = await image.integerEntry(PdfName.width);
     final height = await image.integerEntry(PdfName.height);
@@ -211,7 +220,7 @@ abstract final class PdfImageCompressor {
     final bits = await image.integerEntry(PdfName('BitsPerComponent'));
     if (!isMask && bits != 1) {
       if (bits == 8 && options.colour != PdfColourCodec.keep) {
-        return _recompressContinuousTone(image, options, width, height);
+        return _recompressContinuousTone(image, options, width, height, usage);
       }
       return null;
     }
@@ -289,6 +298,7 @@ abstract final class PdfImageCompressor {
     PdfImageCompressionOptions options,
     int width,
     int height,
+    PdfImageUsage? usage,
   ) async {
     // An explicit /Decode array, a palette or a separation space all give the
     // samples a meaning JPEG cannot carry across.
@@ -312,11 +322,24 @@ abstract final class PdfImageCompressor {
     var targetWidth = samples.width;
     var targetHeight = samples.height;
 
+    var scale = 1.0;
+    final dpi = options.targetDpi;
+    if (dpi != null && usage != null) {
+      final neededWidth = usage.widthPoints * dpi / 72;
+      final neededHeight = usage.heightPoints * dpi / 72;
+      scale = math.min(scale,
+          math.max(neededWidth / targetWidth, neededHeight / targetHeight));
+    }
     final cap = options.maxDimension;
     if (cap != null) {
-      final fitted = ImageResampler.fit(
-          width: targetWidth, height: targetHeight, maxDimension: cap);
-      if (fitted != null) {
+      scale = math.min(scale, cap / math.max(targetWidth, targetHeight));
+    }
+    if (scale < 1) {
+      final fitted = (
+        width: (targetWidth * scale).ceil().clamp(1, targetWidth),
+        height: (targetHeight * scale).ceil().clamp(1, targetHeight),
+      );
+      if (fitted.width != targetWidth || fitted.height != targetHeight) {
         pixels = ImageResampler.resize(
           pixels,
           width: targetWidth,

@@ -136,14 +136,15 @@ subsampling.
   shading soft mask; some marker viewport and advanced paint-server cases
   remain partial.
 - PDF rendering may require a supplied fallback for fonts that are not embedded.
-  CID-keyed CFF supports FDArray/FDSelect and charset CID-to-GID mapping; CFF2
-  remains partial. Axial/radial PatternType 2 shadings, colored/uncolored
+  CID-keyed CFF supports FDArray/FDSelect and charset CID-to-GID mapping. CFF2
+  outlines and the default instance of variable `blend` charstrings render;
+  selecting non-default variation coordinates remains partial. Axial/radial PatternType 2 shadings, colored/uncolored
   tiling patterns and patterned strokes render, including asymmetric shading
   extension. Mesh shadings remain partial. Alpha and
   luminosity soft masks render; transfer functions and some advanced
   transparency-group replacement cases remain partial.
-- Area redaction of shared, transparent or Form-nested images still covers
-  rather than rewriting their source pixels.
+- Area redaction rewrites direct opaque, transparent and shared image uses;
+  images nested in Form XObjects still require overlay coverage.
 - HTML accepts a `BLFontCollection` and embeds matching TrueType/OpenType CSS
   faces. Native applications can populate it with
   `BLFontLoader.loadSystemFonts` from `package:dgfx/dgfx_io.dart`; web clients

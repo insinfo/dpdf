@@ -40,7 +40,7 @@ Future<String> _textOf(Uint8List bytes, [int page = 1]) async {
   }
 }
 
-Future<Uint8List> _imagePage() async {
+Future<Uint8List> _imagePage({bool transparent = false, int pages = 1}) async {
   const width = 10, height = 10;
   final pixels = Uint8List(width * height * 3);
   for (var i = 0; i < width * height; i++) {
@@ -50,7 +50,6 @@ Future<Uint8List> _imagePage() async {
   }
   final output = BytesBuilder(copy: false);
   final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
-  final page = await document.appendBlankPage();
   final image = PdfStream.withBytes(pixels, 0)
     ..put(PdfName.type, PdfName('XObject'))
     ..put(PdfName.subtype, PdfName('Image'))
@@ -58,19 +57,34 @@ Future<Uint8List> _imagePage() async {
     ..put(PdfName.height, PdfNumber.fromInt(height))
     ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
     ..put(PdfName('ColorSpace'), PdfName('DeviceRGB'));
+  if (transparent) {
+    final mask = PdfStream.withBytes(
+        Uint8List(width * height)..fillRange(0, width * height, 64), 0)
+      ..put(PdfName.type, PdfName('XObject'))
+      ..put(PdfName.subtype, PdfName('Image'))
+      ..put(PdfName.width, PdfNumber.fromInt(width))
+      ..put(PdfName.height, PdfNumber.fromInt(height))
+      ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+      ..put(PdfName('ColorSpace'), PdfName('DeviceGray'));
+    mask.attachToDocument(document);
+    image.put(PdfName('SMask'), mask.indirectHandle()!);
+  }
   image.attachToDocument(document);
-  page.pdfRepresentation()
-    ..put(
-        PdfName.resources,
-        PdfDictionary()
-          ..put(PdfName.xObject,
-              PdfDictionary()..put(PdfName('Scan'), image.indirectHandle()!)))
-    ..put(
-        PdfName.contents,
-        PdfStream.withBytes(
-            Uint8List.fromList(
-                ascii.encode('q 100 0 0 100 50 50 cm /Scan Do Q')),
-            0));
+  for (var index = 0; index < pages; index++) {
+    final page = await document.appendBlankPage();
+    page.pdfRepresentation()
+      ..put(
+          PdfName.resources,
+          PdfDictionary()
+            ..put(PdfName.xObject,
+                PdfDictionary()..put(PdfName('Scan'), image.indirectHandle()!)))
+      ..put(
+          PdfName.contents,
+          PdfStream.withBytes(
+              Uint8List.fromList(
+                  ascii.encode('q 100 0 0 100 50 50 cm /Scan Do Q')),
+              0));
+  }
   await document.close();
   return output.takeBytes();
 }
@@ -164,6 +178,70 @@ void main() {
             }
           }
         }
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('rewrites transparent image pixels and preserves alpha outside',
+        () async {
+      final source = await _imagePage(transparent: true);
+      final redacted = await PdfAreaRedaction.apply(
+        source,
+        const [PdfRedactionArea(1, left: 50, bottom: 50, right: 100, top: 150)],
+        options: const PdfAreaRedactionOptions(paintOverlay: false),
+      );
+
+      final document = await PdfDocument.open(PdfReader.fromBytes(redacted));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final xobjects = await resources!.dictionaryEntry(PdfName.xObject);
+        final image = await xobjects!.streamEntry(PdfName('Scan'));
+        final decoded = await PdfImageDecoder.decode(image!);
+        expect(decoded, isNotNull);
+        for (var y = 0; y < 10; y++) {
+          for (var x = 0; x < 10; x++) {
+            final at = (y * 10 + x) * 4;
+            if (x < 5) {
+              expect(
+                  decoded!.rgba!.sublist(at, at + 4), equals([0, 0, 0, 255]));
+            } else {
+              expect(decoded!.rgba!.sublist(at, at + 4),
+                  equals([240, 30, 180, 64]));
+            }
+          }
+        }
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('clones a shared image instead of changing an unredacted page',
+        () async {
+      final source = await _imagePage(pages: 2);
+      final redacted = await PdfAreaRedaction.apply(
+        source,
+        const [PdfRedactionArea(1, left: 50, bottom: 50, right: 100, top: 150)],
+        options: const PdfAreaRedactionOptions(paintOverlay: false),
+      );
+
+      final document = await PdfDocument.open(PdfReader.fromBytes(redacted));
+      try {
+        Future<PdfDecodedImage> imageOn(int number) async {
+          final page = (await document.pageAt(number))!;
+          final resources =
+              await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+          final xobjects = await resources!.dictionaryEntry(PdfName.xObject);
+          return (await PdfImageDecoder.decode(
+              (await xobjects!.streamEntry(PdfName('Scan')))!))!;
+        }
+
+        final first = await imageOn(1);
+        final second = await imageOn(2);
+        expect(first.rgba!.sublist(0, 3), [0, 0, 0]);
+        expect(second.rgba!.sublist(0, 3), [240, 30, 180]);
       } finally {
         await document.close();
       }

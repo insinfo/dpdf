@@ -70,7 +70,7 @@ class PdfAreaRedactionOptions {
   /// a rectangle drawn around visible glyphs catches them.
   final double glyphPadding;
 
-  /// Substitui os pixels de imagens opacas atingidos pela área de redação.
+  /// Substitui os pixels de imagens atingidos pela área de redação.
   ///
   /// A imagem é clonada no recurso da página antes da alteração, impedindo
   /// que uma reutilização em outra página seja modificada acidentalmente.
@@ -97,9 +97,9 @@ class PdfAreaRedactionOptions {
 ///
 /// What it does not do, and what a caller must not assume:
 ///
-/// * Pixels de imagens opacas diretamente usadas pela página são removidos.
-///   Imagens com transparência e imagens dentro de Form XObjects ainda são
-///   apenas cobertas pelo overlay.
+/// * Pixels de imagens diretamente usadas pela página são removidos,
+///   preservando transparência fora da área. Imagens dentro de Form XObjects
+///   ainda são apenas cobertas pelo overlay.
 /// * Vector art inside the area is likewise covered, not removed.
 /// * Composite (Type0/CID) fonts are rejected, because a single-byte text
 ///   machine cannot locate their glyphs.
@@ -272,31 +272,21 @@ class PdfAreaRedaction {
     var changed = false;
     for (final entry in regions.entries) {
       final original = await sourceXObjects.streamEntry(PdfName(entry.key));
-      if (original == null || original.containsKey(PdfName('SMask'))) continue;
+      if (original == null) continue;
       final originalReference = original.indirectHandle();
-      if (originalReference == null ||
-          await _referenceCount(document, originalReference) != 1) {
-        // Não deixe os pixels originais órfãos no arquivo e não altere uma
-        // imagem compartilhada por páginas que não foram redigidas.
-        continue;
-      }
       final decoded = await PdfImageDecoder.decode(original);
       final rgba = decoded?.rgba;
       if (decoded == null || rgba == null) continue;
-      var opaque = true;
-      for (var i = 3; i < rgba.length; i += 4) {
-        if (rgba[i] != 255) {
-          opaque = false;
-          break;
-        }
-      }
-      if (!opaque) continue;
 
       final rgb = Uint8List(decoded.width * decoded.height * 3);
+      final alpha = Uint8List(decoded.width * decoded.height);
+      var hasTransparency = false;
       for (var pixel = 0; pixel < decoded.width * decoded.height; pixel++) {
         rgb[pixel * 3] = rgba[pixel * 4];
         rgb[pixel * 3 + 1] = rgba[pixel * 4 + 1];
         rgb[pixel * 3 + 2] = rgba[pixel * 4 + 2];
+        alpha[pixel] = rgba[pixel * 4 + 3];
+        if (alpha[pixel] != 255) hasTransparency = true;
       }
       final replacement = colour.map((c) => (c * 255).round()).toList();
       for (final region in entry.value) {
@@ -316,6 +306,7 @@ class PdfAreaRedaction {
             rgb[at] = replacement[0];
             rgb[at + 1] = replacement[1];
             rgb[at + 2] = replacement[2];
+            alpha[y * decoded.width + x] = 255;
           }
         }
       }
@@ -328,9 +319,26 @@ class PdfAreaRedaction {
         ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
         ..put(PdfName('ColorSpace'), PdfName('DeviceRGB'))
         ..put(PdfName.filter, PdfName('FlateDecode'));
+      if (hasTransparency) {
+        final maskBytes =
+            Uint8List.fromList(ZLibEncoder(level: 9).convert(alpha));
+        final mask = PdfStream.withBytes(maskBytes, 0)
+          ..put(PdfName.type, PdfName('XObject'))
+          ..put(PdfName.subtype, PdfName('Image'))
+          ..put(PdfName.width, PdfNumber.fromInt(decoded.width))
+          ..put(PdfName.height, PdfNumber.fromInt(decoded.height))
+          ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+          ..put(PdfName('ColorSpace'), PdfName('DeviceGray'))
+          ..put(PdfName.filter, PdfName('FlateDecode'));
+        mask.attachToDocument(document);
+        rewritten.put(PdfName('SMask'), mask.indirectHandle()!);
+      }
       rewritten.attachToDocument(document);
       pageXObjects.put(PdfName(entry.key), rewritten.indirectHandle()!);
-      document.referenceIndex()?.freeReference(originalReference);
+      if (originalReference != null &&
+          await _referenceCount(document, originalReference) == 1) {
+        document.referenceIndex()?.freeReference(originalReference);
+      }
       changed = true;
     }
     if (changed) {

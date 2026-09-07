@@ -399,6 +399,30 @@ void main() {
       }
     });
 
+    test('tspan preserva ordem, posição própria e deslocamento relativo',
+        () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="120" height="30">
+          <text x="2" y="20">A<tspan x="20" dy="2">B</tspan>C</text>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final content = String.fromCharCodes(
+            await (await document.pageAt(1))!.contentPayload());
+        final a = content.indexOf('(A) Tj');
+        final b = content.indexOf('(B) Tj');
+        final c = content.indexOf('(C) Tj');
+        expect(a, greaterThanOrEqualTo(0));
+        expect(b, greaterThan(a));
+        expect(c, greaterThan(b));
+        expect(content, contains('15 16.5 Td\n'),
+            reason: 'x=20 e y=20+dy=2 são convertidos de px para pt');
+      } finally {
+        await document.close();
+      }
+    });
+
     test('image incorpora data URI com a geometria declarada', () async {
       final bytes = await SvgConverter.convertToBytes('''
         <svg width="30" height="20">

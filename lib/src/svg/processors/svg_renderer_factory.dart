@@ -40,7 +40,8 @@ class SvgRendererFactory {
     SvgTags.IMAGE: ImageSvgNodeRenderer.new,
     SvgTags.CLIP_PATH: ClipPathSvgNodeRenderer.new,
     SvgTags.USE: UseSvgNodeRenderer.new,
-    SvgTags.TEXT: TextSvgNodeRenderer.new,
+    SvgTags.TEXT: () => TextSvgNodeRenderer(root: true),
+    SvgTags.TSPAN: TextSvgNodeRenderer.new,
     // Reconhecidos e explicitamente sem pintura própria.
     SvgTags.DEFS: NoOpSvgNodeRenderer.new,
     SvgTags.TITLE: NoOpSvgNodeRenderer.new,

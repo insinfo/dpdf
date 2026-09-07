@@ -6,6 +6,7 @@ import 'package:dpdf/src/svg/css/impl/svg_attribute_inheritance.dart';
 import 'package:dpdf/src/svg/processors/svg_renderer_factory.dart';
 import 'package:dpdf/src/svg/renderers/branch_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
+import 'package:dpdf/src/svg/renderers/impl/text_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 
 /// Constrói a árvore de renderizadores a partir do DOM produzido pelo pacote
@@ -43,11 +44,21 @@ class DefaultSvgProcessor {
 
     if (renderer is BranchSvgNodeRenderer) {
       final inheritable = _inheritablePart(resolved);
-      for (final child in element.children) {
-        final childRenderer = _build(child, inheritable, rules);
-        if (childRenderer == null) continue;
-        childRenderer.setParent(renderer);
-        renderer.addChild(childRenderer);
+      for (final child in element.nodes) {
+        SvgNodeRenderer? childRenderer;
+        if (child is dom.Text &&
+            (name == SvgTags.TEXT || name == SvgTags.TSPAN) &&
+            child.data.isNotEmpty) {
+          childRenderer = TextLeafSvgNodeRenderer()
+            ..setAttributesAndStyles(
+                Map<String, String>.from(resolved)..['_text'] = child.data);
+        } else if (child is dom.Element) {
+          childRenderer = _build(child, inheritable, rules);
+        }
+        if (childRenderer != null) {
+          childRenderer.setParent(renderer);
+          renderer.addChild(childRenderer);
+        }
       }
     }
     return renderer;
@@ -65,10 +76,6 @@ class DefaultSvgProcessor {
       final name = key is String ? key : key.toString();
       own[name] = value;
     });
-    if (element.localName == SvgTags.TEXT) {
-      own['_text'] =
-          element.nodes.whereType<dom.Text>().map((node) => node.data).join();
-    }
     final resolved = Map<String, String>.from(inherited);
     resolved.addAll(own);
     final matching = rules.where((rule) => rule.matches(element)).toList()

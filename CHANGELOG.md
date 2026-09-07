@@ -7,6 +7,13 @@ externos, e compila para VM (JIT/AOT), `dart2js` e `dart2wasm`.
 
 ### Adicionado
 
+- **Codec JPEG em Dart puro**: `JpegDecoder` (baseline sequencial, 4:4:4,
+  4:2:2 e 4:2:0, intervalos de reinício, cinza/RGB/CMYK, transformação Adobe)
+  e `JpegEncoder` (baseline, tabelas do Anexo K, qualidade 1-100, subamostragem
+  opcional). O filtro `/DCTDecode` antes só repassava os bytes.
+- **Reamostragem de imagens** (`ImageResampler`) com filtro de caixa, mais
+  `PdfImageCompressionOptions.lossy` para reencodar imagens de tom contínuo
+  como JPEG e limitar o lado maior a um número de pixels.
 - **Compressão de PDF**: `PdfCompressor` reescreve o documento menor sem mudar
   o que ele desenha — object streams e xref stream, recompressão de fluxos,
   deduplicação de objetos idênticos, remoção de objetos órfãos e poda opcional

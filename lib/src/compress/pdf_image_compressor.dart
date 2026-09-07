@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:j2k/j2k.dart' as j2k;
 import 'package:jbig2/jbig2.dart';
 
 import '../kernel/pdf/pdf_array.dart';
@@ -8,6 +9,9 @@ import '../kernel/pdf/pdf_name.dart';
 import '../kernel/pdf/pdf_number.dart';
 import '../kernel/pdf/pdf_object.dart';
 import '../kernel/pdf/pdf_stream.dart';
+import '../io/image/image_resampler.dart';
+import '../io/image/jpeg_decoder.dart';
+import '../io/image/jpeg_encoder.dart';
 import '../platform/compression.dart';
 
 /// Which codec bi-level images are re-encoded with.
@@ -37,15 +41,43 @@ enum PdfBilevelCodec {
   flate,
 }
 
+/// Which codec continuous-tone images are re-encoded with.
+enum PdfColourCodec {
+  /// Leave the image exactly as it is. The default, because every other
+  /// choice here discards information.
+  keep,
+
+  /// Baseline JPEG. Lossy, and the reason a scanned colour page shrinks by an
+  /// order of magnitude.
+  jpeg,
+}
+
 /// What the image pass is allowed to do.
 ///
-/// Only bi-level images are handled, and only losslessly: the samples that
-/// come out are the samples that went in, just encoded better. Resampling to a
-/// target resolution, and re-encoding continuous-tone images, are lossy
-/// decisions and are not made here.
+/// The bi-level path is lossless by construction: the samples that come out
+/// are the samples that went in, just encoded better. The continuous-tone
+/// path and [maxDimension] discard information, so both are off by default
+/// and have to be asked for.
 class PdfImageCompressionOptions {
   /// Codec for 1-bit images.
   final PdfBilevelCodec bilevel;
+
+  /// Codec for 8-bit grayscale and RGB images.
+  ///
+  /// Defaults to [PdfColourCodec.keep]: re-encoding as JPEG throws away
+  /// detail, so it has to be asked for.
+  final PdfColourCodec colour;
+
+  /// JPEG quality, 1 to 100, used when [colour] is [PdfColourCodec.jpeg].
+  final int jpegQuality;
+
+  /// Downsample an image whose larger side exceeds this, keeping its aspect
+  /// ratio. Null leaves every image at its stored resolution.
+  ///
+  /// This is a cap in **pixels**, not a target DPI: deciding a DPI needs the
+  /// transformation the page's content stream applies to the image, which
+  /// this pass does not read.
+  final int? maxDimension;
 
   /// Skip images with fewer pixels than this. Re-encoding a small image rarely
   /// pays for the segment headers a codec adds.
@@ -53,12 +85,29 @@ class PdfImageCompressionOptions {
 
   const PdfImageCompressionOptions({
     this.bilevel = PdfBilevelCodec.auto,
+    this.colour = PdfColourCodec.keep,
+    this.jpegQuality = 75,
+    this.maxDimension,
     this.minimumPixels = 4096,
   });
 
+  /// Re-encode continuous-tone images as JPEG at [quality], and cap their
+  /// larger side at [maxDimension] when one is given.
+  ///
+  /// Lossy. Use it when the document is for reading rather than archiving.
+  const PdfImageCompressionOptions.lossy({
+    this.bilevel = PdfBilevelCodec.auto,
+    int quality = 75,
+    this.maxDimension,
+    this.minimumPixels = 4096,
+  })  : colour = PdfColourCodec.jpeg,
+        jpegQuality = quality;
+
   /// Do nothing to images.
-  static const PdfImageCompressionOptions none =
-      PdfImageCompressionOptions(bilevel: PdfBilevelCodec.keep);
+  static const PdfImageCompressionOptions none = PdfImageCompressionOptions(
+    bilevel: PdfBilevelCodec.keep,
+    colour: PdfColourCodec.keep,
+  );
 }
 
 /// What the image pass did.
@@ -99,16 +148,21 @@ class PdfImageCompressionReport {
 
 /// Re-encodes the image XObjects in a document with a better codec.
 ///
-/// The pass is lossless: it decodes an image's samples through the filters it
-/// already carries, encodes them again, and keeps the result only when it is
-/// smaller. An image it cannot decode, or cannot improve, is left untouched.
+/// It decodes an image's samples through the filters it already carries,
+/// encodes them again, and keeps the result only when it is smaller. An image
+/// it cannot decode, or cannot improve, is left untouched.
+///
+/// Bi-level images are re-encoded losslessly. Continuous-tone images are only
+/// touched when the options ask for it, because doing so means JPEG, which
+/// throws detail away, and possibly resampling, which throws away more.
 abstract final class PdfImageCompressor {
   /// Re-encodes every image among [objects] that the options cover.
   static Future<PdfImageCompressionReport> run(
     List<CraftPdfObject> objects,
     PdfImageCompressionOptions options,
   ) async {
-    if (options.bilevel == PdfBilevelCodec.keep) {
+    if (options.bilevel == PdfBilevelCodec.keep &&
+        options.colour == PdfColourCodec.keep) {
       return PdfImageCompressionReport.empty;
     }
 
@@ -156,7 +210,12 @@ abstract final class PdfImageCompressor {
 
     final isMask = await image.flagEntry(CraftPdfName('ImageMask')) ?? false;
     final bits = await image.integerEntry(CraftPdfName('BitsPerComponent'));
-    if (!isMask && bits != 1) return null;
+    if (!isMask && bits != 1) {
+      if (bits == 8 && options.colour != PdfColourCodec.keep) {
+        return _recompressContinuousTone(image, options, width, height);
+      }
+      return null;
+    }
     if (width * height < options.minimumPixels) return 0;
 
     // A soft-masked or explicitly re-mapped image keeps its own conventions;
@@ -221,6 +280,170 @@ abstract final class PdfImageCompressor {
     return current.length - candidate.length;
   }
 
+  /// Re-encodes an 8-bit grayscale or RGB image as JPEG, optionally shrinking
+  /// it first.
+  ///
+  /// Returns the bytes saved, 0 when the image was examined and left alone, or
+  /// null when it is not one this path handles.
+  static Future<int?> _recompressContinuousTone(
+    CraftPdfStream image,
+    PdfImageCompressionOptions options,
+    int width,
+    int height,
+  ) async {
+    // An explicit /Decode array, a palette or a separation space all give the
+    // samples a meaning JPEG cannot carry across.
+    if (image.containsKey(CraftPdfName('Decode'))) return 0;
+
+    final channels = await _colourChannels(image);
+    if (channels == null) return null;
+    if (width * height < options.minimumPixels) return 0;
+
+    Uint8List? current;
+    _Samples? samples;
+    try {
+      current = await image.getRawBytes();
+      samples = await _samplesOf(image, width, height, channels);
+    } on Object {
+      return 0;
+    }
+    if (current == null || samples == null) return 0;
+
+    var pixels = samples.pixels;
+    var targetWidth = samples.width;
+    var targetHeight = samples.height;
+
+    final cap = options.maxDimension;
+    if (cap != null) {
+      final fitted = ImageResampler.fit(
+          width: targetWidth, height: targetHeight, maxDimension: cap);
+      if (fitted != null) {
+        pixels = ImageResampler.resize(
+          pixels,
+          width: targetWidth,
+          height: targetHeight,
+          targetWidth: fitted.width,
+          targetHeight: fitted.height,
+          channels: samples.channels,
+        );
+        targetWidth = fitted.width;
+        targetHeight = fitted.height;
+      }
+    }
+
+    final Uint8List candidate;
+    try {
+      candidate = JpegEncoder.encode(
+        pixels,
+        width: targetWidth,
+        height: targetHeight,
+        format: samples.channels == 1
+            ? JpegPixelFormat.grayscale
+            : JpegPixelFormat.rgb,
+        quality: options.jpegQuality,
+      );
+    } on Object {
+      return 0;
+    }
+
+    // Losing detail has to buy something, so a re-encode that is not smaller
+    // is discarded whether or not the image was also resized.
+    if (candidate.length >= current.length) return 0;
+
+    image
+      ..setData(candidate)
+      ..put(CraftPdfName.filter, CraftPdfName('DCTDecode'))
+      ..put(CraftPdfName.width, CraftPdfNumber.fromInt(targetWidth))
+      ..put(CraftPdfName.height, CraftPdfNumber.fromInt(targetHeight))
+      ..put(CraftPdfName('BitsPerComponent'), CraftPdfNumber.fromInt(8))
+      ..put(CraftPdfName('ColorSpace'),
+          CraftPdfName(samples.channels == 1 ? 'DeviceGray' : 'DeviceRGB'))
+      ..remove(CraftPdfName('DecodeParms'))
+      ..markChanged();
+    return current.length - candidate.length;
+  }
+
+  /// Channels implied by the image's colour space, or null when it is one this
+  /// path does not re-encode.
+  static Future<int?> _colourChannels(CraftPdfStream image) async {
+    final space = await image.get(CraftPdfName('ColorSpace'), true);
+    if (space == null) return null;
+    if (space.objectKind() == PdfObjectType.name) {
+      return switch ((space as CraftPdfName).getValue()) {
+        'DeviceGray' || 'G' || 'CalGray' => 1,
+        'DeviceRGB' || 'RGB' || 'CalRGB' => 3,
+        _ => null,
+      };
+    }
+    if (space.objectKind() == PdfObjectType.array) {
+      final array = space as CraftPdfArray;
+      final family = (await array.nameEntry(0))?.getValue();
+      if (family == 'ICCBased') {
+        final profile = await array.streamEntry(1);
+        final n = await profile?.integerEntry(CraftPdfName('N'));
+        // Only the two ICC spaces a baseline JPEG can stand in for.
+        return n == 1 || n == 3 ? n : null;
+      }
+      // Indexed, Separation, DeviceN and Lab all give the samples a meaning
+      // that would be lost.
+      return null;
+    }
+    return null;
+  }
+
+  /// Decodes the image's samples to interleaved 8-bit values.
+  static Future<_Samples?> _samplesOf(
+    CraftPdfStream image,
+    int width,
+    int height,
+    int channels,
+  ) async {
+    final filter = await _filterNames(image);
+
+    if (filter.contains('DCTDecode') || filter.contains('DCT')) {
+      final raw = await image.getRawBytes();
+      if (raw == null) return null;
+      final decoded = JpegDecoder.decode(raw);
+      if (decoded.format == JpegPixelFormat.cmyk) return null;
+      return _Samples(
+          decoded.pixels, decoded.width, decoded.height, decoded.bytesPerPixel);
+    }
+
+    if (filter.contains('JPXDecode')) {
+      final raw = await image.getRawBytes();
+      if (raw == null) return null;
+      final decoded = j2k.decodeJpeg2000(raw);
+      // Only the two layouts a baseline JPEG can carry.
+      if (decoded.components != 1 && decoded.components != 3) return null;
+      return _Samples(
+          decoded.pixels, decoded.width, decoded.height, decoded.components);
+    }
+
+    // Everything else decodes to plain samples through the filters the stream
+    // already declares.
+    final plain = await image.getBytes();
+    if (plain == null || plain.length < width * height * channels) return null;
+    return _Samples(plain, width, height, channels);
+  }
+
+  static Future<Set<String>> _filterNames(CraftPdfStream stream) async {
+    final filter = await stream.get(CraftPdfName.filter);
+    if (filter == null) return const {};
+    if (filter.objectKind() == PdfObjectType.name) {
+      return {(filter as CraftPdfName).getValue()};
+    }
+    if (filter.objectKind() == PdfObjectType.array) {
+      final array = filter as CraftPdfArray;
+      final names = <String>{};
+      for (var i = 0; i < array.size(); i++) {
+        final name = await array.nameEntry(i);
+        if (name != null) names.add(name.getValue());
+      }
+      return names;
+    }
+    return const {};
+  }
+
   /// True when [stream] is an image whose filter is a JBIG2 codestream.
   static Future<bool> usesJbig2(CraftPdfStream stream) async {
     final filter = await stream.get(CraftPdfName.filter);
@@ -238,6 +461,15 @@ abstract final class PdfImageCompressor {
     }
     return false;
   }
+}
+
+/// Interleaved 8-bit samples with the geometry they were decoded at.
+class _Samples {
+  final Uint8List pixels;
+  final int width;
+  final int height;
+  final int channels;
+  const _Samples(this.pixels, this.width, this.height, this.channels);
 }
 
 /// Convenience for building a 1-bit image dictionary around packed rows.

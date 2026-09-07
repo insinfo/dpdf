@@ -187,3 +187,8 @@ export 'src/kernel/pdf/pdf_version.dart';
 export 'src/compress/pdf_compression_options.dart';
 export 'src/compress/pdf_compressor.dart';
 export 'src/compress/pdf_image_compressor.dart';
+
+// Image codecs and resampling, used by the compressor and available directly.
+export 'src/io/image/jpeg_decoder.dart';
+export 'src/io/image/jpeg_encoder.dart';
+export 'src/io/image/image_resampler.dart';

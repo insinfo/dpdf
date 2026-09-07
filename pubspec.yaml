@@ -28,7 +28,7 @@ dependencies:
 # publish of this package will be rejected.
 dependency_overrides:
   jbig2:
-    path: ../jbig2
+    path: ../jbig2 #https://github.com/insinfo/jbig2.git
 
 dev_dependencies:
   lints: ^5.0.0

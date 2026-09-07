@@ -15,6 +15,7 @@ import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/branch_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
+import 'package:dpdf/src/svg/svg_resource_loader.dart';
 import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 
 /// Converte SVG em conteúdo PDF.
@@ -45,8 +46,8 @@ class SvgConverter {
   /// o canto inferior esquerdo da página num canvas recém-criado. Para
   /// posicionar o desenho, informe explicitamente o retângulo.
   static Future<void> drawOnCanvas(String svg, PdfCanvas canvas,
-      {Rectangle? viewport}) async {
-    final prepared = _prepare(svg, viewport);
+      {Rectangle? viewport, SvgResourceLoader? resourceLoader}) async {
+    final prepared = _prepare(svg, viewport, resourceLoader);
     if (prepared == null) return;
     await _draw(prepared, canvas, viewport ?? prepared.intrinsicViewport);
   }
@@ -56,8 +57,8 @@ class SvgConverter {
   /// Sem [viewport], o desenho é ancorado no canto superior esquerdo da
   /// página, que é a leitura natural de um SVG cujo eixo Y cresce para baixo.
   static Future<void> drawOnPage(String svg, PdfPage page,
-      {Rectangle? viewport}) async {
-    final prepared = _prepare(svg, viewport);
+      {Rectangle? viewport, SvgResourceLoader? resourceLoader}) async {
+    final prepared = _prepare(svg, viewport, resourceLoader);
     if (prepared == null) return;
     final canvas = await PdfCanvas.fromPage(page);
     var area = viewport;
@@ -75,11 +76,11 @@ class SvgConverter {
   /// Sem [pageSize] a página recebe exatamente o tamanho intrínseco do
   /// desenho, evitando margens que o chamador não pediu.
   static Future<Uint8List> convertToBytes(String svg,
-      {PageSize? pageSize}) async {
+      {PageSize? pageSize, SvgResourceLoader? resourceLoader}) async {
     final output = BytesBuilder(copy: false);
     final document = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
     try {
-      final prepared = _prepare(svg, pageSize);
+      final prepared = _prepare(svg, pageSize, resourceLoader);
       final size = prepared?.intrinsicViewport ?? Rectangle(0, 0, 1, 1);
       final resolvedSize = pageSize ??
           PageSize(size.getWidth() <= 0 ? 1 : size.getWidth(),
@@ -113,13 +114,14 @@ class SvgConverter {
   /// A montagem da árvore é separada do desenho porque o tamanho intrínseco
   /// só se conhece depois de resolver os atributos do elemento raiz — e ele
   /// é necessário antes de existir uma página onde desenhar.
-  static _PreparedSvg? _prepare(String svg, Rectangle? customViewport) {
+  static _PreparedSvg? _prepare(String svg, Rectangle? customViewport,
+      SvgResourceLoader? resourceLoader) {
     final element = _findSvgElement(svg);
     if (element == null) return null;
     final tree = const DefaultSvgProcessor().process(element);
     if (tree == null) return null;
 
-    final context = SvgDrawContext(null, null);
+    final context = SvgDrawContext(null, null, resourceLoader: resourceLoader);
     _registerNamedObjects(tree, context);
     context.setCustomViewport(customViewport);
     final em = context.getCssContext().getRootFontSize();

@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:dpdf/src/kernel/geom/page_size.dart';
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
@@ -348,6 +349,51 @@ void main() {
   });
 
   group('SvgConverter em documento', () {
+    const pixelPng =
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
+    test('image incorpora data URI com a geometria declarada', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="30" height="20">
+          <image href="data:image/png;base64,$pixelPng"
+                 x="2" y="3" width="10" height="8"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final content = String.fromCharCodes(
+            await (await document.pageAt(1))!.contentPayload());
+        expect(content, contains('7.5 0 0 6 1.5 2.25 cm\n'));
+        expect(content, contains(' Do\n'));
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('image externa usa o resolvedor explícito', () async {
+      Uri? requested;
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="20" height="20">
+          <image href="https://example.test/pixel.png"
+                 width="4" height="4"/>
+        </svg>
+      ''', resourceLoader: (uri) async {
+        requested = uri;
+        return base64Decode(pixelPng);
+      });
+      expect(requested, Uri.parse('https://example.test/pixel.png'));
+
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final content = String.fromCharCodes(
+            await (await document.pageAt(1))!.contentPayload());
+        expect(content, contains('3 0 0 3 0 0 cm\n'));
+        expect(content, contains(' Do\n'));
+      } finally {
+        await document.close();
+      }
+    });
+
     test('gera uma página do tamanho intrínseco do desenho', () async {
       final bytes = await SvgConverter.convertToBytes(
           '<svg width="100" height="60"><rect x="10" y="20" width="30" '

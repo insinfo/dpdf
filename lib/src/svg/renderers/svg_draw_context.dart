@@ -9,6 +9,7 @@ import 'package:dpdf/src/svg/exceptions/svg_exception_message_constant.dart';
 import 'package:dpdf/src/svg/exceptions/svg_processing_exception.dart';
 import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/utils/svg_text_properties.dart';
+import 'package:dpdf/src/svg/svg_resource_loader.dart';
 
 /// The SvgDrawContext keeps a stack of PdfCanvas instances, which
 /// track the nested XObjects associated with the root canvas.
@@ -21,6 +22,7 @@ class SvgDrawContext {
 
   final ResourceResolver _resourceResolver;
   final FontProvider _fontProvider;
+  final SvgResourceLoader? resourceLoader;
 
   SvgTextProperties _textProperties = SvgTextProperties();
   SvgCssContext _cssContext = SvgCssContext();
@@ -30,7 +32,8 @@ class SvgDrawContext {
   List<double>? _relativePosition;
   Rectangle? _customViewport;
 
-  SvgDrawContext(ResourceResolver? resourceResolver, FontProvider? fontProvider)
+  SvgDrawContext(ResourceResolver? resourceResolver, FontProvider? fontProvider,
+      {this.resourceLoader})
       : _resourceResolver = resourceResolver ?? ResourceResolver(null),
         _fontProvider = fontProvider ?? BasicFontProvider() {
     _cssContext = SvgCssContext();

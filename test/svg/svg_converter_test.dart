@@ -498,6 +498,28 @@ void main() {
       }
     });
 
+    test('gradientTransform transforma somente o shading', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="40" height="20">
+          <linearGradient id="g" gradientTransform="translate(4 2)">
+            <stop offset="0" stop-color="red"/>
+            <stop offset="1" stop-color="blue"/>
+          </linearGradient>
+          <rect width="40" height="20" fill="url(#g)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final content = String.fromCharCodes(
+            await (await document.pageAt(1))!.contentPayload());
+        expect(content, contains('1 0 0 1 3 1.5 cm\n'));
+        expect(content.indexOf('1 0 0 1 3 1.5 cm\n'),
+            lessThan(content.indexOf(' sh\n')));
+      } finally {
+        await document.close();
+      }
+    });
+
     test('image externa usa o resolvedor explícito', () async {
       Uri? requested;
       final bytes = await SvgConverter.convertToBytes('''

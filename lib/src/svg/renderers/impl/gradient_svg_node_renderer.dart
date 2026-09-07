@@ -9,6 +9,7 @@ import 'package:dpdf/src/svg/renderers/svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_shading_paint_server.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 import 'package:dpdf/src/svg/utils/svg_color_utils.dart';
+import 'package:dpdf/src/svg/utils/transform_utils.dart';
 
 class GradientStopSvgNodeRenderer extends AbstractSvgNodeRenderer {
   @override
@@ -90,6 +91,27 @@ abstract class GradientSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
         : parseHorizontalLength(raw, context);
   }
 
+  Future<void> paintTransformed(
+      SvgDrawContext context, Future<void> Function() paint) async {
+    final raw = getAttribute(SvgAttributes.GRADIENT_TRANSFORM);
+    if (raw == null || raw.trim().isEmpty) {
+      await paint();
+      return;
+    }
+    final transform = TransformUtils.parseTransform(raw);
+    final canvas = context.getCurrentCanvas();
+    canvas.saveState();
+    try {
+      if (!transform.isIdentity) {
+        canvas.concatMatrix(transform.m00, transform.m10, transform.m01,
+            transform.m11, transform.m02, transform.m12);
+      }
+      await paint();
+    } finally {
+      canvas.restoreState();
+    }
+  }
+
   @override
   Rectangle? getObjectBoundingBox(SvgDrawContext context) => null;
 }
@@ -98,14 +120,20 @@ class LinearGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
   @override
   Future<void> paintShading(SvgDrawContext context, Rectangle b) async {
     final s = stops();
-    await context.getCurrentCanvas().shading(PdfShading.axialRgbStops(
-          coordinate(SvgAttributes.X1, '0%', b.getX(), b.getWidth(), context),
-          coordinate(SvgAttributes.Y1, '0%', b.getY(), b.getHeight(), context),
-          coordinate(SvgAttributes.X2, '100%', b.getX(), b.getWidth(), context),
-          coordinate(SvgAttributes.Y2, '0%', b.getY(), b.getHeight(), context),
-          s.offsets,
-          s.colors,
-        ));
+    await paintTransformed(
+        context,
+        () => context.getCurrentCanvas().shading(PdfShading.axialRgbStops(
+              coordinate(
+                  SvgAttributes.X1, '0%', b.getX(), b.getWidth(), context),
+              coordinate(
+                  SvgAttributes.Y1, '0%', b.getY(), b.getHeight(), context),
+              coordinate(
+                  SvgAttributes.X2, '100%', b.getX(), b.getWidth(), context),
+              coordinate(
+                  SvgAttributes.Y2, '0%', b.getY(), b.getHeight(), context),
+              s.offsets,
+              s.colors,
+            )));
   }
 
   @override
@@ -129,8 +157,10 @@ class RadialGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
     final fy = coordinate('fy', '50%', b.getY(), b.getHeight(), context);
     final r = coordinate(SvgAttributes.R, '50%', 0,
         math.max(b.getWidth(), b.getHeight()), context);
-    await context.getCurrentCanvas().shading(
-        PdfShading.radialRgbStops(fx, fy, 0, cx, cy, r, s.offsets, s.colors));
+    await paintTransformed(
+        context,
+        () => context.getCurrentCanvas().shading(PdfShading.radialRgbStops(
+            fx, fy, 0, cx, cy, r, s.offsets, s.colors)));
   }
 
   @override

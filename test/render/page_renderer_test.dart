@@ -862,6 +862,38 @@ void main() {
       expect(_at(page, 75, 50).r, lessThan(15));
       expect(page.report.unsupportedOperators, isEmpty);
     });
+
+    test('uses the luminosity soft-mask backdrop colour', () async {
+      final group = PdfStream.withBytes(Uint8List(0), 0)
+        ..put(PdfName.subtype, PdfName.form)
+        ..put(PdfName.bBox, PdfArray.fromDoubles([0, 0, 100, 100]))
+        ..put(PdfName.resources, PdfDictionary())
+        ..put(
+            PdfName('Group'),
+            PdfDictionary()
+              ..put(PdfName.s, PdfName('Transparency'))
+              ..put(PdfName('CS'), PdfName.deviceRgb));
+      final resources = PdfDictionary()
+        ..put(
+            PdfName.extGState,
+            PdfDictionary()
+              ..put(
+                  PdfName('GS0'),
+                  PdfDictionary()
+                    ..put(
+                        PdfName.sMask,
+                        PdfDictionary()
+                          ..put(PdfName.s, PdfName('Luminosity'))
+                          ..put(PdfName('G'), group)
+                          ..put(PdfName('BC'),
+                              PdfArray.fromDoubles([1, 1, 1])))));
+
+      final page =
+          await _render('/GS0 gs 0 g 0 0 100 100 re f', resources: resources);
+
+      expect(_at(page, 50, 50).r, lessThan(15));
+      expect(page.report.unsupportedOperators, isEmpty);
+    });
   });
 
   group('PdfPageRenderer images', () {

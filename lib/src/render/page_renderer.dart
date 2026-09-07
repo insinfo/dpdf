@@ -1802,8 +1802,31 @@ class _Renderer {
       groupToDevice = BLMatrix2D(m[0], m[1], m[2], m[3], m[4], m[5])
           .multiply(groupToDevice);
     }
+    var backdrop = 0x00000000;
+    if (subtype == 'Luminosity') {
+      final backdropArray = await mask.arrayEntry(PdfName('BC'));
+      if (backdropArray != null) {
+        final groupDictionary = await group.dictionaryEntry(PdfName('Group'));
+        final colourObject = await groupDictionary?.get(PdfName('CS'), true);
+        final colourSpace = colourObject == null
+            ? null
+            : await PdfColorSpace.makeColorSpace(colourObject);
+        final components = await backdropArray.toDoubleArray();
+        if (colourSpace == null ||
+            components.length != colourSpace.getNumberOfComponents()) {
+          _note('gs:SMask-backdrop');
+        } else {
+          try {
+            final rgb = colourSpace.toRgb(components);
+            backdrop = _rgb(rgb[0], rgb[1], rgb[2]);
+          } on Object {
+            _note('gs:SMask-backdrop');
+          }
+        }
+      }
+    }
     final surface = BLImage(context.image.width, context.image.height)
-      ..clear(0x00000000);
+      ..clear(backdrop);
     final maskContext = BLContext(surface);
     final nested =
         _Renderer(maskContext, groupToDevice, fontFallback: _fontFallback);

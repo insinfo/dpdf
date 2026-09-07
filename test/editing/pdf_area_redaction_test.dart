@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dpdf/dpdf.dart';
+import 'package:dpdf/src/render/image_decoder.dart';
 import 'package:test/test.dart';
 
 /// One page with three lines of Helvetica, each on its own baseline, so a
@@ -37,6 +38,41 @@ Future<String> _textOf(Uint8List bytes, [int page = 1]) async {
   } finally {
     await document.close();
   }
+}
+
+Future<Uint8List> _imagePage() async {
+  const width = 10, height = 10;
+  final pixels = Uint8List(width * height * 3);
+  for (var i = 0; i < width * height; i++) {
+    pixels[i * 3] = 240;
+    pixels[i * 3 + 1] = 30;
+    pixels[i * 3 + 2] = 180;
+  }
+  final output = BytesBuilder(copy: false);
+  final document = await PdfDocument.create(PdfWriter.fromBytesBuilder(output));
+  final page = await document.appendBlankPage();
+  final image = PdfStream.withBytes(pixels, 0)
+    ..put(PdfName.type, PdfName('XObject'))
+    ..put(PdfName.subtype, PdfName('Image'))
+    ..put(PdfName.width, PdfNumber.fromInt(width))
+    ..put(PdfName.height, PdfNumber.fromInt(height))
+    ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+    ..put(PdfName('ColorSpace'), PdfName('DeviceRGB'));
+  image.attachToDocument(document);
+  page.pdfRepresentation()
+    ..put(
+        PdfName.resources,
+        PdfDictionary()
+          ..put(PdfName.xObject,
+              PdfDictionary()..put(PdfName('Scan'), image.indirectHandle()!)))
+    ..put(
+        PdfName.contents,
+        PdfStream.withBytes(
+            Uint8List.fromList(
+                ascii.encode('q 100 0 0 100 50 50 cm /Scan Do Q')),
+            0));
+  await document.close();
+  return output.takeBytes();
 }
 
 void main() {
@@ -98,6 +134,39 @@ void main() {
       expect(latin1.decode(withBox, allowInvalid: true), contains(' re'));
       expect(withoutBox.length, lessThan(withBox.length));
       expect(await _textOf(withoutBox), isNot(contains('SECRET')));
+    });
+
+    test('removes source pixels from an opaque scanned image', () async {
+      final source = await _imagePage();
+      final redacted = await PdfAreaRedaction.apply(
+        source,
+        const [PdfRedactionArea(1, left: 50, bottom: 50, right: 100, top: 150)],
+        options: const PdfAreaRedactionOptions(paintOverlay: false),
+      );
+
+      final document = await PdfDocument.open(PdfReader.fromBytes(redacted));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final xobjects = await resources!.dictionaryEntry(PdfName.xObject);
+        final image = await xobjects!.streamEntry(PdfName('Scan'));
+        final decoded = await PdfImageDecoder.decode(image!);
+        expect(decoded, isNotNull);
+        for (var y = 0; y < 10; y++) {
+          for (var x = 0; x < 10; x++) {
+            final at = (y * 10 + x) * 4;
+            if (x < 5) {
+              expect(decoded!.rgba!.sublist(at, at + 3), equals([0, 0, 0]));
+            } else {
+              expect(
+                  decoded!.rgba!.sublist(at, at + 3), equals([240, 30, 180]));
+            }
+          }
+        }
+      } finally {
+        await document.close();
+      }
     });
 
     test('rejects an empty or non-finite area', () async {

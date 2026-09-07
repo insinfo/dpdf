@@ -1,7 +1,8 @@
 import 'dart:convert';
-import '../platform/compression.dart';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
+import '../platform/compression.dart';
 import 'pdf_unicode_cmap.dart';
 import '../io/font/pdf_encodings.dart';
 import 'pdf_simple_encoding.dart';
@@ -12,11 +13,14 @@ import '../kernel/pdf/pdf_dictionary.dart';
 import '../kernel/pdf/pdf_document.dart';
 import '../kernel/pdf/pdf_name.dart';
 import '../kernel/pdf/pdf_number.dart';
+import '../kernel/pdf/pdf_object.dart';
 import '../kernel/pdf/pdf_page.dart';
 import '../kernel/pdf/pdf_reader.dart';
 import '../kernel/pdf/pdf_stream.dart';
 import '../kernel/pdf/pdf_string.dart';
 import '../kernel/pdf/pdf_writer.dart';
+import '../render/content_parser.dart';
+import '../render/image_decoder.dart';
 
 part 'pdf_text_positions.dart';
 part 'pdf_text_redaction.dart';

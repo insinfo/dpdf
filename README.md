@@ -115,9 +115,10 @@ final redacted = await PdfAreaRedaction.apply(input, [
 ]);
 ```
 
-Area redaction removes matching text and draws an opaque cover. Pixels from an
-underlying scan remain in the file; securely redacting a scan requires replacing
-the image itself. `PdfTextRedaction` offers a stricter reconstruction path and
+Area redaction removes matching text, replaces covered pixels in uniquely
+referenced opaque page images, and draws an opaque cover. Shared images,
+transparency and images nested in Form XObjects are conservatively left intact
+under the cover. `PdfTextRedaction` offers a stricter reconstruction path and
 rejects documents it cannot safely rebuild.
 
 ## JPEG support
@@ -134,7 +135,8 @@ subsampling.
   some advanced paint-server inheritance cases remain partial.
 - PDF rendering may require a supplied fallback for fonts that are not embedded;
   some advanced CFF/CID and pattern cases remain partial.
-- Area redaction covers images but does not remove their source pixels.
+- Area redaction of shared, transparent or Form-nested images still covers
+  rather than rewriting their source pixels.
 - HTML uses the 14 standard PDF fonts and does not discover system fonts.
 - JBIG2 encoding uses generic regions rather than symbol dictionaries.
 

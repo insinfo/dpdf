@@ -70,12 +70,19 @@ class PdfAreaRedactionOptions {
   /// a rectangle drawn around visible glyphs catches them.
   final double glyphPadding;
 
+  /// Substitui os pixels de imagens opacas atingidos pela área de redação.
+  ///
+  /// A imagem é clonada no recurso da página antes da alteração, impedindo
+  /// que uma reutilização em outra página seja modificada acidentalmente.
+  final bool redactImagePixels;
+
   const PdfAreaRedactionOptions({
     this.paintOverlay = true,
     this.overlayColor = const [0, 0, 0],
     this.removeAnnotations = true,
     this.clearDocumentInfo = false,
     this.glyphPadding = 2,
+    this.redactImagePixels = true,
   });
 }
 
@@ -90,9 +97,9 @@ class PdfAreaRedactionOptions {
 ///
 /// What it does not do, and what a caller must not assume:
 ///
-/// * It removes **text**. An image inside the area is covered by the overlay
-///   but its pixels stay in the file; redacting a scanned page needs the image
-///   itself replaced.
+/// * Pixels de imagens opacas diretamente usadas pela página são removidos.
+///   Imagens com transparência e imagens dentro de Form XObjects ainda são
+///   apenas cobertas pelo overlay.
 /// * Vector art inside the area is likewise covered, not removed.
 /// * Composite (Type0/CID) fonts are rejected, because a single-byte text
 ///   machine cannot locate their glyphs.
@@ -200,9 +207,172 @@ class PdfAreaRedaction {
     if (options.removeAnnotations) {
       await _removeAnnotations(dictionary, areas);
     }
+    if (options.redactImagePixels && resources is PdfDictionary) {
+      await _redactImages(document, dictionary, resources, content, areas,
+          options.overlayColor);
+    }
     if (options.paintOverlay) {
       await _paintOverlay(document, page, areas, options);
     }
+  }
+
+  static Future<void> _redactImages(
+    PdfDocument document,
+    PdfDictionary page,
+    PdfDictionary inheritedResources,
+    Uint8List content,
+    List<PdfRedactionArea> areas,
+    List<double> colour,
+  ) async {
+    final sourceXObjects =
+        await inheritedResources.dictionaryEntry(PdfName.xObject);
+    if (sourceXObjects == null || content.isEmpty) return;
+
+    final regions = <String, List<_ImageUnitRect>>{};
+    var matrix = const _RedactionMatrix(1, 0, 0, 1, 0, 0);
+    final stack = <_RedactionMatrix>[];
+    try {
+      for (final operation in PdfContentParser.parse(content)) {
+        switch (operation.operator) {
+          case 'q':
+            stack.add(matrix);
+          case 'Q':
+            if (stack.isNotEmpty) matrix = stack.removeLast();
+          case 'cm':
+            final values = operation.numbers(6);
+            if (values != null) {
+              matrix = _RedactionMatrix.from(values).multiply(matrix);
+            }
+          case 'Do':
+            final name = operation.name(0);
+            if (name == null) continue;
+            final image = await sourceXObjects.streamEntry(PdfName(name));
+            if (image == null ||
+                (await image.nameEntry(PdfName.subtype))?.getValue() !=
+                    'Image') {
+              continue;
+            }
+            final inverse = matrix.inverse();
+            if (inverse == null) continue;
+            for (final area in areas) {
+              final unit = _ImageUnitRect.fromArea(area, inverse);
+              if (!unit.isEmpty) {
+                regions.putIfAbsent(name, () => []).add(unit);
+              }
+            }
+        }
+      }
+    } on PdfContentException {
+      return;
+    }
+    if (regions.isEmpty) return;
+
+    final pageResources = PdfDictionary.fromDictionary(inheritedResources);
+    final pageXObjects = PdfDictionary.fromDictionary(sourceXObjects);
+    var changed = false;
+    for (final entry in regions.entries) {
+      final original = await sourceXObjects.streamEntry(PdfName(entry.key));
+      if (original == null || original.containsKey(PdfName('SMask'))) continue;
+      final originalReference = original.indirectHandle();
+      if (originalReference == null ||
+          await _referenceCount(document, originalReference) != 1) {
+        // Não deixe os pixels originais órfãos no arquivo e não altere uma
+        // imagem compartilhada por páginas que não foram redigidas.
+        continue;
+      }
+      final decoded = await PdfImageDecoder.decode(original);
+      final rgba = decoded?.rgba;
+      if (decoded == null || rgba == null) continue;
+      var opaque = true;
+      for (var i = 3; i < rgba.length; i += 4) {
+        if (rgba[i] != 255) {
+          opaque = false;
+          break;
+        }
+      }
+      if (!opaque) continue;
+
+      final rgb = Uint8List(decoded.width * decoded.height * 3);
+      for (var pixel = 0; pixel < decoded.width * decoded.height; pixel++) {
+        rgb[pixel * 3] = rgba[pixel * 4];
+        rgb[pixel * 3 + 1] = rgba[pixel * 4 + 1];
+        rgb[pixel * 3 + 2] = rgba[pixel * 4 + 2];
+      }
+      final replacement = colour.map((c) => (c * 255).round()).toList();
+      for (final region in entry.value) {
+        final x0 =
+            (region.left * decoded.width).floor().clamp(0, decoded.width);
+        final x1 =
+            (region.right * decoded.width).ceil().clamp(0, decoded.width);
+        final y0 = ((1 - region.top) * decoded.height)
+            .floor()
+            .clamp(0, decoded.height);
+        final y1 = ((1 - region.bottom) * decoded.height)
+            .ceil()
+            .clamp(0, decoded.height);
+        for (var y = y0; y < y1; y++) {
+          for (var x = x0; x < x1; x++) {
+            final at = (y * decoded.width + x) * 3;
+            rgb[at] = replacement[0];
+            rgb[at + 1] = replacement[1];
+            rgb[at + 2] = replacement[2];
+          }
+        }
+      }
+      final compressed = Uint8List.fromList(ZLibEncoder(level: 9).convert(rgb));
+      final rewritten = PdfStream.withBytes(compressed, 0)
+        ..put(PdfName.type, PdfName('XObject'))
+        ..put(PdfName.subtype, PdfName('Image'))
+        ..put(PdfName.width, PdfNumber.fromInt(decoded.width))
+        ..put(PdfName.height, PdfNumber.fromInt(decoded.height))
+        ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
+        ..put(PdfName('ColorSpace'), PdfName('DeviceRGB'))
+        ..put(PdfName.filter, PdfName('FlateDecode'));
+      rewritten.attachToDocument(document);
+      pageXObjects.put(PdfName(entry.key), rewritten.indirectHandle()!);
+      document.referenceIndex()?.freeReference(originalReference);
+      changed = true;
+    }
+    if (changed) {
+      pageResources.put(PdfName.xObject, pageXObjects);
+      page.put(PdfName.resources, pageResources);
+      page.markChanged();
+    }
+  }
+
+  static Future<int> _referenceCount(
+      PdfDocument document, PdfIndirectReference wanted) async {
+    var count = 0;
+    final xref = document.referenceIndex();
+    if (xref == null) return 0;
+    for (var i = 1; i < xref.size(); i++) {
+      final reference = xref.get(i);
+      if (reference == null || reference.isFree()) continue;
+      final object = await reference.targetObject(true);
+      if (object != null) count += await _countInObject(object, wanted);
+    }
+    return count;
+  }
+
+  static Future<int> _countInObject(
+      PdfObject object, PdfIndirectReference wanted) async {
+    if (object is PdfIndirectReference) return object == wanted ? 1 : 0;
+    var count = 0;
+    if (object is PdfDictionary) {
+      for (final value in object.getMap()?.values ?? const <PdfObject>[]) {
+        if (value is PdfIndirectReference) {
+          if (value == wanted) count++;
+        } else if (value is PdfArray || value is PdfDictionary) {
+          count += await _countInObject(value, wanted);
+        }
+      }
+    } else if (object is PdfArray) {
+      for (var i = 0; i < object.size(); i++) {
+        final value = await object.get(i, false);
+        if (value != null) count += await _countInObject(value, wanted);
+      }
+    }
+    return count;
   }
 
   static Future<void> _removeAnnotations(
@@ -287,6 +457,60 @@ class PdfAreaRedaction {
     }
     dictionary.markChanged();
   }
+}
+
+class _ImageUnitRect {
+  final double left, bottom, right, top;
+  const _ImageUnitRect(this.left, this.bottom, this.right, this.top);
+
+  factory _ImageUnitRect.fromArea(
+      PdfRedactionArea area, _RedactionMatrix inverse) {
+    final points = [
+      inverse.point(area.left, area.bottom),
+      inverse.point(area.left, area.top),
+      inverse.point(area.right, area.bottom),
+      inverse.point(area.right, area.top),
+    ];
+    final xs = points.map((p) => p.$1);
+    final ys = points.map((p) => p.$2);
+    return _ImageUnitRect(
+        xs.reduce(math.min).clamp(0, 1),
+        ys.reduce(math.min).clamp(0, 1),
+        xs.reduce(math.max).clamp(0, 1),
+        ys.reduce(math.max).clamp(0, 1));
+  }
+
+  bool get isEmpty => right <= left || top <= bottom;
+}
+
+class _RedactionMatrix {
+  final double a, b, c, d, e, f;
+  const _RedactionMatrix(this.a, this.b, this.c, this.d, this.e, this.f);
+  factory _RedactionMatrix.from(List<double> values) => _RedactionMatrix(
+      values[0], values[1], values[2], values[3], values[4], values[5]);
+
+  _RedactionMatrix multiply(_RedactionMatrix other) => _RedactionMatrix(
+      a * other.a + b * other.c,
+      a * other.b + b * other.d,
+      c * other.a + d * other.c,
+      c * other.b + d * other.d,
+      e * other.a + f * other.c + other.e,
+      e * other.b + f * other.d + other.f);
+
+  _RedactionMatrix? inverse() {
+    final determinant = a * d - b * c;
+    if (determinant.abs() < 1e-12) return null;
+    return _RedactionMatrix(
+        d / determinant,
+        -b / determinant,
+        -c / determinant,
+        a / determinant,
+        (c * f - d * e) / determinant,
+        (b * e - a * f) / determinant);
+  }
+
+  (double, double) point(double x, double y) =>
+      (x * a + y * c + e, x * b + y * d + f);
 }
 
 /// Per-resource-name character widths and decoding for one page.

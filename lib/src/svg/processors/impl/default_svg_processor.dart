@@ -151,12 +151,9 @@ class _SvgStyleRule {
   static _SvgStyleRule? parse(
       String raw, Map<String, String> declarations, int order) {
     final selector = raw.trim();
-    if (selector.isEmpty || RegExp(r'[+~:\[]').hasMatch(selector)) return null;
-    final tokens = selector
-        .replaceAll(RegExp(r'\s*>\s*'), ' > ')
-        .split(RegExp(r'\s+'))
-        .where((token) => token.isNotEmpty)
-        .toList();
+    if (selector.isEmpty) return null;
+    final tokens = _selectorTokens(selector);
+    if (tokens == null) return null;
     final selectors = <_SvgSimpleSelector>[];
     final directChild = <bool>[];
     var pendingChild = false;
@@ -207,32 +204,55 @@ class _SvgSimpleSelector {
   final String? tag;
   final String? id;
   final Set<String> classes;
+  final List<_SvgAttributeSelector> attributes;
   final int specificity;
 
-  const _SvgSimpleSelector(this.tag, this.id, this.classes, this.specificity);
+  const _SvgSimpleSelector(
+      this.tag, this.id, this.classes, this.attributes, this.specificity);
 
   static _SvgSimpleSelector? parse(String selector) {
-    final idMatches = RegExp(r'#([\w-]+)').allMatches(selector).toList();
+    final attributePattern = RegExp(
+        r'''\[\s*([A-Za-z_][\w:.-]*)\s*(?:(~=|\|=|\^=|\$=|\*=|=)\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]+)))?\s*\]''');
+    final attributeMatches = attributePattern.allMatches(selector).toList();
+    final attributes = <_SvgAttributeSelector>[
+      for (final match in attributeMatches)
+        _SvgAttributeSelector(match.group(1)!, match.group(2),
+            match.group(3) ?? match.group(4) ?? match.group(5)),
+    ];
+    final plain = selector.replaceAll(attributePattern, '');
+    final idMatches = RegExp(r'#([\w-]+)').allMatches(plain).toList();
     if (idMatches.length > 1) return null;
     final id = idMatches.isEmpty ? null : idMatches.single.group(1);
     final classes = RegExp(r'\.([\w-]+)')
-        .allMatches(selector)
+        .allMatches(plain)
         .map((match) => match.group(1)!)
         .toSet();
-    final tagMatch = RegExp(r'^([A-Za-z][\w-]*|\*)').firstMatch(selector);
-    if (id == null && classes.isEmpty && tagMatch == null) return null;
+    final tagMatch = RegExp(r'^([A-Za-z][\w-]*|\*)').firstMatch(plain);
+    if (id == null &&
+        classes.isEmpty &&
+        attributes.isEmpty &&
+        tagMatch == null) {
+      return null;
+    }
     final parts = RegExp(r'(^[A-Za-z][\w-]*|^\*|[.#][\w-]+)')
         .allMatches(selector)
         .map((match) => match.group(0)!)
         .join();
-    if (parts != selector) return null;
+    if (parts != plain ||
+        attributeMatches.map((match) => match.group(0)!).join().length !=
+            selector.length - plain.length) {
+      return null;
+    }
     final rawTag = tagMatch?.group(1);
     final tag = rawTag == '*' ? null : rawTag;
     return _SvgSimpleSelector(
       tag,
       id,
       classes,
-      (id == null ? 0 : 100) + classes.length * 10 + (tag == null ? 0 : 1),
+      List.unmodifiable(attributes),
+      (id == null ? 0 : 100) +
+          (classes.length + attributes.length) * 10 +
+          (tag == null ? 0 : 1),
     );
   }
 
@@ -243,6 +263,81 @@ class _SvgSimpleSelector {
         .split(RegExp(r'\s+'))
         .where((value) => value.isNotEmpty)
         .toSet();
-    return classes.every(actual.contains);
+    return classes.every(actual.contains) &&
+        attributes.every((selector) => selector.matches(element));
   }
+}
+
+class _SvgAttributeSelector {
+  final String name;
+  final String? operator;
+  final String? value;
+
+  const _SvgAttributeSelector(this.name, this.operator, this.value);
+
+  bool matches(dom.Element element) {
+    if (!element.attributes.containsKey(name)) return false;
+    if (operator == null) return true;
+    final actual = element.attributes[name] ?? '';
+    final expected = value ?? '';
+    switch (operator) {
+      case '=':
+        return actual == expected;
+      case '~=':
+        return actual.split(RegExp(r'\s+')).contains(expected);
+      case '|=':
+        return actual == expected || actual.startsWith('$expected-');
+      case '^=':
+        return actual.startsWith(expected);
+      case r'$=':
+        return actual.endsWith(expected);
+      case '*=':
+        return actual.contains(expected);
+    }
+    return false;
+  }
+}
+
+List<String>? _selectorTokens(String selector) {
+  final tokens = <String>[];
+  final current = StringBuffer();
+  var brackets = 0;
+  String? quote;
+  void flush() {
+    final token = current.toString().trim();
+    if (token.isNotEmpty) tokens.add(token);
+    current.clear();
+  }
+
+  for (var index = 0; index < selector.length; index++) {
+    final char = selector[index];
+    if (quote != null) {
+      current.write(char);
+      if (char == quote && (index == 0 || selector[index - 1] != r'\')) {
+        quote = null;
+      }
+      continue;
+    }
+    if (char == '"' || char == "'") {
+      quote = char;
+      current.write(char);
+    } else if (char == '[') {
+      brackets++;
+      current.write(char);
+    } else if (char == ']') {
+      if (brackets == 0) return null;
+      brackets--;
+      current.write(char);
+    } else if (brackets == 0 && char == '>') {
+      flush();
+      tokens.add('>');
+    } else if (brackets == 0 && char.trim().isEmpty) {
+      flush();
+    } else {
+      current.write(char);
+    }
+  }
+  if (quote != null || brackets != 0) return null;
+  flush();
+  return tokens;
 }

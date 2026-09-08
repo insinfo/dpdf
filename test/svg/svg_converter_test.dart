@@ -255,6 +255,37 @@ void main() {
           reason: 'o seletor descendente mais específico vence rect');
     });
 
+    test('style aceita seletores CSS por atributo e seus operadores', () async {
+      final content = await _render('''
+        <svg width="80" height="20">
+          <style>
+            [data-present] { fill: red; }
+            [data-exact = "yes"] { fill: #00ff00; }
+            [data-words ~= "hot"] { fill: blue; }
+            [lang |= "pt"] { fill: yellow; }
+            [data-code ^= "pre"] { fill: #ff00ff; }
+            [data-code \$= "end"] { fill: #00ffff; }
+            rect[data-code *= "middle"] { fill: #808080; }
+          </style>
+          <rect data-present="" width="5" height="5"/>
+          <rect data-exact="yes" x="10" width="5" height="5"/>
+          <rect data-words="cold hot warm" x="20" width="5" height="5"/>
+          <rect lang="pt-BR" x="30" width="5" height="5"/>
+          <rect data-code="prefix" x="40" width="5" height="5"/>
+          <rect data-code="the-end" x="50" width="5" height="5"/>
+          <rect data-code="a-middle-z" x="60" width="5" height="5"/>
+        </svg>
+      ''');
+
+      expect(_count(content, '1 0 0 rg\n'), 1);
+      expect(_count(content, '0 1 0 rg\n'), 1);
+      expect(_count(content, '0 0 1 rg\n'), 1);
+      expect(_count(content, '1 1 0 rg\n'), 1);
+      expect(_count(content, '1 0 1 rg\n'), 1);
+      expect(_count(content, '0 1 1 rg\n'), 1);
+      expect(_count(content, '0.50196 0.50196 0.50196 rg\n'), 1);
+    });
+
     test('use instancia geometria de defs e aplica x e y', () async {
       final content = await _render('''
         <svg width="40" height="20">

@@ -133,6 +133,9 @@ subsampling.
 
 ## Known limitations
 
+- Full specification coverage remains pending. JBIG2, CFF/CID, SVG and the
+  other subsystems described below are implemented and tested incrementally,
+  but are not yet considered 100% complete.
 - SVG `<style>` rules support compound and attribute selectors, all six CSS
   attribute matching operators, and descendant, child, adjacent-sibling and
   general-sibling combinators. Structural `:root`, `:empty`, `:first-child`,

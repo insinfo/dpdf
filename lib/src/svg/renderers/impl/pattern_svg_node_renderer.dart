@@ -23,7 +23,8 @@ class PatternSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
   Future<void> doDraw(SvgDrawContext context) async {}
 
   @override
-  Future<bool> applyPattern(SvgDrawContext context, Rectangle bounds) async {
+  Future<bool> applyPattern(SvgDrawContext context, Rectangle bounds,
+      {bool stroke = false}) async {
     final target = context.getCurrentCanvas();
     final document = target.getDocument();
     if (document == null || target.resources == null) return false;
@@ -115,7 +116,11 @@ class PatternSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
         context.removeCurrentViewPort();
         context.popCanvas();
       }
-      await target.setFillPattern(stream);
+      if (stroke) {
+        await target.setStrokePattern(stream);
+      } else {
+        await target.setFillPattern(stream);
+      }
       return true;
     } finally {
       if (id.isNotEmpty) context.popPatternId();

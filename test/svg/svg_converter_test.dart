@@ -780,6 +780,69 @@ void main() {
       }
     });
 
+    test('pattern pode pintar o stroke sem virar preenchimento transparente',
+        () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="80" height="30">
+          <defs>
+            <pattern id="stripe" width="8" height="8"
+                     patternUnits="userSpaceOnUse">
+              <rect width="4" height="8" fill="red"/>
+              <rect x="4" width="4" height="8" fill="blue"/>
+            </pattern>
+          </defs>
+          <path d="M 8 15 L 72 15" fill="none"
+                stroke='url("#stripe") red' stroke-width="8"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final content = String.fromCharCodes(await page.contentPayload());
+        expect(content, contains('/Pattern CS\n'));
+        expect(content, contains(' SCN\n'));
+        expect(content, contains('S\n'));
+
+        final rendered = await PdfPageRenderer.render(page,
+            options: const PdfRenderOptions(dpi: 72));
+        var coloured = 0;
+        for (final pixel in rendered.pixels) {
+          final red = (pixel >> 16) & 0xff;
+          final green = (pixel >> 8) & 0xff;
+          final blue = pixel & 0xff;
+          if (green < 80 && (red > 180 || blue > 180)) coloured++;
+        }
+        expect(coloured, greaterThan(100),
+            reason: 'o padrão vermelho/azul deve permanecer visível no traço');
+        expect(rendered.report.unsupportedOperators, isEmpty);
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('paint server ausente usa a cor fallback da sintaxe SVG', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="30" height="20">
+          <rect width="30" height="20" fill="url(#missing) #00ff00"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final content = String.fromCharCodes(await page.contentPayload());
+        expect(content, contains('0 1 0 rg\n'));
+        final rendered = await PdfPageRenderer.render(page,
+            options: const PdfRenderOptions(dpi: 72));
+        final centre = rendered.pixels[
+            (rendered.height ~/ 2) * rendered.width + rendered.width ~/ 2];
+        expect((centre >> 8) & 0xff, greaterThan(240));
+        expect((centre >> 16) & 0xff, lessThan(15));
+        expect(centre & 0xff, lessThan(15));
+      } finally {
+        await document.close();
+      }
+    });
+
     test('pattern objectBoundingBox dimensiona a célula pela geometria',
         () async {
       final bytes = await SvgConverter.convertToBytes('''

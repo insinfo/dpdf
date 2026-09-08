@@ -4,5 +4,6 @@ import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 
 abstract interface class SvgPatternPaintServer
     implements NoDrawSvgNodeRenderer {
-  Future<bool> applyPattern(SvgDrawContext context, Rectangle bounds);
+  Future<bool> applyPattern(SvgDrawContext context, Rectangle bounds,
+      {bool stroke = false});
 }

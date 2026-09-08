@@ -684,6 +684,18 @@ class PdfCanvas {
     return this;
   }
 
+  /// Seleciona um tiling pattern colorido como pintura de traço.
+  Future<PdfCanvas> setStrokePattern(PdfStream patternStream) async {
+    if (resources == null || document == null) {
+      throw StateError('A pattern needs a document-backed canvas.');
+    }
+    final name = await resources!.addPattern(document!, patternStream);
+    contentStream!.getOutputStream()
+      ..writeBytes(ByteUtils.getIsoBytes('/Pattern CS\n'))
+      ..writeBytes(ByteUtils.getIsoBytes('/${name.getValue()} SCN\n'));
+    return this;
+  }
+
   Future<PdfCanvas> beginMarkedContent(PdfName tag,
       [PdfDictionary? properties]) async {
     if (properties == null) {

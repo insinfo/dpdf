@@ -191,6 +191,8 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
       }
 
       final shading = _shadingPaintServer(context);
+      final pattern = _patternPaintServer(context, SvgAttributes.FILL);
+      final strokePattern = _patternPaintServer(context, SvgAttributes.STROKE);
       if (doFill && shading != null) {
         final fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, '');
         currentCanvas.saveState();
@@ -207,6 +209,11 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
           // O operador de clip consome o caminho; reconstrua apenas para o
           // traço, mantendo shading e stroke semanticamente independentes.
           await doDraw(context);
+          if (strokePattern != null) {
+            await strokePattern.applyPattern(
+                context, getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0),
+                stroke: true);
+          }
           currentCanvas.stroke();
         } else {
           currentCanvas.newPath();
@@ -215,15 +222,40 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
         return;
       }
 
-      final pattern = _patternPaintServer(context);
       if (doFill && pattern != null) {
         final applied = await pattern.applyPattern(
             context, getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0));
         if (applied) {
+          if (doStroke && strokePattern != null) {
+            await strokePattern.applyPattern(
+                context, getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0),
+                stroke: true);
+          }
           final fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, '');
           _doStrokeOrFill(fillRule, currentCanvas);
         } else if (doStroke) {
           currentCanvas.stroke();
+        } else {
+          currentCanvas.newPath();
+        }
+        await _drawMarkers(context);
+        return;
+      }
+
+      if (doStroke && strokePattern != null) {
+        final applied = await strokePattern.applyPattern(
+            context, getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0),
+            stroke: true);
+        if (applied) {
+          if (doFill && canElementFill()) {
+            final fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, '');
+            _doStrokeOrFill(fillRule, currentCanvas);
+          } else {
+            currentCanvas.stroke();
+          }
+        } else if (doFill && canElementFill()) {
+          final fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, '');
+          _doStrokeOrFill(fillRule, currentCanvas);
         } else {
           currentCanvas.newPath();
         }
@@ -265,9 +297,9 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
     for (final type in _MARKER_VERTEX_TYPES) {
       final raw =
           getAttribute(type.toString()) ?? getAttribute(SvgAttributes.MARKER);
-      if (raw == null || !raw.startsWith('url(')) continue;
-      final id = raw.replaceAll('url(#', '').replaceAll(')', '').trim();
-      final marker = context.getNamedObject(CssUtils.extractUnquotedString(id));
+      final reference = raw == null ? null : _paintReference(raw);
+      if (reference == null) continue;
+      final marker = context.getNamedObject(reference.id);
       if (marker is! MarkerSvgNodeRenderer) continue;
       final selected = type == MarkerVertexType.MARKER_START
           ? vertices.where((vertex) => vertex.isStart)
@@ -282,25 +314,26 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
 
   SvgShadingPaintServer? _shadingPaintServer(SvgDrawContext context) {
     final raw = getAttribute(SvgAttributes.FILL);
-    if (raw == null || !raw.startsWith('url(')) return null;
-    final id = raw.replaceAll('url(#', '').replaceAll(')', '').trim();
-    final renderer = context.getNamedObject(CssUtils.extractUnquotedString(id));
+    final reference = raw == null ? null : _paintReference(raw);
+    if (reference == null) return null;
+    final renderer = context.getNamedObject(reference.id);
     return renderer is SvgShadingPaintServer ? renderer : null;
   }
 
-  SvgPatternPaintServer? _patternPaintServer(SvgDrawContext context) {
-    final raw = getAttribute(SvgAttributes.FILL);
-    if (raw == null || !raw.startsWith('url(')) return null;
-    final id = raw.replaceAll('url(#', '').replaceAll(')', '').trim();
-    final renderer = context.getNamedObject(CssUtils.extractUnquotedString(id));
+  SvgPatternPaintServer? _patternPaintServer(SvgDrawContext context,
+      [String attribute = SvgAttributes.FILL]) {
+    final raw = getAttribute(attribute);
+    final reference = raw == null ? null : _paintReference(raw);
+    if (reference == null) return null;
+    final renderer = context.getNamedObject(reference.id);
     return renderer is SvgPatternPaintServer ? renderer : null;
   }
 
   Future<void> _applyMask(SvgDrawContext context) async {
     final raw = getAttribute(SvgAttributes.MASK);
-    if (raw == null || !raw.startsWith('url(')) return;
-    final id = raw.replaceAll('url(#', '').replaceAll(')', '').trim();
-    final renderer = context.getNamedObject(CssUtils.extractUnquotedString(id));
+    final reference = raw == null ? null : _paintReference(raw);
+    if (reference == null) return;
+    final renderer = context.getNamedObject(reference.id);
     if (renderer is SvgMaskPaintServer) {
       await renderer.applyMask(
           context, getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0));
@@ -403,11 +436,13 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
       double opacity =
           _getOpacityByAttribute(SvgAttributes.STROKE_OPACITY, generalOpacity);
       Color? strokeColor;
-      TransparentColor? tc =
-          _getColorFromAttribute(context, strokeRaw, width / 2.0, opacity);
-      if (tc != null) {
-        strokeColor = tc.getColor();
-        opacity = tc.getOpacity();
+      if (_patternPaintServer(context, SvgAttributes.STROKE) == null) {
+        TransparentColor? tc =
+            _getColorFromAttribute(context, strokeRaw, width / 2.0, opacity);
+        if (tc != null) {
+          strokeColor = tc.getColor();
+          opacity = tc.getOpacity();
+        }
       }
 
       String? dashArrayRaw = getAttribute(SvgAttributes.STROKE_DASHARRAY);
@@ -458,10 +493,9 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
       raw = getAttributeOrDefault(CommonCssConstants.COLOR, "black");
     }
 
-    if (raw.startsWith("url(")) {
-      String id = raw.replaceAll("url(#", "").replaceAll(")", "").trim();
-      id = CssUtils.extractUnquotedString(id);
-      SvgNodeRenderer? colorRenderer = context.getNamedObject(id);
+    final reference = _paintReference(raw);
+    if (reference != null) {
+      SvgNodeRenderer? colorRenderer = context.getNamedObject(reference.id);
       if (colorRenderer is SvgPaintServer) {
         if (colorRenderer.getParent() == null) {
           colorRenderer.setParent(this);
@@ -474,6 +508,10 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
         if (resolvedColor != null) {
           return TransparentColor(resolvedColor, 1.0);
         }
+      }
+      if (reference.fallback.isNotEmpty) {
+        return _getColorFromAttribute(
+            context, reference.fallback, margin, parentOpacity);
       }
       return TransparentColor(ColorConstants.BLACK, 0.0);
     }
@@ -498,9 +536,9 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
   Future<bool> _drawInClipPath(SvgDrawContext context) async {
     String? clipPathName = getAttribute(SvgAttributes.CLIP_PATH);
     if (clipPathName != null) {
-      String id =
-          clipPathName.replaceAll("url(#", "").replaceAll(")", "").trim();
-      SvgNodeRenderer? template = context.getNamedObject(id);
+      final reference = _paintReference(clipPathName);
+      SvgNodeRenderer? template =
+          reference == null ? null : context.getNamedObject(reference.id);
       if (template is ClipPathSvgNodeRenderer) {
         ClipPathSvgNodeRenderer clipPath =
             template.createDeepCopy() as ClipPathSvgNodeRenderer;
@@ -534,6 +572,20 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
 
   @override
   SvgNodeRenderer createDeepCopy();
+}
+
+class _PaintReference {
+  final String id;
+  final String fallback;
+  const _PaintReference(this.id, this.fallback);
+}
+
+_PaintReference? _paintReference(String value) {
+  final match = RegExp(r'''^\s*url\(\s*['"]?#([^'")\s]+)['"]?\s*\)\s*(.*)$''',
+          caseSensitive: false)
+      .firstMatch(value);
+  if (match == null) return null;
+  return _PaintReference(match.group(1)!, match.group(2)?.trim() ?? '');
 }
 
 class FillProperties {

@@ -14,6 +14,7 @@ class HtmlLayoutEngine {
   final List<HtmlTextFragment> _fragments = [];
   final List<HtmlBoxDecoration> _decorations = [];
   final List<HtmlImageFragment> _images = [];
+  final List<HtmlSvgFragment> _svgs = [];
   double _cursor = 0;
 
   HtmlLayoutEngine(this.availableWidth) : assert(availableWidth > 0);
@@ -26,13 +27,17 @@ class HtmlLayoutEngine {
     for (final box in boxes) {
       _layout(box, 0, availableWidth);
     }
-    return HtmlDisplayList(List.unmodifiable(_fragments),
-        List.unmodifiable(_decorations), List.unmodifiable(_images));
+    return HtmlDisplayList(
+        List.unmodifiable(_fragments),
+        List.unmodifiable(_decorations),
+        List.unmodifiable(_images),
+        List.unmodifiable(_svgs));
   }
 
   double _layout(HtmlBox box, double x, double width) {
     if (box.role == HtmlBoxRole.table) return _table(box, x, width);
     if (box.isImage) return _image(box, x, width);
+    if (box.isSvg) return _svg(box, x, width);
     if (box.isText) {
       return _paragraph(box.text!, box.style.text, x, width,
           linkTarget: box.linkTarget);
@@ -57,6 +62,16 @@ class HtmlLayoutEngine {
     final top = _cursor;
     _images
         .add(HtmlImageFragment(source, x, top, resolvedWidth, resolvedHeight));
+    _cursor += resolvedHeight;
+    return resolvedHeight;
+  }
+
+  double _svg(HtmlBox box, double x, double width) {
+    final source = box.svg!;
+    final resolvedWidth = source.width.clamp(1.0, width).toDouble();
+    final resolvedHeight = source.height * resolvedWidth / source.width;
+    final top = _cursor;
+    _svgs.add(HtmlSvgFragment(source, x, top, resolvedWidth, resolvedHeight));
     _cursor += resolvedHeight;
     return resolvedHeight;
   }
@@ -97,7 +112,7 @@ class HtmlLayoutEngine {
 
   List<HtmlBox>? _inlineLeaves(HtmlBox box) {
     if (box.isText) return [box];
-    if (box.isImage) return null;
+    if (box.isImage || box.isSvg) return null;
     if (box.style.display != HtmlDisplay.inline) return null;
     final result = <HtmlBox>[];
     for (final child in box.children) {

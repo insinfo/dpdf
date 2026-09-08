@@ -1,14 +1,26 @@
 import '../css/css_color.dart';
 import '../model/html_box.dart';
 import '../model/html_raster_image.dart';
+import '../model/html_svg_image.dart';
 
 /// Platform-neutral output of the HTML layout stage, consumed by PDF paint.
 class HtmlDisplayList {
   final List<HtmlTextFragment> textFragments;
   final List<HtmlBoxDecoration> boxDecorations;
   final List<HtmlImageFragment> imageFragments;
+  final List<HtmlSvgFragment> svgFragments;
   const HtmlDisplayList(this.textFragments, this.boxDecorations,
-      [this.imageFragments = const []]);
+      [this.imageFragments = const [], this.svgFragments = const []]);
+}
+
+/// Positioned vector SVG command. SVG remains vector data in the PDF.
+class HtmlSvgFragment {
+  final HtmlSvgImage image;
+  final double x;
+  final double top;
+  final double width;
+  final double height;
+  const HtmlSvgFragment(this.image, this.x, this.top, this.width, this.height);
 }
 
 /// Positioned raster image command. Images are atomic in the flow profile.

@@ -1,6 +1,7 @@
 import '../css/css_values.dart';
 import '../css/css_color.dart';
 import 'html_raster_image.dart';
+import 'html_svg_image.dart';
 
 /// The normalized box tree consumed by the HTML layout engines.
 ///
@@ -80,6 +81,7 @@ class HtmlBox {
   /// URI inherited from an HTML anchor for visible link content.
   final String? linkTarget;
   final HtmlRasterImage? image;
+  final HtmlSvgImage? svg;
   final HtmlBoxRole role;
   final List<HtmlBox> children;
 
@@ -88,12 +90,14 @@ class HtmlBox {
     this.text,
     this.linkTarget,
     this.image,
+    this.svg,
     this.role = HtmlBoxRole.normal,
     this.children = const [],
   });
 
   bool get isText => text != null;
   bool get isImage => image != null;
+  bool get isSvg => svg != null;
 
   String get textContent =>
       text ?? children.map((child) => child.textContent).join(' ');

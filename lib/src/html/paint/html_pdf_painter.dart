@@ -16,6 +16,7 @@ import '../../kernel/pdf/canvas/pdf_canvas.dart';
 import '../../kernel/pdf/pdf_document.dart';
 import '../../kernel/pdf/pdf_page.dart';
 import 'html_pdf_link_annotation.dart';
+import '../../svg/svg_converter.dart';
 
 /// Paints the platform-neutral HTML display list into paginated PDF pages.
 class HtmlPdfPainter {
@@ -89,6 +90,18 @@ class HtmlPdfPainter {
           fragment.height,
           margin + fragment.x,
           pageSize.height - margin - localTop - fragment.height);
+    }
+    for (final fragment in displayList.svgFragments) {
+      final pageIndex = (fragment.top / usableHeight).floor();
+      await canvasAt(pageIndex);
+      final localTop = fragment.top - pageIndex * usableHeight;
+      await SvgConverter.drawOnPage(fragment.image.source, pages[pageIndex],
+          viewport: Rectangle(
+              margin + fragment.x,
+              pageSize.height - margin - localTop - fragment.height,
+              fragment.width,
+              fragment.height),
+          fontCollection: fontCollection);
     }
     for (final fragment in displayList.textFragments) {
       final pageIndex = (fragment.baseline / usableHeight).floor();

@@ -7,6 +7,7 @@ import '../css/css_color.dart';
 import '../css/html_style_sheet.dart';
 import '../model/html_box.dart';
 import '../model/html_text.dart';
+import '../model/html_svg_image.dart';
 import 'html_list_context.dart';
 
 /// Turns a parsed HTML DOM into a platform-neutral, normalized box tree.
@@ -51,6 +52,11 @@ class HtmlBoxBuilder {
         } else if (alternative != null && alternative.isNotEmpty) {
           result.add(_text(alternative, style.text, linkTarget: linkTarget));
         }
+      } else if (tag == 'svg') {
+        final width = _svgLength(node.attributes['width'], 300 * .75);
+        final height = _svgLength(node.attributes['height'], 150 * .75);
+        result.add(HtmlBox(
+            style: style, svg: HtmlSvgImage(node.outerHtml, width, height)));
       } else if (tag == 'table') {
         result.add(_table(node, style, linkTarget));
       } else {
@@ -204,6 +210,16 @@ class HtmlBoxBuilder {
 
   double _length(String? source) {
     return CssValues.length(source);
+  }
+
+  double _svgLength(String? source, double fallback) {
+    final value = source?.trim();
+    if (value == null || value.isEmpty || value.endsWith('%')) return fallback;
+    final unitless = double.tryParse(value);
+    final points = unitless == null
+        ? CssValues.length(value, fallback: fallback)
+        : unitless * .75;
+    return points <= 0 ? fallback : points;
   }
 
   bool _fontWeight(String? source, bool fallback) {

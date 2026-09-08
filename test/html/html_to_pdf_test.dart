@@ -275,6 +275,30 @@ void main() {
     }
   });
 
+  test('keeps inline SVG as positioned vector PDF content', () async {
+    final bytes = await HtmlConverter.convertToBytes('''
+      <p>Antes</p>
+      <svg width="80" height="24" viewBox="0 0 80 24">
+        <rect width="80" height="24" rx="4" fill="#165dff"/>
+        <circle cx="12" cy="12" r="6" fill="white"/>
+      </svg>
+      <p>Depois</p>
+    ''');
+    final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+    try {
+      final page = (await document.pageAt(1))!;
+      final content = String.fromCharCodes(await page.contentPayload());
+      expect(await PdfTextExtraction.fromPage(page), contains('Antes'));
+      expect(await PdfTextExtraction.fromPage(page), contains('Depois'));
+      expect(content, contains('0.08627 0.36471 1 rg'));
+      expect(content, contains(' cm\n'));
+      expect(String.fromCharCodes(bytes), isNot(contains('/Subtype /Image')),
+          reason: 'SVG inline deve permanecer vetorial');
+    } finally {
+      await document.close();
+    }
+  });
+
   test('places structured table cells in PDF columns and rows', () async {
     final bytes = await HtmlConverter.convertToBytes('''
       <table><thead><tr><th>NorthCell</th><th>EastCell</th></tr></thead>

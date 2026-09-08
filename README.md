@@ -149,7 +149,9 @@ subsampling.
   outlines and variable `blend` charstrings render; `BLFont` can select
   normalized non-default variation coordinates. Bare Type1C fonts resolve
   their internal Standard or Expert CFF Encoding and PDF `/Differences`
-  through glyph names, without assuming character codes are glyph IDs.
+  through glyph names, without assuming character codes are glyph IDs. Type 2
+  arithmetic, conditional, transient-storage and stack operators are executed
+  when they feed glyph outlines.
   Axial/radial PatternType 2 shadings, colored/uncolored
   tiling patterns and patterned strokes render, including asymmetric shading
   extension. Type 4 free-form and Type 5 lattice Gouraud meshes render with

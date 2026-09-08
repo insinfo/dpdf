@@ -13,6 +13,8 @@ const _simpleCffBase64 =
     'AQAEAgABAgABAAhUZXN0Q0ZGAAECAAEALR0AAAAAHQAAAAAdAAAB9B0AAAK8BR0AAABVDx0AAABcER0AAAAMHQAAAJcSAAECAAEACG15Z2x5cGgAAAAAIgAjAYcABAIAAQACABIAIgAvDu+9FfgkiwWL+R4F/CSLBQ6LixX3XIsFi/dcBftciwUOlZUVlYsFi5UFgYsFDh0AAAAAFB0AAAAAFQ==';
 const _expertCffBase64 =
     'AQAEAgABAgABAAhUZXN0Q0ZGAAECAAEAMx0AAAAAHf///zgdAAAD6B0AAAMgBR0AAABPDx0AAAABEB0AAABWER0AAAAMHQAAAJESAAAAAAAA5QCeAXoABAIAAQACAA8AHwAvDouLFe+LBYvvBSeLBQ6LixX3XIsFi/dcBftciwUOi4sV98CLBYv3wAX7wIsFDh0AAAAAFB0AAAAAFQ==';
+const _arithmeticCffBase64 =
+    'AQAEAgABAgABAAhUZXN0Q0ZGAAECAAEALR0AAAAAHf///zgdAAAD6B0AAAMgBR0AAABJDx0AAABMER0AAAAMHQAAAIQSAAAAAAAAIgACAgABAAIAMA7vnwwKvZUMCxXvjQwYi40MGAWLjQwY740MGAUnjQwYi40MGAWLjQwYJ40MGAUOHQAAAAAUHQAAAAAV';
 
 /// Builds a one-page PDF whose text is drawn with an embedded TrueType font.
 Future<Uint8List> _pageWithText(
@@ -280,6 +282,19 @@ void main() {
       expect(page.report.isComplete, isTrue);
       expect(_inked(page), greaterThan(50),
           reason: 'código 255 deve selecionar Ydieresissmall no GID 3');
+    });
+
+    test('Type1C executa operadores aritméticos antes de pintar', () async {
+      final page = await _render(await _pageWithSimpleCff(
+        programBase64: _arithmeticCffBase64,
+      ));
+      final extent = _inkExtent(page);
+
+      expect(page.report.glyphsSkipped, isZero);
+      expect(page.report.isComplete, isTrue);
+      expect(extent, isNotNull);
+      expect(extent!.$2 - extent.$1, greaterThan(4),
+          reason: 'o retângulo calculado de 200 unidades deve ser pintado');
     });
 
     test('Type1C aplica Differences por nome em vez de assumir code igual GID',

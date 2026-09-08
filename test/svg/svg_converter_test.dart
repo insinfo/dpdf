@@ -866,6 +866,35 @@ void main() {
       }
     });
 
+    test('patternTransform transforma também a origem x e y da célula',
+        () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="100" height="60">
+          <defs>
+            <pattern id="p" x="10" y="5" width="20" height="10"
+                     patternUnits="userSpaceOnUse"
+                     patternTransform="scale(2)">
+              <rect width="20" height="10" fill="red"/>
+            </pattern>
+          </defs>
+          <rect width="100" height="60" fill="url(#p)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final patterns = await resources!.dictionaryEntry(PdfName.pattern);
+        final pattern = (await patterns!.values()).single as PdfStream;
+        final matrix = await pattern.arrayEntry(PdfName.matrix);
+        expect(await matrix!.toDoubleArray(),
+            orderedEquals(<double>[2, 0, 0, 2, 15, 7.5]));
+      } finally {
+        await document.close();
+      }
+    });
+
     test('mask luminance vira soft mask com grupo de transparência', () async {
       final bytes = await SvgConverter.convertToBytes('''
         <svg width="80" height="40">

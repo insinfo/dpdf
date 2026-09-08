@@ -83,8 +83,10 @@ class PatternSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
         b = transform.m10;
         c = transform.m01;
         d = transform.m11;
-        e += transform.m02;
-        f += transform.m12;
+        // x/y position the untransformed tile. patternTransform then maps
+        // that complete coordinate system into the target user space.
+        e = a * x + c * y + transform.m02;
+        f = b * x + d * y + transform.m12;
       }
       stream.put(PdfName.matrix, PdfArray.fromDoubles([a, b, c, d, e, f]));
 

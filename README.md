@@ -162,7 +162,8 @@ subsampling.
   decoding remains delegated to the application/provider.
 - JBIG2 automatically chooses between generic regions and deduplicated symbol
   dictionaries with text regions, including shared `/JBIG2Globals` across PDF
-  images. Refinement aggregation remains partial.
+  images. Single-image dictionaries can use lossless refinement aggregation
+  for near-identical glyphs; cross-page refinement clustering remains partial.
 
 Optional reading, recovery, merge, and signing modes are documented in
 [test/compatibility/OPTIONAL_MODES.md](test/compatibility/OPTIONAL_MODES.md).

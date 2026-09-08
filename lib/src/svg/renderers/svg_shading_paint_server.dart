@@ -5,4 +5,6 @@ import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 abstract interface class SvgShadingPaintServer
     implements NoDrawSvgNodeRenderer {
   Future<void> paintShading(SvgDrawContext context, Rectangle bounds);
+
+  Future<bool> applyStrokeShading(SvgDrawContext context, Rectangle bounds);
 }

@@ -191,6 +191,7 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
       }
 
       final shading = _shadingPaintServer(context);
+      final strokeShading = _shadingPaintServer(context, SvgAttributes.STROKE);
       final pattern = _patternPaintServer(context, SvgAttributes.FILL);
       final strokePattern = _patternPaintServer(context, SvgAttributes.STROKE);
       if (doFill && shading != null) {
@@ -209,7 +210,10 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
           // O operador de clip consome o caminho; reconstrua apenas para o
           // traço, mantendo shading e stroke semanticamente independentes.
           await doDraw(context);
-          if (strokePattern != null) {
+          if (strokeShading != null) {
+            await strokeShading.applyStrokeShading(context,
+                getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0));
+          } else if (strokePattern != null) {
             await strokePattern.applyPattern(
                 context, getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0),
                 stroke: true);
@@ -230,6 +234,9 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
             await strokePattern.applyPattern(
                 context, getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0),
                 stroke: true);
+          } else if (doStroke && strokeShading != null) {
+            await strokeShading.applyStrokeShading(context,
+                getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0));
           }
           final fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, '');
           _doStrokeOrFill(fillRule, currentCanvas);
@@ -246,6 +253,26 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
         final applied = await strokePattern.applyPattern(
             context, getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0),
             stroke: true);
+        if (applied) {
+          if (doFill && canElementFill()) {
+            final fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, '');
+            _doStrokeOrFill(fillRule, currentCanvas);
+          } else {
+            currentCanvas.stroke();
+          }
+        } else if (doFill && canElementFill()) {
+          final fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, '');
+          _doStrokeOrFill(fillRule, currentCanvas);
+        } else {
+          currentCanvas.newPath();
+        }
+        await _drawMarkers(context);
+        return;
+      }
+
+      if (doStroke && strokeShading != null) {
+        final applied = await strokeShading.applyStrokeShading(
+            context, getObjectBoundingBox(context) ?? Rectangle(0, 0, 0, 0));
         if (applied) {
           if (doFill && canElementFill()) {
             final fillRule = getAttributeOrDefault(SvgAttributes.FILL_RULE, '');
@@ -312,8 +339,9 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
     }
   }
 
-  SvgShadingPaintServer? _shadingPaintServer(SvgDrawContext context) {
-    final raw = getAttribute(SvgAttributes.FILL);
+  SvgShadingPaintServer? _shadingPaintServer(SvgDrawContext context,
+      [String attribute = SvgAttributes.FILL]) {
+    final raw = getAttribute(attribute);
     final reference = raw == null ? null : _paintReference(raw);
     if (reference == null) return null;
     final renderer = context.getNamedObject(reference.id);
@@ -436,7 +464,8 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
       double opacity =
           _getOpacityByAttribute(SvgAttributes.STROKE_OPACITY, generalOpacity);
       Color? strokeColor;
-      if (_patternPaintServer(context, SvgAttributes.STROKE) == null) {
+      if (_patternPaintServer(context, SvgAttributes.STROKE) == null &&
+          _shadingPaintServer(context, SvgAttributes.STROKE) == null) {
         TransparentColor? tc =
             _getColorFromAttribute(context, strokeRaw, width / 2.0, opacity);
         if (tc != null) {

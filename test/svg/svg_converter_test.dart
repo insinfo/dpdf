@@ -721,7 +721,7 @@ void main() {
     test('pattern vira um tiling pattern nativo com conteúdo próprio',
         () async {
       final bytes = await SvgConverter.convertToBytes('''
-        <svg width="80" height="30">
+        <svg width="80" height="40">
           <defs>
             <pattern id="tiles" width="10" height="8"
                      patternUnits="userSpaceOnUse">
@@ -838,6 +838,89 @@ void main() {
         expect((centre >> 8) & 0xff, greaterThan(240));
         expect((centre >> 16) & 0xff, lessThan(15));
         expect(centre & 0xff, lessThan(15));
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('gradiente linear pode pintar stroke como PatternType 2', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="80" height="30">
+          <defs>
+            <linearGradient id="line" x1="0%" x2="100%">
+              <stop offset="0" stop-color="red"/>
+              <stop offset="1" stop-color="blue"/>
+            </linearGradient>
+          </defs>
+          <path d="M 5 15 L 75 15" fill="none"
+                stroke="url(#line)" stroke-width="8"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final content = String.fromCharCodes(await page.contentPayload());
+        expect(content, contains('/Pattern CS\n'));
+        expect(content, contains(' SCN\n'));
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final patterns = await resources!.dictionaryEntry(PdfName.pattern);
+        final pattern = (await patterns!.values()).single as PdfDictionary;
+        expect((await pattern.integerEntry(PdfName('PatternType'))), 2);
+
+        final rendered = await PdfPageRenderer.render(page,
+            options: const PdfRenderOptions(dpi: 72));
+        var redOnLeft = 0;
+        var blueOnRight = 0;
+        for (var y = 0; y < rendered.height; y++) {
+          for (var x = 0; x < rendered.width; x++) {
+            final pixel = rendered.pixels[y * rendered.width + x];
+            final red = (pixel >> 16) & 0xff;
+            final blue = pixel & 0xff;
+            if (x < rendered.width ~/ 2 && red > blue + 50) redOnLeft++;
+            if (x >= rendered.width ~/ 2 && blue > red + 50) blueOnRight++;
+          }
+        }
+        expect(redOnLeft, greaterThan(50));
+        expect(blueOnRight, greaterThan(50));
+        expect(rendered.report.unsupportedOperators, isEmpty);
+      } finally {
+        await document.close();
+      }
+    });
+
+    test('stroke radial conserva gradientTransform e stop-opacity', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="80" height="30">
+          <defs>
+            <radialGradient id="halo" gradientTransform="translate(2 0)">
+              <stop offset="0" stop-color="red" stop-opacity="1"/>
+              <stop offset="1" stop-color="blue" stop-opacity="0.25"/>
+            </radialGradient>
+          </defs>
+          <rect x="8" y="8" width="64" height="24" fill="none"
+                stroke="url(#halo)" stroke-width="6"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final content = String.fromCharCodes(await page.contentPayload());
+        expect(content.indexOf(' gs\n'), lessThan(content.indexOf('S\n')));
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final patterns = await resources!.dictionaryEntry(PdfName.pattern);
+        final pattern = (await patterns!.values()).single as PdfDictionary;
+        expect(
+            await (await pattern.arrayEntry(PdfName.matrix))!.toDoubleArray(),
+            equals(<double>[1, 0, 0, 1, 1.5, 0]));
+        final shading = await pattern.dictionaryEntry(PdfName.shading);
+        expect(await shading!.integerEntry(PdfName.shadingType), 3);
+
+        final rendered = await PdfPageRenderer.render(page,
+            options: const PdfRenderOptions(dpi: 72));
+        expect(rendered.report.unsupportedOperators, isEmpty);
+        expect(rendered.pixels.toSet().length, greaterThan(10));
       } finally {
         await document.close();
       }

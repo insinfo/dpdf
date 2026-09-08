@@ -5,7 +5,9 @@ import 'package:dpdf/src/kernel/pdf/colorspace/pdf_shading.dart';
 import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 import 'package:dpdf/src/kernel/pdf/extgstate/pdf_ext_g_state.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 import 'package:dpdf/src/kernel/pdf/xobject/pdf_form_x_object.dart';
 import 'package:dpdf/src/svg/renderers/impl/abstract_branch_svg_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/impl/abstract_svg_node_renderer.dart';
@@ -130,6 +132,54 @@ abstract class GradientSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
     await paintTransformed(context, () => target.shading(color));
   }
 
+  Future<bool> paintGradientStroke(SvgDrawContext context, Rectangle bounds,
+      PdfShading color, PdfShading opacity) async {
+    final target = context.getCurrentCanvas();
+    final document = target.getDocument();
+    if (document == null || target.resources == null) return false;
+    final hasTransparency = stops().opacities.any((value) => value < 1);
+    if (hasTransparency) {
+      final form = PdfFormXObject(bounds);
+      form.pdfRepresentation()
+        ..put(
+            PdfName('Group'),
+            PdfDictionary()
+              ..put(PdfName.s, PdfName('Transparency'))
+              ..put(PdfName('CS'), PdfName.deviceRgb))
+        ..attachToDocument(document);
+      final maskCanvas = await PdfCanvas.fromFormXObject(form, document);
+      context.pushCanvas(maskCanvas);
+      try {
+        await paintTransformed(context, () => maskCanvas.shading(opacity));
+      } finally {
+        context.popCanvas();
+      }
+      await target.setExtGState(PdfExtGState().setSoftMask(PdfDictionary()
+        ..put(PdfName.s, PdfName('Luminosity'))
+        ..put(PdfName('G'), form.pdfRepresentation())));
+    }
+    final pattern = PdfDictionary()
+      ..put(PdfName('PatternType'), PdfNumber.fromInt(2))
+      ..put(PdfName.shading, color.pdfRepresentation())
+      ..attachToDocument(document);
+    final raw = getAttribute(SvgAttributes.GRADIENT_TRANSFORM);
+    if (raw != null && raw.trim().isNotEmpty) {
+      final transform = TransformUtils.parseTransform(raw);
+      pattern.put(
+          PdfName.matrix,
+          PdfArray.fromDoubles([
+            transform.m00,
+            transform.m10,
+            transform.m01,
+            transform.m11,
+            transform.m02,
+            transform.m12,
+          ]));
+    }
+    await target.setStrokePattern(pattern);
+    return true;
+  }
+
   double coordinate(String name, String fallback, double origin, double size,
       SvgDrawContext context) {
     final raw = getAttribute(name) ?? fallback;
@@ -178,9 +228,8 @@ abstract class GradientSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
 }
 
 class LinearGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
-  @override
-  Future<void> paintShading(SvgDrawContext context, Rectangle b) async {
-    TemplateResolveUtils.resolve(this, context);
+  ({PdfShading color, PdfShading opacity}) _createShadings(
+      SvgDrawContext context, Rectangle b) {
     final s = stops();
     final x0 =
         coordinate(SvgAttributes.X1, '0%', b.getX(), b.getWidth(), context);
@@ -190,12 +239,27 @@ class LinearGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
         coordinate(SvgAttributes.X2, '100%', b.getX(), b.getWidth(), context);
     final y1 =
         coordinate(SvgAttributes.Y2, '0%', b.getY(), b.getHeight(), context);
-    await paintGradient(
-        context,
-        b,
-        PdfShading.axialRgbStops(x0, y0, x1, y1, s.offsets, s.colors),
-        PdfShading.axialRgbStops(x0, y0, x1, y1, s.offsets,
-            s.opacities.map((v) => <double>[v, v, v]).toList()));
+    return (
+      color: PdfShading.axialRgbStops(x0, y0, x1, y1, s.offsets, s.colors),
+      opacity: PdfShading.axialRgbStops(x0, y0, x1, y1, s.offsets,
+          s.opacities.map((v) => <double>[v, v, v]).toList()),
+    );
+  }
+
+  @override
+  Future<void> paintShading(SvgDrawContext context, Rectangle b) async {
+    TemplateResolveUtils.resolve(this, context);
+    final shadings = _createShadings(context, b);
+    await paintGradient(context, b, shadings.color, shadings.opacity);
+  }
+
+  @override
+  Future<bool> applyStrokeShading(
+      SvgDrawContext context, Rectangle bounds) async {
+    TemplateResolveUtils.resolve(this, context);
+    final shadings = _createShadings(context, bounds);
+    return paintGradientStroke(
+        context, bounds, shadings.color, shadings.opacity);
   }
 
   @override
@@ -208,16 +272,13 @@ class LinearGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
 }
 
 class RadialGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
-  @override
-  Future<void> paintShading(SvgDrawContext context, Rectangle b) async {
-    TemplateResolveUtils.resolve(this, context);
+  ({PdfShading color, PdfShading opacity}) _createShadings(
+      SvgDrawContext context, Rectangle b) {
     final s = stops();
     final cx =
         coordinate(SvgAttributes.CX, '50%', b.getX(), b.getWidth(), context);
     final cy =
         coordinate(SvgAttributes.CY, '50%', b.getY(), b.getHeight(), context);
-    // SVG: omitted focal coordinates inherit the resolved centre, rather than
-    // reverting independently to 50%. This also matters for href inheritance.
     final fx = getAttribute(SvgAttributes.FX) == null
         ? cx
         : coordinate(SvgAttributes.FX, '50%', b.getX(), b.getWidth(), context);
@@ -227,16 +288,29 @@ class RadialGradientSvgNodeRenderer extends GradientSvgNodeRenderer {
     final radiusBasis = math.max(b.getWidth(), b.getHeight());
     final fr = coordinate(SvgAttributes.FR, '0', 0, radiusBasis, context);
     final r = coordinate(SvgAttributes.R, '50%', 0, radiusBasis, context);
-    // SVG 2 requires a non-negative focal radius no larger than the outer
-    // radius. Clamping malformed author input keeps the emitted PDF valid.
     final focalRadius = fr.clamp(0, math.max(0, r)).toDouble();
-    await paintGradient(
-        context,
-        b,
-        PdfShading.radialRgbStops(
-            fx, fy, focalRadius, cx, cy, r, s.offsets, s.colors),
-        PdfShading.radialRgbStops(fx, fy, focalRadius, cx, cy, r, s.offsets,
-            s.opacities.map((v) => <double>[v, v, v]).toList()));
+    return (
+      color: PdfShading.radialRgbStops(
+          fx, fy, focalRadius, cx, cy, r, s.offsets, s.colors),
+      opacity: PdfShading.radialRgbStops(fx, fy, focalRadius, cx, cy, r,
+          s.offsets, s.opacities.map((v) => <double>[v, v, v]).toList()),
+    );
+  }
+
+  @override
+  Future<void> paintShading(SvgDrawContext context, Rectangle b) async {
+    TemplateResolveUtils.resolve(this, context);
+    final shadings = _createShadings(context, b);
+    await paintGradient(context, b, shadings.color, shadings.opacity);
+  }
+
+  @override
+  Future<bool> applyStrokeShading(
+      SvgDrawContext context, Rectangle bounds) async {
+    TemplateResolveUtils.resolve(this, context);
+    final shadings = _createShadings(context, bounds);
+    return paintGradientStroke(
+        context, bounds, shadings.color, shadings.opacity);
   }
 
   @override

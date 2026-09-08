@@ -147,7 +147,9 @@ subsampling.
 - PDF rendering may require a supplied fallback for fonts that are not embedded.
   CID-keyed CFF supports FDArray/FDSelect and charset CID-to-GID mapping. CFF2
   outlines and variable `blend` charstrings render; `BLFont` can select
-  normalized non-default variation coordinates. Axial/radial PatternType 2 shadings, colored/uncolored
+  normalized non-default variation coordinates. Bare Type1C fonts resolve
+  their internal CFF Encoding and PDF `/Differences` through glyph names,
+  without assuming character codes are glyph IDs. Axial/radial PatternType 2 shadings, colored/uncolored
   tiling patterns and patterned strokes render, including asymmetric shading
   extension. Type 4 free-form and Type 5 lattice Gouraud meshes render with
   decoded vertex colours, including parameter interpolation before nonlinear

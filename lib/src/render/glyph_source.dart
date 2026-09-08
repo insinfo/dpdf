@@ -150,6 +150,13 @@ class PdfGlyphSource {
   /// encoding plus any `/Differences`.
   final Map<int, int> _codeToUnicode;
 
+  /// For simple CFF fonts: character code to the glyph name selected by the
+  /// PDF Encoding and Differences dictionary.
+  final Map<int, String> _codeToGlyphName;
+
+  /// Whether unmapped simple-font codes use the CFF program's own Encoding.
+  final bool _useCffEncoding;
+
   /// For composite fonts: CID to glyph index, when `/CIDToGIDMap` is a stream.
   /// Null means the identity mapping.
   final Uint16List? _cidToGid;
@@ -174,14 +181,18 @@ class PdfGlyphSource {
     required Map<int, double> widths,
     required double defaultWidth,
     required Map<int, int> codeToUnicode,
+    required Map<int, String> codeToGlyphName,
     required Uint16List? cidToGid,
     _EmbeddedCMap? cmap,
     bool codeIsGlyphIndex = false,
+    bool useCffEncoding = false,
   })  : _cmap = cmap,
         _codeIsGlyphIndex = codeIsGlyphIndex,
+        _useCffEncoding = useCffEncoding,
         _widths = widths,
         _defaultWidth = defaultWidth,
         _codeToUnicode = codeToUnicode,
+        _codeToGlyphName = codeToGlyphName,
         _cidToGid = cidToGid;
 
   /// True when glyphs can actually be drawn.
@@ -244,6 +255,17 @@ class PdfGlyphSource {
       return cid < map.length ? map[cid] : 0;
     }
 
+    final cff = font.cffInfo;
+    if (cff != null && !cff.isCID) {
+      final glyphName = _codeToGlyphName[code];
+      final byName = glyphName == null ? null : font.glyphIdForName(glyphName);
+      if (byName != null && byName != 0) return byName;
+      if (_useCffEncoding) {
+        final encoded = cff.codeToGlyphId[code];
+        if (encoded != null && encoded != 0) return encoded;
+      }
+    }
+
     final unicode = _codeToUnicode[code];
     if (unicode != null) {
       final gid = font.mapCodePoint(unicode);
@@ -301,7 +323,8 @@ class PdfGlyphSource {
         0;
 
     final baseFont = (await font.nameEntry(PdfName.baseFont))?.getValue() ?? '';
-    final codeToUnicode = await _simpleEncoding(font, descriptor);
+    final encoding = await _simpleEncoding(font, descriptor);
+    final codeToUnicode = encoding.unicode;
 
     // Uma das catorze fontes padrão pode legitimamente omitir `/Widths`: o
     // leitor tem de conhecer as métricas. Sem isto todo avanço vira zero e a
@@ -323,8 +346,10 @@ class PdfGlyphSource {
       widths: widths,
       defaultWidth: missing,
       codeToUnicode: codeToUnicode,
+      codeToGlyphName: encoding.glyphNames,
       cidToGid: null,
       codeIsGlyphIndex: _lacksUsableCmap(resolved.face),
+      useCffEncoding: encoding.usesFontEncoding,
     );
   }
 
@@ -355,6 +380,7 @@ class PdfGlyphSource {
         widths: const {},
         defaultWidth: 1000,
         codeToUnicode: const {},
+        codeToGlyphName: const {},
         cidToGid: null,
       );
     }
@@ -371,6 +397,7 @@ class PdfGlyphSource {
         widths: const {},
         defaultWidth: 1000,
         codeToUnicode: const {},
+        codeToGlyphName: const {},
         cidToGid: null,
       );
     }
@@ -395,6 +422,7 @@ class PdfGlyphSource {
       widths: widths,
       defaultWidth: defaultWidth,
       codeToUnicode: const {},
+      codeToGlyphName: const {},
       cidToGid: cidToGid,
       cmap: embedded,
     );
@@ -454,7 +482,12 @@ class PdfGlyphSource {
   }
 
   /// Builds the character-code to Unicode table from `/Encoding`.
-  static Future<Map<int, int>> _simpleEncoding(
+  static Future<
+      ({
+        Map<int, int> unicode,
+        Map<int, String> glyphNames,
+        bool usesFontEncoding
+      })> _simpleEncoding(
     PdfDictionary font,
     PdfDictionary? descriptor,
   ) async {
@@ -480,12 +513,18 @@ class PdfGlyphSource {
     }
 
     final table = <int, int>{};
+    final glyphNames = <int, String>{};
     if (base != null) {
       for (var code = 0; code < 256; code++) {
         try {
           final text =
               PdfSimpleEncoding.decode(base, Uint8List.fromList([code]));
-          if (text.isNotEmpty) table[code] = text.runes.first;
+          if (text.isNotEmpty) {
+            final scalar = text.runes.first;
+            table[code] = scalar;
+            final name = AdobeGlyphList.unicodeToName(scalar);
+            if (name != null) glyphNames[code] = name;
+          }
         } on FormatException {
           // Undefined slot in this encoding.
         } on UnsupportedError {
@@ -505,9 +544,14 @@ class PdfGlyphSource {
       for (final entry in differences.entries) {
         final scalar = AdobeGlyphList.nameToUnicode(entry.value);
         if (scalar >= 0) table[entry.key] = scalar;
+        glyphNames[entry.key] = entry.value;
       }
     }
-    return table;
+    return (
+      unicode: table,
+      glyphNames: glyphNames,
+      usesFontEncoding: base == null,
+    );
   }
 
   /// `/Differences` is a flat array where a number resets the running code and

@@ -10,6 +10,8 @@ import 'package:test/test.dart';
 const _fontPath = 'test/assets/ABeeZee-Regular.ttf';
 const _cidCffBase64 =
     'AQAEAgABAgABAAhUZXN0Q0lEAAECAAEALB0AAAAAHQAAAAAdAAAAAAweHQAAAEgPHQAAAFgRHQAAAGoMJB0AAABNDCUAAAAAAAAqASwDAAIAAAAAAgEAAwADAgABAAIABQAIDiAKDiAKDgACAgABAAwAFx0AAAAGHQAAAIkSHQAAAAYdAAAApBIdAAAABhMAAQIAAQAPlZ8V74sFi/dcBSeLBQsdAAAABhMAAQIAAQAS98CzFffAiwWL+CQF+8CLBQs=';
+const _simpleCffBase64 =
+    'AQAEAgABAgABAAhUZXN0Q0ZGAAECAAEALR0AAAAAHQAAAAAdAAAB9B0AAAK8BR0AAABVDx0AAABcER0AAAAMHQAAAJcSAAECAAEACG15Z2x5cGgAAAAAIgAjAYcABAIAAQACABIAIgAvDu+9FfgkiwWL+R4F/CSLBQ6LixX3XIsFi/dcBftciwUOlZUVlYsFi5UFgYsFDh0AAAAAFB0AAAAAFQ==';
 
 /// Builds a one-page PDF whose text is drawn with an embedded TrueType font.
 Future<Uint8List> _pageWithText(
@@ -176,6 +178,52 @@ Future<Uint8List> _pageWithCidCff() async {
   return output.takeBytes();
 }
 
+Future<Uint8List> _pageWithSimpleCff(
+    {PdfObject? encoding, int code = 65}) async {
+  final output = BytesBuilder(copy: false);
+  final pdf = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
+  final page = await pdf.appendBlankPage();
+  page
+      .pdfRepresentation()
+      .put(PdfName.mediaBox, PdfArray.fromDoubles([0, 0, 100, 100]));
+
+  final program = PdfStream.withBytes(base64Decode(_simpleCffBase64), 0)
+    ..put(PdfName.subtype, PdfName('Type1C'));
+  final descriptor = PdfDictionary()
+    ..put(PdfName.type, PdfName('FontDescriptor'))
+    ..put(PdfName.fontName, PdfName('TestCFF'))
+    ..put(PdfName.flags, PdfNumber.fromInt(4))
+    ..put(PdfName('FontBBox'), PdfArray.fromDoubles([0, 0, 500, 700]))
+    ..put(PdfName('ItalicAngle'), PdfNumber(0))
+    ..put(PdfName('Ascent'), PdfNumber(700))
+    ..put(PdfName('Descent'), PdfNumber(0))
+    ..put(PdfName('CapHeight'), PdfNumber(700))
+    ..put(PdfName('StemV'), PdfNumber(80))
+    ..put(PdfName('FontFile3'), program);
+  final font = PdfDictionary()
+    ..put(PdfName.type, PdfName.font)
+    ..put(PdfName.subtype, PdfName('Type1'))
+    ..put(PdfName.baseFont, PdfName('TestCFF'))
+    ..put(PdfName('FirstChar'), PdfNumber.fromInt(65))
+    ..put(PdfName('LastChar'), PdfNumber.fromInt(66))
+    ..put(PdfName('Widths'), PdfArray.fromDoubles([600, 600]))
+    ..put(PdfName.fontDescriptor, descriptor);
+  if (encoding != null) font.put(PdfName('Encoding'), encoding);
+  page.pdfRepresentation()
+    ..put(
+        PdfName.resources,
+        PdfDictionary()
+          ..put(PdfName.font, PdfDictionary()..put(PdfName('F0'), font)))
+    ..put(
+        PdfName.contents,
+        PdfStream.withBytes(
+            Uint8List.fromList(latin1.encode(
+                'BT /F0 30 Tf 1 0 0 1 20 40 Tm <${code.toRadixString(16).padLeft(2, '0')}> Tj ET')),
+            0));
+  await pdf.close();
+  return output.takeBytes();
+}
+
 void main() {
   // Without the font there is nothing to embed, and a test that silently
   // passes on a missing asset is worse than one that is absent.
@@ -209,6 +257,28 @@ void main() {
       expect(extent.$2, greaterThan(58),
           reason:
               'CID 300 deve selecionar o GID 2 pelo charset não identidade');
+    });
+
+    test('Type1C usa o Encoding interno do CFF quando o PDF o omite', () async {
+      final page = await _render(await _pageWithSimpleCff());
+
+      expect(page.report.glyphsSkipped, isZero);
+      expect(page.report.isComplete, isTrue);
+      expect(_inked(page), greaterThan(100));
+    });
+
+    test('Type1C aplica Differences por nome em vez de assumir code igual GID',
+        () async {
+      final encoding = PdfDictionary()
+        ..put(PdfName('BaseEncoding'), PdfName('StandardEncoding'))
+        ..put(PdfName('Differences'),
+            PdfArray.fromList([PdfNumber.fromInt(65), PdfName('B')]));
+      final normal = _inkExtent(await _render(await _pageWithSimpleCff()))!;
+      final remapped = _inkExtent(
+          await _render(await _pageWithSimpleCff(encoding: encoding)))!;
+
+      expect(remapped.$2 - remapped.$1, lessThan(normal.$2 - normal.$1),
+          reason: '/B é o retângulo estreito no GID 2 da fixture');
     });
 
     test('puts the ink where the text was positioned', () async {

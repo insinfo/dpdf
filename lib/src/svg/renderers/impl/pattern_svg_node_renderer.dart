@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
@@ -13,6 +15,7 @@ import 'package:dpdf/src/svg/renderers/svg_pattern_paint_server.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 import 'package:dpdf/src/svg/utils/transform_utils.dart';
 import 'package:dpdf/src/svg/utils/template_resolve_utils.dart';
+import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 
 class PatternSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
     implements SvgPatternPaintServer {
@@ -89,7 +92,13 @@ class PatternSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
       context.pushCanvas(patternCanvas);
       context.addViewPort(Rectangle(0, 0, width, height));
       try {
-        if ((getAttribute(SvgAttributes.PATTERN_CONTENT_UNITS) ??
+        final viewBox = SvgCssUtils.parseViewBox(this);
+        if (viewBox != null &&
+            viewBox.length >= 4 &&
+            viewBox[2] > 0 &&
+            viewBox[3] > 0) {
+          _applyViewBox(patternCanvas, viewBox, width, height);
+        } else if ((getAttribute(SvgAttributes.PATTERN_CONTENT_UNITS) ??
                 SvgValues.USER_SPACE_ON_USE) ==
             SvgValues.OBJECT_BOUNDING_BOX) {
           patternCanvas.concatMatrix(
@@ -113,6 +122,42 @@ class PatternSvgNodeRenderer extends AbstractBranchSvgNodeRenderer
 
   @override
   Rectangle? getObjectBoundingBox(SvgDrawContext context) => null;
+
+  void _applyViewBox(
+      PdfCanvas canvas, List<double> viewBox, double width, double height) {
+    var scaleX = width / viewBox[2];
+    var scaleY = height / viewBox[3];
+    final aspect = getAttribute(SvgAttributes.PRESERVE_ASPECT_RATIO) ??
+        SvgValues.DEFAULT_ASPECT_RATIO;
+    final parts = SvgCssUtils.splitValueList(aspect)
+        .where((part) => part.toLowerCase() != SvgValues.DEFER)
+        .toList();
+    final align = parts.isEmpty
+        ? SvgValues.DEFAULT_ASPECT_RATIO.toLowerCase()
+        : parts.first.toLowerCase();
+    final meetOrSlice = parts.length > 1 ? parts[1].toLowerCase() : '';
+    if (align != SvgValues.NONE.toLowerCase()) {
+      final uniform = meetOrSlice == SvgValues.SLICE
+          ? math.max(scaleX, scaleY)
+          : math.min(scaleX, scaleY);
+      scaleX = scaleY = uniform;
+    }
+    final spareX = width - viewBox[2] * scaleX;
+    final spareY = height - viewBox[3] * scaleY;
+    final offsetX = align.startsWith('xmax')
+        ? spareX
+        : align.startsWith('xmid')
+            ? spareX / 2
+            : 0.0;
+    final offsetY = align.endsWith('ymax')
+        ? spareY
+        : align.endsWith('ymid')
+            ? spareY / 2
+            : 0.0;
+    canvas.concatMatrix(1, 0, 0, 1, offsetX, offsetY);
+    canvas.concatMatrix(scaleX, 0, 0, scaleY, 0, 0);
+    canvas.concatMatrix(1, 0, 0, 1, -viewBox[0], -viewBox[1]);
+  }
 
   @override
   SvgNodeRenderer createDeepCopy() {

@@ -836,6 +836,36 @@ void main() {
       }
     });
 
+    test('pattern viewBox escala e centraliza o conteúdo da célula', () async {
+      final bytes = await SvgConverter.convertToBytes('''
+        <svg width="120" height="60">
+          <defs>
+            <pattern id="p" width="80" height="40"
+                     patternUnits="userSpaceOnUse"
+                     viewBox="0 0 10 10" preserveAspectRatio="xMidYMid meet">
+              <rect width="10" height="10" fill="red"/>
+            </pattern>
+          </defs>
+          <rect width="120" height="60" fill="url(#p)"/>
+        </svg>
+      ''');
+      final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
+      try {
+        final page = (await document.pageAt(1))!;
+        final resources =
+            await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final patterns = await resources!.dictionaryEntry(PdfName.pattern);
+        final pattern = (await patterns!.values()).single as PdfStream;
+        final content = String.fromCharCodes((await pattern.getBytes())!);
+        // 80x40 CSS px viram 60x30 pt. O viewBox quadrado usa escala 3
+        // e fica centralizado nos 30 pontos horizontais restantes.
+        expect(content, contains('1 0 0 1 15 0 cm'));
+        expect(content, contains('4 0 0 4 0 0 cm'));
+      } finally {
+        await document.close();
+      }
+    });
+
     test('mask luminance vira soft mask com grupo de transparência', () async {
       final bytes = await SvgConverter.convertToBytes('''
         <svg width="80" height="40">

@@ -258,7 +258,7 @@ class _SvgSimpleSelector {
             match.group(3) ?? match.group(4) ?? match.group(5)),
     ];
     final pseudoPattern = RegExp(
-        r':(first-child|last-child|only-child|root|empty|nth-child\(\s*(odd|even|[1-9]\d*)\s*\))',
+        r':(first-child|last-child|only-child|root|empty|nth-child\(\s*(odd|even|[+-]?\d+|[+-]?\d*n(?:\s*[+-]\s*\d+)?)\s*\))',
         caseSensitive: false);
     final pseudoMatches = pseudoPattern.allMatches(selector).toList();
     final pseudoClasses = <_SvgPseudoClass>[
@@ -345,13 +345,31 @@ class _SvgPseudoClass {
       default:
         if (!name.startsWith('nth-child(') || index < 0) return false;
         final position = index + 1;
-        return switch (argument) {
-          'odd' => position.isOdd,
-          'even' => position.isEven,
-          _ => position == int.tryParse(argument ?? ''),
-        };
+        return _matchesNth(position, argument ?? '');
     }
   }
+}
+
+bool _matchesNth(int position, String expression) {
+  final normalized = expression.toLowerCase().replaceAll(RegExp(r'\s+'), '');
+  if (normalized == 'odd') return position.isOdd;
+  if (normalized == 'even') return position.isEven;
+  final fixed = int.tryParse(normalized);
+  if (fixed != null) return position == fixed;
+  final match = RegExp(r'^([+-]?\d*)n([+-]\d+)?$').firstMatch(normalized);
+  if (match == null) return false;
+  final coefficientRaw = match.group(1)!;
+  final coefficient = coefficientRaw.isEmpty || coefficientRaw == '+'
+      ? 1
+      : coefficientRaw == '-'
+          ? -1
+          : int.parse(coefficientRaw);
+  final offset = int.tryParse(match.group(2) ?? '') ?? 0;
+  if (coefficient == 0) return position == offset;
+  final delta = position - offset;
+  if (coefficient > 0 && delta < 0) return false;
+  if (coefficient < 0 && delta > 0) return false;
+  return delta % coefficient.abs() == 0;
 }
 
 class _SvgAttributeSelector {
@@ -388,6 +406,7 @@ List<String>? _selectorTokens(String selector) {
   final tokens = <String>[];
   final current = StringBuffer();
   var brackets = 0;
+  var parentheses = 0;
   String? quote;
   void flush() {
     final token = current.toString().trim();
@@ -414,16 +433,25 @@ List<String>? _selectorTokens(String selector) {
       if (brackets == 0) return null;
       brackets--;
       current.write(char);
-    } else if (brackets == 0 && (char == '>' || char == '+' || char == '~')) {
+    } else if (char == '(') {
+      parentheses++;
+      current.write(char);
+    } else if (char == ')') {
+      if (parentheses == 0) return null;
+      parentheses--;
+      current.write(char);
+    } else if (brackets == 0 &&
+        parentheses == 0 &&
+        (char == '>' || char == '+' || char == '~')) {
       flush();
       tokens.add(char);
-    } else if (brackets == 0 && char.trim().isEmpty) {
+    } else if (brackets == 0 && parentheses == 0 && char.trim().isEmpty) {
       flush();
     } else {
       current.write(char);
     }
   }
-  if (quote != null || brackets != 0) return null;
+  if (quote != null || brackets != 0 || parentheses != 0) return null;
   flush();
   return tokens;
 }

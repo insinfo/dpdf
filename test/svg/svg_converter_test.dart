@@ -341,6 +341,29 @@ void main() {
       expect(_count(content, '0 1 1 rg\n'), 1);
     });
 
+    test('nth-child aceita fórmulas An+B positivas e negativas', () async {
+      final content = await _render('''
+        <svg width="100" height="40">
+          <style>
+            rect { width: 2; height: 2; }
+            .a > rect:nth-child(2n+1) { fill: red; }
+            .b > rect:nth-child(3n) { fill: blue; }
+            .c > rect:nth-child(-n+3) { fill: #00ff00; }
+            .d > rect:nth-child(n + 4) { fill: yellow; }
+          </style>
+          <g class="a"><rect/><rect/><rect/><rect/><rect/><rect/></g>
+          <g class="b"><rect/><rect/><rect/><rect/><rect/><rect/></g>
+          <g class="c"><rect/><rect/><rect/><rect/><rect/><rect/></g>
+          <g class="d"><rect/><rect/><rect/><rect/><rect/><rect/></g>
+        </svg>
+      ''');
+
+      expect(_count(content, '1 0 0 rg\n'), 3);
+      expect(_count(content, '0 0 1 rg\n'), 2);
+      expect(_count(content, '0 1 0 rg\n'), 3);
+      expect(_count(content, '1 1 0 rg\n'), 3);
+    });
+
     test('use instancia geometria de defs e aplica x e y', () async {
       final content = await _render('''
         <svg width="40" height="20">

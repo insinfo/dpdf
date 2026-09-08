@@ -467,7 +467,7 @@ void main() {
         final content = String.fromCharCodes(
             await (await document.pageAt(1))!.contentPayload());
         expect(content, contains('BT\n'));
-        expect(content, contains('7.5 15 Td\n'));
+        expect(content, contains('1 0 0 -1 7.5 15 Tm\n'));
         expect(content, contains('(Hello SVG) Tj\n'));
       } finally {
         await document.close();
@@ -516,7 +516,7 @@ void main() {
         expect(a, greaterThanOrEqualTo(0));
         expect(b, greaterThan(a));
         expect(c, greaterThan(b));
-        expect(content, contains('15 16.5 Td\n'),
+        expect(content, contains('1 0 0 -1 15 16.5 Tm\n'),
             reason: 'x=20 e y=20+dy=2 são convertidos de px para pt');
       } finally {
         await document.close();

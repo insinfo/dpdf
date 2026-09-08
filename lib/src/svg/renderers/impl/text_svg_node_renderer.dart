@@ -67,7 +67,10 @@ class TextLeafSvgNodeRenderer extends AbstractSvgNodeRenderer
     final font = await _resolveFont(context);
     canvas.beginText();
     await canvas.setFontAndSize(font, size);
-    canvas.moveText(x, y);
+    // The SVG root flips the canvas Y axis so geometric coordinates grow
+    // downward. Counter-flip glyph space around the requested baseline;
+    // otherwise PDF viewers draw every SVG label upside down.
+    canvas.setTextMatrix(1, 0, 0, -1, x, y);
     canvas.showText(text);
     canvas.endText();
     context.resetTextMove();

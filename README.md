@@ -133,8 +133,9 @@ subsampling.
 
 ## Known limitations
 
-- SVG `<style>` rules support compound, attribute, descendant and direct-child
-  selectors, including all six CSS attribute matching operators.
+- SVG `<style>` rules support compound and attribute selectors, all six CSS
+  attribute matching operators, and descendant, child, adjacent-sibling and
+  general-sibling combinators.
   Colored tiling patterns and luminance/alpha masks are emitted as native
   PDF pattern and soft-mask resources. Tiling patterns paint both fills and
   strokes; axial/radial gradients also paint strokes through native shading

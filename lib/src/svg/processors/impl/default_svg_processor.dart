@@ -136,16 +136,15 @@ class DefaultSvgProcessor {
   }
 }
 
-/// Regra para estilos SVG embutidos: compostos de tipo, id e classes, ligados
-/// pelos combinadores descendente e filho direto.
+/// Regra para estilos SVG embutidos com os quatro combinadores estruturais.
 class _SvgStyleRule {
   final List<_SvgSimpleSelector> selectors;
-  final List<bool> directChild;
+  final List<_SvgCombinator> combinators;
   final Map<String, String> declarations;
   final int specificity;
   final int order;
 
-  const _SvgStyleRule(this.selectors, this.directChild, this.declarations,
+  const _SvgStyleRule(this.selectors, this.combinators, this.declarations,
       this.specificity, this.order);
 
   static _SvgStyleRule? parse(
@@ -155,24 +154,27 @@ class _SvgStyleRule {
     final tokens = _selectorTokens(selector);
     if (tokens == null) return null;
     final selectors = <_SvgSimpleSelector>[];
-    final directChild = <bool>[];
-    var pendingChild = false;
+    final combinators = <_SvgCombinator>[];
+    _SvgCombinator? pending;
     for (final token in tokens) {
-      if (token == '>') {
-        if (selectors.isEmpty || pendingChild) return null;
-        pendingChild = true;
+      final explicit = _SvgCombinator.fromToken(token);
+      if (explicit != null) {
+        if (selectors.isEmpty || pending != null) return null;
+        pending = explicit;
         continue;
       }
       final parsed = _SvgSimpleSelector.parse(token);
       if (parsed == null) return null;
-      if (selectors.isNotEmpty) directChild.add(pendingChild);
+      if (selectors.isNotEmpty) {
+        combinators.add(pending ?? _SvgCombinator.descendant);
+      }
       selectors.add(parsed);
-      pendingChild = false;
+      pending = null;
     }
-    if (selectors.isEmpty || pendingChild) return null;
+    if (selectors.isEmpty || pending != null) return null;
     return _SvgStyleRule(
       List.unmodifiable(selectors),
-      List.unmodifiable(directChild),
+      List.unmodifiable(combinators),
       Map<String, String>.unmodifiable(declarations),
       selectors.fold(0, (sum, part) => sum + part.specificity),
       order,
@@ -184,20 +186,55 @@ class _SvgStyleRule {
     if (!selectors.last.matches(current)) return false;
     for (var index = selectors.length - 2; index >= 0; index--) {
       final wanted = selectors[index];
-      var ancestor = current.parent;
-      if (directChild[index]) {
-        if (ancestor is! dom.Element || !wanted.matches(ancestor)) return false;
-        current = ancestor;
-        continue;
+      switch (combinators[index]) {
+        case _SvgCombinator.child:
+          final parent = current.parent;
+          if (parent is! dom.Element || !wanted.matches(parent)) return false;
+          current = parent;
+        case _SvgCombinator.descendant:
+          var ancestor = current.parent;
+          while (ancestor is dom.Element && !wanted.matches(ancestor)) {
+            ancestor = ancestor.parent;
+          }
+          if (ancestor is! dom.Element) return false;
+          current = ancestor;
+        case _SvgCombinator.adjacentSibling:
+          final sibling = _previousElement(current);
+          if (sibling == null || !wanted.matches(sibling)) return false;
+          current = sibling;
+        case _SvgCombinator.generalSibling:
+          var sibling = _previousElement(current);
+          while (sibling != null && !wanted.matches(sibling)) {
+            sibling = _previousElement(sibling);
+          }
+          if (sibling == null) return false;
+          current = sibling;
       }
-      while (ancestor is dom.Element && !wanted.matches(ancestor)) {
-        ancestor = ancestor.parent;
-      }
-      if (ancestor is! dom.Element) return false;
-      current = ancestor;
     }
     return true;
   }
+}
+
+enum _SvgCombinator {
+  descendant,
+  child,
+  adjacentSibling,
+  generalSibling;
+
+  static _SvgCombinator? fromToken(String token) => switch (token) {
+        '>' => child,
+        '+' => adjacentSibling,
+        '~' => generalSibling,
+        _ => null,
+      };
+}
+
+dom.Element? _previousElement(dom.Element element) {
+  final parent = element.parent;
+  if (parent is! dom.Element) return null;
+  final siblings = parent.children;
+  final index = siblings.indexOf(element);
+  return index > 0 ? siblings[index - 1] : null;
 }
 
 class _SvgSimpleSelector {
@@ -328,9 +365,9 @@ List<String>? _selectorTokens(String selector) {
       if (brackets == 0) return null;
       brackets--;
       current.write(char);
-    } else if (brackets == 0 && char == '>') {
+    } else if (brackets == 0 && (char == '>' || char == '+' || char == '~')) {
       flush();
-      tokens.add('>');
+      tokens.add(char);
     } else if (brackets == 0 && char.trim().isEmpty) {
       flush();
     } else {

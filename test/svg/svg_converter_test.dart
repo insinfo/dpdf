@@ -286,6 +286,32 @@ void main() {
       expect(_count(content, '0.50196 0.50196 0.50196 rg\n'), 1);
     });
 
+    test('style aceita irmãos adjacentes e gerais sem confundir ~=', () async {
+      final content = await _render('''
+        <svg width="60" height="20">
+          <style>
+            .root > .lead + rect { fill: red; }
+            .lead ~ .later { fill: blue; }
+            [data-tags ~= "hot"] { stroke: #00ff00; }
+          </style>
+          <g class="root">
+            <rect class="lead" width="4" height="4"/>
+            <rect x="6" width="4" height="4"/>
+            <g><rect class="later" x="12" width="4" height="4"/></g>
+            <rect class="later" x="18" width="4" height="4"/>
+            <rect data-tags="cold hot" x="24" width="4" height="4"/>
+          </g>
+        </svg>
+      ''');
+
+      expect(_count(content, '1 0 0 rg\n'), 1,
+          reason: 'somente o irmão imediatamente após .lead é adjacente');
+      expect(_count(content, '0 0 1 rg\n'), 1,
+          reason: 'o .later aninhado não é irmão de .lead');
+      expect(_count(content, '0 1 0 RG\n'), 1,
+          reason: '~= continua sendo operador de atributo, não combinador');
+    });
+
     test('use instancia geometria de defs e aplica x e y', () async {
       final content = await _render('''
         <svg width="40" height="20">

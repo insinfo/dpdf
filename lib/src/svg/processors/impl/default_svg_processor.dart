@@ -242,10 +242,11 @@ class _SvgSimpleSelector {
   final String? id;
   final Set<String> classes;
   final List<_SvgAttributeSelector> attributes;
+  final List<_SvgPseudoClass> pseudoClasses;
   final int specificity;
 
-  const _SvgSimpleSelector(
-      this.tag, this.id, this.classes, this.attributes, this.specificity);
+  const _SvgSimpleSelector(this.tag, this.id, this.classes, this.attributes,
+      this.pseudoClasses, this.specificity);
 
   static _SvgSimpleSelector? parse(String selector) {
     final attributePattern = RegExp(
@@ -256,7 +257,16 @@ class _SvgSimpleSelector {
         _SvgAttributeSelector(match.group(1)!, match.group(2),
             match.group(3) ?? match.group(4) ?? match.group(5)),
     ];
-    final plain = selector.replaceAll(attributePattern, '');
+    final pseudoPattern = RegExp(
+        r':(first-child|last-child|only-child|root|empty|nth-child\(\s*(odd|even|[1-9]\d*)\s*\))',
+        caseSensitive: false);
+    final pseudoMatches = pseudoPattern.allMatches(selector).toList();
+    final pseudoClasses = <_SvgPseudoClass>[
+      for (final match in pseudoMatches)
+        _SvgPseudoClass(match.group(1)!.toLowerCase(), match.group(2)),
+    ];
+    final plain =
+        selector.replaceAll(attributePattern, '').replaceAll(pseudoPattern, '');
     final idMatches = RegExp(r'#([\w-]+)').allMatches(plain).toList();
     if (idMatches.length > 1) return null;
     final id = idMatches.isEmpty ? null : idMatches.single.group(1);
@@ -268,6 +278,7 @@ class _SvgSimpleSelector {
     if (id == null &&
         classes.isEmpty &&
         attributes.isEmpty &&
+        pseudoClasses.isEmpty &&
         tagMatch == null) {
       return null;
     }
@@ -275,9 +286,11 @@ class _SvgSimpleSelector {
         .allMatches(selector)
         .map((match) => match.group(0)!)
         .join();
-    if (parts != plain ||
-        attributeMatches.map((match) => match.group(0)!).join().length !=
-            selector.length - plain.length) {
+    final removedLength = attributeMatches.fold<int>(
+            0, (sum, match) => sum + match.group(0)!.length) +
+        pseudoMatches.fold<int>(
+            0, (sum, match) => sum + match.group(0)!.length);
+    if (parts != plain || removedLength != selector.length - plain.length) {
       return null;
     }
     final rawTag = tagMatch?.group(1);
@@ -287,8 +300,9 @@ class _SvgSimpleSelector {
       id,
       classes,
       List.unmodifiable(attributes),
+      List.unmodifiable(pseudoClasses),
       (id == null ? 0 : 100) +
-          (classes.length + attributes.length) * 10 +
+          (classes.length + attributes.length + pseudoClasses.length) * 10 +
           (tag == null ? 0 : 1),
     );
   }
@@ -301,7 +315,42 @@ class _SvgSimpleSelector {
         .where((value) => value.isNotEmpty)
         .toSet();
     return classes.every(actual.contains) &&
-        attributes.every((selector) => selector.matches(element));
+        attributes.every((selector) => selector.matches(element)) &&
+        pseudoClasses.every((selector) => selector.matches(element));
+  }
+}
+
+class _SvgPseudoClass {
+  final String name;
+  final String? argument;
+
+  const _SvgPseudoClass(this.name, this.argument);
+
+  bool matches(dom.Element element) {
+    final parent = element.parent;
+    final siblings =
+        parent is dom.Element ? parent.children : const <dom.Element>[];
+    final index = siblings.indexOf(element);
+    switch (name) {
+      case 'first-child':
+        return index == 0;
+      case 'last-child':
+        return index >= 0 && index == siblings.length - 1;
+      case 'only-child':
+        return index == 0 && siblings.length == 1;
+      case 'root':
+        return parent is! dom.Element;
+      case 'empty':
+        return element.nodes.isEmpty;
+      default:
+        if (!name.startsWith('nth-child(') || index < 0) return false;
+        final position = index + 1;
+        return switch (argument) {
+          'odd' => position.isOdd,
+          'even' => position.isEven,
+          _ => position == int.tryParse(argument ?? ''),
+        };
+    }
   }
 }
 

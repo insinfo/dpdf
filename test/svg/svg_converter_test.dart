@@ -312,6 +312,35 @@ void main() {
           reason: '~= continua sendo operador de atributo, não combinador');
     });
 
+    test('style aceita pseudoclasses estruturais de filhos', () async {
+      final content = await _render('''
+        <svg width="100" height="30">
+          <style>
+            svg:root > rect:empty { fill: #ff00ff; }
+            .first > rect:first-child { fill: red; }
+            .last > rect:last-child { fill: blue; }
+            .odd > rect:nth-child(odd) { fill: #00ff00; }
+            .even > rect:nth-child(even) { fill: yellow; }
+            .only > rect:only-child { fill: #00ffff; }
+          </style>
+          <rect width="3" height="3"/>
+          <g class="first"><rect width="3" height="3"/><rect width="3" height="3"/></g>
+          <g class="last"><rect width="3" height="3"/><rect width="3" height="3"/></g>
+          <g class="odd"><rect width="3" height="3"/><rect width="3" height="3"/><rect width="3" height="3"/></g>
+          <g class="even"><rect width="3" height="3"/><rect width="3" height="3"/><rect width="3" height="3"/><rect width="3" height="3"/></g>
+          <g class="only"><rect width="3" height="3"/></g>
+        </svg>
+      ''');
+
+      expect(_count(content, '1 0 1 rg\n'), 1,
+          reason: ':root e :empty podem participar do mesmo seletor');
+      expect(_count(content, '1 0 0 rg\n'), 1);
+      expect(_count(content, '0 0 1 rg\n'), 1);
+      expect(_count(content, '0 1 0 rg\n'), 2);
+      expect(_count(content, '1 1 0 rg\n'), 2);
+      expect(_count(content, '0 1 1 rg\n'), 1);
+    });
+
     test('use instancia geometria de defs e aplica x e y', () async {
       final content = await _render('''
         <svg width="40" height="20">

@@ -64,4 +64,21 @@ void main() {
     expect(decoration.border!.width, 2);
     expect(decoration.border!.color.blue, 1);
   });
+
+  test('table border ends at the last row without an empty trailing strip', () {
+    final document = parse('''
+      <style>
+        table { border: 1pt solid #999; }
+      </style>
+      <table><tr><td>first</td></tr><tr><td>last</td></tr></table>
+    ''');
+    final boxes = HtmlBoxBuilder(HtmlStyleSheet.fromDocument(document), 12)
+        .build(document.body!.nodes);
+    final displayList = HtmlLayoutEngine(400).layoutDisplayList(boxes);
+    final outer = displayList.boxDecorations
+        .firstWhere((decoration) => decoration.width > 300);
+    // Cada célula contém uma linha de 16,2 pt. A tabela não deve acrescentar
+    // o espaçamento de bloco de 4,2 pt após a última linha.
+    expect(outer.height, closeTo(32.4, .001));
+  });
 }

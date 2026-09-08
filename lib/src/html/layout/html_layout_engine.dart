@@ -305,7 +305,8 @@ class HtmlLayoutEngine {
         (geometry.contentWidth - box.style.gap * (columns - 1)) / columns;
     final start = _cursor;
     _cursor += geometry.marginTop + geometry.paddingTop;
-    for (final row in rows) {
+    for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      final row = rows[rowIndex];
       final rowStart = _cursor;
       var bottom = rowStart;
       var offset = 0.0;
@@ -315,9 +316,10 @@ class HtmlLayoutEngine {
         if (_cursor > bottom) bottom = _cursor;
         offset += columnWidth + box.style.gap;
       }
-      _cursor = bottom + box.style.gap;
+      _cursor = bottom;
+      if (rowIndex + 1 < rows.length) _cursor += box.style.gap;
     }
-    _cursor += box.style.text.fontSize * .35 + geometry.paddingBottom;
+    _cursor += geometry.paddingBottom;
     _addDecoration(box, geometry, start + geometry.marginTop, _cursor);
     _cursor += geometry.marginBottom;
     return _cursor - start;

@@ -19,56 +19,39 @@ Future<void> main(List<String> arguments) async {
   final destination =
       arguments.isEmpty ? Directory.current : Directory(arguments.first);
 
-  final relatorio = await _etapa('converter HTML', _converterHtml);
-  await _etapa('gravar relatório',
-      () => _salvar(destination, 'relatorio.html.pdf', relatorio));
+  final relatorio = await _converterHtml();
+  await _salvar(destination, 'relatorio.html.pdf', relatorio);
 
-  await _etapa('verificar integridade', () => _inspecionar(relatorio));
-  await _etapa('verificar PDF/A', () => _verificarConformidade(relatorio));
+  await _inspecionar(relatorio);
+  await _verificarConformidade(relatorio);
 
-  final redigido = await _etapa('redigir área', _redigirPorArea);
-  await _etapa('gravar PDF redigido',
-      () => _salvar(destination, 'redigido.pdf', redigido));
+  final redigido = await _redigirPorArea();
+  await _salvar(destination, 'redigido.pdf', redigido);
   final fonts = BLFontCollection();
-  final fallback = await _etapa(
-      'localizar fonte fallback',
-      () => const BLFontLoader().loadSystemFont(
-            fonts,
-            const BLFontQuery([
-              'Arial',
-              'Liberation Sans',
-              'DejaVu Sans',
-              'Noto Sans',
-            ]),
-          ));
+  final fallback = await const BLFontLoader().loadSystemFont(
+    fonts,
+    const BLFontQuery([
+      'Arial',
+      'Liberation Sans',
+      'DejaVu Sans',
+      'Noto Sans',
+    ]),
+  );
   print('fonte fallback ......: ${fallback?.familyName ?? 'não encontrada'}');
   print('fontes examinadas ...: ${fonts.faces.length}');
-  final document = await _etapa(
-      'reabrir PDF', () => PdfDocument.open(PdfReader.fromBytes(redigido)));
+  final document = await PdfDocument.open(PdfReader.fromBytes(redigido));
   final page = await document.pageAt(1);
   if (page == null) {
     await document.close();
     throw StateError('O PDF redigido não contém a primeira página.');
   }
-  final result = await _etapa(
-      'renderizar página',
-      () => PdfPageRenderer.render(page,
-          options: PdfRenderOptions(
-              fontFallback: pdfFontFallbackFromCollection(fonts))));
+  final result = await PdfPageRenderer.render(page,
+      options:
+          PdfRenderOptions(fontFallback: pdfFontFallbackFromCollection(fonts)));
   print('texto ignorado ......: ${result.report.glyphsSkipped}');
-  final png = await _etapa('codificar PNG', () async => result.toPng());
+  final png = result.toPng();
   await document.close();
-  await _etapa('gravar PNG', () => _salvar(destination, 'redigido.png', png));
-}
-
-Future<T> _etapa<T>(String nome, Future<T> Function() executar) async {
-  final relogio = Stopwatch()..start();
-  try {
-    return await executar();
-  } finally {
-    relogio.stop();
-    print('tempo $nome: ${relogio.elapsedMilliseconds} ms');
-  }
+  await _salvar(destination, 'redigido.png', png);
 }
 
 /// HTML para PDF. O conversor mede o texto com as métricas da face que ele

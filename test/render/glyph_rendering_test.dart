@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dpdf/dpdf.dart';
-import 'package:dpdf/src/io/font/true_type_font.dart';
 import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
 import 'package:test/test.dart';
 
@@ -12,6 +11,8 @@ const _cidCffBase64 =
     'AQAEAgABAgABAAhUZXN0Q0lEAAECAAEALB0AAAAAHQAAAAAdAAAAAAweHQAAAEgPHQAAAFgRHQAAAGoMJB0AAABNDCUAAAAAAAAqASwDAAIAAAAAAgEAAwADAgABAAIABQAIDiAKDiAKDgACAgABAAwAFx0AAAAGHQAAAIkSHQAAAAYdAAAApBIdAAAABhMAAQIAAQAPlZ8V74sFi/dcBSeLBQsdAAAABhMAAQIAAQAS98CzFffAiwWL+CQF+8CLBQs=';
 const _simpleCffBase64 =
     'AQAEAgABAgABAAhUZXN0Q0ZGAAECAAEALR0AAAAAHQAAAAAdAAAB9B0AAAK8BR0AAABVDx0AAABcER0AAAAMHQAAAJcSAAECAAEACG15Z2x5cGgAAAAAIgAjAYcABAIAAQACABIAIgAvDu+9FfgkiwWL+R4F/CSLBQ6LixX3XIsFi/dcBftciwUOlZUVlYsFi5UFgYsFDh0AAAAAFB0AAAAAFQ==';
+const _expertCffBase64 =
+    'AQAEAgABAgABAAhUZXN0Q0ZGAAECAAEAMx0AAAAAHf///zgdAAAD6B0AAAMgBR0AAABPDx0AAAABEB0AAABWER0AAAAMHQAAAJESAAAAAAAA5QCeAXoABAIAAQACAA8AHwAvDouLFe+LBYvvBSeLBQ6LixX3XIsFi/dcBftciwUOi4sV98CLBYv3wAX7wIsFDh0AAAAAFB0AAAAAFQ==';
 
 /// Builds a one-page PDF whose text is drawn with an embedded TrueType font.
 Future<Uint8List> _pageWithText(
@@ -179,7 +180,9 @@ Future<Uint8List> _pageWithCidCff() async {
 }
 
 Future<Uint8List> _pageWithSimpleCff(
-    {PdfObject? encoding, int code = 65}) async {
+    {PdfObject? encoding,
+    int code = 65,
+    String programBase64 = _simpleCffBase64}) async {
   final output = BytesBuilder(copy: false);
   final pdf = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await pdf.appendBlankPage();
@@ -187,7 +190,7 @@ Future<Uint8List> _pageWithSimpleCff(
       .pdfRepresentation()
       .put(PdfName.mediaBox, PdfArray.fromDoubles([0, 0, 100, 100]));
 
-  final program = PdfStream.withBytes(base64Decode(_simpleCffBase64), 0)
+  final program = PdfStream.withBytes(base64Decode(programBase64), 0)
     ..put(PdfName.subtype, PdfName('Type1C'));
   final descriptor = PdfDictionary()
     ..put(PdfName.type, PdfName('FontDescriptor'))
@@ -204,9 +207,9 @@ Future<Uint8List> _pageWithSimpleCff(
     ..put(PdfName.type, PdfName.font)
     ..put(PdfName.subtype, PdfName('Type1'))
     ..put(PdfName.baseFont, PdfName('TestCFF'))
-    ..put(PdfName('FirstChar'), PdfNumber.fromInt(65))
-    ..put(PdfName('LastChar'), PdfNumber.fromInt(66))
-    ..put(PdfName('Widths'), PdfArray.fromDoubles([600, 600]))
+    ..put(PdfName('FirstChar'), PdfNumber.fromInt(code))
+    ..put(PdfName('LastChar'), PdfNumber.fromInt(code))
+    ..put(PdfName('Widths'), PdfArray.fromDoubles([600]))
     ..put(PdfName.fontDescriptor, descriptor);
   if (encoding != null) font.put(PdfName('Encoding'), encoding);
   page.pdfRepresentation()
@@ -265,6 +268,18 @@ void main() {
       expect(page.report.glyphsSkipped, isZero);
       expect(page.report.isComplete, isTrue);
       expect(_inked(page), greaterThan(100));
+    });
+
+    test('Type1C usa o Expert Encoding interno quando o PDF o omite', () async {
+      final page = await _render(await _pageWithSimpleCff(
+        code: 255,
+        programBase64: _expertCffBase64,
+      ));
+
+      expect(page.report.glyphsSkipped, isZero);
+      expect(page.report.isComplete, isTrue);
+      expect(_inked(page), greaterThan(50),
+          reason: 'código 255 deve selecionar Ydieresissmall no GID 3');
     });
 
     test('Type1C aplica Differences por nome em vez de assumir code igual GID',

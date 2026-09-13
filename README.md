@@ -186,9 +186,11 @@ frames (SOF5, SOF6, SOF13, SOF14) are refused with an explicit message.
   can attach a `BLCallbackFontProvider` backed by URLs, Google Fonts or
   `FontFace`. CSS `@font-face` URLs and data URIs can be loaded through
   `HtmlConverterProperties.fontResourceLoader` and `baseUri`; `local()` resolves
-  installed/catalogued faces without downloading a fallback. WOFF 1.0 is
-  decoded to its sfnt; WOFF 2.0 uses Brotli and a transformed `glyf`, and is
-  reported as unsupported rather than passed on to the sfnt reader.
+  installed/catalogued faces without downloading a fallback. WOFF 1.0 and
+  WOFF 2.0 are both decoded to sfnt, the latter including the `glyf`/`loca` and
+  `hmtx` transformations and `ttcf` collections, with a Brotli decoder bundled
+  in the package rather than an FFI binding. `ttcf` collections are
+  reconstructed correctly but the sfnt reader does not yet open a collection.
 - JBIG2 automatically chooses between generic regions and deduplicated symbol
   dictionaries with text regions, including shared `/JBIG2Globals` across PDF
   images. Lossless refinement aggregation for near-identical glyphs works for

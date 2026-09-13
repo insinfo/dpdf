@@ -105,7 +105,7 @@ pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só
 | 9.6.6 Codificação | OK | `/BaseEncoding`, `/Differences`, tabelas padrão, TrueType simbólica com `cmap` (3,0) e (1,0) |
 | 9.7 Fontes compostas | OK | CIDFont, `/CIDToGIDMap`, CMaps predefinidos e embutidos, `/W`, `/W2`, escrita vertical |
 | 9.8 Descritores de fonte | OK | |
-| 9.9 Programas de fonte embutidos | Parcial | Type1, TrueType, CFF/Type1C, CFF2, OpenType. **WOFF 1.0 sim; WOFF 2.0 rejeitado** (exige Brotli e `glyf` transformado) |
+| 9.9 Programas de fonte embutidos | OK | Type1, TrueType, CFF/Type1C, CFF2, OpenType, WOFF 1.0 e **WOFF 2.0**, este com as transformações de `glyf`/`loca` e `hmtx` e Brotli embutido no pacote. Coleções `ttcf` são reconstruídas mas o leitor sfnt ainda não as abre |
 | 9.10 Extração de texto | Parcial | `/ToUnicode` e mapeamento reverso; imagens inline ignoradas |
 
 ## 10 — Renderização
@@ -264,8 +264,8 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 2. **Componentes subamostrados em codestream JPEG 2000 cru** (`j2k`) — em curso. É o caso
    comum de `/JPXDecode` em PDF, e hoje a imagem é pulada em vez de desenhada.
 3. **Imagens inline na extração de texto** (8.9.7 + 9.10) — a extração as ignora.
-4. **WOFF 2.0** — exige Brotli e a transformação de `glyf`/`loca`. Hoje é rejeitado com
-   erro explícito, e não silenciosamente.
+4. **Coleções `ttcf`** — reconstruídas a partir de WOFF 2.0, mas o leitor sfnt não abre
+   coleção, então a fonte falha depois da conversão.
 5. **Redação de arte vetorial** — `PdfAreaRedaction` reescreve texto e imagens; vetores
    ainda exigem cobertura por sobreposição.
 6. **Gouraud no `dgfx`** — remove a emulação cara e as costuras visíveis entre facetas nos

@@ -32,7 +32,7 @@ Estado da implementação do `dpdf` e dos pacotes auxiliares `jbig2` e `dgfx` em
 |---|---|---|---|---|
 | Linhas em `lib/` | 108 629 | ~12 000 | ~11 800 | 51 530 |
 | Arquivos em `lib/` | 618 | 60 | 45 | 240 |
-| Testes passando | 2 180 | 104 | 306 | 318 |
+| Testes passando | 2 715 | 104 | 329 | 428 |
 | `dart analyze` | sem erros nem avisos | limpo | limpo | limpo |
 
 Os três pacotes auxiliares são projetos separados. `jbig2` e `dgfx` entram no `dpdf` por

@@ -73,6 +73,32 @@ binaries, and targets the Dart VM, `dart2js`, and `dart2wasm`.
 
 ### Breaking changes
 
+- `Document.add`, `Canvas.add`, `showTextAligned` and `showTextAlignedParagraph`
+  are synchronous and return the root element instead of a `Future`. They queue
+  the element; the layout runs in `close`, which was already mandatory to await.
+  Forgetting to await `add` used to drop the content with no error, no warning
+  and no exception.
+
+  ```dart
+  // Before
+  await document.add(Paragraph('First page.'));
+  await document.add(AreaBreak(AreaBreakType.NEXT_PAGE));
+  await document.close();
+
+  // After
+  document.add(Paragraph('First page.'));
+  document.add(AreaBreak(AreaBreakType.NEXT_PAGE));
+  await document.close();
+  ```
+
+  Three observable consequences. A layout error now reaches the caller from
+  `close`, not from `add`; the queue is discarded when that happens, so the
+  error is reported once. An element must not be mutated after it is added,
+  because it is laid out as it stands at `close`. And `PdfDocument.close`
+  refuses to run while a `Document` or `Canvas` built on it still holds queued
+  content, replacing the silently empty file with an explicit error; the new
+  `PendingLayoutContent` contract is what that check reads.
+
 - Removed the legacy `Craft` prefix from 481 API identifiers before the first
   publication. For example, `CraftPdfDocument`, `CraftPdfName`, and
   `CraftSvgConverter` became `PdfDocument`, `PdfName`, and `SvgConverter`.

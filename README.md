@@ -34,6 +34,34 @@ import 'package:dpdf/dpdf.dart';
 - Digital signatures, timestamping, OCSP, CRL, JKS, and BKS support
 - Integrity checks and explicit PDF/A and PDF/UA verification reports
 
+## Lay out a document
+
+`Document.add` is synchronous. It appends the element to the document's queue
+and returns; every page, every measurement and every bit of drawing happens in
+`close`, which must be awaited.
+
+```dart
+final output = BytesBuilder(copy: false);
+final pdf = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
+final document = Document(pdf);
+
+document.add(Paragraph('First page.'));
+document.add(AreaBreak(AreaBreakType.NEXT_PAGE));
+document.add(Paragraph('Second page.'));
+
+await document.close(); // lays everything out, in the order it was added
+await pdf.close();
+```
+
+The queue keeps insertion order, so an `AreaBreak` between two paragraphs still
+breaks between them. Two consequences follow from the work being deferred: an
+element must not be mutated after it is added, because `close` lays out the
+object as it stands then; and a layout error surfaces from `close` rather than
+from `add`. Closing a `PdfDocument` while a `Document` or `Canvas` built on it
+still holds queued content is refused with an explicit error, so a forgotten
+`close` cannot quietly produce an empty file. `Canvas` follows the same rule,
+and `showTextAligned` queues like `add` does.
+
 ## HTML and SVG
 
 ```dart

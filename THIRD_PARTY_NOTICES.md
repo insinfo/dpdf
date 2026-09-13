@@ -260,11 +260,21 @@ arquivo continue sob a mesma licença. A CC BY-SA 4.0 cobre somente este arquivo
 não se estende ao restante do pacote. Termos completos:
 https://creativecommons.org/licenses/by-sa/4.0/legalcode
 
+## Ilustrações de domínio público
+
+Os arquivos `anatomy-of-the-hand.svg`, `attacking-tiger.svg`,
+`back-to-school.svg`, `bengal-tiger-head.svg`, `cartoon-tiger.svg`,
+`soccer-ball.svg`, `tiger-sticker-red-on-green.svg` e
+`united-states-map-with-capitals.svg`, em `test/assets`, vêm de
+publicdomainvectors.org sob domínio público, sem exigência de atribuição. A
+URL de origem de cada um está em `test/assets/manifest.json`. Só os nomes de
+arquivo mudaram, para kebab-case; o conteúdo é o publicado.
+
 ## Fixtures de geração própria
 
-A licença abaixo cobre somente bee.png, bulb.gif, Desert.jpg,
+A licença abaixo cobre somente shapes-rgb.png, blue-square-16.gif, shapes-rgb.jpg,
 image-2frames.gif, image.jb2, png_greyscale.png, rootRsa.cer, test.pdf e
-WP_20140410_001.bmp em `test/assets`. O inventário de hashes e origens está em
+shapes-rgb-large.bmp em `test/assets`. O inventário de hashes e origens está em
 `test/assets/manifest.json`. O certificado é uma CA sintética para testes,
 não uma credencial de produção; contém somente o certificado público.
 

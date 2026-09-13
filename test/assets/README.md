@@ -7,10 +7,22 @@ Os avisos de licença usam finais de linha LF, conforme `.gitattributes`, para
 que os hashes também confiram após checkout em outras plataformas.
 Os termos também estão reunidos em `../../THIRD_PARTY_NOTICES.md`.
 
-As imagens próprias são padrões geométricos sintéticos, apesar dos nomes
-históricos Desert.jpg, bulb.gif e WP_20140410_001.bmp. test.pdf contém uma
-página sintética com dois retângulos. image.jb2 exercita região genérica MMR,
-sem representar cobertura completa do formato JBIG2.
+As imagens próprias são padrões geométricos sintéticos, e os nomes dizem o
+que elas são: shapes-rgb.jpg, shapes-rgb.png e shapes-rgb-large.bmp trazem o
+mesmo desenho — retângulo azul, elipse laranja e uma diagonal vermelha — em
+três formatos e dois tamanhos, e blue-square-16.gif é um quadrado azul de
+16 px com paleta. Antes chamavam-se Desert.jpg, bee.png, WP_20140410_001.bmp
+e bulb.gif, nomes herdados que não descreviam nada do conteúdo e faziam o
+teste parecer exercitar uma fotografia. test.pdf contém uma página sintética
+com dois retângulos. image.jb2 exercita região genérica MMR, sem representar
+cobertura completa do formato JBIG2.
+
+Os oito `.svg` são de domínio público, de publicdomainvectors.org; o
+`manifest.json` traz a URL de cada um. Servem de corpus de conversão porque
+não foram desenhados por este projeto: trazem caminhos, gradientes, grupos e
+transformações que os nossos próprios geradores nunca emitem. Os nomes foram
+passados para kebab-case e um deles foi corrigido — `tiger1.svg` virou
+`bengal-tiger-head.svg`, que é o que a ilustração mostra.
 
 pdf20-offset-start.pdf é cópia inalterada de `PDF 2.0 with offset start.pdf`
 do repositório pdf20examples da PDF Association, renomeada apenas para tirar os

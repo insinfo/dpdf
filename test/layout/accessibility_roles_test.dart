@@ -43,7 +43,7 @@ void main() {
     });
 
     test('an image is a Figure and accepts an alternate description', () {
-      final path = r'test/assets/Desert.jpg';
+      final path = r'test/assets/shapes-rgb.jpg';
       if (!File(path).existsSync()) {
         markTestSkipped('Test image not found at $path');
         return;
@@ -70,7 +70,7 @@ void main() {
     });
 
     test('an image can be used as the bullet of a single item', () {
-      final path = r'test/assets/Desert.jpg';
+      final path = r'test/assets/shapes-rgb.jpg';
       if (!File(path).existsSync()) {
         markTestSkipped('Test image not found at $path');
         return;

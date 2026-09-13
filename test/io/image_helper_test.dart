@@ -8,7 +8,7 @@ import 'package:dpdf/src/io/image/raw_image_data.dart';
 void main() {
   group('Image Helper Tests', () {
     test('BMP Image Helper Test', () async {
-      final file = File('test/assets/WP_20140410_001.bmp');
+      final file = File('test/assets/shapes-rgb-large.bmp');
       final bytes = await file.readAsBytes();
       final imageData = ImageDataFactory.create(bytes);
 
@@ -18,7 +18,7 @@ void main() {
     });
 
     test('GIF Image Helper Test', () async {
-      final file = File('test/assets/bulb.gif');
+      final file = File('test/assets/blue-square-16.gif');
       final bytes = await file.readAsBytes();
       final imageData = ImageDataFactory.create(bytes);
 

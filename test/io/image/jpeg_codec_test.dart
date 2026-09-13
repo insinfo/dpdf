@@ -48,7 +48,7 @@ void main() {
     late Uint8List desert;
 
     setUpAll(() {
-      desert = File('test/assets/Desert.jpg').readAsBytesSync();
+      desert = File('test/assets/shapes-rgb.jpg').readAsBytesSync();
     });
 
     test('probes the frame header without decoding', () {
@@ -210,7 +210,7 @@ void main() {
         're-encoding a real photograph is near lossless above its own '
         'quality', () {
       final original =
-          JpegDecoder.decode(File('test/assets/Desert.jpg').readAsBytesSync());
+          JpegDecoder.decode(File('test/assets/shapes-rgb.jpg').readAsBytesSync());
 
       final again = JpegDecoder.decode(JpegEncoder.encode(
         original.pixels,

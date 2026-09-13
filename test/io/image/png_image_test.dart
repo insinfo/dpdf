@@ -6,8 +6,8 @@ import 'package:dpdf/src/layout/properties/image_type.dart';
 
 void main() {
   group('PngImageHelper Tests', () {
-    test('Process bee.png', () async {
-      final file = File('test/assets/bee.png');
+    test('Process shapes-rgb.png', () async {
+      final file = File('test/assets/shapes-rgb.png');
       expect(await file.exists(), isTrue);
 
       final bytes = await file.readAsBytes();

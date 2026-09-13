@@ -9,7 +9,7 @@ void main() {
   test('decodes PNG and JPEG data URIs while preserving requested dimensions',
       () async {
     final png = await File('test/assets/png_greyscale.png').readAsBytes();
-    final jpeg = await File('test/assets/Desert.jpg').readAsBytes();
+    final jpeg = await File('test/assets/shapes-rgb.jpg').readAsBytes();
     final decodedPng = HtmlDataImage.tryParse(
         'data:image/png;base64,${base64Encode(png)}',
         width: '20',

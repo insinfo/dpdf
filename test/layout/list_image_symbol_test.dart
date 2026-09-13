@@ -14,7 +14,7 @@ import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
 
 void main() {
   test('List with Image Symbol Layout', () async {
-    final imagePath = r'C:\MyDartProjects\dpdf\test\assets\Desert.jpg';
+    final imagePath = r'C:\MyDartProjects\dpdf\test\assets\shapes-rgb.jpg';
     if (!File(imagePath).existsSync()) {
       // Skip test if image not available
       markTestSkipped('Test image not found at $imagePath');

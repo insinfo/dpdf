@@ -9,7 +9,20 @@ class PdfUnicodeCMap {
 
   /// Reads codespacerange, bfchar and bfrange blocks. Unsupported inheritance,
   /// malformed Unicode and unmapped input fail explicitly instead of guessing.
-  static PdfUnicodeCMap parse(Uint8List bytes) {
+  ///
+  /// [codeLength] is the byte width of the character codes imposed by the font
+  /// that references this CMap: 1 for every simple font (9.6.6.1, a simple
+  /// font's codes are single bytes by definition) and 2 for Identity-H/V
+  /// (9.7.5.2). That width belongs to the font, never to the ToUnicode stream,
+  /// and mainstream producers emit the `<0000> <FFFF>` Identity default in
+  /// every ToUnicode CMap regardless of the font it describes. So when the
+  /// caller knows the width, it replaces the declared codespacerange, whose
+  /// only use here is splitting a string into codes. See [_normalize] for what
+  /// happens to entries written at a different width.
+  static PdfUnicodeCMap parse(Uint8List bytes, {int? codeLength}) {
+    if (codeLength != null && (codeLength < 1 || codeLength > 4)) {
+      throw ArgumentError.value(codeLength, 'codeLength', 'Must be 1 to 4');
+    }
     if (bytes.length > 8 * 1024 * 1024) {
       throw const FormatException('ToUnicode exceeds the 8 MiB limit');
     }
@@ -106,13 +119,20 @@ class PdfUnicodeCMap {
       }
       previous = token;
     }
-    if (spaces.isEmpty) throw const FormatException('Missing code space');
+    if (spaces.isEmpty && codeLength == null) {
+      throw const FormatException('Missing code space');
+    }
     for (var i = 0; i < spaces.length; i++) {
       for (var j = 0; j < i; j++) {
         if (spaces[i].prefixOverlaps(spaces[j])) {
           throw const FormatException('Overlapping or ambiguous code spaces');
         }
       }
+    }
+    if (codeLength != null) {
+      return PdfUnicodeCMap._([
+        _CodeSpace(List.filled(codeLength, 0), List.filled(codeLength, 255))
+      ], _normalize(mapping, codeLength));
     }
     for (final key in mapping.keys) {
       final code = key.codeUnits;
@@ -123,6 +143,57 @@ class PdfUnicodeCMap {
     }
     return PdfUnicodeCMap._(spaces, mapping);
   }
+
+  /// Rewrites entries onto the [codeLength] the font actually uses.
+  ///
+  /// Producers pad source codes with leading zero bytes: a simple TrueType
+  /// font gets `<20> <0020>` for most codes and `<0020> <0020>` for a few, in
+  /// the same block. A simple font has no code 0x0020, so the padded form can
+  /// only mean code 0x20, and trimming the zero bytes recovers it. Anything
+  /// else is dropped rather than reshaped:
+  ///
+  /// * a longer code whose leading bytes are nonzero names a code the font
+  ///   cannot produce, so there is nothing to recover;
+  /// * a shorter code would have to be zero-extended, and zero-extending is a
+  ///   guess about which byte position the producer meant;
+  /// * two entries that trim onto the same code with different text are
+  ///   genuinely ambiguous.
+  ///
+  /// A dropped entry leaves that code unmapped, which surfaces later as an
+  /// explicit decode failure. Emitting an invented character instead would be
+  /// worse: wrong text is indistinguishable from right text downstream.
+  static Map<String, String> _normalize(
+      Map<String, String> mapping, int codeLength) {
+    final result = <String, String>{
+      for (final entry in mapping.entries)
+        if (entry.key.length == codeLength) entry.key: entry.value
+    };
+    final ambiguous = <String>{};
+    mapping.forEach((key, value) {
+      if (key.length <= codeLength) return;
+      for (var i = 0; i < key.length - codeLength; i++) {
+        if (key.codeUnitAt(i) != 0) return;
+      }
+      final trimmed = key.substring(key.length - codeLength);
+      final previous = result[trimmed];
+      if (previous == null) {
+        result[trimmed] = value;
+      } else if (previous != value) {
+        ambiguous.add(trimmed);
+      }
+    });
+    for (final key in ambiguous) {
+      result.remove(key);
+    }
+    return result;
+  }
+
+  /// The text this CMap assigns to one complete character code, or null when
+  /// it assigns none. Splitting a string into codes is [decode]'s job; this
+  /// answers for a code the caller has already delimited, so that a caller
+  /// holding a second source for the same font can consult it on the codes
+  /// this CMap leaves out.
+  String? textFor(List<int> code) => _mapping[_key(code)];
 
   String decode(Uint8List bytes) {
     final result = StringBuffer();

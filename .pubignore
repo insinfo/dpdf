@@ -16,3 +16,10 @@ referencias/
 # e ainda assim dispara alarme nos verificadores de licenca que consumidores
 # rodam na integracao continua. Veja test/assets/ghostscript-tiger/NOTICE.md.
 test/assets/ghostscript-tiger/
+
+# Seis edicoes de um diario oficial, 5,5 MB de corpus de documentos
+# estrangeiros. Versionadas para que a suite rode em qualquer clone, e fora do
+# pacote publicado: quem so quer a biblioteca nao precisa baixar isso. Sao atos
+# oficiais de orgao publico, sem protecao autoral pela Lei 9.610/98 art. 8, IV.
+# Veja test/assets/jornal-oficial/NOTICE.md.
+test/assets/jornal-oficial/

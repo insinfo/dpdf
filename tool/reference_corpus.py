@@ -88,7 +88,13 @@ doc = fitz.open()
 # Pagina 1: texto em varias fontes e tamanhos
 p = doc.new_page(width=595, height=842)
 p.insert_text((50, 60), "Pagina 1 - texto", fontname="helv", fontsize=24)
-p.insert_text((50, 95), "Helvetica normal, acentuacao: acao, coracao, ate",
+# Acentos de verdade: sem isto o corpus nao exercita codigo nenhum acima de
+# 127, e foi essa a falha que deixou passar um teste que dizia "acentuacao" e
+# so tinha ASCII.
+p.insert_text((50, 95), "Helvetica com acentos: ação, coração, até",
+              fontname="helv", fontsize=11)
+p.insert_text((50, 195), "WinAnsi alto: ção éíó "
+              "ÀÇÕ «» °±µ €",
               fontname="helv", fontsize=11)
 p.insert_text((50, 115), "Times-Roman em italico", fontname="tiit", fontsize=11)
 p.insert_text((50, 135), "Courier monoespacado 0123456789",

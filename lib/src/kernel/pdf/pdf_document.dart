@@ -96,6 +96,16 @@ class PdfDocument {
   /// Modified document ID.
   PdfString? _modifiedDocumentId;
 
+  /// Whether [_modifiedDocumentId] is still the value read from the input
+  /// file.
+  ///
+  /// ISO 32000-1:2008, 14.4: the second byte string of `/ID` "shall be a
+  /// changing identifier based on the file's contents at the time it was last
+  /// updated". A document opened for writing produces a new revision, so the
+  /// identifier inherited from the input has to be replaced exactly once
+  /// before the trailer is written.
+  bool _revisionIdentifierComesFromInput = false;
+
   /// Document info - lazy initialized.
   PdfDocumentInfo? _info;
 
@@ -290,6 +300,7 @@ class PdfDocument {
       }
       if (idArray.size() > 1) {
         _modifiedDocumentId = await idArray.stringEntry(1);
+        _revisionIdentifierComesFromInput = _modifiedDocumentId != null;
       }
     }
 
@@ -777,14 +788,52 @@ class PdfDocument {
   }
 
   /// Gets original document id.
+  ///
+  /// ISO 32000-1:2008, 14.4: the first byte string of the trailer `/ID` array
+  /// "shall be a permanent identifier based on the contents of the file at the
+  /// time it was originally created and shall not change when the file is
+  /// incrementally updated", so a value read from the input document is kept
+  /// as it stands. [WriterProperties.initialDocumentId], when set, overrides
+  /// the generated value.
   PdfString initialDocumentIdentifier() {
+    final requested = _writer?.properties.initialDocumentId;
+    if (requested != null) {
+      return _originalDocumentId ??= PdfString(requested)..setHexWriting(true);
+    }
     return _originalDocumentId ??=
         PdfString.fromBytes(PdfEncryption.generateNewDocumentId(), true);
   }
 
   /// Gets modified document id.
+  ///
+  /// ISO 32000-1:2008, 14.4: the second byte string "shall be a changing
+  /// identifier based on the file's contents at the time it was last updated",
+  /// and "when a file is first written, both identifiers shall be set to the
+  /// same value". So:
+  ///
+  /// * a document created from scratch reports the same value as
+  ///   [initialDocumentIdentifier];
+  /// * a document opened for writing replaces the identifier it inherited from
+  ///   the input, whether the revision is incremental or a full rewrite;
+  /// * a document opened for reading only keeps the identifier it read.
+  ///
+  /// [WriterProperties.modifiedDocumentId], when set, overrides all of that.
   PdfString revisionIdentifier() {
-    return _modifiedDocumentId ??=
+    final requested = _writer?.properties.modifiedDocumentId;
+    if (requested != null) {
+      _revisionIdentifierComesFromInput = false;
+      return _modifiedDocumentId = PdfString(requested)..setHexWriting(true);
+    }
+    if (_revisionIdentifierComesFromInput && _writer != null) {
+      _revisionIdentifierComesFromInput = false;
+      return _modifiedDocumentId =
+          PdfString.fromBytes(PdfEncryption.generateNewDocumentId(), true);
+    }
+    if (_modifiedDocumentId != null) return _modifiedDocumentId!;
+    if (_reader == null) {
+      return _modifiedDocumentId = initialDocumentIdentifier();
+    }
+    return _modifiedDocumentId =
         PdfString.fromBytes(PdfEncryption.generateNewDocumentId(), true);
   }
 

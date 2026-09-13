@@ -245,3 +245,18 @@ export 'src/kernel/pdf/viewer/pdf_requirement.dart';
 export 'src/kernel/pdf/viewer/pdf_measure.dart';
 export 'src/kernel/pdf/article/pdf_article_thread.dart';
 export 'src/kernel/pdf/article/pdf_bead.dart';
+
+// Prepress support, ISO 32000-1:2008, 14.11.
+export 'src/kernel/pdf/prepress/pdf_page_boundaries.dart';
+export 'src/kernel/pdf/prepress/pdf_box_color_info.dart';
+export 'src/kernel/pdf/prepress/pdf_separation_info.dart';
+export 'src/kernel/pdf/prepress/pdf_printer_mark_form.dart';
+export 'src/kernel/pdf/prepress/pdf_trap_network.dart';
+
+// Web Capture, ISO 32000-1:2008, 14.10.
+export 'src/kernel/pdf/webcapture/web_capture_names.dart';
+export 'src/kernel/pdf/webcapture/pdf_web_capture_info.dart';
+export 'src/kernel/pdf/webcapture/pdf_web_capture_command.dart';
+export 'src/kernel/pdf/webcapture/pdf_web_capture_content_set.dart';
+export 'src/kernel/pdf/webcapture/pdf_web_capture_source.dart';
+export 'src/kernel/pdf/webcapture/pdf_web_capture_database.dart';

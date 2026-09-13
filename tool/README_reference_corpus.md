@@ -44,6 +44,16 @@ uma região inteira divergindo ou uma diferença grande concentrada.
 mostra, por exemplo, que imagens e transparência batem enquanto círculo e Bézier não —
 apontando o traçado de curvas em vez de deixar um número agregado sem explicação.
 
+**Divergir do MuPDF não é o mesmo que estar errado.** A região `bmp` acusa cerca de 31 % dos
+pixels diferentes, e a diferença é do MuPDF. O xadrez de 160×120 entra num retângulo de
+220×150; o PyMuPDF preserva a proporção, então ele é desenhado 200×150, escala exatamente
+1,25, e um bloco de 8 px vira 10 px de dispositivo com a origem em coordenada inteira.
+Nenhuma fronteira de bloco cai no meio de um pixel, logo preto puro e branco puro é a
+resposta exata. A 72 dpi o MuPDF entrega 25 e 229, perdendo contraste; a 288 dpi ele próprio
+volta a 0 e 255, como nós nas duas resoluções. Antes de tratar uma divergência como defeito
+nosso, vale repetir a medida em resolução maior: artefato de reamostragem desaparece,
+erro de geometria não.
+
 Medir cobertura absoluta também vale: somar `(255 - valor) / 255` ao longo de um corte
 perpendicular a um traço de largura `w` tem de dar exatamente `w`. Foi essa medida que
 transformou "parece mais fino" em "perde metade da largura com junção miter".

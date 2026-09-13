@@ -59,6 +59,7 @@ export 'src/kernel/pdf/pdf_catalog.dart';
 export 'src/kernel/pdf/pdf_page.dart';
 export 'src/kernel/pdf/pdf_pages_tree.dart';
 export 'src/kernel/pdf/pdf_writer.dart';
+export 'src/kernel/pdf/pdf_linearization.dart';
 export 'src/kernel/pdf/stamping_properties.dart';
 export 'src/kernel/pdf/pdf_output_intent.dart';
 export 'src/kernel/pdf/canvas/pdf_canvas.dart';

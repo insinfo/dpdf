@@ -731,8 +731,22 @@ class _Plan {
     return header + count * 20 + trailerLength;
   }
 
-  int _firstPageTrailerLength() =>
-      _firstPageTrailerBytes(0, 0, 0, 0, 0).length;
+  /// The first-page trailer's length, measured on the values it will really
+  /// carry.
+  ///
+  /// `/Size`, `/Prev` and `startxref` are written through [_padded] and so have
+  /// a constant width, but `/Root` and `/Info` carry plain object numbers, and
+  /// `/Info` is omitted entirely when the document has no information
+  /// dictionary. Measuring with zeroes would therefore under-count by the
+  /// digits of the root number plus the whole `/Info` clause, and the layout
+  /// would plan a shorter file than it goes on to write.
+  int _firstPageTrailerLength() => _firstPageTrailerBytes(
+        0,
+        0,
+        renumber[rootNumber] ?? 0,
+        infoNumber == null ? 0 : renumber[infoNumber] ?? 0,
+        0,
+      ).length;
 
   int _mainTrailerLength(int size) =>
       ByteUtils.getIsoBytes('trailer\n<< /Size ${_padded(size)} >>\n'

@@ -3117,14 +3117,33 @@ class _Renderer {
 
   // --- text -----------------------------------------------------------------
 
-  /// Resolves the `Tf` operand to a font, remembering the result per page.
+  /// Resolves the `Tf` operand to a font, remembering the result per font.
+  ///
+  /// A cache por NOME estaria errada. O nome do recurso so tem significado
+  /// dentro do dicionario `/Resources` em que aparece (7.8.3), e produtores
+  /// reaproveitam nomes curtos: um mesmo documento traz `/TT0` apontando para
+  /// tres fontes diferentes em Form XObjects diferentes. Guardando por nome, a
+  /// primeira resolvida passava a valer para todas, e o texto saia desenhado
+  /// com o subconjunto errado — glifo ausente vira espaco em branco e glifo
+  /// presente vira a letra errada, que e pior porque parece texto.
+  ///
+  /// A chave e o objeto da fonte: o numero do objeto indireto quando existe, e
+  /// a identidade do dicionario quando a fonte foi escrita direta no recurso.
   Future<void> _selectFont(String? name, PdfDictionary? resources) async {
     if (name == null) {
       _font = null;
       return;
     }
-    if (_fontCache.containsKey(name)) {
-      _font = _fontCache[name];
+    final fonts = await resources?.dictionaryEntry(PdfName('Font'));
+    final dicionario = await fonts?.dictionaryEntry(PdfName(name));
+    final objeto = dicionario?.indirectReference?.objNr;
+    final chave = dicionario == null
+        ? 'ausente:$name'
+        : objeto != null
+            ? 'obj:$objeto'
+            : 'direto:${identityHashCode(dicionario)}';
+    if (_fontCache.containsKey(chave)) {
+      _font = _fontCache[chave];
       return;
     }
     PdfGlyphSource? resolved;
@@ -3136,7 +3155,7 @@ class _Renderer {
       // the text was skipped and the rest of the content still draws.
       resolved = null;
     }
-    _fontCache[name] = resolved;
+    _fontCache[chave] = resolved;
     _font = resolved;
     final failure = resolved?.failure;
     if (failure != null) {

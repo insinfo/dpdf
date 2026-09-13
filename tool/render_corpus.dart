@@ -15,13 +15,19 @@ Future<void> main(List<String> args) async {
   // Quarto argumento `sem-substituicao` mostra o que o documento traz de
   // fato, sem as URW embutidas: e a medida de quanto a substituicao cobre.
   final substituir = !args.contains('sem-substituicao');
+  // `paginas=N` limita quantas paginas renderizar. Um diario oficial tem
+  // milhares; a primeira pagina ja diz se o documento abre e desenha.
+  final limite = int.tryParse(
+          args.firstWhere((a) => a.startsWith('paginas='), orElse: () => '')
+              .replaceFirst('paginas=', '')) ??
+      100;
   Directory(saida).createSync(recursive: true);
 
   final bytes = Uint8List.fromList(File(entrada).readAsBytesSync());
   final doc = await PdfDocument.open(PdfReader.fromBytes(bytes));
 
   var n = 0;
-  while (n < 100) {
+  while (n < limite) {
     PdfPage? pagina;
     try {
       pagina = await doc.pageAt(n + 1);

@@ -26,6 +26,8 @@ part 'pdf_text_positions.dart';
 part 'pdf_text_redaction.dart';
 part 'pdf_graphics_envelope.dart';
 part 'pdf_area_redaction.dart';
+part 'pdf_inline_image.dart';
+part 'pdf_vector_redaction.dart';
 
 /// Decodes PDF character codes for a selected font resource.
 /// A decoder must apply that font's Encoding/ToUnicode mapping.
@@ -34,7 +36,10 @@ typedef PdfCharacterDecoder = String Function(String font, Uint8List codes);
 /// Extracts text in content-stream order, not visual reading order.
 ///
 /// Form XObjects are visited in painting order. Marked-content replacement
-/// text is emitted once per sequence; inline images remain unsupported.
+/// text is emitted once per sequence. Inline images (`BI ... ID ... EI`,
+/// 8.9.7) carry no text, so they are stepped over; their binary payload is
+/// bounded by the declared sample count when unfiltered and by a validated
+/// `EI` search otherwise, so image bytes are never mistaken for operators.
 class PdfTextExtraction {
   static Future<String> fromPage(PdfPage page,
       {PdfCharacterDecoder? decoder}) async {
@@ -414,6 +419,14 @@ class PdfTextExtraction {
           final replacement = marked.removeLast();
           if (replacement != null) emit(replacement);
         case 'BI':
+          if (inText) {
+            throw FormatException(
+                'An inline image cannot appear inside a text object.');
+          }
+          if (operands.isNotEmpty) {
+            throw FormatException('BI takes no operands.');
+          }
+          lexer.readInlineImage();
         case 'DP':
         case 'gs':
           throw UnsupportedError(

@@ -1,7 +1,9 @@
 part of 'pdf_text_extraction.dart';
 
 /// Balances q/Q outside strings, names, arrays, dictionaries and comments.
-/// Inline image payloads require a separate binary parser and are rejected.
+/// Inline image payloads (8.9.7) are stepped over with the same bounded
+/// scanner text extraction uses, so a `q` or `Q` byte inside image data never
+/// counts as an operator.
 class PdfGraphicsEnvelope {
   static Uint8List wrap(Uint8List content) {
     final tokens = _ContentTokens(content, allowDictionaries: true);
@@ -10,8 +12,7 @@ class PdfGraphicsEnvelope {
       if (token is! _Operator) continue;
       switch (token.value) {
         case 'BI':
-          throw UnsupportedError(
-              'Overlay state repair does not parse inline image payloads.');
+          tokens.readInlineImage();
         case 'q':
           depth++;
         case 'Q':

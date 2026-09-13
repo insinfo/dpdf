@@ -162,6 +162,7 @@ export 'src/kernel/colors/device_rgb.dart';
 // Fonts and images used when composing content.
 export 'src/io/font/constants/standard_fonts.dart';
 export 'src/io/font/true_type_font.dart';
+export 'src/io/font/true_type_collection.dart';
 export 'src/io/font/font_program.dart';
 export 'src/io/font/font_program_factory.dart';
 export 'src/io/image/image_data.dart';

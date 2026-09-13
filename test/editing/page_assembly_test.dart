@@ -42,7 +42,7 @@ void main() {
         'a\nb\nc');
   });
   test('Unsupported content and malformed state do not silently pass', () {
-    for (final stream in ['BI', '/X Do', '/GS gs', 'bogus']) {
+    for (final stream in ['/X Do', '/GS gs', 'bogus']) {
       expect(() => extract(stream), throwsUnsupportedError);
     }
     for (final stream in [
@@ -50,7 +50,10 @@ void main() {
       'BT',
       'Q',
       'BT /F1 12 Tf (abc',
-      'BT /F1 12 Tf [(x)'
+      'BT /F1 12 Tf [(x)',
+      // A bare BI is now malformed content rather than unsupported content:
+      // inline images are read, and this one never reaches its ID.
+      'BI'
     ]) {
       expect(() => extract(stream), throwsFormatException);
     }

@@ -316,6 +316,44 @@ class _TextMachine {
           for (var i = 0; i < 4; i++) {
             number(i);
           }
+        // Path construction, painting and clipping (8.5.2, 8.5.3, 8.5.4) and
+        // the non-painting parts of the graphics state (8.4.4) carry no text
+        // state, so they are copied through untouched. Area redaction removes
+        // the artwork they draw in a later pass; what matters here is that a
+        // page holding both text and drawings can be rewritten at all.
+        case 'm':
+        case 'l':
+        case 'c':
+        case 'v':
+        case 'y':
+        case 'h':
+        case 're':
+        case 'S':
+        case 's':
+        case 'f':
+        case 'F':
+        case 'f*':
+        case 'B':
+        case 'B*':
+        case 'b':
+        case 'b*':
+        case 'n':
+        case 'W':
+        case 'W*':
+        case 'w':
+        case 'J':
+        case 'j':
+        case 'M':
+        case 'd':
+        case 'ri':
+        case 'i':
+        case 'CS':
+        case 'cs':
+        case 'SC':
+        case 'SCN':
+        case 'sc':
+        case 'scn':
+          break;
         default:
           throw UnsupportedError(
               'Positioned text cannot interpret ${token.value}.');
@@ -337,6 +375,9 @@ class _TextMachine {
 
   String _serialize(Object object) {
     if (object is num) return _pdfNumber(object);
+    if (object is List<Object>) {
+      return '[${object.map(_serialize).join(' ')}]';
+    }
     if (object is _Name) {
       final result = StringBuffer('/');
       for (final code in latin1.encode(object.value)) {

@@ -76,6 +76,16 @@ class PdfAreaRedactionOptions {
   /// que uma reutilização em outra página seja modificada acidentalmente.
   final bool redactImagePixels;
 
+  /// O que fazer com a arte vetorial que encontra uma area.
+  ///
+  /// O padrao remove de verdade: um caminho inteiramente dentro de uma area
+  /// desaparece do fluxo de conteudo, um caminho inteiramente fora sobrevive
+  /// byte a byte, e um caminho que atravessa a borda faz o documento ser
+  /// recusado. Cobrir com um retangulo opaco nao e redacao — as coordenadas
+  /// continuam no arquivo — e por isso so acontece sob pedido explicito,
+  /// com [PdfVectorArtRedaction.cover].
+  final PdfVectorArtRedaction vectorArt;
+
   const PdfAreaRedactionOptions({
     this.paintOverlay = true,
     this.overlayColor = const [0, 0, 0],
@@ -83,6 +93,7 @@ class PdfAreaRedactionOptions {
     this.clearDocumentInfo = false,
     this.glyphPadding = 2,
     this.redactImagePixels = true,
+    this.vectorArt = PdfVectorArtRedaction.removeOrReject,
   });
 }
 
@@ -100,7 +111,15 @@ class PdfAreaRedactionOptions {
 /// * Pixels de imagens diretamente usadas ou aninhadas em Form XObjects são
 ///   removidos, preservando transparência fora da área e clonando recursos
 ///   compartilhados.
-/// * Vector art inside the area is likewise covered, not removed.
+/// * Arte vetorial inteiramente dentro da area e removida do fluxo de
+///   conteudo, inclusive dentro de Form XObjects; um caminho que atravessa a
+///   borda da area faz a operacao ser recusada, porque recortar curvas de
+///   Bezier contra um retangulo e trabalho que esta implementacao nao faz e
+///   um arquivo que parece redigido sem estar e pior que uma recusa. Veja
+///   [PdfVectorArtRedaction].
+/// * Caminhos de recorte (`W`, `W*`) sao preservados: apaga-los mudaria o que
+///   o resto da pagina mostra. O mesmo vale para sombreamentos (`sh`) e para
+///   os procedimentos de glifo de fontes Type 3.
 /// * Composite (Type0/CID) fonts are rejected, because a single-byte text
 ///   machine cannot locate their glyphs.
 ///
@@ -212,9 +231,43 @@ class PdfAreaRedaction {
       await _redactImages(document, dictionary, resources, content, areas,
           options.overlayColor);
     }
+    if (options.vectorArt == PdfVectorArtRedaction.removeOrReject) {
+      await _redactVectorArt(document, page, areas);
+    }
     if (options.paintOverlay) {
       await _paintOverlay(document, page, areas, options);
     }
+  }
+
+  /// Remove do fluxo de conteudo os caminhos que caem dentro das areas.
+  ///
+  /// Le a pagina de novo em vez de reutilizar o conteudo do passo de texto:
+  /// a remocao de imagens pode ter reescrito tanto /Contents quanto
+  /// /Resources, e partir de uma copia velha desfaria esse trabalho.
+  static Future<void> _redactVectorArt(
+    PdfDocument document,
+    PdfPage page,
+    List<PdfRedactionArea> areas,
+  ) async {
+    final dictionary = page.pdfRepresentation();
+    final resources =
+        await PdfTextRedaction._inherited(dictionary, 'Resources');
+    final rewrite = await _VectorArtRedactor.apply(
+        document,
+        resources is PdfDictionary ? resources : null,
+        await page.contentPayload(),
+        areas,
+        0);
+    if (!rewrite.changed) return;
+    if (rewrite.content != null) {
+      final stream = PdfStream.withBytes(rewrite.content!, 0);
+      stream.attachToDocument(document);
+      dictionary.put(PdfName.contents, stream);
+    }
+    if (rewrite.resources != null) {
+      dictionary.put(PdfName.resources, rewrite.resources!);
+    }
+    dictionary.markChanged();
   }
 
   static Future<bool> _redactImages(

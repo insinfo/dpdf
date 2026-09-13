@@ -41,9 +41,17 @@ void main() {
     final wrapped = latin1.decode(PdfGraphicsEnvelope.wrap(source));
     expect(wrapped, startsWith('q\n'));
     expect(wrapped, endsWith('\nQ\nQ\n'));
+    // An inline image that never reaches its ID is malformed content, not
+    // content the envelope declines to read.
     expect(
         () => PdfGraphicsEnvelope.wrap(Uint8List.fromList('BI /W 1'.codeUnits)),
-        throwsUnsupportedError);
+        throwsFormatException);
+    // A whole inline image is stepped over by its declared sample count, so
+    // the "q q " spelled by its data is not counted as graphics state.
+    final image =
+        latin1.encode('q BI /W 4 /H 1 /BPC 8 /CS /G ID q q  EI').toList();
+    expect(latin1.decode(PdfGraphicsEnvelope.wrap(Uint8List.fromList(image))),
+        endsWith('\nQ\nQ\n'));
   });
 
   test('append drawing retains original content and changes only its page',

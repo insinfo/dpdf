@@ -436,8 +436,10 @@ void main() {
               (e) => e.message, 'message', contains('over-subscribed'))));
     });
 
-    test('arquivo de codificação aritmética continua recusado', () {
-      // SOF9: DCT sequencial, codificação aritmética.
+    test('arquivo de codificação aritmética agora é aceito', () {
+      // SOF9: DCT sequencial, codificação aritmética. O cabeçalho é válido e o
+      // arquivo não traz varredura nenhuma, então a sondagem o aceita e a
+      // decodificação reclama da falta de dados comprimidos, não do processo.
       final bytes = Uint8List.fromList([
         0xFF, 0xD8, //
         0xFF, 0xC9, 0x00, 0x0B, 0x08, 0x00, 0x10, 0x00, 0x18, 0x01, 0x01,
@@ -446,10 +448,42 @@ void main() {
       ]);
       final info = JpegDecoder.probe(bytes);
 
-      expect(info.decodable, isFalse);
-      expect(info.reason, contains('Arithmetic'));
+      expect(info.decodable, isTrue);
+      expect(info.reason, isNull);
+      expect(info.width, equals(24));
+      expect(info.height, equals(16));
       expect(
-          () => JpegDecoder.decode(bytes), throwsA(isA<JpegDecodeException>()));
+          () => JpegDecoder.decode(bytes),
+          throwsA(isA<JpegDecodeException>().having(
+              (e) => e.message, 'message', contains('no entropy-coded scan'))));
+    });
+
+    test('arquivo sem perdas aritmético também é aceito', () {
+      // SOF11: sem perdas, codificação aritmética.
+      final bytes = Uint8List.fromList([
+        0xFF, 0xD8, //
+        0xFF, 0xCB, 0x00, 0x0B, 0x08, 0x00, 0x10, 0x00, 0x18, 0x01, 0x01,
+        0x11, 0x00,
+        0xFF, 0xD9,
+      ]);
+      final info = JpegDecoder.probe(bytes);
+
+      expect(info.decodable, isTrue);
+      expect(info.reason, isNull);
+    });
+
+    test('quadro diferencial continua recusado', () {
+      // SOF5: DCT sequencial diferencial, que exige o modo hierárquico.
+      final bytes = Uint8List.fromList([
+        0xFF, 0xD8, //
+        0xFF, 0xC5, 0x00, 0x0B, 0x08, 0x00, 0x10, 0x00, 0x18, 0x01, 0x01,
+        0x11, 0x00,
+        0xFF, 0xD9,
+      ]);
+      final info = JpegDecoder.probe(bytes);
+
+      expect(info.decodable, isFalse);
+      expect(info.reason, contains('Differential'));
     });
   });
 }

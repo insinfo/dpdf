@@ -1,5 +1,11 @@
 import 'dart:typed_data';
 
+import 'jpeg_arithmetic_decoder.dart';
+
+part 'jpeg_arithmetic_scan.dart';
+part 'jpeg_lossless_decoder.dart';
+part 'jpeg_hierarchical_decoder.dart';
+
 /// How the samples of a decoded JPEG are laid out.
 enum JpegPixelFormat {
   /// One byte per pixel.
@@ -52,14 +58,21 @@ class JpegDecodeException implements Exception {
   String toString() => 'JpegDecodeException: $message';
 }
 
-/// A Huffman-coded JPEG decoder, sequential and progressive.
+/// A JPEG decoder: sequential and progressive, Huffman and arithmetic.
 ///
 /// It reads the DCT-based sequential mode of ITU-T T.81 — the mode PDF's
 /// `/DCTDecode` filter carries most often — and the progressive mode of T.81
 /// §G, with restart intervals and any component sampling factors, so 4:4:4,
-/// 4:2:2 and 4:2:0 files all decode. Arithmetic-coded, lossless and
-/// hierarchical files are rejected with a clear message rather than decoded
-/// wrongly.
+/// 4:2:2 and 4:2:0 files all decode. Both entropy codings are supported: the
+/// Huffman procedures of §F.2.2 and the adaptive binary arithmetic coder of
+/// Annex D (SOF9 and SOF10), including the DAC conditioning segment.
+///
+/// It also reads the lossless mode of Annex H — SOF3 and SOF11, the seven
+/// predictors of Table H.1, 2 to 16 bits per sample and the point transform —
+/// and hierarchical sequences built on it (Annex J: DHP, EXP, the bi-linear
+/// upsampling filter of J.1.1.2 and differential frames added modulo 2^16).
+/// The differential *DCT* frames of Annex J are rejected with a clear message
+/// rather than decoded wrongly.
 ///
 /// The IDCT is the AAN float algorithm with the scale factors folded into the
 /// dequantisation tables, which is what makes a block cost 8 butterflies per
@@ -82,8 +95,10 @@ class JpegInfo {
   final int height;
   final int components;
 
-  /// False for arithmetic-coded, hierarchical or lossless files, which
-  /// [JpegDecoder.decode] refuses. Progressive files are decodable.
+  /// False for the processes [JpegDecoder.decode] refuses: the differential
+  /// DCT frames of Annex J, and a hierarchical sequence built on the DCT
+  /// processes. Progressive, arithmetic-coded, lossless and lossless
+  /// hierarchical files are all decodable.
   final bool decodable;
 
   /// Why it is not decodable, when it is not.
@@ -136,6 +151,11 @@ class _Component {
   /// dequantised or transformed until the last scan has been read. A
   /// sequential file goes straight from block to plane and leaves this null.
   Int32List? coefficients;
+
+  /// Decoded samples at this component's own resolution, for the lossless
+  /// processes of T.81 Annex H. Wider than a byte because lossless allows up
+  /// to 16 bits per sample; null for the DCT-based processes.
+  Int32List? samples;
 
   int dcTable = 0;
   int acTable = 0;
@@ -225,6 +245,45 @@ class _Decoder {
   bool progressive = false;
   String? refusal;
 
+  /// True for the arithmetic-coded processes: SOF9, SOF10, SOF11 and their
+  /// differential counterparts. The entropy coding is then the adaptive binary
+  /// arithmetic coder of T.81 Annex D rather than Huffman.
+  bool arithmetic = false;
+
+  /// Conditioning bounds from the DAC marker segments, T.81 B.2.4.3. They
+  /// persist across scans, so they live with the decoder rather than with one
+  /// scan's statistics.
+  final JpegArithConditioning arithConditioning = JpegArithConditioning();
+
+  /// True for the lossless processes of Annex H: SOF3, SOF7, SOF11 and SOF15.
+  /// The data unit is then one sample and there is no transform.
+  bool lossless = false;
+
+  /// True for the differential frames of the hierarchical mode, Annex J.
+  bool differential = false;
+
+  /// True once a DHP segment has been seen, which selects the hierarchical
+  /// decoder of Annex J.
+  bool hierarchical = false;
+
+  /// The point transform Al of the last scan read, T.81 A.4. A differential
+  /// frame's output is scaled by it before being added to the reference,
+  /// J.2.3.2.
+  int scanPointTransform = 0;
+
+  /// Bits per sample as the frame header declares, T.81 B.2.2. Eight or twelve
+  /// for the DCT processes, two to sixteen for the lossless ones.
+  int samplePrecision = 8;
+
+  /// The level shift the IDCT output needs, 2^(P-1) per A.3.1, and the range
+  /// the samples are limited to.
+  int levelShift = 128;
+  int maxSample = 255;
+
+  /// Right shift that brings a sample of [samplePrecision] bits down to the
+  /// eight [JpegImage] carries.
+  int outputShift = 0;
+
   /// Geometry and buffers are laid out once, at the first scan, and every later
   /// scan of a progressive file adds to them.
   bool prepared = false;
@@ -261,6 +320,7 @@ class _Decoder {
   JpegImage decode() {
     _readFrameHeader(stopAtScan: false);
     if (refusal != null) throw JpegDecodeException(refusal!);
+    if (hierarchical) return _decodeHierarchical();
     // A progressive file only has complete coefficients once every scan is in,
     // so dequantisation and the IDCT run here rather than per block.
     if (progressive) _reconstructProgressive();
@@ -308,20 +368,49 @@ class _Decoder {
         case 0xC2: // SOF2 progressive
           progressive = true;
           _readFrame(_u16());
-        case 0xC3:
+        case 0xC3: // SOF3 lossless, Huffman
+          lossless = true;
+          _readFrame(_u16());
+        case 0xC7: // SOF7 differential lossless, Huffman
+          lossless = true;
+          differential = true;
+          _readFrame(_u16());
         case 0xC5:
         case 0xC6:
-        case 0xC7:
-          refusal ??= 'Lossless or differential JPEG is not supported.';
+          refusal ??= 'Differential DCT JPEG is not supported.';
           _readFrame(_u16());
-        case 0xC9:
-        case 0xCA:
-        case 0xCB:
+        case 0xC9: // SOF9 extended sequential, arithmetic
+          arithmetic = true;
+          _readFrame(_u16());
+        case 0xCA: // SOF10 progressive, arithmetic
+          arithmetic = true;
+          progressive = true;
+          _readFrame(_u16());
+        case 0xCB: // SOF11 lossless, arithmetic
+          lossless = true;
+          arithmetic = true;
+          _readFrame(_u16());
+        case 0xCF: // SOF15 differential lossless, arithmetic
+          lossless = true;
+          arithmetic = true;
+          differential = true;
+          _readFrame(_u16());
         case 0xCD:
         case 0xCE:
-        case 0xCF:
-          refusal ??= 'Arithmetic-coded JPEG is not supported.';
+          refusal ??= 'Arithmetic-coded differential DCT JPEG is not '
+              'supported.';
           _readFrame(_u16());
+        case 0xCC: // DAC
+          _readArithmeticConditioning(_u16());
+        case 0xDE: // DHP, T.81 B.3.2: the size of the completed image.
+          hierarchical = true;
+          _readFrame(_u16());
+          final first = _firstFrameMarker();
+          if (first != 0xC3 && first != 0xCB) {
+            refusal ??= 'Hierarchical JPEG is supported only for the lossless '
+                'processes of Annex H.';
+          }
+          return;
         case 0xC4: // DHT
           _readHuffmanTables(_u16());
         case 0xDB: // DQT
@@ -336,8 +425,9 @@ class _Decoder {
           _readScan(_u16());
           // A sequential file has one scan; anything after it is trailing data.
           // A progressive file has many, so keep walking markers: the scan
-          // reader left `offset` on the next real marker.
-          if (!progressive) return;
+          // reader left `offset` on the next real marker. A lossless file may
+          // also carry one scan per component.
+          if (!progressive && !lossless) return;
         default:
           if (marker >= 0xD0 && marker <= 0xD7) continue;
           final length = _u16();
@@ -356,9 +446,20 @@ class _Decoder {
   void _readFrame(int length) {
     final end = offset + length - 2;
     final precision = _u8();
-    if (precision != 8) {
+    samplePrecision = precision;
+    if (lossless) {
+      if (precision < 2 || precision > 16) {
+        refusal ??= 'A lossless JPEG must carry 2 to 16 bits per sample, '
+            'not $precision.';
+      }
+    } else if (precision != 8 && precision != 12) {
       refusal ??= '$precision-bit samples are not supported; '
-          'only 8-bit JPEG is.';
+          'only 8- and 12-bit JPEG is.';
+    }
+    if (precision >= 1 && precision <= 16) {
+      levelShift = 1 << (precision - 1);
+      maxSample = (1 << precision) - 1;
+      outputShift = precision > 8 ? precision - 8 : 0;
     }
     frameHeight = _u16();
     frameWidth = _u16();
@@ -386,8 +487,11 @@ class _Decoder {
     components = list;
     maxH = list.map((c) => c.h).reduce((a, b) => a > b ? a : b);
     maxV = list.map((c) => c.v).reduce((a, b) => a > b ? a : b);
-    mcusPerLine = (frameWidth + maxH * 8 - 1) ~/ (maxH * 8);
-    mcusPerColumn = (frameHeight + maxV * 8 - 1) ~/ (maxV * 8);
+    // A DCT data unit is an 8 x 8 block; a lossless one is a single sample,
+    // T.81 A.2.1.
+    final unit = lossless ? 1 : 8;
+    mcusPerLine = (frameWidth + maxH * unit - 1) ~/ (maxH * unit);
+    mcusPerColumn = (frameHeight + maxV * unit - 1) ~/ (maxV * unit);
     offset = end;
   }
 
@@ -437,6 +541,23 @@ class _Decoder {
     offset = end;
   }
 
+  /// Reads a DAC segment, T.81 B.2.4.3: one `Tc`/`Tb` byte and one `Cs` byte
+  /// per conditioning table.
+  void _readArithmeticConditioning(int length) {
+    final end = offset + length - 2;
+    while (offset < end) {
+      final info = _u8();
+      final cs = _u8();
+      try {
+        arithConditioning.apply(info >> 4, info & 0x0F, cs);
+      } on ArgumentError catch (error) {
+        throw JpegDecodeException(
+            'A DAC segment is malformed: ${error.message}');
+      }
+    }
+    offset = end;
+  }
+
   void _readAdobe(int length) {
     final end = offset + length - 2;
     // 'Adobe' plus version, flags0, flags1, transform.
@@ -479,6 +600,22 @@ class _Decoder {
     offset = headerEnd;
 
     _prepareComponents();
+
+    if (lossless) {
+      _readLosslessScan(scan, spectralStart, approximation & 0x0F);
+      return;
+    }
+
+    if (arithmetic) {
+      _readArithmeticScan(
+        scan,
+        spectralStart,
+        spectralEnd,
+        approximation >> 4,
+        approximation & 0x0F,
+      );
+      return;
+    }
 
     if (progressive) {
       _readProgressiveScan(
@@ -534,6 +671,10 @@ class _Decoder {
   void _prepareComponents() {
     if (prepared) return;
     prepared = true;
+    if (lossless) {
+      _prepareLosslessComponents();
+      return;
+    }
     for (final component in components) {
       component.blocksPerLine = mcusPerLine * component.h;
       component.blocksPerColumn = mcusPerColumn * component.v;
@@ -1139,12 +1280,13 @@ class _Decoder {
     }
   }
 
-  /// Level-shifts by 128 and clamps, which is the range limiting of T.81 A.3.1.
-  static int _clampSample(double value) {
-    final shifted = value.round() + 128;
-    if (shifted < 0) return 0;
-    if (shifted > 255) return 255;
-    return shifted;
+  /// Level-shifts by 2^(P-1) and clamps, which is the range limiting of T.81
+  /// A.3.1, then scales a 12-bit sample down to the eight [JpegImage] carries.
+  int _clampSample(double value) {
+    var shifted = value.round() + levelShift;
+    if (shifted < 0) shifted = 0;
+    if (shifted > maxSample) shifted = maxSample;
+    return shifted >> outputShift;
   }
 
   // --- colour assembly ------------------------------------------------------

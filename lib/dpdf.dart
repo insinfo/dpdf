@@ -222,6 +222,11 @@ export 'src/render/glyph_source.dart'
         pdfFontFallbackFromCollection;
 export 'src/render/image_decoder.dart';
 export 'src/render/page_renderer.dart';
+// Substitutas para as fontes que o PDF referencia sem embutir: as URW Core 35
+// que viajam no pacote, e o catálogo instalado na máquina. Ambas resolvem para
+// nada na web, onde não há bytes de fonte a ler.
+export 'src/render/standard_fonts.dart';
+export 'src/render/system_fonts.dart';
 
 // Multimedia features: ISO 32000-1:2008, clause 13.
 export 'src/kernel/pdf/multimedia/multimedia.dart';

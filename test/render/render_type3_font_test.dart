@@ -279,6 +279,10 @@ void main() {
       expect(page.report.glyphsSkipped, greaterThan(0));
       expect(
           page.report.fontFailures['F1'], equals(PdfGlyphFailure.notEmbedded));
+      // Uma Type 3 não tem substituta: seus códigos designam procedimentos com
+      // nomes próprios, não caracteres. Emprestar os contornos de uma fonte de
+      // texto desenharia letras no lugar dos desenhos do documento.
+      expect(page.report.fontsSubstituted, isEmpty);
     });
 
     test('the text matrix survives a glyph procedure that shows text',

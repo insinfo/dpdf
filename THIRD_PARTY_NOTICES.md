@@ -1,7 +1,9 @@
 # Avisos de recursos distribuídos
 
 Estes termos se aplicam aos recursos identificados abaixo, incluindo os dados
-Adobe embutidos em `lib/src/io/resources/embedded_font_resources.dart`.
+Adobe embutidos em `lib/src/io/resources/embedded_font_resources.dart` e os
+programas de fonte URW embutidos em
+`lib/src/render/resources/standard_font_programs_vm.dart`.
 Preserve estes avisos também ao redistribuir aplicações compiladas que incluam
 esses dados. Este inventário não atribui uma licença ao restante do código.
 
@@ -66,6 +68,32 @@ Adobe Font Metrics (AFM) for PDF Core 14 Fonts
    to this file or any of the AFM files are prominently noted in the modified
    file(s); and that this paragraph is not modified. Adobe Systems has no
    responsibility or obligation to support the use of the AFM files.
+
+## Fontes URW Core 35
+
+Arquivos inalterados: `assets/fonts/urw-core35/*.otf`, catorze das trinta e oito
+faces da versão 2.00. São as substitutas metricamente compatíveis das catorze
+fontes padrão do PDF (NimbusSans para Helvetica, NimbusRoman para Times,
+NimbusMonoPS para Courier, StandardSymbolsPS para Symbol e D050000L para
+ZapfDingbats), e o renderizador as usa quando o documento referencia uma dessas
+sem embuti-la. O mesmo conteúdo viaja comprimido em
+`lib/src/render/resources/standard_font_programs_vm.dart`, gerado por
+`tool/generate_standard_fonts.dart`; a compressão é a única diferença em
+relação aos arquivos originais.
+
+Os programas permanecem sob a SIL OFL 1.1 — não são relicenciados por virem
+junto de código MIT, e a OFL não alcança os documentos desenhados com eles. O
+texto integral da licença acompanha os arquivos em
+`assets/fonts/urw-core35/LICENSE.OFL` e está reproduzido mais abaixo, na seção
+da fonte de testes ABeeZee. A URW++ publicou as mesmas fontes também sob AGPL3
+e LPPL 1.3c, como diz `assets/fonts/urw-core35/LICENSE.md`, deixando a escolha
+para quem redistribui; este pacote escolhe a OFL, e é o texto dela que
+acompanha os arquivos.
+
+O enunciado de copyright não declara Reserved Font Name nenhum, de modo que os
+nomes das famílias podem ser carregados como estão.
+
+Copyright (c) 2014,2015 by (URW)++ Design & Development
 
 ## Decodificador Brotli
 

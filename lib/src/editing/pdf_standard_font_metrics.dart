@@ -20,6 +20,13 @@ abstract final class PdfStandardFontMetrics {
   static final Map<String, Map<int, double>> _byCode = {};
   static final Map<String, Map<int, double>> _byScalar = {};
 
+  /// Larguras pelo nome do glifo, que é como o AFM realmente as indexa.
+  ///
+  /// É a única consulta que funciona para toda a faixa alta: um glifo fora da
+  /// StandardEncoding aparece no AFM com `C -1`, sem código nenhum, e a
+  /// codificação efetiva do dicionário PDF é que diz qual byte o designa.
+  static final Map<String, Map<String, double>> _byName = {};
+
   /// The faces this package can measure: the PDF core 14.
   static Set<String> get availableFonts => EmbeddedFontResources.standardFaces;
 
@@ -69,6 +76,19 @@ abstract final class PdfStandardFontMetrics {
       throw UnsupportedError('Missing $font metric for $encoding byte $code.');
     }
     return value;
+  }
+
+  /// Largura de avanço do glifo chamado [glyphName], ou null quando a face não
+  /// define esse glifo.
+  ///
+  /// O nome vem da codificação efetiva da fonte — a base do dicionário mais as
+  /// `/Differences` —, e não do código. `ccedilla` está no AFM da Helvetica
+  /// como `C -1 ; WX 500 ; N ccedilla`: procurar por byte devolve nada, e uma
+  /// largura nula empilha os glifos acentuados uns sobre os outros.
+  static double? widthForGlyphName(String font, String glyphName) {
+    if (!EmbeddedFontResources.hasMetrics(font)) return null;
+    _load(font);
+    return _byName[font]![glyphName];
   }
 
   /// Advance width for [code], or [fallback] when the face does not define it.
@@ -125,6 +145,7 @@ abstract final class PdfStandardFontMetrics {
     if (_byCode.containsKey(font)) return;
     final byCode = <int, double>{};
     final byScalar = <int, double>{};
+    final byName = <String, double>{};
 
     for (final line in const LineSplitter()
         .convert(latin1.decode(EmbeddedFontResources.metrics(font)!))) {
@@ -141,6 +162,7 @@ abstract final class PdfStandardFontMetrics {
       final advance = double.parse(fields['WX']!);
       final name = fields['N']!;
       if (code >= 0) byCode[code] = advance;
+      byName[name] = advance;
       // The local legacy AGL assigns mu to Greek U+03BC; PDF WinAnsi uses
       // the micro sign U+00B5. Bind the AFM glyph directly for this alias.
       final scalar = name == 'mu' ? 0xb5 : AdobeGlyphList.nameToUnicode(name);
@@ -155,5 +177,6 @@ abstract final class PdfStandardFontMetrics {
 
     _byCode[font] = byCode;
     _byScalar[font] = byScalar;
+    _byName[font] = byName;
   }
 }

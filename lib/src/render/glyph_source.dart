@@ -48,6 +48,10 @@ class PdfFontRequest {
   bool get isSerif => (flags & 2) != 0;
   bool get isFixedPitch => (flags & 1) != 0;
 
+  /// Bit 3 de `/Flags`: a fonte usa um conjunto de glifos próprio em vez do
+  /// latino padrão. Um substituto de texto desenharia outros símbolos.
+  bool get isSymbolic => (flags & 4) != 0;
+
   @override
   String toString() => 'PdfFontRequest($baseFont, flags: $flags)';
 }
@@ -146,6 +150,15 @@ class PdfGlyphSource {
   /// Why [face] is null. Null when the font resolved cleanly.
   final PdfGlyphFailure? failure;
 
+  /// O `/BaseFont` que está sendo desenhado com o programa de outra fonte, ou
+  /// null quando os contornos vêm do programa que o PDF embutiu.
+  ///
+  /// Uma substituição posiciona pelo `/Widths` do PDF e desenha com outra
+  /// tipografia: a linha termina no lugar certo, mas os contornos não são os
+  /// que o produtor viu. Quem renderiza precisa saber disso, e é por aqui que
+  /// a informação chega ao relatório.
+  final String? substitutedFont;
+
   /// True for Type0 fonts, whose codes are multi-byte and index CIDs.
   final bool composite;
 
@@ -184,6 +197,7 @@ class PdfGlyphSource {
   PdfGlyphSource._({
     required this.face,
     required this.failure,
+    this.substitutedFont,
     this.type3,
     required this.composite,
     required Map<int, double> widths,
@@ -345,14 +359,16 @@ class PdfGlyphSource {
     // linha inteira se empilha no mesmo ponto — o texto some mesmo quando os
     // contornos estão disponíveis.
     if (widths.isEmpty) {
-      _fillStandardWidths(widths, baseFont, codeToUnicode);
+      _fillStandardWidths(widths, baseFont, encoding.glyphNames);
     }
 
     // Clause 9.6.5: a Type 3 font has no program at all. Its glyphs are
     // content streams, so it resolves to the procedures rather than to a
     // face, and the substitution machinery below must not run: a Type 3 font
     // is never "missing" its program, it simply does not have one.
-    if ((await font.nameEntry(PdfName.subtype))?.getValue() == 'Type3') {
+    final isType3 =
+        (await font.nameEntry(PdfName.subtype))?.getValue() == 'Type3';
+    if (isType3) {
       final type3 = await PdfType3Font.parse(font, encoding.glyphNames);
       if (type3 != null) {
         return PdfGlyphSource._(
@@ -371,12 +387,18 @@ class PdfGlyphSource {
 
     final program = await _embeddedProgram(descriptor);
 
-    final resolved = await _applyFallback(program, fallback, baseFont,
+    // Uma Type 3 que chegou até aqui tem `/CharProcs` faltando ou ilegível.
+    // Não há o que substituir: seus códigos designam procedimentos com nomes
+    // próprios ('square', 'logo'), não caracteres, e emprestar os contornos de
+    // uma fonte de texto desenharia letras no lugar dos desenhos do documento.
+    final resolved = await _applyFallback(
+        program, isType3 ? null : fallback, baseFont,
         descriptor: descriptor, composite: false);
 
     return PdfGlyphSource._(
       face: resolved.face,
       failure: resolved.failure,
+      substitutedFont: resolved.substituted,
       composite: false,
       widths: widths,
       defaultWidth: missing,
@@ -453,6 +475,7 @@ class PdfGlyphSource {
     return PdfGlyphSource._(
       face: resolved.face,
       failure: resolved.failure,
+      substitutedFont: resolved.substituted,
       composite: true,
       widths: widths,
       defaultWidth: defaultWidth,
@@ -626,20 +649,44 @@ class PdfGlyphSource {
   /// Preenche [widths] com as métricas AFM de uma das catorze fontes padrão.
   ///
   /// As larguras vão em espaço de glifo (1/1000), como o `/Widths` do PDF.
+  ///
+  /// A consulta é pelo NOME do glifo que a codificação efetiva da fonte dá a
+  /// cada código — a base de `/Encoding` mais as `/Differences`, que é o que
+  /// [glyphNames] traz. Consultar por código só funciona enquanto o documento
+  /// usa StandardEncoding: em WinAnsiEncoding o byte 0xE7 é `ccedilla`, que na
+  /// StandardEncoding é `lslash`, e no AFM os glifos fora da StandardEncoding
+  /// aparecem com `C -1`, sem código nenhum. Quando a largura não entra no
+  /// mapa o avanço vira zero e a linha acentuada se empilha num ponto só.
   static void _fillStandardWidths(
     Map<int, double> widths,
     String baseFont,
-    Map<int, int> codeToUnicode,
+    Map<int, String> glyphNames,
   ) {
     final face = _standardFaceFor(baseFont);
     if (face == null) return;
 
-    // `Symbol` e `ZapfDingbats` trazem a própria codificação embutida; as
-    // demais são consultadas pela codificação padrão do PDF.
-    const encoding = 'StandardEncoding';
+    // `Symbol` e `ZapfDingbats` trazem a própria codificação embutida: no AFM
+    // delas o código É o byte que o documento usa, e nenhuma `/Encoding` do
+    // dicionário muda isso (ISO 32000-1, 9.6.6.2).
+    final builtin = face == 'Symbol' || face == 'ZapfDingbats';
+
     for (var code = 0; code < 256; code++) {
+      if (!builtin) {
+        final name = glyphNames[code];
+        if (name != null) {
+          final width = PdfStandardFontMetrics.widthForGlyphName(face, name);
+          // Um nome que a face não define fica sem largura, e o `/MissingWidth`
+          // responde: inventar a largura de outro glifo seria pior.
+          if (width != null) widths[code] = width;
+          continue;
+        }
+      }
       try {
-        widths[code] = PdfStandardFontMetrics.width(face, encoding, code);
+        // Sem nome para o código, a codificação embutida da fonte é a base —
+        // StandardEncoding para as de texto, a própria para Symbol e
+        // ZapfDingbats.
+        widths[code] =
+            PdfStandardFontMetrics.width(face, 'StandardEncoding', code);
       } on UnsupportedError {
         // Código que esta face não define.
       } on RangeError {
@@ -677,17 +724,30 @@ class PdfGlyphSource {
   }
 
   /// Pede ao chamador uma fonte de substituição quando o PDF não embute uma.
-  static Future<({BLFontFace? face, PdfGlyphFailure? failure})> _applyFallback(
+  ///
+  /// O terceiro campo do resultado diz de qual `/BaseFont` veio a
+  /// substituição, para que o relatório possa nomeá-la. Ele fica null quando
+  /// nada foi trocado — o programa estava embutido, não havia substituto, ou
+  /// o substituto não pôde ser lido.
+  static Future<
+      ({
+        BLFontFace? face,
+        PdfGlyphFailure? failure,
+        String? substituted
+      })> _applyFallback(
     ({BLFontFace? face, PdfGlyphFailure? failure}) program,
     PdfFontFallback? fallback,
     String baseFont, {
     required PdfDictionary? descriptor,
     required bool composite,
   }) async {
-    if (program.face != null || fallback == null) return program;
+    ({BLFontFace? face, PdfGlyphFailure? failure, String? substituted}) keep() =>
+        (face: program.face, failure: program.failure, substituted: null);
+
+    if (program.face != null || fallback == null) return keep();
     // Só faz sentido substituir o que simplesmente não veio. Um programa
     // presente mas ilegível é outro problema, e mascará-lo esconderia o defeito.
-    if (program.failure != PdfGlyphFailure.notEmbedded) return program;
+    if (program.failure != PdfGlyphFailure.notEmbedded) return keep();
 
     final flags =
         (await descriptor?.numberEntry(PdfName('Flags')))?.intValue() ?? 0;
@@ -697,14 +757,22 @@ class PdfGlyphSource {
           baseFont: baseFont, flags: flags, composite: composite));
     } catch (_) {
       // Um `fallback` que lança não pode derrubar a página.
-      return program;
+      return keep();
     }
-    if (bytes == null || bytes.isEmpty) return program;
+    if (bytes == null || bytes.isEmpty) return keep();
 
     try {
-      return (face: BLFontFace.parse(bytes), failure: null);
+      return (
+        face: BLFontFace.parse(bytes),
+        failure: null,
+        substituted: baseFont.isEmpty ? '(sem /BaseFont)' : baseFont,
+      );
     } catch (_) {
-      return (face: null, failure: PdfGlyphFailure.unreadableProgram);
+      return (
+        face: null,
+        failure: PdfGlyphFailure.unreadableProgram,
+        substituted: null,
+      );
     }
   }
 

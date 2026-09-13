@@ -18,6 +18,8 @@ import '../io/image/png_encoder.dart';
 import 'content_parser.dart';
 import 'glyph_source.dart';
 import 'image_decoder.dart';
+import 'standard_fonts.dart';
+import 'system_fonts.dart';
 import 'type3_font.dart';
 
 /// How a page is turned into pixels.
@@ -44,15 +46,52 @@ class PdfRenderOptions {
     this.applyRotation = true,
     this.maxPixels = 64 * 1000 * 1000,
     this.fontFallback,
+    this.useStandardFonts = true,
+    this.useSystemFonts = false,
   });
+
+  /// Desenha com as URW Core 35 embutidas o que o PDF não embutiu.
+  ///
+  /// Ligado por padrão. As URW são as substitutas metricamente compatíveis das
+  /// catorze fontes padrão — o mesmo conjunto que o Ghostscript usa —, então o
+  /// `/Widths` do PDF continua descrevendo a linha que se vê.
+  ///
+  /// O padrão pesa dois erros. Desenhar com outra tipografia sem avisar é
+  /// enganoso; devolver a página em branco também é, e é o erro mais grave dos
+  /// dois, porque some com o conteúdo em vez de aproximá-lo. Praticamente todo
+  /// PDF do mundo real referencia ao menos uma das catorze sem carregá-la, e
+  /// nenhum leitor conhecido responde a isso com uma página vazia. O desempate
+  /// é o relatório: toda substituição aparece em
+  /// [PdfRenderReport.fontsSubstituted], nomeada, de modo que quem precisa de
+  /// fidelidade consegue ver que não a teve.
+  ///
+  /// Desligue quando não desenhar for melhor do que desenhar diferente. Fora
+  /// do VM isto não tem efeito: o caminho web não carrega os programas.
+  /// [fontFallback], quando fornecido, tem precedência.
+  final bool useStandardFonts;
+
+  /// Também procura nas fontes instaladas na máquina.
+  ///
+  /// Desligado por padrão, de propósito: o catálogo varia de máquina para
+  /// máquina, e com ele a página deixa de ser reproduzível — duas execuções do
+  /// mesmo documento podem sair diferentes. Ligue quando a tipografia real
+  /// valer mais do que a reprodutibilidade, por exemplo quando o documento
+  /// referencia fontes instaladas localmente sem embuti-las.
+  ///
+  /// Quando ligado, o sistema responde primeiro: se a fonte que o produtor
+  /// nomeou está instalada, ela é mais fiel do que qualquer substituta. O que
+  /// o sistema não tiver cai nas URW embutidas. Também sem efeito fora do VM.
+  final bool useSystemFonts;
 
   /// Supplies a typeface for text whose font the PDF does not embed.
   ///
   /// Most real documents reference at least one font without carrying it —
   /// the standard fourteen, or whatever the producer assumed the reader has.
-  /// Without this, that text is measured and positioned but not drawn, and
-  /// the report says so. This package bundles no typefaces on purpose: which
-  /// font to substitute, and under which licence, is the caller's decision.
+  /// The package covers the fourteen itself, with the bundled URW faces
+  /// ([useStandardFonts]); this hook is how a caller substitutes something
+  /// else, and the only way to draw such text on the web, where the bundled
+  /// programs are not carried. It takes precedence over both built-in
+  /// resolvers.
   ///
   /// ```dart
   /// PdfRenderOptions(fontFallback: (request) async =>
@@ -445,6 +484,17 @@ class PdfRenderReport {
   /// Images that could not be decoded.
   final int imagesSkipped;
 
+  /// `/BaseFont` de cada fonte desenhada com a tipografia de outra, ordenado.
+  ///
+  /// O PDF pode referenciar uma fonte sem carregá-la — as catorze padrão, quase
+  /// sempre. Quando um substituto é usado, o texto aparece, mas não é o
+  /// original: o posicionamento vem do `/Widths` do PDF e os contornos vêm de
+  /// outro arquivo, então larguras e desenho pertencem a tipografias
+  /// diferentes. Uma página com esta lista não vazia **não** é uma reprodução
+  /// fiel, ainda que [isComplete] seja verdadeiro — nada ficou por desenhar,
+  /// só não foi desenhado com a fonte certa.
+  final List<String> fontsSubstituted;
+
   /// Why each font that could not be drawn was rejected, by resource name.
   ///
   /// Counting skipped text is enough to know a page is incomplete, but not to
@@ -458,6 +508,7 @@ class PdfRenderReport {
     required this.glyphsSkipped,
     required this.imagesSkipped,
     this.fontFailures = const {},
+    this.fontsSubstituted = const [],
   });
 
   bool get isComplete =>
@@ -469,7 +520,9 @@ class PdfRenderReport {
       '${unsupportedOperators.isEmpty ? '' : ', unsupported: '
           '${unsupportedOperators.keys.join(' ')}'}'
       '${glyphsSkipped == 0 ? '' : ', $glyphsSkipped text op(s) skipped'}'
-      '${imagesSkipped == 0 ? '' : ', $imagesSkipped image(s) skipped'})';
+      '${imagesSkipped == 0 ? '' : ', $imagesSkipped image(s) skipped'}'
+      '${fontsSubstituted.isEmpty ? '' : ', ${fontsSubstituted.length} '
+          'font(s) substituted: ${fontsSubstituted.join(' ')}'})';
 }
 
 /// A rendered page.
@@ -512,12 +565,16 @@ class PdfRenderedPage {
 /// text as real glyph outlines — including Type 3 fonts, whose glyphs are
 /// content streams the renderer executes (clause 9.6.5).
 ///
-/// Text is drawn when the PDF embeds the font program. A document that
-/// references a font without carrying it — the standard fourteen, most often —
-/// has that text measured and positioned but not drawn, and
-/// [PdfRenderReport.fontFailures] says why. Supply
-/// [PdfRenderOptions.fontFallback] to have it drawn with a typeface of your
-/// choosing.
+/// Text is drawn from the PDF's own font program when there is one. A document
+/// that references a font without carrying it — the standard fourteen, most
+/// often — is drawn with the bundled URW faces instead, which are metrically
+/// compatible with the fourteen, and [PdfRenderReport.fontsSubstituted] names
+/// every font that got that treatment: the widths are the PDF's, the outlines
+/// are not. Turn that off with [PdfRenderOptions.useStandardFonts], replace it
+/// with [PdfRenderOptions.fontFallback], or add the machine's own catalogue
+/// with [PdfRenderOptions.useSystemFonts]. What still cannot be drawn — a
+/// composite font, a symbolic one with no bundled equivalent — is measured,
+/// positioned and reported through [PdfRenderReport.fontFailures].
 ///
 /// ## Scan conversion, clause 10.6
 ///
@@ -582,7 +639,7 @@ class PdfPageRenderer {
     };
 
     final renderer =
-        _Renderer(context, base, fontFallback: options.fontFallback);
+        _Renderer(context, base, fontFallback: _substitution(options));
     final resources =
         await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
     await renderer.run(await page.contentPayload(), resources, 0);
@@ -597,8 +654,27 @@ class PdfPageRenderer {
         glyphsSkipped: renderer.glyphsSkipped,
         imagesSkipped: renderer.imagesSkipped,
         fontFailures: Map.unmodifiable(renderer.fontFailures),
+        fontsSubstituted:
+            List.unmodifiable(renderer.fontsSubstituted.toList()..sort()),
       ),
     );
+  }
+
+  /// De onde saem os contornos de uma fonte que o PDF não embutiu.
+  ///
+  /// Uma fonte fornecida pelo chamador manda sobre tudo. Sem ela, as fontes
+  /// do sistema respondem primeiro quando o chamador as pediu, e as URW
+  /// embutidas cobrem o resto. Os dois resolvedores são nulos fora do VM, e
+  /// aí o texto sem programa segue apenas medido e relatado.
+  static PdfFontFallback? _substitution(PdfRenderOptions options) {
+    final supplied = options.fontFallback;
+    if (supplied != null) return supplied;
+    final system = options.useSystemFonts ? systemFontFallback() : null;
+    final standard = options.useStandardFonts ? standardFontFallback() : null;
+    if (system == null) return standard;
+    if (standard == null) return system;
+    return (request) async =>
+        await system(request) ?? await standard(request);
   }
 
   /// Renders [page] straight to PNG bytes.
@@ -730,6 +806,9 @@ class _Renderer {
 
   /// Por que cada fonte que não pôde ser desenhada foi recusada.
   final fontFailures = <String, PdfGlyphFailure>{};
+
+  /// `/BaseFont` de cada fonte desenhada com o programa de outra.
+  final fontsSubstituted = <String>{};
   var imagesSkipped = 0;
 
   late _State state;
@@ -1862,6 +1941,7 @@ class _Renderer {
     glyphsSkipped += nested.glyphsSkipped;
     imagesSkipped += nested.imagesSkipped;
     fontFailures.addAll(nested.fontFailures);
+    fontsSubstituted.addAll(nested.fontsSubstituted);
 
     final deviceToPattern = patternToDevice.invert();
     if (deviceToPattern == null) return;
@@ -3008,6 +3088,7 @@ class _Renderer {
     glyphsSkipped += nested.glyphsSkipped;
     imagesSkipped += nested.imagesSkipped;
     fontFailures.addAll(nested.fontFailures);
+    fontsSubstituted.addAll(nested.fontsSubstituted);
   }
 
   void _setDash(PdfContentOperation op) {
@@ -3061,6 +3142,8 @@ class _Renderer {
     if (failure != null) {
       fontFailures[name] = failure;
     }
+    final substituted = resolved?.substitutedFont;
+    if (substituted != null) fontsSubstituted.add(substituted);
   }
 
   /// Draws `Tj`, `TJ`, `'` and `"`.

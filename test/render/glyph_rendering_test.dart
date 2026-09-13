@@ -59,17 +59,26 @@ Future<PdfRenderedPage> _renderWithFallback(
   final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
   try {
     return await PdfPageRenderer.render((await document.pageAt(1))!,
-        options: PdfRenderOptions(dpi: 72, fontFallback: fallback));
+        options: PdfRenderOptions(
+            dpi: 72, fontFallback: fallback, useStandardFonts: false));
   } finally {
     await document.close();
   }
 }
 
+/// Renderiza sem nenhuma substituição.
+///
+/// As URW embutidas entram por padrão, e é isso que um usuário quer; aqui não.
+/// Estes testes falam sobre o que o documento traz — se um texto foi desenhado
+/// a partir do programa embutido, e o que acontece quando não há programa —, e
+/// com substituição ligada todos passariam mesmo que a fonte do documento
+/// nunca fosse lida. A substituição tem os seus próprios testes em
+/// `standard_font_substitution_test.dart`.
 Future<PdfRenderedPage> _render(Uint8List bytes, {double dpi = 72}) async {
   final document = await PdfDocument.open(PdfReader.fromBytes(bytes));
   try {
     return await PdfPageRenderer.render((await document.pageAt(1))!,
-        options: PdfRenderOptions(dpi: dpi));
+        options: PdfRenderOptions(dpi: dpi, useStandardFonts: false));
   } finally {
     await document.close();
   }

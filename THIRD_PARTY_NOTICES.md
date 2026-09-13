@@ -67,11 +67,56 @@ Adobe Font Metrics (AFM) for PDF Core 14 Fonts
    file(s); and that this paragraph is not modified. Adobe Systems has no
    responsibility or obligation to support the use of the AFM files.
 
+## Decodificador Brotli
+
+Arquivos: `lib/src/io/codec/brotli/` (exceto `brotli.dart`, que e fachada propria
+deste pacote).
+
+Porte em Dart do decodificador de referencia do Brotli, `org.brotli.dec`, escrito
+pelo Projeto Brotli do Google. O porte veio de um projeto irmao do mesmo autor e
+foi copiado para ca com os nomes de arquivo ajustados a convencao do Dart e sem
+`Decoder.dart`, que depende de `dart:io` e custaria a este pacote o suporte a
+`dart2js` e `dart2wasm`. A logica de decodificacao nao foi alterada.
+
+O decodificador e usado apenas para expandir os dados de tabela de uma fonte
+WOFF 2.0, conforme exige a recomendacao da W3C. O dicionario estatico do anexo A
+da RFC 7932 esta embutido em `dictionary_data.dart` e e indispensavel: sem ele
+fluxos validos simplesmente nao decodificam.
+
+Origem: https://github.com/google/brotli
+Licenca: MIT, a mesma deste pacote.
+
+Copyright (c) 2009, 2010, 2013-2016 by the Brotli Authors.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
 ## Fonte de testes ABeeZee
 
 Arquivo inalterado: `test/assets/ABeeZee-Regular.ttf`.
 Origem: https://github.com/google/fonts/tree/fffdadf0f0c9cc1ec8b407063424a8bfbee05611/ofl/abeezee
 A fonte mantém SIL OFL 1.1; não é relicenciada MIT.
+
+Derivados desse mesmo arquivo, usados para testar a leitura de WOFF 2.0:
+`test/assets/ABeeZee-Regular.woff2` (com a transformação de `glyf` e `loca`) e
+`test/assets/ABeeZee-Regular-untransformed.woff2` (sem transformação). Ambos
+foram gerados com a `fontTools` a partir do TTF acima e permanecem sob a mesma
+OFL 1.1, que cobre obras derivadas.
 
 Copyright 2011 The ABeeZee Project Authors (https://github.com/googlefonts/abeezee), with Reserved Font Name 'ABeeZee'
 

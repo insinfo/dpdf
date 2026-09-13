@@ -289,6 +289,16 @@ class PdfWriter {
     } else {
       writeByte(0x28); // '('
       for (final b in bytes) {
+        if (b == 0x0D) {
+          // 7.3.4.2: an end-of-line marker inside a literal string that is not
+          // preceded by a REVERSE SOLIDUS is read back as a single 0x0A,
+          // whatever it was written as. A raw CARRIAGE RETURN would therefore
+          // come back as a LINE FEED, and a CRLF pair would come back as one
+          // byte instead of two. Table 3 gives the escape that survives.
+          writeByte(0x5C); // ''
+          writeByte(0x72); // 'r'
+          continue;
+        }
         if (b == 0x28 || b == 0x29 || b == 0x5C) writeByte(0x5C);
         writeByte(b);
       }

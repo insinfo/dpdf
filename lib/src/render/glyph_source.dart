@@ -12,6 +12,7 @@ import '../kernel/pdf/pdf_array.dart';
 import '../kernel/pdf/pdf_dictionary.dart';
 import '../kernel/pdf/pdf_name.dart';
 import '../kernel/pdf/pdf_number.dart';
+import 'type3_font.dart';
 
 /// What the renderer needs a substitute font for.
 class PdfFontRequest {
@@ -136,6 +137,12 @@ class PdfGlyphSource {
   /// The parsed font program, or null when there is nothing drawable.
   final BLFontFace? face;
 
+  /// The glyph procedures, when this is a Type 3 font (clause 9.6.5).
+  ///
+  /// A Type 3 font has no program, so [face] is null and the renderer draws
+  /// the glyph by running a content stream instead.
+  final PdfType3Font? type3;
+
   /// Why [face] is null. Null when the font resolved cleanly.
   final PdfGlyphFailure? failure;
 
@@ -177,6 +184,7 @@ class PdfGlyphSource {
   PdfGlyphSource._({
     required this.face,
     required this.failure,
+    this.type3,
     required this.composite,
     required Map<int, double> widths,
     required double defaultWidth,
@@ -196,7 +204,7 @@ class PdfGlyphSource {
         _cidToGid = cidToGid;
 
   /// True when glyphs can actually be drawn.
-  bool get isDrawable => face != null;
+  bool get isDrawable => face != null || type3 != null;
 
   /// Splits a PDF string's bytes into character codes.
   ///
@@ -227,7 +235,13 @@ class PdfGlyphSource {
   /// CMap tem de ser aplicada antes da consulta.
   double width(int code) {
     final key = composite ? _cidFor(code) : code;
-    return (_widths[key] ?? _defaultWidth) / 1000.0;
+    final raw = _widths[key] ?? _defaultWidth;
+    // A Type 3 font measures its glyphs in the glyph space that
+    // `/FontMatrix` defines, not in the 1/1000 em every other font uses, so
+    // the width has to go through the matrix rather than through /1000.
+    final font = type3;
+    if (font != null) return font.advance(raw);
+    return raw / 1000.0;
   }
 
   /// Glyph index for [code], or null when the program has no glyph for it.
@@ -332,6 +346,27 @@ class PdfGlyphSource {
     // contornos estão disponíveis.
     if (widths.isEmpty) {
       _fillStandardWidths(widths, baseFont, codeToUnicode);
+    }
+
+    // Clause 9.6.5: a Type 3 font has no program at all. Its glyphs are
+    // content streams, so it resolves to the procedures rather than to a
+    // face, and the substitution machinery below must not run: a Type 3 font
+    // is never "missing" its program, it simply does not have one.
+    if ((await font.nameEntry(PdfName.subtype))?.getValue() == 'Type3') {
+      final type3 = await PdfType3Font.parse(font, encoding.glyphNames);
+      if (type3 != null) {
+        return PdfGlyphSource._(
+          face: null,
+          failure: null,
+          type3: type3,
+          composite: false,
+          widths: widths,
+          defaultWidth: 0,
+          codeToUnicode: codeToUnicode,
+          codeToGlyphName: encoding.glyphNames,
+          cidToGid: null,
+        );
+      }
     }
 
     final program = await _embeddedProgram(descriptor);

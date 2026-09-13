@@ -18,6 +18,7 @@ import '../io/image/png_encoder.dart';
 import 'content_parser.dart';
 import 'glyph_source.dart';
 import 'image_decoder.dart';
+import 'type3_font.dart';
 
 /// How a page is turned into pixels.
 class PdfRenderOptions {
@@ -434,7 +435,8 @@ class PdfRenderedPage {
 /// clipping, the device and CIE colour spaces including Indexed, Separation
 /// and DeviceN, coloured tiling patterns, alpha/luminosity soft masks, image
 /// XObjects with their masks, inline images, form XObjects recursively, and
-/// text as real glyph outlines.
+/// text as real glyph outlines — including Type 3 fonts, whose glyphs are
+/// content streams the renderer executes (clause 9.6.5).
 ///
 /// Text is drawn when the PDF embeds the font program. A document that
 /// references a font without carrying it — the standard fourteen, most often —
@@ -442,6 +444,22 @@ class PdfRenderedPage {
 /// [PdfRenderReport.fontFailures] says why. Supply
 /// [PdfRenderOptions.fontFallback] to have it drawn with a typeface of your
 /// choosing.
+///
+/// ## Scan conversion, clause 10.6
+///
+/// Clause 10.6.1 defines pixel coverage by the pixel centre: a shape paints
+/// the pixels whose centres fall inside it, all or nothing. This renderer
+/// resolves coverage instead, and paints a pixel in proportion to how much of
+/// it the shape covers. The divergence is deliberate and it is what every
+/// screen renderer does: under the centre rule a table rule thinner than a
+/// pixel appears or disappears depending on where it lands, and a curve comes
+/// out jagged. Coverage keeps the thin feature, at the weight it really has.
+///
+/// The cases the clause pins down exactly are followed exactly. A line width
+/// of 0 is one device pixel wide at any resolution, not nothing (clause
+/// 8.4.3.2). A subpath that never leaves its starting point paints a filled
+/// circle of the line width under round caps and nothing at all under butt or
+/// projecting square caps, where the cap has no direction (clause 8.5.3.2).
 class PdfPageRenderer {
   PdfPageRenderer._();
 
@@ -568,6 +586,11 @@ class _State {
   double rise;
   int renderMode;
 
+  /// The `/TK` entry of the graphics state, clause 9.3.8. True — the default —
+  /// makes all the glyphs of one text object a single knockout element, so
+  /// overlapping glyphs do not composite with each other.
+  bool textKnockout;
+
   _State({
     required this.ctm,
     this.fillColour = 0xFF000000,
@@ -592,6 +615,7 @@ class _State {
     this.leading = 0,
     this.rise = 0,
     this.renderMode = 0,
+    this.textKnockout = true,
   });
 
   _State clone() => _State(
@@ -618,6 +642,7 @@ class _State {
         leading: leading,
         rise: rise,
         renderMode: renderMode,
+        textKnockout: textKnockout,
       );
 }
 
@@ -660,6 +685,23 @@ class _Renderer {
   List<double>? _textClipVertices;
   List<int>? _textClipContours;
 
+  /// Device-space points of the subpaths that turned out to be degenerate —
+  /// a `m` followed by nothing that moved, or only by segments back to the
+  /// same coordinates.
+  ///
+  /// ISO 32000-1 clause 8.5.3.2: `S` paints such a subpath only under round
+  /// line caps, as a filled circle of the line width centred on the point.
+  /// The rasterizer's stroker cannot produce it — a zero-length segment has
+  /// no direction to build a cap on — so the dots are collected here and
+  /// filled separately.
+  final _degeneratePoints = <double>[];
+
+  /// The start of the subpath under construction, and whether every point
+  /// added to it so far has landed on that same spot.
+  double _subpathX = 0, _subpathY = 0;
+  bool _subpathOpen = false;
+  bool _subpathDegenerate = false;
+
   /// A `W` or `W*` seen before the painting operator that ends the path.
   BLFillRule? _pendingClip;
 
@@ -672,6 +714,23 @@ class _Renderer {
 
   /// The font selected by the last `Tf`, resolved to outlines and advances.
   PdfGlyphSource? _font;
+
+  /// True while [_knockoutBackdrop] is the one this renderer took for a text
+  /// object under `/TK`, rather than one belonging to a knockout group.
+  bool _textKnockoutActive = false;
+
+  /// True while a Type 3 glyph procedure is running, so `d1` only takes
+  /// effect where clause 9.6.5 gives it a meaning.
+  bool _inType3Glyph = false;
+
+  /// True once the running Type 3 glyph procedure has executed `d1`.
+  bool _type3ShapeOnly = false;
+
+  /// The colour operators a `d1` glyph description may not use.
+  static const _type3IgnoredOperators = <String>{
+    'g', 'G', 'rg', 'RG', 'k', 'K', //
+    'cs', 'CS', 'sc', 'scn', 'SC', 'SCN',
+  };
 
   /// Fonts already resolved, keyed by resource name. Resolving parses the
   /// embedded program, so a page that sets the same font hundreds of times
@@ -719,6 +778,9 @@ class _Renderer {
     PdfDictionary? resources,
     int depth,
   ) async {
+    if (_type3ShapeOnly && _type3IgnoredOperators.contains(op.operator)) {
+      return;
+    }
     switch (op.operator) {
       // --- graphics state ---
       case 'q':
@@ -849,7 +911,9 @@ class _Renderer {
         _textMatrix = BLMatrix2D.identity;
         _textClipVertices = null;
         _textClipContours = null;
+        _endTextKnockout();
       case 'ET':
+        _endTextKnockout();
         await _applyTextClip();
       case 'Tf':
         state.fontSize = op.number(1) ?? state.fontSize;
@@ -887,7 +951,7 @@ class _Renderer {
       case 'TJ':
       case "'":
       case '"':
-        await _showText(op);
+        await _showText(op, resources, depth);
 
       // --- XObjects and images ---
       case 'Do':
@@ -904,8 +968,12 @@ class _Renderer {
       case 'BX':
       case 'EX':
       case 'd0':
-      case 'd1':
         break;
+      case 'd1':
+        // Clause 9.6.5: `d1` declares that the glyph description is a shape
+        // only. Everything it paints takes the colour that was in force when
+        // the text was shown, so the colour operators inside it are ignored.
+        if (_inType3Glyph) _type3ShapeOnly = true;
 
       default:
         if (op.operator.isNotEmpty) _note(op.operator);
@@ -941,6 +1009,31 @@ class _Renderer {
     _startX = _currentX = p.$1;
     _startY = _currentY = p.$2;
     _pathEmpty = false;
+    _closeSubpath();
+    _subpathX = p.$1;
+    _subpathY = p.$2;
+    _subpathOpen = true;
+    _subpathDegenerate = true;
+  }
+
+  /// Files the subpath just finished, remembering it when it was degenerate.
+  void _closeSubpath() {
+    if (_subpathOpen && _subpathDegenerate) {
+      _degeneratePoints
+        ..add(_subpathX)
+        ..add(_subpathY);
+    }
+    _subpathOpen = false;
+  }
+
+  /// Notes that the subpath reached [x], [y]; anything away from its start
+  /// means it has a direction and is no longer a single point.
+  void _subpathReached(double x, double y) {
+    if (!_subpathDegenerate) return;
+    const epsilon = 1e-9;
+    if ((x - _subpathX).abs() > epsilon || (y - _subpathY).abs() > epsilon) {
+      _subpathDegenerate = false;
+    }
   }
 
   void _lineTo(double x, double y) {
@@ -948,6 +1041,7 @@ class _Renderer {
     final p = _device(x, y);
     _extend(p.$1, p.$2);
     _path.lineTo(p.$1, p.$2);
+    _subpathReached(p.$1, p.$2);
     _currentX = p.$1;
     _currentY = p.$2;
   }
@@ -970,6 +1064,9 @@ class _Renderer {
     _extend(c2.$1, c2.$2);
     _extend(end.$1, end.$2);
     _path.cubicTo(c1.$1, c1.$2, c2.$1, c2.$2, end.$1, end.$2);
+    _subpathReached(c1.$1, c1.$2);
+    _subpathReached(c2.$1, c2.$2);
+    _subpathReached(end.$1, end.$2);
     _currentX = end.$1;
     _currentY = end.$2;
   }
@@ -992,6 +1089,7 @@ class _Renderer {
   }
 
   Future<void> _endPath({BLFillRule? fill, required bool stroke}) async {
+    _closeSubpath();
     if (!_pathEmpty) {
       final path = _path;
       final bounds = _pathBounds;
@@ -1032,6 +1130,9 @@ class _Renderer {
     _pendingClip = null;
     _path = BLPath();
     _pathEmpty = true;
+    _degeneratePoints.clear();
+    _subpathOpen = false;
+    _subpathDegenerate = false;
   }
 
   Future<void> _strokeCurrentPath() async {
@@ -1039,6 +1140,7 @@ class _Renderer {
     // A uniform scale is exact; under a skew this is the average, which is
     // what a stroke of a single width can be.
     final scale = _averageScale(state.ctm);
+    await _strokeDegeneratePoints(scale);
     final options = BLStrokeOptions(
       width: state.lineWidth * scale,
       startCap: state.lineCap,
@@ -1076,6 +1178,37 @@ class _Renderer {
     await context.strokePath(_path, color: colour, options: options);
   }
 
+  /// Paints the dots of clause 8.5.3.2.
+  ///
+  /// A subpath that never leaves its starting point has no direction, so the
+  /// orientation of a butt or projecting-square cap would be indeterminate
+  /// and the spec says `S` shall then produce nothing. Round caps are the one
+  /// case that is well defined: the two semicircular caps meet and the result
+  /// is a filled circle of the line width, centred on the point. Producers
+  /// use exactly this to draw a dot — `x y m x y l S` under `1 J`.
+  Future<void> _strokeDegeneratePoints(double scale) async {
+    if (_degeneratePoints.isEmpty) return;
+    if (state.lineCap != BLStrokeCap.round) return;
+
+    // Clause 8.4.3.2: a line width of 0 is the thinnest the device can draw,
+    // which is one pixel, so the dot is a one pixel circle rather than none.
+    final width = state.lineWidth * scale;
+    final radius = (width <= 0 ? 1.0 : width) / 2;
+
+    final dots = BLPath();
+    for (var i = 0; i + 1 < _degeneratePoints.length; i += 2) {
+      dots.addArc(_degeneratePoints[i], _degeneratePoints[i + 1], radius, 0,
+          2 * math.pi);
+    }
+    final colour = _withAlpha(state.strokeColour, state.strokeAlpha);
+    if (state.strokePattern != null) {
+      await _fillPattern(dots, BLFillRule.nonZero, state.strokePattern!,
+          stroke: true);
+      return;
+    }
+    await context.fillPath(dots, color: colour, rule: BLFillRule.nonZero);
+  }
+
   static double _averageScale(BLMatrix2D m) {
     final determinant = m.determinant.abs();
     if (determinant > 0) return math.sqrt(determinant);
@@ -1100,6 +1233,46 @@ class _Renderer {
   /// null means the whole surface. [constantAlpha] is the `ca`/`CA` used to
   /// paint, which is what lets the knockout rule recover the object's shape
   /// from the layer's alpha.
+  /// True when knockout compositing can give a different answer from simply
+  /// painting each object over the one before.
+  ///
+  /// With the Normal blend mode, no soft mask and both alpha constants at 1,
+  /// an object completely replaces the backdrop wherever its shape is 1, so
+  /// compositing it against the group's initial backdrop and against the
+  /// accumulated content produce the same pixels. Checking this is what keeps
+  /// ordinary opaque text off the offscreen-layer path.
+  bool get _knockoutMatters =>
+      state.blendMode != _BlendMode.normal ||
+      state.fillAlpha < 1 ||
+      state.strokeAlpha < 1 ||
+      context.opacityMask != null;
+
+  /// Starts treating the glyphs of the current text object as one knockout
+  /// element, ISO 32000-1 clause 9.3.8.
+  ///
+  /// `/TK` defaults to **true**, so this is the normal case: where two glyphs
+  /// of the same text object overlap, the later one replaces the earlier
+  /// rather than compositing with it, and semi-transparent text does not show
+  /// a darker patch at every kerned overlap or accent.
+  ///
+  /// The snapshot is taken at the first glyph that can actually be affected
+  /// rather than at `BT`: copying the whole surface is only worth it when the
+  /// result would differ, and glyphs already drawn opaquely would knock
+  /// themselves out to the same pixels anyway.
+  void _beginTextKnockout() {
+    if (_knockoutBackdrop != null) return; // Already inside a knockout group.
+    if (!state.textKnockout) return;
+    if (!_knockoutMatters) return;
+    _knockoutBackdrop = Uint32List.fromList(context.image.pixels);
+    _textKnockoutActive = true;
+  }
+
+  void _endTextKnockout() {
+    if (!_textKnockoutActive) return;
+    _textKnockoutActive = false;
+    _knockoutBackdrop = null;
+  }
+
   Future<void> _paint(
     Future<void> Function() body, {
     BLRectI? bounds,
@@ -2444,6 +2617,45 @@ class _Renderer {
 
   // --- graphics state dictionary --------------------------------------------
 
+  /// Applies a `/ExtGState`, Table 58.
+  ///
+  /// Several entries of Table 58 are deliberately not applied, and not
+  /// reported as unsupported either, because they describe an output device
+  /// this renderer is not:
+  ///
+  /// * `/HT` and `/HTP`, the halftone (clause 10.5). Halftoning exists to
+  ///   reproduce a continuous tone on a device that cannot hold one — a
+  ///   bilevel imagesetter or a printer with a few ink levels — by trading
+  ///   spatial resolution for tonal resolution. This renderer's output is
+  ///   8 bits per channel with an alpha channel, which *is* a continuous-tone
+  ///   device, so there is no tone to approximate. Running the screen anyway
+  ///   would turn every smooth fill and every antialiased edge into a dot
+  ///   pattern, at a screen frequency chosen for paper, and the result would
+  ///   match neither the PDF nor what any viewer shows. The halftone is read
+  ///   and preserved by the object model (`PdfExtGState.getHalftone`), which
+  ///   is what a prepress consumer actually needs from it.
+  /// * `/TR` and `/TR2`, the transfer function (clause 10.4), for the same
+  ///   reason: it is a per-device tone correction applied after colour
+  ///   conversion, viewers ignore it for screen display, and PDF/A forbids it
+  ///   outright. The unrelated `/TR` *inside* a soft-mask dictionary is a part
+  ///   of the transparency model rather than a device control, and that one
+  ///   is applied — see [_applySoftMask].
+  /// * `/BG`, `/BG2`, `/UCR` and `/UCR2`: black generation and undercolour
+  ///   removal only have a meaning on the way to CMYK ink.
+  /// * `/FL` and `/SM`, the flatness and smoothness tolerances: both name a
+  ///   maximum error for approximating curves, and the rasterizer flattens in
+  ///   device space at its own tolerance already.
+  /// * `/SA`, automatic stroke adjustment (clause 10.6.5), which nudges
+  ///   stroke edges onto the pixel grid so that thin lines come out a uniform
+  ///   width on a device with hard pixels. An antialiased rasterizer conveys
+  ///   a sub-pixel stroke by its coverage instead, which keeps the geometry
+  ///   the producer asked for; snapping it would move edges by up to half a
+  ///   pixel to fix a problem this renderer does not have.
+  /// * `/OP`, `/op` and `/OPM`, overprint: a property of ink on paper.
+  ///
+  /// None of these is counted in [PdfRenderReport.unsupportedOperators]:
+  /// the report is there to say when a page came out incomplete, and a page
+  /// that merely names a halftone did not.
   Future<void> _applyExtGState(
       PdfContentOperation op, PdfDictionary? resources, int depth) async {
     final name = op.name(0);
@@ -2460,6 +2672,50 @@ class _Renderer {
 
     final strokeAlpha = await gs.decimalEntry(PdfName('CA'));
     if (strokeAlpha != null) state.strokeAlpha = strokeAlpha.clamp(0.0, 1.0);
+
+    // Table 58 lets the graphics state dictionary carry the stroke parameters
+    // the `J`, `j`, `M` and `d` operators set. A producer that only ever sets
+    // them here would otherwise stroke every line with the defaults.
+    final lineCap = await gs.integerEntry(PdfName('LC'));
+    if (lineCap != null) {
+      state.lineCap = switch (lineCap) {
+        1 => BLStrokeCap.round,
+        2 => BLStrokeCap.square,
+        _ => BLStrokeCap.butt,
+      };
+    }
+    final lineJoin = await gs.integerEntry(PdfName('LJ'));
+    if (lineJoin != null) {
+      state.lineJoin = switch (lineJoin) {
+        1 => BLStrokeJoin.round,
+        2 => BLStrokeJoin.bevel,
+        _ => BLStrokeJoin.miterBevel,
+      };
+    }
+    final miterLimit = await gs.decimalEntry(PdfName('ML'));
+    if (miterLimit != null && miterLimit > 0) state.miterLimit = miterLimit;
+
+    // `/D` is `[[dash array] phase]`, the two operands of `d` in one array.
+    final dash = await gs.arrayEntry(PdfName('D'));
+    if (dash != null && dash.size() == 2) {
+      final array = await dash.get(0);
+      if (array is PdfArray) {
+        final pattern = <double>[];
+        for (var i = 0; i < array.size(); i++) {
+          final value = await array.get(i);
+          if (value is PdfNumber && value.doubleValue() >= 0) {
+            pattern.add(value.doubleValue());
+          }
+        }
+        state.dashArray = pattern;
+        final phase = await dash.get(1);
+        state.dashPhase = phase is PdfNumber ? phase.doubleValue() : 0;
+      }
+    }
+
+    // Clause 9.3.8. `/TK` false makes each glyph its own element again.
+    final textKnockout = await gs.flagEntry(PdfName('TK'));
+    if (textKnockout != null) state.textKnockout = textKnockout;
 
     if (gs.containsKey(PdfName('SMask'))) {
       final maskObject = await gs.get(PdfName('SMask'), true);
@@ -2678,7 +2934,11 @@ class _Renderer {
   }
 
   /// Draws `Tj`, `TJ`, `'` and `"`.
-  Future<void> _showText(PdfContentOperation op) async {
+  Future<void> _showText(
+    PdfContentOperation op,
+    PdfDictionary? resources,
+    int depth,
+  ) async {
     var operandIndex = 0;
     switch (op.operator) {
       case "'":
@@ -2695,7 +2955,7 @@ class _Renderer {
     final operand = op.operands[operandIndex];
 
     if (operand is PdfString) {
-      await _showString(operand.getValueBytes());
+      await _showString(operand.getValueBytes(), resources, depth);
       return;
     }
 
@@ -2705,7 +2965,7 @@ class _Renderer {
       for (var i = 0; i < operand.size(); i++) {
         final item = await operand.get(i);
         if (item is PdfString) {
-          await _showString(item.getValueBytes());
+          await _showString(item.getValueBytes(), resources, depth);
         } else if (item is PdfNumber) {
           _advanceText(-item.doubleValue() /
               1000.0 *
@@ -2719,7 +2979,11 @@ class _Renderer {
     glyphsSkipped++;
   }
 
-  Future<void> _showString(Uint8List? bytes) async {
+  Future<void> _showString(
+    Uint8List? bytes,
+    PdfDictionary? resources,
+    int depth,
+  ) async {
     if (bytes == null || bytes.isEmpty) return;
 
     final font = _font;
@@ -2750,9 +3014,20 @@ class _Renderer {
       _textClipContours ??= <int>[];
     }
 
+    // Clause 9.3.8: a Type 3 glyph is a content stream rather than a single
+    // outline, so the text-object knockout would apply to the shapes inside
+    // one glyph as well. That is not what the clause describes, and applying
+    // it would change glyphs that are correct today, so it is left alone.
+    if ((fill || stroke) && font.type3 == null) _beginTextKnockout();
+
     for (final code in font.codes(bytes)) {
       if (fill || stroke || clip) {
-        await _drawGlyph(font, code, fill: fill, stroke: stroke, clip: clip);
+        await _drawGlyph(font, code,
+            fill: fill,
+            stroke: stroke,
+            clip: clip,
+            resources: resources,
+            depth: depth);
       }
       _advanceForCode(code, font.width(code), composite: font.composite);
     }
@@ -2823,7 +3098,19 @@ class _Renderer {
     required bool fill,
     required bool stroke,
     required bool clip,
+    required PdfDictionary? resources,
+    required int depth,
   }) async {
+    final type3 = font.type3;
+    if (type3 != null) {
+      // Clause 9.6.5: a Type 3 glyph is a content stream, not an outline.
+      // The text rendering mode cannot select fill or stroke for it — the
+      // procedure paints itself — so only the clipping modes are reported.
+      if (clip) _note('Tr:type3-clip');
+      if (!fill && !stroke) return;
+      await _drawType3Glyph(type3, code, resources: resources, depth: depth);
+      return;
+    }
     final face = font.face!;
     final gid = font.glyph(code);
     if (gid == null) {
@@ -2926,6 +3213,96 @@ class _Renderer {
             bounds.width + strokeReach * 2, bounds.height + strokeReach * 2),
         constantAlpha: state.strokeAlpha,
       );
+    }
+  }
+
+  /// Runs one Type 3 glyph procedure, ISO 32000-1 clause 9.6.5.
+  ///
+  /// The procedure is a content stream drawn in the font's glyph space, so it
+  /// is executed exactly like a form XObject whose matrix is
+  /// `FontMatrix x [Tfs*Th 0 0 Tfs 0 Trise] x Tm x CTM`. Everything else the
+  /// glyph inherits from the graphics state in force at the show-text
+  /// operator, which is what lets a `d1` glyph take the current fill colour.
+  ///
+  /// The advance still comes from `/Widths`, never from the `wx` operand of
+  /// `d0`/`d1`: Table 112 requires the two to agree, and `/Widths` is what the
+  /// producer laid the line out against.
+  Future<void> _drawType3Glyph(
+    PdfType3Font font,
+    int code, {
+    required PdfDictionary? resources,
+    required int depth,
+  }) async {
+    if (depth >= _maxDepth) return;
+
+    final PdfStream? procedure;
+    try {
+      procedure = await font.procedure(code);
+    } on Object {
+      glyphsSkipped++;
+      return;
+    }
+    if (procedure == null) {
+      // The encoding names no procedure for this code, or `/CharProcs` has
+      // no such key. Nothing can be drawn, and the report should say so.
+      glyphsSkipped++;
+      return;
+    }
+    final content = await procedure.getBytes();
+    // A blank glyph, a space for instance, has an empty procedure.
+    if (content == null || content.isEmpty) return;
+
+    final m = font.fontMatrix;
+    final parameters = BLMatrix2D(
+      state.fontSize * state.horizontalScale,
+      0,
+      0,
+      state.fontSize,
+      0,
+      state.rise,
+    );
+    final glyphToDevice = BLMatrix2D(m[0], m[1], m[2], m[3], m[4], m[5])
+        .multiply(parameters)
+        .multiply(_textMatrix)
+        .multiply(state.ctm);
+
+    final saved = state.clone();
+    final savedStack = _stack.length;
+    final savedTextMatrix = _textMatrix;
+    final savedLineMatrix = _textLineMatrix;
+    final savedInType3 = _inType3Glyph;
+    final savedShapeOnly = _type3ShapeOnly;
+    final savedTextKnockout = _textKnockoutActive;
+    // A procedure may open a text object of its own, and `BT` discards the
+    // outlines the enclosing text object has collected for its clip.
+    final savedClipVertices = _textClipVertices;
+    final savedClipContours = _textClipContours;
+    context.save();
+
+    state.ctm = glyphToDevice;
+    // A glyph description is not itself shown text: resetting the rendering
+    // mode keeps a clipping mode on the outer text object from being applied
+    // again, recursively, to everything the procedure draws.
+    state.renderMode = 0;
+    _inType3Glyph = true;
+    _type3ShapeOnly = false;
+    _textKnockoutActive = false;
+
+    try {
+      await run(content, font.resources ?? resources, depth + 1);
+    } finally {
+      _inType3Glyph = savedInType3;
+      _type3ShapeOnly = savedShapeOnly;
+      _textKnockoutActive = savedTextKnockout;
+      _textMatrix = savedTextMatrix;
+      _textLineMatrix = savedLineMatrix;
+      _textClipVertices = savedClipVertices;
+      _textClipContours = savedClipContours;
+      context.restore();
+      while (_stack.length > savedStack) {
+        _stack.removeLast();
+      }
+      state = saved;
     }
   }
 
@@ -3067,6 +3444,7 @@ class _Renderer {
     final saved = state.clone();
     final savedStack = _stack.length;
     final savedKnockout = _knockoutBackdrop;
+    final savedTextKnockout = _textKnockoutActive;
     final savedBusy = _layerBusy;
 
     // The bounding box has to be mapped through the form's own matrix, so the
@@ -3118,6 +3496,9 @@ class _Renderer {
     state.strokeAlpha = 1;
     state.blendMode = _BlendMode.normal;
     _knockoutBackdrop = knockout ? Uint32List.fromList(surface.pixels) : null;
+    // The group's own content starts a fresh text-knockout scope: an `ET`
+    // inside it must not drop the backdrop the group is knocking out against.
+    _textKnockoutActive = false;
 
     final formResources =
         await xobject.dictionaryEntry(PdfName.resources) ?? resources;
@@ -3129,6 +3510,7 @@ class _Renderer {
 
     context = target;
     _knockoutBackdrop = savedKnockout;
+    _textKnockoutActive = savedTextKnockout;
     _layerBusy = savedBusy;
     state = saved;
     while (_stack.length > savedStack) {

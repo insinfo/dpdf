@@ -12,6 +12,8 @@ class _DribblingSource implements PdfByteSource {
   int reads = 0;
   bool closed = false;
 
+  /// [chunk] is the most bytes a single read hands back, which is what makes
+  /// this source exercise the short-read path.
   _DribblingSource(this.bytes, {this.chunk = 7});
 
   @override
@@ -85,9 +87,16 @@ void main() {
     });
 
     test('tolerates a source that returns short reads', () {
-      final source = _DribblingSource(_prefixed(300, _body('%PDF-1.7\nrest')));
-      expect(findPdfHeaderOffset(source), 300);
-      expect(source.reads, greaterThan(1));
+      // The marker straddles a read boundary at every one of these sizes, and
+      // a chunk of one byte is the degenerate case: the scan has to stitch
+      // `%PDF-` together across five separate reads.
+      for (final chunk in [1, 3, 7, 64]) {
+        final source = _DribblingSource(
+            _prefixed(300, _body('%PDF-1.7\nrest')),
+            chunk: chunk);
+        expect(findPdfHeaderOffset(source), 300, reason: 'chunk $chunk');
+        expect(source.reads, greaterThan(1), reason: 'chunk $chunk');
+      }
     });
   });
 

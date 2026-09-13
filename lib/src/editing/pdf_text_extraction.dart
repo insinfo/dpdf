@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import '../platform/compression.dart';
 import 'pdf_unicode_cmap.dart';
 import '../io/font/pdf_encodings.dart';
+import '../io/font/true_type_font.dart';
 import 'pdf_simple_encoding.dart';
 import 'pdf_standard_font_metrics.dart';
 import 'pdf_encoding_differences.dart';
@@ -41,6 +42,13 @@ typedef PdfCharacterDecoder = String Function(String font, Uint8List codes);
 /// bounded by the declared sample count when unfiltered and by a validated
 /// `EI` search otherwise, so image bytes are never mistaken for operators.
 class PdfTextExtraction {
+  /// U+FFFD REPLACEMENT CHARACTER, emitted for a glyph the document draws but
+  /// never identifies. It stands in for the one thing a reader may honestly
+  /// say about such a glyph: a character was here and the file does not name
+  /// it. Guessing a letter instead would be indistinguishable from the real
+  /// text downstream; dropping it silently would hide that anything was lost.
+  static const int _undefinedCharacter = 0xfffd;
+
   static Future<String> fromPage(PdfPage page,
       {PdfCharacterDecoder? decoder}) async {
     var resources =
@@ -173,75 +181,256 @@ class PdfTextExtraction {
     return PdfEncodings.convertToString(bytes, 'PDF');
   }
 
+  /// Byte width of the character codes a font produces, or null when only the
+  /// font's own CMap could say. Simple fonts always use single-byte codes
+  /// (9.6.6.1); Identity-H/V always use two (9.7.5.2). Every other composite
+  /// encoding names a CMap this reader does not execute, so its ToUnicode
+  /// stream keeps having to speak for itself.
+  static int? _codeLength(String? subtype, String? encoding) {
+    if (subtype == 'Type1' ||
+        subtype == 'MMType1' ||
+        subtype == 'TrueType' ||
+        subtype == 'Type3') {
+      return 1;
+    }
+    if (subtype == 'Type0' &&
+        (encoding == 'Identity-H' || encoding == 'Identity-V')) {
+      return 2;
+    }
+    return null;
+  }
+
+  /// Flag 3 of /FontDescriptor /Flags (9.8.2, Table 123): the font's character
+  /// set lies outside the Adobe standard Latin set.
+  static Future<bool> _isSymbolic(PdfDictionary? font) async {
+    final descriptor = await font?.dictionaryEntry(PdfName('FontDescriptor'));
+    final flags = await descriptor?.get(PdfName('Flags'), true);
+    if (flags == null) return false;
+    if (flags is! PdfNumber) {
+      throw FormatException('/FontDescriptor /Flags must be a number.');
+    }
+    return flags.intValue() & 4 != 0;
+  }
+
+  /// Glyph index to Unicode scalar, read back out of an embedded TrueType
+  /// program, for an Identity-H/V font that ships no ToUnicode CMap.
+  ///
+  /// With Identity encoding and an Identity /CIDToGIDMap the character codes
+  /// are glyph indices, and nothing in the PDF says what those glyphs mean.
+  /// The font's own `cmap` table does: it is the font declaring which
+  /// character each glyph draws, so reading it backwards reports the font's
+  /// statement rather than a guess of ours. When several characters share one
+  /// glyph — U+0020 and U+00A0, U+002D and U+00AD — the lowest scalar wins:
+  /// the higher ones are the compatibility aliases of the lower one, so the
+  /// choice is between spellings of the same character, not between different
+  /// characters.
+  ///
+  /// The producers of subset Identity fonts routinely drop the `cmap` table,
+  /// since the viewer indexes glyphs directly and never needs it. Then the
+  /// document states nowhere at all what its glyphs mean, and the returned
+  /// map is simply empty: the caller marks those codes [_undefinedCharacter]
+  /// rather than dropping the page, because the missing information is the
+  /// file's, not this reader's. That is the whole of the relaxation — null
+  /// comes back whenever the chain breaks for a reason that could instead be
+  /// read (a /CIDToGIDMap stream, a CFF descendant, a font that is not
+  /// embedded at all), and such a font keeps being refused outright.
+  static Future<Map<int, int>?> _embeddedGlyphUnicode(
+      PdfDictionary font) async {
+    final descendants = await font.get(PdfName('DescendantFonts'), true);
+    if (descendants is! PdfArray || descendants.size() != 1) return null;
+    final descendant = await descendants.get(0, true);
+    if (descendant is! PdfDictionary) return null;
+    final kind = (await descendant.nameEntry(PdfName.subtype))?.getValue();
+    if (kind != 'CIDFontType0' && kind != 'CIDFontType2') return null;
+    if (kind == 'CIDFontType2') {
+      // A /CIDToGIDMap stream would renumber the glyphs, and this reader does
+      // not apply it, so only the identity case may be read back.
+      final cidToGid = await descendant.get(PdfName('CIDToGIDMap'), true);
+      if (cidToGid != null &&
+          !(cidToGid is PdfName && cidToGid.getValue() == 'Identity')) {
+        return null;
+      }
+    }
+    // Any ordering other than Identity names a registered character
+    // collection whose CIDs do carry meaning, through tables this reader does
+    // not consult here. Such a font is refused, not declared meaningless.
+    final systemInfo =
+        await descendant.dictionaryEntry(PdfName('CIDSystemInfo'));
+    final ordering = await systemInfo?.get(PdfName('Ordering'), true);
+    final identityOrdering =
+        ordering is PdfString && ordering.getValue() == 'Identity';
+    final descriptor =
+        await descendant.dictionaryEntry(PdfName('FontDescriptor'));
+    var program = await descriptor?.streamEntry(PdfName('FontFile2'));
+    var bareCff = false;
+    if (program == null) {
+      program = await descriptor?.streamEntry(PdfName('FontFile3'));
+      // A bare CFF font program has no place to put a character map: the
+      // format has no `cmap` table, and a CID-keyed charset lists CIDs, not
+      // characters. Wrapped in OpenType it can carry one, so that is read.
+      bareCff = program != null &&
+          (await program.nameEntry(PdfName.subtype))?.getValue() != 'OpenType';
+    }
+    final bytes = await program?.getBytes();
+    if (bytes == null || bytes.isEmpty) return null;
+    if (bareCff) return identityOrdering ? const {} : null;
+    final tables = _sfntTables(bytes);
+    if (tables == null) return null;
+    if (!tables.contains('cmap')) {
+      return identityOrdering ? const {} : null;
+    }
+    final TrueTypeFont parsed;
+    try {
+      parsed = TrueTypeFont.fromBytes(bytes);
+    } catch (_) {
+      return null;
+    }
+    final reverse = <int, int>{};
+    parsed.unicodeToGlyph.forEach((scalar, glyph) {
+      if (scalar < 0) return;
+      final glyphIndex = glyph.getCode();
+      final previous = reverse[glyphIndex];
+      if (previous == null || scalar < previous) reverse[glyphIndex] = scalar;
+    });
+    return reverse;
+  }
+
+  /// Tags of an sfnt table directory, or null if [bytes] is not one font's
+  /// own sfnt. A collection is excluded on purpose: which of its fonts the
+  /// stream means is a question this reader does not answer.
+  static Set<String>? _sfntTables(Uint8List bytes) {
+    if (bytes.length < 12) return null;
+    final view = ByteData.sublistView(bytes);
+    const sfntVersions = {0x00010000, 0x4f54544f, 0x74727565};
+    if (!sfntVersions.contains(view.getUint32(0))) return null;
+    final count = view.getUint16(4);
+    if (12 + count * 16 > bytes.length) return null;
+    return {
+      for (var i = 0; i < count; i++)
+        latin1.decode(bytes.sublist(12 + i * 16, 16 + i * 16))
+    };
+  }
+
   static Future<PdfCharacterDecoder> _resourceDecoder(
       PdfDictionary? resources) async {
     final fonts = await resources?.dictionaryEntry(PdfName.font);
-    final permitted = <String, String>{};
-    final unicodeMaps = <String, PdfUnicodeCMap>{};
-    final differences = <String, PdfEncodingDifferences>{};
+    final decodings = <String, _FontDecoding>{};
     if (fonts != null) {
       for (final entry in await fonts.entrySet()) {
         final font = await fonts.dictionaryEntry(entry.key);
-        final unicode = await font?.get(PdfName('ToUnicode'), true);
-        if (unicode != null) {
-          if (unicode is! PdfStream) {
-            throw FormatException('ToUnicode must be a stream.');
-          }
-          if (unicode.containsKey(PdfName('UseCMap'))) {
-            throw UnsupportedError(
-                'Inherited ToUnicode CMaps are unsupported.');
-          }
-          unicodeMaps[entry.key.getValue()] =
-              PdfUnicodeCMap.parse(await _strictStream(unicode));
-          continue;
-        }
-        final base = (await font?.nameEntry(PdfName.baseFont))?.getValue();
-        final subtype = (await font?.nameEntry(PdfName.subtype))?.getValue();
-        final encoding = (await font?.nameEntry(PdfName.encoding))?.getValue();
-        final latinBase14 = subtype == 'Type1' &&
-            const {
-              'Helvetica',
-              'Helvetica-Bold',
-              'Helvetica-Oblique',
-              'Helvetica-BoldOblique',
-              'Courier',
-              'Courier-Bold',
-              'Courier-Oblique',
-              'Courier-BoldOblique',
-              'Times-Roman',
-              'Times-Bold',
-              'Times-Italic',
-              'Times-BoldItalic'
-            }.contains(base);
-        final encodingObject = await font?.get(PdfName.encoding, true);
-        if (encodingObject is PdfDictionary &&
-            (subtype == 'Type1' ||
-                subtype == 'TrueType' ||
-                subtype == 'Type3')) {
-          differences[entry.key.getValue()] =
-              await PdfEncodingDifferences.parse(encodingObject,
-                  defaultBase: latinBase14 ? 'StandardEncoding' : null);
-          continue;
-        }
-        if (latinBase14 &&
-            (await font!.get(PdfName.encoding) == null ||
-                encoding == 'WinAnsiEncoding' ||
-                encoding == 'StandardEncoding') &&
-            !font.containsKey(PdfName('ToUnicode'))) {
-          permitted[entry.key.getValue()] = encoding ?? 'StandardEncoding';
-        }
+        if (font == null) continue;
+        decodings[entry.key.getValue()] = await _fontDecoding(font);
       }
     }
     return (font, codes) {
-      final unicode = unicodeMaps[font];
-      if (unicode != null) return unicode.decode(codes);
-      final custom = differences[font];
-      if (custom != null) return custom.decode(codes);
-      if (!permitted.containsKey(font)) {
+      final decoding = decodings[font];
+      if (decoding == null) {
         throw UnsupportedError('A character decoder is required for /$font.');
       }
-      return PdfSimpleEncoding.decode(permitted[font]!, codes);
+      return decoding.decode(font, codes);
     };
+  }
+
+  /// Collects every source one font offers for recovering text, in the order
+  /// 9.10.2 ranks them: the ToUnicode CMap first, then the encoding the font
+  /// declares. Both are read, not just the first one present, because a
+  /// ToUnicode CMap is routinely partial — a producer that emits WinAnsi text
+  /// and one en dash writes a CMap holding only the en dash, and every other
+  /// code is meant to be read off the encoding.
+  static Future<_FontDecoding> _fontDecoding(PdfDictionary font) async {
+    final base = (await font.nameEntry(PdfName.baseFont))?.getValue();
+    final subtype = (await font.nameEntry(PdfName.subtype))?.getValue();
+    final encoding = (await font.nameEntry(PdfName.encoding))?.getValue();
+    final codeLength = _codeLength(subtype, encoding);
+
+    PdfUnicodeCMap? unicode;
+    final toUnicode = await font.get(PdfName('ToUnicode'), true);
+    if (toUnicode != null) {
+      if (toUnicode is! PdfStream) {
+        throw FormatException('ToUnicode must be a stream.');
+      }
+      if (toUnicode.containsKey(PdfName('UseCMap'))) {
+        throw UnsupportedError('Inherited ToUnicode CMaps are unsupported.');
+      }
+      unicode = PdfUnicodeCMap.parse(await _strictStream(toUnicode),
+          codeLength: codeLength);
+    }
+
+    if (subtype == 'Type0') {
+      return _FontDecoding(
+          codeLength: codeLength,
+          unicode: unicode,
+          glyphUnicode: encoding == 'Identity-H' || encoding == 'Identity-V'
+              ? await _embeddedGlyphUnicode(font)
+              : null);
+    }
+
+    // With a ToUnicode CMap in hand the encoding is only a backstop for the
+    // codes the CMap omits, so a broken /Encoding no longer sinks the font:
+    // the primary source still answers, and codes it does not cover fall to
+    // the replacement character. Without a CMap the encoding is the only
+    // source there is, and its errors are the font's errors.
+    try {
+      return await _declaredEncoding(font, subtype, encoding, codeLength,
+          base: base, unicode: unicode);
+    } catch (_) {
+      if (unicode == null) rethrow;
+      return _FontDecoding(codeLength: codeLength, unicode: unicode);
+    }
+  }
+
+  static Future<_FontDecoding> _declaredEncoding(
+      PdfDictionary font, String? subtype, String? encoding, int? codeLength,
+      {String? base, PdfUnicodeCMap? unicode}) async {
+    final latinBase14 = subtype == 'Type1' &&
+        const {
+          'Helvetica',
+          'Helvetica-Bold',
+          'Helvetica-Oblique',
+          'Helvetica-BoldOblique',
+          'Courier',
+          'Courier-Bold',
+          'Courier-Oblique',
+          'Courier-BoldOblique',
+          'Times-Roman',
+          'Times-Bold',
+          'Times-Italic',
+          'Times-BoldItalic'
+        }.contains(base);
+    final encodingObject = await font.get(PdfName.encoding, true);
+    if (encodingObject is PdfDictionary &&
+        (subtype == 'Type1' || subtype == 'TrueType' || subtype == 'Type3')) {
+      return _FontDecoding(
+          codeLength: codeLength,
+          unicode: unicode,
+          differences: await PdfEncodingDifferences.parse(encodingObject,
+              defaultBase: latinBase14 ? 'StandardEncoding' : null));
+    }
+    if (latinBase14 &&
+        (encodingObject == null ||
+            encoding == 'WinAnsiEncoding' ||
+            encoding == 'StandardEncoding')) {
+      return _FontDecoding(
+          codeLength: codeLength,
+          unicode: unicode,
+          baseEncoding: encoding ?? 'StandardEncoding');
+    }
+    // A named base encoding (9.6.6.2, Annex D) assigns a glyph name to every
+    // code on its own, so an embedded subset with no ToUnicode is still
+    // decodable: the font program supplies outlines, not meaning. Only the
+    // flat Latin tables qualify. A symbolic TrueType font takes its encoding
+    // from the font program's own cmap (9.6.6.4), so a base encoding name on
+    // one is not authoritative and is not trusted here; and a font with no
+    // /Encoding at all falls back to the built-in encoding this reader does
+    // not read, so it keeps being refused.
+    if ((subtype == 'Type1' || subtype == 'MMType1' || subtype == 'TrueType') &&
+        const {'WinAnsiEncoding', 'MacRomanEncoding', 'StandardEncoding'}
+            .contains(encoding) &&
+        !await _isSymbolic(font)) {
+      return _FontDecoding(
+          codeLength: codeLength, unicode: unicode, baseEncoding: encoding);
+    }
+    return _FontDecoding(codeLength: codeLength, unicode: unicode);
   }
 
   static Future<Uint8List> _strictContent(PdfPage page) async {
@@ -556,6 +745,84 @@ class PdfTextExtraction {
       throw FormatException('Unterminated content state.');
     }
     return output;
+  }
+}
+
+/// The sources one font resource offers for turning its character codes into
+/// text, and the order they are consulted in.
+///
+/// The order follows 9.10.2: a ToUnicode CMap is the document's direct
+/// statement about a code and wins; otherwise the encoding the font declares
+/// answers. Anything a source does claim is reported as that source states
+/// it, errors included — a glyph name that resolves to nothing, or a byte the
+/// encoding leaves undefined, stays an error rather than becoming filler.
+///
+/// [PdfTextExtraction._undefinedCharacter] is reached only when the sources
+/// that exist all fall silent on a code they were entitled to answer, which
+/// happens when a producer subsets away the information. A font that offers
+/// no source at all is a different matter and is refused outright: there the
+/// gap is in this reader, not in the file.
+class _FontDecoding {
+  /// Bytes per character code, or null when only [unicode] can split the
+  /// string, because the font's encoding names a CMap this reader does not
+  /// execute. A null width forces the all-or-nothing path: without knowing
+  /// where one code ends there is no per-code fallback to try.
+  final int? codeLength;
+  final PdfUnicodeCMap? unicode;
+  final PdfEncodingDifferences? differences;
+  final String? baseEncoding;
+  final Map<int, int>? glyphUnicode;
+
+  const _FontDecoding(
+      {this.codeLength,
+      this.unicode,
+      this.differences,
+      this.baseEncoding,
+      this.glyphUnicode});
+
+  bool get _empty =>
+      unicode == null &&
+      differences == null &&
+      baseEncoding == null &&
+      glyphUnicode == null;
+
+  String decode(String name, Uint8List codes) {
+    final width = codeLength;
+    if (_empty || (width == null && unicode == null)) {
+      throw UnsupportedError('A character decoder is required for /$name.');
+    }
+    if (width == null) return unicode!.decode(codes);
+    if (codes.length % width != 0) {
+      throw FormatException(
+          'Text of /$name is not a whole number of $width-byte codes', codes);
+    }
+    final text = StringBuffer();
+    for (var offset = 0; offset < codes.length; offset += width) {
+      final code = Uint8List.sublistView(codes, offset, offset + width);
+      final mapped = unicode?.textFor(code);
+      if (mapped != null) {
+        text.write(mapped);
+        continue;
+      }
+      if (differences != null) {
+        text.write(differences!.decode(code));
+        continue;
+      }
+      if (baseEncoding != null) {
+        text.write(PdfSimpleEncoding.decode(baseEncoding!, code));
+        continue;
+      }
+      final glyphs = glyphUnicode;
+      if (glyphs != null) {
+        final scalar = glyphs[code.fold<int>(0, (value, b) => value * 256 + b)];
+        if (scalar != null) {
+          text.writeCharCode(scalar);
+          continue;
+        }
+      }
+      text.writeCharCode(PdfTextExtraction._undefinedCharacter);
+    }
+    return text.toString();
   }
 }
 

@@ -19,10 +19,17 @@ class PdfPositionedCharacter {
 /// Interprets horizontal, single-byte text state with explicit font metrics.
 /// The caller must reject vertical/multibyte fonts before using this API.
 class PdfTextPositions {
+  /// [textGraphicsStates] names the page's /ExtGState resources and says, for
+  /// each, whether it carries a /Font entry (8.4.5, Table 58) — the one entry
+  /// of a graphics state that moves text. Without it every `gs` is refused,
+  /// because an unread state could be changing the font under the machine.
   static List<PdfPositionedCharacter> fromContent(Uint8List bytes,
       {required PdfCharacterDecoder decoder,
-      required PdfCharacterWidth width}) {
-    return _TextMachine(decoder, width).read(bytes).characters;
+      required PdfCharacterWidth width,
+      Map<String, bool>? textGraphicsStates}) {
+    return _TextMachine(decoder, width, graphicsStates: textGraphicsStates)
+        .read(bytes)
+        .characters;
   }
 }
 
@@ -72,7 +79,12 @@ class _TextMachine {
   final PdfCharacterDecoder decoder;
   final PdfCharacterWidth width;
   final Set<String>? allowedFonts;
-  _TextMachine(this.decoder, this.width, {this.allowedFonts});
+
+  /// /ExtGState resource name to "carries a /Font entry"; null when the
+  /// caller could not resolve the page's resources.
+  final Map<String, bool>? graphicsStates;
+  _TextMachine(this.decoder, this.width,
+      {this.allowedFonts, this.graphicsStates});
   _TextResult read(Uint8List bytes,
       {Set<int> remove = const {},
       Map<int, Uint8List> insert = const {},
@@ -354,6 +366,31 @@ class _TextMachine {
         case 'sc':
         case 'scn':
           break;
+        case 'gs':
+          // Same reading as in text extraction: only /Font in the installed
+          // state can move text, so the dictionary decides whether this
+          // operator may be stepped over. The operator itself is written back
+          // untouched either way, since the rewrite must keep the page's
+          // colour, transparency and line state exactly as it found it.
+          requireCount(1);
+          if (operands.first is! _Name) {
+            throw FormatException('gs requires a graphics state name.');
+          }
+          final name = (operands.first as _Name).value;
+          final states = graphicsStates;
+          if (states == null) {
+            throw UnsupportedError(
+                'Resolving gs /$name requires page resources.');
+          }
+          final hasFont = states[name];
+          if (hasFont == null) {
+            throw FormatException('Missing /ExtGState entry /$name.');
+          }
+          if (hasFont) {
+            throw UnsupportedError(
+                'Positioned text cannot interpret gs /$name, whose '
+                '/ExtGState carries a /Font entry.');
+          }
         default:
           throw UnsupportedError(
               'Positioned text cannot interpret ${token.value}.');

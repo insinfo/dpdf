@@ -205,10 +205,13 @@ class PdfAreaRedaction {
         : null;
 
     final metrics = await _PageFontMetrics.resolve(fonts);
+    final states = await _textGraphicsStates(
+        resources is PdfDictionary ? resources : null);
     var content = await page.contentPayload();
 
     if (content.isNotEmpty && metrics.hasFonts) {
-      final machine = _TextMachine(metrics.decode, metrics.width);
+      final machine =
+          _TextMachine(metrics.decode, metrics.width, graphicsStates: states);
       final parsed = machine.read(content);
       final remove = <int>{};
       for (var index = 0; index < parsed.characters.length; index++) {
@@ -244,6 +247,22 @@ class PdfAreaRedaction {
     if (options.paintOverlay) {
       await _paintOverlay(document, page, areas, options);
     }
+  }
+
+  /// Lista os /ExtGState da pagina dizendo, de cada um, se traz /Font: e a
+  /// unica entrada da tabela 58 capaz de mudar o texto, e portanto a unica
+  /// que a maquina de posicoes nao pode ignorar.
+  static Future<Map<String, bool>> _textGraphicsStates(
+      PdfDictionary? resources) async {
+    final result = <String, bool>{};
+    final states = await resources?.dictionaryEntry(PdfName('ExtGState'));
+    if (states == null) return result;
+    for (final key in states.keySet()) {
+      final state = await states.dictionaryEntry(key);
+      if (state == null) continue;
+      result[key.getValue()] = state.containsKey(PdfName.font);
+    }
+    return result;
   }
 
   /// Remove do fluxo de conteudo os caminhos que caem dentro das areas.

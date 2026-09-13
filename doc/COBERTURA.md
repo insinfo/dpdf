@@ -1,7 +1,9 @@
 # Cobertura da especificação
 
-Estado da implementação do `dpdf` e dos pacotes auxiliares `jbig2` e `dgfx` em relação à
-**ISO 32000-1:2008** (PDF 1.7) e às normas que ela referencia.
+Estado da implementação do `dpdf` e dos pacotes auxiliares `jbig2`, `dgfx` e `j2k` em
+relação à **ISO 32000-1:2008** (PDF 1.7), com os pontos da **ISO 32000-2:2020** (PDF 2.0)
+que já foram atendidos assinalados na linha correspondente, e às normas que elas
+referenciam.
 
 > **Como este documento foi levantado.** A coluna de estado combina três fontes: a presença
 > de código localizada por busca em `lib/`, a existência de teste que exercite o
@@ -24,7 +26,7 @@ Estado da implementação do `dpdf` e dos pacotes auxiliares `jbig2` e `dgfx` em
 | **OK** | Implementado e coberto por teste |
 | **Parcial** | Implementado em parte; o que falta está descrito na própria linha |
 | **Ausente** | Não implementado |
-| **Em curso** | Sendo implementado neste momento; o estado muda em breve |
+| **Fora do alcance** | Decisão de projeto, com a razão na própria linha — não é trabalho pendente |
 
 ## Números
 
@@ -68,7 +70,7 @@ pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só
 | 7.6.3 Manipulador padrão | OK | R2–R6, incluindo AES-256 e os algoritmos 2.A/2.B |
 | 7.6.4 Manipulador por chave pública | OK | `/Adobe.PubSec`, envelope CMS, permissões por destinatário |
 | 7.6.5 Filtros de cripto | OK | `/CF`, `/StmF`, `/StrF`, `/EFF`, `/V2`, `/AESV2`, `/AESV3` |
-| 7.7 Estrutura do documento | Parcial | Catálogo sendo completado entrada a entrada — **em curso** |
+| 7.7 Estrutura do documento | OK | Tabela 28 completa, entrada por entrada |
 | 7.8 Fluxos de conteúdo e recursos | OK | |
 | 7.9 Estruturas de dados comuns | OK | Datas, strings de texto, árvores de nomes e de números, retângulos |
 | 7.10 Funções | OK | Tipos 0, 2, 3 e 4, com todos os operadores da Tabela 42 |
@@ -105,7 +107,7 @@ pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só
 | 9.6.6 Codificação | OK | `/BaseEncoding`, `/Differences`, tabelas padrão, TrueType simbólica com `cmap` (3,0) e (1,0) |
 | 9.7 Fontes compostas | OK | CIDFont, `/CIDToGIDMap`, CMaps predefinidos e embutidos, `/W`, `/W2`, escrita vertical |
 | 9.8 Descritores de fonte | OK | |
-| 9.9 Programas de fonte embutidos | OK | Type1, TrueType, CFF/Type1C, CFF2, OpenType, WOFF 1.0 e **WOFF 2.0**, este com as transformações de `glyf`/`loca` e `hmtx` e Brotli embutido no pacote. Coleções `ttcf` são reconstruídas mas o leitor sfnt ainda não as abre |
+| 9.9 Programas de fonte embutidos | OK | Type1, TrueType, CFF/Type1C, CFF2, OpenType, WOFF 1.0 e **WOFF 2.0**, este com as transformações de `glyf`/`loca` e `hmtx` e Brotli embutido no pacote. Coleções `ttcf` são reconstruídas **e abertas**, com as fontes compartilhando tabelas no mesmo buffer |
 | 9.10 Extração de texto | OK | `/ToUnicode` e mapeamento reverso; imagens inline são atravessadas corretamente |
 
 ## 10 — Renderização
@@ -131,34 +133,34 @@ pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só
 
 | Cláusula | Estado | Observação |
 |---|---|---|
-| 12.2 Preferências de visualização | Parcial | **Em curso** — Tabela 150 sendo completada |
+| 12.2 Preferências de visualização | OK | As dezessete entradas da Tabela 150, com validação de `/PrintPageRange` |
 | 12.3.2 Destinos | OK | `XYZ`, `Fit`, `FitH`, `FitV`, `FitR`, `FitB`, `FitBH`, `FitBV`, nomeados, remotos |
 | 12.3.3 Sumário (outline) | OK | |
 | 12.3.4 Miniaturas | Parcial | Preservadas; sem geração |
 | 12.3.5 Coleções | OK | |
 | 12.3.6 Rótulos de página | OK | |
-| 12.4.2 Transições de página | Parcial | **Em curso** — os treze estilos da Tabela 164 |
-| 12.4.3 Fios de artigo | Ausente | **Em curso** — `/Threads`, beads e a lista circular |
-| 12.5 Anotações | OK | 25 dos 26 subtipos da Tabela 169 têm classe própria, com fluxos de aparência `/AP`, `/AS`; a anotação 3D está **em curso** |
+| 12.4.2 Transições de página | OK | Os doze estilos da Tabela 164, com validação de quais entradas cada estilo aceita |
+| 12.4.3 Fios de artigo | OK | `/Threads`, beads e a validação da lista circular duplamente ligada |
+| 12.5 Anotações | OK | Os 26 subtipos da Tabela 169 têm classe própria, com fluxos de aparência `/AP` e `/AS` |
 | 12.6 Ações | OK | `GoTo`, `GoToR`, `GoToE`, `Launch`, `Thread`, `URI`, `Sound`, `Movie`, `Hide`, `Named`, `SubmitForm`, `ResetForm`, `ImportData`, `JavaScript`, `SetOCGState`, `Rendition`, `Trans`, `GoTo3DView` |
 | 12.7 Formulários interativos | OK | Campos de texto, escolha e botão; texto variável e geração de aparência; `/NeedAppearances` |
 | 12.7.8 XFA | Parcial | Preservado e removível; sem interpretação |
 | 12.8 Assinaturas digitais | OK | `adbe.pkcs7.detached`, CAdES, carimbo RFC 3161, DocMDP, FieldMDP, `/Changes` |
-| 12.9 Propriedades de medida | Parcial | **Em curso** |
-| 12.10 Requisitos do documento | Ausente | **Em curso** — `/Requirements` |
+| 12.9 Propriedades de medida | OK | `/Measure`, `/Viewport` e a regra de sobreposição quando mais de um viewport cobre o ponto |
+| 12.10 Requisitos do documento | OK | `/Requirements`, com `/RH` recusado em `/EnableJavaScripts` como a 12.10.1 exige |
 
 ## 13 — Multimídia
 
 | Cláusula | Estado | Observação |
 |---|---|---|
-| 13.2.2 Anotação Screen | Parcial | **Em curso** |
-| 13.2.3 Renditions | Ausente | **Em curso** — `/MR` e `/SR` |
-| 13.2.4 Media clips | Ausente | **Em curso** — `/MCD` e `/MCS` |
-| 13.2.5–13.2.8 Parâmetros de mídia | Ausente | **Em curso** |
-| 13.3 Sons | Parcial | **Em curso** |
-| 13.4 Filmes | Parcial | **Em curso** |
-| 13.5 Apresentações alternativas | Ausente | **Em curso** |
-| 13.6 Arte 3D | Parcial | **Em curso** — o fluxo U3D/PRC permanece opaco por desenho |
+| 13.2.2 Anotação Screen | OK | Ligada a ação de rendição |
+| 13.2.3 Renditions | OK | `/MR` e `/SR`, com a busca em profundidade das seletoras |
+| 13.2.4 Media clips | OK | `/MCD` e `/MCS`, com permissões |
+| 13.2.5–13.2.8 Parâmetros de mídia | OK | Reprodução, tela com janela flutuante, deslocamentos de tempo/quadro/marcador e identificadores de software, incluindo os algoritmos normativos de escolha de reprodutor |
+| 13.3 Sons | OK | Objeto de som e a ação correspondente |
+| 13.4 Filmes | OK | Dicionário de filme, anotação, ação e parâmetros de ativação |
+| 13.5 Apresentações alternativas | OK | `/AlternatePresentations` e `/SlideShow` |
+| 13.6 Arte 3D | OK | Fluxo, referência, vistas, projeção, fundo, modo de renderização, iluminação e animação. O fluxo U3D/PRC permanece opaco por desenho; seções transversais e nós 3D ficam como array cru |
 
 ## 14 — Intercâmbio de documentos
 
@@ -167,17 +169,17 @@ pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só
 | 14.2 Conjuntos de procedimentos | OK | Obsoletos na 1.7; preservados |
 | 14.3 Metadados XMP | OK | Leitura, edição e serialização; esquemas de extensão |
 | 14.4 Identificadores de arquivo | OK | `/ID` com a regra de atualização incremental |
-| 14.5 Dicionários page-piece | Parcial | **Em curso** — `/PieceInfo` |
+| 14.5 Dicionários page-piece | OK | `/PieceInfo` na página e no catálogo, com `/LastModified` obrigatório |
 | 14.6 Conteúdo marcado | OK | |
 | 14.7 Estrutura lógica | OK | `/StructTreeRoot`, `/ParentTree`, `/RoleMap`, `/ClassMap`, MCR e OBJR, cópia entre documentos |
 | 14.8 PDF marcado | OK | Tipos de estrutura padrão e atributos; espaços de nomes do PDF 2.0 |
 | 14.9 Acessibilidade | OK | Verificada pelo `PdfUAVerifier` |
-| 14.10 Captura web | Ausente | Baixo valor prático; não priorizado |
+| 14.10 Captura web | OK | `/SpiderInfo`, comandos, árvores `/IDS` e `/URLS`, algoritmo canônico de URL e identificadores por resumo |
 | 14.11.2 Caixas de página | OK | |
-| 14.11.3 `/BoxColorInfo` | Ausente | **Em curso** |
-| 14.11.4 Separações | Ausente | **Em curso** |
-| 14.11.5 Marcas de impressão | Parcial | **Em curso** |
-| 14.11.6 Trapping | Parcial | **Em curso** |
+| 14.11.3 `/BoxColorInfo` | OK | Com os estilos de borda das Tabelas 360 e 361 |
+| 14.11.4 Separações | OK | Com as regras de grupo da Tabela 364 |
+| 14.11.5 Marcas de impressão | OK | Anotação e XObject de formulário, com `/MarkStyle` e `/Colorants` |
+| 14.11.6 Trapping | OK | Rede de trapping, com a exclusão mútua entre `/LastModified` e `/Version` |
 | 14.11.7 Intenções de saída | OK | |
 
 ---
@@ -230,7 +232,7 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 | Componentes subamostrados em codestream cru | OK | Reamostrados pelo mesmo código que o caminho JP2 usa; fator inteiro de 1 a 255, todo o alcance de `XRsiz`/`YRsiz` |
 | Codificador com profundidade por componente e sinal | OK | `bitsPerComponent` e `signedComponents`; a MCT é desligada quando os três primeiros componentes divergem, como a G.2 exige |
 | Saída com profundidade diferente de 8 ou 16 bits | Parcial | Reescalonada; a profundidade original fica em `sourceBitsPerComponent` |
-
+| Resolução reduzida | OK | Corrigida uma divergência herdada do JJ2000, documentada em `doc/DIVERGENCIAS_JJ2000.md` do repositório `jpeg2000`: a referência responde geometria de componente no nível errado e escreve mais amostras do que o próprio cabeçalho declara |
 | Filtros wavelet customizados (ATK) | OK | Síntese genérica por *lifting* do Anexo G da 15444-2. Validada por reproduzir **bit a bit** os filtros 5-3 e 9-7 especializados. A categoria arbitrária do Anexo H é recusada citando a cláusula |
 | Part 2 / JPX (demais extensões) | Ausente | Trabalho **grande e aberto**: decomposição arbitrária (DFS/ADS), transformada multicomponente (MCT), precisão estendida, deslocamento DC variável, ROI arbitrária. Cada uma é independente e pode ser feita isoladamente |
 | Decodificação em paralelo | OK | `decodeJpeg2000Parallel`, assíncrona, com isolates atrás de `if (dart.library.io)` e caminho sequencial como padrão na Web. Paraleliza por tile e, quando há menos tiles que workers, por code-block — que é o caso de tile único do PDF. Medido 2,6x a 3,8x em 8 núcleos acima de 0,2 MP, com saída bit a bit idêntica. `decodeJpeg2000` segue síncrona e inalterada |
@@ -251,30 +253,34 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 | Tabela `post` | OK | |
 | Shaping GSUB/GPOS | Parcial | GSUB 1–4; GPOS 1–2 e só avanço horizontal |
 | Bidi | Parcial | Analisador simplificado, sem níveis de embutimento |
-| Paralelismo | Ausente | `useIsolates`, `tileHeight` e `useSimd` são parâmetros inertes — a API promete o que não entrega. A rota é a mesma do `j2k`: `dart:isolate` atrás de import condicional, com `dgfx_io.dart` já servindo de ponto de entrada para a VM |
-| Interpolação Gouraud | Ausente | O `dpdf` emula com um triângulo de cor chapada por faceta |
+| Paralelismo | Fora do alcance | Medido: preencher uma A4 a 300 dpi custa 10,6 ms, e só mandar o framebuffer para um isolate custa 30,7 ms. Sem memória compartilhada entre isolates (que exigiria FFI), paralelizar seria quatro vezes mais lento. Os parâmetros viraram `@Deprecated` com a razão escrita; o lugar certo de paralelizar é acima do dgfx, uma imagem por isolate |
+| Interpolação Gouraud | OK | `fillTriangleGouraud` e `fillTriangleMesh`. A malha entra como contornos de um caminho com regra nonZero, então a aresta interna se cancela e não sobra costura. O `dpdf` ainda não trocou a emulação por ela |
 | Formatos de pixel | Parcial | Só ARGB32 alfa-reto |
 
 ---
 
 ## Lacunas conhecidas, em ordem de valor
 
-1. **Quadros diferenciais por DCT no JPEG** (SOF5, SOF6, SOF13, SOF14) — exigem IDCT com
-   saída assinada sem *level shift*; o plano de componente hoje é `Uint8List`.
-2. **Recorte geométrico na redação de arte vetorial** — um caminho que atravessa a borda da
-   área é recusado, não recortado. Exige subdividir Bézier e reconstruir o *winding*.
+1. **Recorte geométrico na redação de arte vetorial** — um caminho que atravessa a borda da
+   área é recusado, não recortado. Exige subdividir Bézier e reconstruir o *winding*. Hoje a
+   recusa é honesta, mas recusar é pior que redigir.
+2. **`j2k` publicado está defasado** — o `dpdf` consome a `0.9.0` do pub.dev, que ainda
+   carrega o defeito de `dart2js` (todo decode 8 bits não-RGB quebra na web) e recusa
+   codestream cru subamostrado. Nenhuma correção local chega ao `dpdf` sem uma publicação.
 3. **Cobertura de borda curva no `dgfx`** — subestima a área em cerca de 10%: um círculo de
    raio 2 px rasteriza 11,3 em vez de 12,57, enquanto um retângulo 4×4 dá exato. Aponta para
    a tolerância de achatamento em raios pequenos.
-4. **Coleções `ttcf`** — reconstruídas a partir de WOFF 2.0, mas o leitor sfnt não abre
-   coleção, então a fonte falha depois da conversão.
-5. **Redação de arte vetorial** — `PdfAreaRedaction` reescreve texto e imagens; vetores
-   ainda exigem cobertura por sobreposição.
-6. **Gouraud no `dgfx`** — remove a emulação cara e as costuras visíveis entre facetas nos
-   sombreamentos de tipo 4 a 7.
-7. **Paralelismo real no `dgfx`** — a API pública promete o que não entrega.
-8. **Meios-tons na rasterização** (10.5) e **casos de *knockout*** (11.4).
-9. **Captura web** (14.10) — baixo valor prático.
+4. **O `dpdf` ainda não usa o Gouraud do `dgfx`** — `_paintMeshFacet` continua pintando um
+   triângulo de cor chapada por faceta, com as costuras que isso deixa. A API do outro lado
+   já existe; falta trocar.
+5. **Quadros diferenciais por DCT no JPEG** (SOF5, SOF6, SOF13, SOF14) — exigem IDCT com
+   saída assinada sem *level shift*; o plano de componente hoje é `Uint8List`.
+6. **Codificação CCITT só escreve Grupo 4**, e o `jbig2` não codifica MMR nem `EXTTEMPLATE`.
+7. **Shaping e bidi no `dgfx`** — GSUB 1–4 e GPOS 1–2 com só avanço horizontal; o analisador
+   bidi é simplificado. Não afeta o renderizador de PDF, que posiciona por `/Widths`, mas
+   afeta o caminho SVG.
+8. **Arquivos híbridos `/XRefStm`** são lidos e não escritos; o dicionário de extensões não
+   tem API de escrita; miniaturas são preservadas e não geradas.
 
 ## O que não está no alcance
 
@@ -282,8 +288,10 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 > difícil. Coisas grandes mas bem definidas — Parte 2 do JPEG 2000, paralelismo — ficam nas
 > tabelas acima como *Ausente*, porque são trabalho pendente e não decisão de projeto.
 
-- **ISO 32000-2 (PDF 2.0)** além do que a 1.7 cobre: o alvo declarado é a 1.7, com alguns
-  elementos do PDF 2.0 já presentes (espaços de nomes de estrutura, AES-256 revisão 6).
+- **ISO 32000-2 (PDF 2.0)** além do que a 1.7 cobre: o alvo declarado é a 1.7. Já estão
+  atendidos os espaços de nomes de estrutura, AES-256 revisão 6 e a regra de bytes antes do
+  cabeçalho da 7.5.2. Não foram avaliados os documentos ISO/TS que estendem o PDF 2.0
+  (32001 SHA-2, 32002 EdDSA, 32003 AES-GCM, 32004 integridade, 32005 namespace).
 - **Interpretação de XFA**: formulários XFA são preservados e podem ser removidos, mas não
   são executados.
 - **Decodificação de U3D e PRC**: os fluxos de arte 3D são tratados como opacos.

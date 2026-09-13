@@ -11,7 +11,7 @@ import 'package:dpdf/dpdf.dart';
 ## Highlights
 
 - PDF object model, xref tables and streams, object streams, incremental updates,
-  standard encryption, forms, fonts, and annotations
+  linearization, encryption, optional content, forms, fonts, and annotations
 - High-level layout with paragraphs, lists, tables, images, and page breaks
 - HTML-to-PDF and SVG-to-PDF conversion
 - PDF page rendering to RGBA pixels or PNG
@@ -38,9 +38,11 @@ final svgPdf = await SvgConverter.convertToBytes('''
 ''');
 ```
 
-SVG supports `svg`, `g`, `path`, `rect`, `circle`, `ellipse`, `line`,
-`polyline`, and `polygon`, including transforms, `viewBox`, basic fill/stroke
-styling, opacity, and inline style inheritance.
+SVG supports `svg`, `g`, `defs`, `use`, `symbol`, `switch`, `path`, `rect`,
+`circle`, `ellipse`, `line`, `polyline`, `polygon`, `image`, `text`, `tspan`,
+`textPath`, `clipPath`, `mask`, `marker`, `pattern` and the gradient elements,
+including transforms, `viewBox`, fill/stroke styling, opacity, and inline
+style inheritance.
 
 ## Render PDF pages
 
@@ -123,6 +125,15 @@ Form-nested images (cloning shared resources), preserves transparency outside
 the rectangle, and draws an opaque cover. `PdfTextRedaction` offers a stricter
 reconstruction path and rejects documents it cannot safely rebuild.
 
+## CCITT fax support
+
+`CCITTFaxDecode` decodes Group 4 (`K` negative), Group 3 one-dimensional
+(`K` zero) and mixed Group 3 two-dimensional (`K` positive) data, honouring
+`EncodedByteAlign`, `BlackIs1`, `EndOfLine`, `Rows` and
+`DamagedRowsBeforeError`; an absent `Rows` trims to the lines actually
+decoded. Encoding writes Group 4. The run-length tables the decoder uses are
+derived from the ones the encoder writes, so the two cannot drift apart.
+
 ## JPEG support
 
 `JpegDecoder` supports baseline and progressive Huffman JPEG, grayscale, RGB,
@@ -172,8 +183,9 @@ subsampling.
   can attach a `BLCallbackFontProvider` backed by URLs, Google Fonts or
   `FontFace`. CSS `@font-face` URLs and data URIs can be loaded through
   `HtmlConverterProperties.fontResourceLoader` and `baseUri`; `local()` resolves
-  installed/catalogued faces without downloading a fallback. WOFF/WOFF2
-  decoding remains delegated to the application/provider.
+  installed/catalogued faces without downloading a fallback. WOFF 1.0 is
+  decoded to its sfnt; WOFF 2.0 uses Brotli and a transformed `glyf`, and is
+  reported as unsupported rather than passed on to the sfnt reader.
 - JBIG2 automatically chooses between generic regions and deduplicated symbol
   dictionaries with text regions, including shared `/JBIG2Globals` across PDF
   images. Lossless refinement aggregation for near-identical glyphs works for

@@ -178,7 +178,15 @@ frames (SOF5, SOF6, SOF13, SOF14) are refused with an explicit message.
   resolved. Gradient stop opacity uses an aligned
   shading soft mask. Marker viewports support alignment, meet/slice and
   overflow clipping; some advanced paint-server cases remain partial.
-- PDF rendering may require a supplied fallback for fonts that are not embedded.
+- PDF rendering draws the fourteen standard fonts from bundled URW Core 35
+  faces when the document does not embed a program, so a page of Helvetica or
+  Symbol is not blank. The widths still come from the PDF, and
+  `PdfRenderReport.fontsSubstituted` names every font drawn with another
+  typeface. `PdfRenderOptions.useStandardFonts` turns that off, `useSystemFonts`
+  adds the machine's installed catalogue (off by default, since it varies per
+  machine), and `fontFallback` replaces both; it is also the only route on the
+  web, where the bundled programs are not carried. Composite, Type 3 and unknown
+  symbolic fonts are still reported rather than approximated.
   CID-keyed CFF supports FDArray/FDSelect and charset CID-to-GID mapping. CFF2
   outlines and variable `blend` charstrings render; `BLFont` can select
   normalized non-default variation coordinates. Bare Type1C fonts resolve
@@ -228,8 +236,16 @@ dart run tool/check_platforms.dart
 The platform check covers VM/JIT, VM/AOT, `dart2js`, and `dart2wasm`; Wasm
 requires Node.js with WasmGC support. To regenerate the embedded Adobe glyph and
 standard-font metric resources, run `dart run tool/generate_font_resources.dart`.
+`dart run tool/generate_standard_fonts.dart` regenerates the embedded URW
+programs from `assets/fonts/urw-core35/`.
 
 ## License
 
-MIT. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for notices covering
-embedded third-party data.
+MIT for the code. The package also bundles fourteen faces of the URW Core 35
+(version 2.00) under the SIL Open Font License 1.1, Copyright (c) 2014,2015 by
+(URW)++ Design & Development, used to draw the fourteen standard PDF fonts when
+a document references them without embedding a program; the copyright statement
+declares no Reserved Font Name. The licence text travels with the fonts in
+`assets/fonts/urw-core35/LICENSE.OFL`. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for this and the other notices
+covering embedded third-party data.

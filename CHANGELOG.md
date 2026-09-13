@@ -28,6 +28,11 @@ binaries, and targets the Dart VM, `dart2js`, and `dart2wasm`.
   verification reports.
 - Text extraction, text and area redaction, page overlays and assembly, form
   merging, digital signatures, timestamps, OCSP, CRL, and JKS/BKS support.
+- The fourteen standard PDF fonts are drawn from bundled URW Core 35 faces when
+  a document references them without embedding a program, so such a page is no
+  longer blank; substitutions are named in the render report. Standard-font
+  advance widths resolve by glyph name, so accented text under WinAnsiEncoding
+  or MacRomanEncoding keeps its spacing instead of collapsing into one point.
 - Clipping of filled vector artwork against a redaction area: curves are split
   at the parameters where they cross the edge and the hole is reclosed along
   the edge itself, preserving the winding rule for both `f` and `f*`. A

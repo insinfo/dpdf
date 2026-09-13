@@ -231,9 +231,9 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 | Reamostragem além de 2:1 | Ausente | **Em curso.** `Resampler` recusa outros fatores; a norma permite `XRsiz`/`YRsiz` de 1 a 255 |
 | Saída com profundidade diferente de 8 ou 16 bits | Parcial | Reescalonada; a profundidade original fica em `sourceBitsPerComponent` |
 | Codificador com amostras com sinal | Ausente | Só amostras sem sinal; profundidade por componente não exposta |
-| Filtros wavelet customizados (id ≥ 128) | Fora do alcance | Parte 2 (JPX) |
-| Part 2 / JPX | Fora do alcance | |
-| Decodificação em paralelo | Ausente | Monothread; várias vezes mais lento que codecs nativos |
+| Filtros wavelet customizados (id ≥ 128) | Ausente | Trabalho **limitado**: o marcador ATK da Parte 2 descreve núcleos por *lifting*, e uma síntese genérica por lifting atende a todos. Não é questão de princípio, só não foi feito |
+| Part 2 / JPX (demais extensões) | Ausente | Trabalho **grande e aberto**: decomposição arbitrária (DFS/ADS), transformada multicomponente (MCT), precisão estendida, deslocamento DC variável, ROI arbitrária. Cada uma é independente e pode ser feita isoladamente |
+| Decodificação em paralelo | Ausente | **Em curso.** Monothread hoje. Viável sem custo para Web: `dart:isolate` atrás de `if (dart.library.io)`, com caminho sequencial como padrão — o padrão que `lib/src/j2k/platform/platform.dart` já usa no pacote. Tiles e code-blocks são independentes por construção |
 
 ### `dgfx` — rasterizador
 
@@ -251,7 +251,7 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 | Tabela `post` | OK | |
 | Shaping GSUB/GPOS | Parcial | GSUB 1–4; GPOS 1–2 e só avanço horizontal |
 | Bidi | Parcial | Analisador simplificado, sem níveis de embutimento |
-| Paralelismo | Ausente | `useIsolates`, `tileHeight` e `useSimd` são parâmetros inertes |
+| Paralelismo | Ausente | `useIsolates`, `tileHeight` e `useSimd` são parâmetros inertes — a API promete o que não entrega. A rota é a mesma do `j2k`: `dart:isolate` atrás de import condicional, com `dgfx_io.dart` já servindo de ponto de entrada para a VM |
 | Interpolação Gouraud | Ausente | O `dpdf` emula com um triângulo de cor chapada por faceta |
 | Formatos de pixel | Parcial | Só ARGB32 alfa-reto |
 
@@ -277,6 +277,10 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 12. **Captura web** (14.10) — baixo valor prático.
 
 ## O que não está no alcance
+
+> Esta lista é sobre o que não faz sentido **para esta biblioteca**, não sobre o que é
+> difícil. Coisas grandes mas bem definidas — Parte 2 do JPEG 2000, paralelismo — ficam nas
+> tabelas acima como *Ausente*, porque são trabalho pendente e não decisão de projeto.
 
 - **ISO 32000-2 (PDF 2.0)** além do que a 1.7 cobre: o alvo declarado é a 1.7, com alguns
   elementos do PDF 2.0 já presentes (espaços de nomes de estrutura, AES-256 revisão 6).

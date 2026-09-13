@@ -55,7 +55,7 @@ pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só
 | 7.4.5 `RunLengthDecode` | OK | |
 | 7.4.6 `CCITTFaxDecode` | OK | Grupo 4, Grupo 3 1-D e 2-D misto, `EncodedByteAlign`, `BlackIs1`, `EndOfLine`, `DamagedRowsBeforeError`. **Codificação só escreve Grupo 4.** |
 | 7.4.7 `JBIG2Decode` | OK | Via `package:jbig2`; ver seção própria |
-| 7.4.8 `DCTDecode` | Parcial | Baseline e progressivo Huffman. Aritmético, lossless e hierárquico **em curso** |
+| 7.4.8 `DCTDecode` | OK | Baseline e progressivo com Huffman **e aritmético** (SOF9/SOF10), lossless (SOF3/SOF11) com os sete preditores do Anexo H, e hierárquico sobre os processos sem perdas (Anexo J). 8 e 12 bits por amostra. Quadro diferencial por DCT (SOF5/6/13/14) é recusado com mensagem explícita |
 | 7.4.9 `JPXDecode` | Parcial | Via `package:j2k`; `SMaskInData` tratado. Uma recusa do codec vira imagem pulada no `PdfRenderReport`, não exceção. Codestream cru com componentes subamostrados ainda é recusado — ver a seção do `j2k` |
 | 7.4.10 `Crypt` | OK | Filtro `/Identity` e os nomeados em `/CF` |
 | 7.5.2 Cabeçalho | OK | |
@@ -259,22 +259,20 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 
 ## Lacunas conhecidas, em ordem de valor
 
-1. **JPEG aritmético, lossless e hierárquico** (T.81 anexos D, H, J) — em curso.
-2. **Multimídia do capítulo 13** — em curso.
-3. **Fios de artigo, transições, preferências de visualização, requisitos** — em curso.
-4. **Pré-impressão: separações, `/BoxColorInfo`, trapping** — em curso.
-5. **Componentes subamostrados em codestream JPEG 2000 cru** (`j2k`) — em curso. É o caso
+1. **Quadros diferenciais por DCT no JPEG** (SOF5, SOF6, SOF13, SOF14) — exigem IDCT com
+   saída assinada sem *level shift*; o plano de componente hoje é `Uint8List`.
+2. **Componentes subamostrados em codestream JPEG 2000 cru** (`j2k`) — em curso. É o caso
    comum de `/JPXDecode` em PDF, e hoje a imagem é pulada em vez de desenhada.
-6. **Imagens inline na extração de texto** (8.9.7 + 9.10) — a extração as ignora.
-7. **WOFF 2.0** — exige Brotli e a transformação de `glyf`/`loca`. Hoje é rejeitado com
+3. **Imagens inline na extração de texto** (8.9.7 + 9.10) — a extração as ignora.
+4. **WOFF 2.0** — exige Brotli e a transformação de `glyf`/`loca`. Hoje é rejeitado com
    erro explícito, e não silenciosamente.
-8. **Redação de arte vetorial** — `PdfAreaRedaction` reescreve texto e imagens; vetores
+5. **Redação de arte vetorial** — `PdfAreaRedaction` reescreve texto e imagens; vetores
    ainda exigem cobertura por sobreposição.
-9. **Gouraud no `dgfx`** — remove a emulação cara e as costuras visíveis entre facetas nos
+6. **Gouraud no `dgfx`** — remove a emulação cara e as costuras visíveis entre facetas nos
    sombreamentos de tipo 4 a 7.
-10. **Paralelismo real no `dgfx`** — a API pública promete o que não entrega.
-11. **Meios-tons na rasterização** (10.5) e **casos de *knockout*** (11.4).
-12. **Captura web** (14.10) — baixo valor prático.
+7. **Paralelismo real no `dgfx`** — a API pública promete o que não entrega.
+8. **Meios-tons na rasterização** (10.5) e **casos de *knockout*** (11.4).
+9. **Captura web** (14.10) — baixo valor prático.
 
 ## O que não está no alcance
 

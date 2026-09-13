@@ -136,11 +136,14 @@ derived from the ones the encoder writes, so the two cannot drift apart.
 
 ## JPEG support
 
-`JpegDecoder` supports baseline and progressive Huffman JPEG, grayscale, RGB,
-Adobe CMYK/YCCK, common chroma subsampling, successive approximation, EOB runs,
-and restart markers. Arithmetic, lossless, and hierarchical JPEG are not yet
-supported. `JpegEncoder` writes baseline JPEG with configurable quality and
-subsampling.
+`JpegDecoder` supports baseline and progressive JPEG with either entropy
+coder — Huffman or arithmetic (SOF9/SOF10) — plus lossless JPEG (SOF3/SOF11)
+with all seven predictors of Annex H, and hierarchical JPEG built on those
+lossless processes (Annex J). It handles grayscale, RGB, Adobe CMYK/YCCK,
+common chroma subsampling, successive approximation, EOB runs, restart markers,
+8 and 12 bits per sample, and 16-bit quantisation tables. Differential DCT
+frames (SOF5, SOF6, SOF13, SOF14) are refused with an explicit message.
+`JpegEncoder` writes baseline JPEG with configurable quality and subsampling.
 
 ## Known limitations
 

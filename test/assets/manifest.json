@@ -56,6 +56,12 @@
       "source": "https://publicdomainvectors.org/en/free-clipart/Cartoon-tiger/49738.html"
     },
     {
+      "file": "ghostscript-tiger/ghostscript-tiger.svg",
+      "sha256": "5211e169283f43ab8ad7ea7998d917d5fbb3c568ac85c1a0217e86792822684d",
+      "license": "AGPL-3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Ghostscript_Tiger.svg"
+    },
+    {
       "file": "image-2frames.gif",
       "sha256": "8b1553f1f1f155d45f06458efe6ab5819823b8ae89725dd664ca81b991102dd9",
       "license": "MIT",

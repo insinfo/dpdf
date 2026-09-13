@@ -260,6 +260,21 @@ arquivo continue sob a mesma licença. A CC BY-SA 4.0 cobre somente este arquivo
 não se estende ao restante do pacote. Termos completos:
 https://creativecommons.org/licenses/by-sa/4.0/legalcode
 
+## Ghostscript Tiger (AGPL)
+
+`test/assets/ghostscript-tiger/ghostscript-tiger.svg` vem do Ghostscript,
+via Wikimedia Commons, sob **GNU Affero General Public License** — é a única
+ilustração deste repositório que não é de domínio público. O texto integral
+da licença e a procedência ficam no próprio diretório, em
+`LICENSE.AGPL-3.0.txt` e `NOTICE.md`.
+
+O diretório é versionado, para que a suíte rode em qualquer clone, e consta
+do `.pubignore`: **este arquivo não está no pacote publicado no pub.dev**.
+Incluí-lo seria mera agregação (AGPL-3.0, seção 5), mas um arquivo AGPL
+dentro de um pacote MIT dispara alarme nos verificadores de licença que
+consumidores rodam na integração contínua, e não há motivo para impor isso a
+quem só quer a biblioteca.
+
 ## Ilustrações de domínio público
 
 Os arquivos `anatomy-of-the-hand.svg`, `attacking-tiger.svg`,

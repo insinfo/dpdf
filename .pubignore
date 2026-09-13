@@ -9,3 +9,10 @@ test/out/
 !test/assets/test.pdf
 migrate_working_dir/
 referencias/
+
+# O Ghostscript Tiger e AGPL, nao dominio publico como as demais ilustracoes.
+# Fica versionado para que os testes rodem em qualquer clone, mas fora do
+# pacote publicado: um arquivo AGPL dentro de um pacote MIT e mera agregacao,
+# e ainda assim dispara alarme nos verificadores de licenca que consumidores
+# rodam na integracao continua. Veja test/assets/ghostscript-tiger/NOTICE.md.
+test/assets/ghostscript-tiger/

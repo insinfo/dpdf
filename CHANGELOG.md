@@ -28,6 +28,20 @@ binaries, and targets the Dart VM, `dart2js`, and `dart2wasm`.
   verification reports.
 - Text extraction, text and area redaction, page overlays and assembly, form
   merging, digital signatures, timestamps, OCSP, CRL, and JKS/BKS support.
+- Text extraction reads the documents that real producers write: `gs` whose
+  `/ExtGState` carries no `/Font` is ignored rather than refused, `DP`, `BX`
+  and `EX` are stepped over, encodings named without a ToUnicode are honoured,
+  and a ToUnicode is read at the code width the font imposes rather than at the
+  width its `codespacerange` claims. Where a document draws a glyph it never
+  identifies anywhere, extraction now yields U+FFFD instead of failing the
+  page — an observable change of contract. Area redaction accepts the same
+  `gs`, refusing only when the graphics state could change the current font.
+- Fonts resolve by object rather than by resource name. A producer may reuse
+  one short name for different fonts in different Form XObjects, and the old
+  cache drew every one of them with whichever font it met first.
+- Images drawn smaller than their source integrate the area they cover instead
+  of point-sampling it; `/Interpolate` governs magnification, and minification
+  without filtering drops one-pixel detail outright.
 - The fourteen standard PDF fonts are drawn from bundled URW Core 35 faces when
   a document references them without embedding a program, so such a page is no
   longer blank; substitutions are named in the render report. Standard-font

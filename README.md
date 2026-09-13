@@ -15,7 +15,8 @@ import 'package:dpdf/dpdf.dart';
 - High-level layout with paragraphs, lists, tables, images, and page breaks
 - HTML-to-PDF and SVG-to-PDF conversion
 - PDF page rendering to RGBA pixels or PNG
-- Text extraction, redaction, page assembly, overlays, and form merging
+- Text extraction in content-stream order (not visual reading order),
+  redaction, page assembly, overlays, and form merging
 - Structural compression and optional image recompression
 - Digital signatures, timestamping, OCSP, CRL, JKS, and BKS support
 - Integrity checks and explicit PDF/A and PDF/UA verification reports

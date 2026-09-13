@@ -374,9 +374,11 @@ class PdfIntegrityChecker {
     if (match.start != 0) {
       findings.add(PdfIntegrityFinding(
         'header-not-at-start',
-        PdfIntegritySeverity.warning,
-        'The %PDF- header starts at offset ${match.start} instead of 0; all '
-            'byte offsets in the file are shifted by that amount.',
+        PdfIntegritySeverity.info,
+        'The %PDF- header starts at offset ${match.start} instead of 0. ISO '
+            '32000-2, 7.5.2 allows arbitrary bytes there; the file remains '
+            'viable because its byte offsets are counted from the PERCENT '
+            'SIGN, not from the start of the file.',
         offset: match.start,
       ));
     }
@@ -523,6 +525,10 @@ class PdfIntegrityChecker {
     var live = 0;
     var offsetErrors = 0;
     var parseErrors = 0;
+    // Cross-reference offsets are counted from the `%` of `%PDF-`
+    // (ISO 32000-2, 7.5.2), which is not necessarily byte zero of the file.
+    final headerOffset = reader.headerOffset;
+    final pdfLength = bytes.length - headerOffset;
 
     for (var objectNumber = 1; objectNumber < xref.size(); objectNumber++) {
       final reference = xref.get(objectNumber);
@@ -531,20 +537,21 @@ class PdfIntegrityChecker {
 
       if (reference.getObjStreamNumber() == 0) {
         final offset = reference.getOffset();
-        if (offset <= 0 || offset >= bytes.length) {
+        if (offset <= 0 || offset >= pdfLength) {
           if (offsetErrors++ < _reportLimit) {
             findings.add(PdfIntegrityFinding(
               'xref-offset-out-of-range',
               PdfIntegritySeverity.error,
               'The cross-reference entry points to offset $offset, outside the '
-                  '${bytes.length} byte file.',
+                  '$pdfLength byte PDF.',
               objectNumber: objectNumber,
               offset: offset,
             ));
           }
           continue;
         }
-        if (!_startsWithObjectHeader(bytes, offset, objectNumber)) {
+        if (!_startsWithObjectHeader(
+            bytes, headerOffset + offset, objectNumber)) {
           if (offsetErrors++ < _reportLimit) {
             findings.add(PdfIntegrityFinding(
               'xref-offset-mismatch',

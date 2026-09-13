@@ -50,6 +50,12 @@
       "source": "https://raw.githubusercontent.com/google/fonts/fffdadf0f0c9cc1ec8b407063424a8bfbee05611/ofl/abeezee/OFL.txt"
     },
     {
+      "file": "pdf20-offset-start.pdf",
+      "sha256": "a5b92313770f16ba1db649ccdc97d42f7744659c691897538734eebdc1bc9e9a",
+      "license": "CC-BY-SA-4.0",
+      "source": "https://github.com/pdf-association/pdf20examples; originally named 'PDF 2.0 with offset start.pdf'"
+    },
+    {
       "file": "png_greyscale.png",
       "sha256": "d54e53a11d9cdd6e45ca826c46a861714997d9d9ea1068894b736dd25dcd992a",
       "license": "MIT",

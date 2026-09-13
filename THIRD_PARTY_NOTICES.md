@@ -212,6 +212,26 @@ DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 
+## Exemplo PDF 2.0 da PDF Association
+
+Arquivo inalterado: `test/assets/pdf20-offset-start.pdf`, cópia byte a byte de
+`PDF 2.0 with offset start.pdf` do repositório de exemplos da PDF Association.
+Só o nome do arquivo mudou, para evitar espaços no caminho; o conteúdo é
+idêntico (SHA-256 em `test/assets/manifest.json`).
+Origem: https://github.com/pdf-association/pdf20examples
+
+É o exemplo oficial da provisão da ISO 32000-2, 7.5.2, que permite bytes
+arbitrários antes de `%PDF-`: o cabeçalho começa no byte 656 e os deslocamentos
+da tabela de referências cruzadas são contados a partir do sinal de porcentagem.
+Serve de fixture para `test/kernel/pdf/reader_offset_start_test.dart`.
+
+A PDF Association distribui esses exemplos sob Creative Commons
+Attribution-ShareAlike 4.0 International (CC BY-SA 4.0), que permite a
+redistribuição, inclusive comercial, desde que se dê o crédito acima e que este
+arquivo continue sob a mesma licença. A CC BY-SA 4.0 cobre somente este arquivo;
+não se estende ao restante do pacote. Termos completos:
+https://creativecommons.org/licenses/by-sa/4.0/legalcode
+
 ## Fixtures de geração própria
 
 A licença abaixo cobre somente bee.png, bulb.gif, Desert.jpg,

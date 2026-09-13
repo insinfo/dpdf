@@ -5,6 +5,7 @@ import '../../io/source/random_access_file_or_array.dart';
 import '../../io/source/pdf_byte_source.dart';
 import '../../io/source/pdf_file_source.dart';
 import '../../io/source/pdf_tokenizer.dart';
+import '../../io/source/windowed_byte_source.dart';
 import '../exceptions/pdf_exception.dart';
 import '../exceptions/kernel_exception_message_constant.dart';
 import 'pdf_object.dart';
@@ -43,12 +44,24 @@ class PdfReader {
   ReaderProperties properties;
   PdfEncryption? _encryption;
 
-  PdfReader.fromBytes(Uint8List bytes, [ReaderProperties? properties])
-      : _tokens = PdfTokenizer(RandomAccessFileOrArray(bytes)),
-        properties = properties ?? ReaderProperties();
+  /// Number of bytes that preceded `%PDF-` in the input, and that were hidden
+  /// from the parser. Zero for the usual file whose header is at byte zero.
+  final int headerOffset;
 
+  PdfReader.fromBytes(Uint8List bytes, [ReaderProperties? properties])
+      : this.fromSource(PdfMemorySource(bytes), properties);
+
+  /// Reads [source], which may carry arbitrary bytes before its `%PDF-`.
+  ///
+  /// ISO 32000-2, 7.5.2 counts every byte offset in a PDF from the PERCENT SIGN
+  /// of the header, so a source whose header is not at byte zero is presented
+  /// to the tokenizer already shifted (see [sourceAtPdfHeader]). The rest of
+  /// the reader therefore keeps working in the file's own coordinate system and
+  /// never has to add [headerOffset] to a position.
   PdfReader.fromSource(PdfByteSource source, [ReaderProperties? properties])
-      : _tokens = PdfTokenizer(RandomAccessFileOrArray.fromSource(source)),
+      : headerOffset = pdfHeaderWindowStart(source),
+        _tokens = PdfTokenizer(
+            RandomAccessFileOrArray.fromSource(sourceAtPdfHeader(source))),
         properties = properties ?? ReaderProperties();
 
   static Future<PdfReader> fromFile(String path,

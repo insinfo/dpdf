@@ -122,9 +122,11 @@ class PdfTokenizer {
 
   /// Creates a PdfTokenizer for the specified RandomAccessFileOrArray.
   ///
-  /// The beginning of the file is read to determine the location of the header,
-  /// and the data source is adjusted as necessary to account for any junk
-  /// that occurs in the byte source before the header.
+  /// Position zero of [_file] is taken to be the first byte of the data being
+  /// tokenized. This class is also used for content streams and CMaps, so it
+  /// never goes looking for a `%PDF-` header: skipping bytes that precede the
+  /// header of a whole document is the caller's job, and `PdfReader` does it
+  /// with `sourceAtPdfHeader` before building the tokenizer.
   PdfTokenizer(this._file) : _outBuf = ByteBuffer();
 
   /// Seeks to the specified position.

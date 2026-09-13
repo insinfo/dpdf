@@ -70,6 +70,15 @@ binaries, and targets the Dart VM, `dart2js`, and `dart2wasm`.
   decoding.
 - Removed a duplicate Pattern color-space stub and corrected ICC component
   counts.
+- Awaited the futures that the new `discarded_futures` and `unawaited_futures`
+  lints exposed. A form-field flag setter returned before the flag was written,
+  `PdfArray.remove` returned before the element was gone — so removing a field
+  from an AcroForm left the widget in the page's `/Annots` and the field in its
+  parent's `/Kids` — the signature appearance layer was attached after the
+  field had already been added to the form, `TransparentColor` could emit its
+  `/ExtGState` after the operators it governs, `setRenderingIntent` wrote the
+  `ri` operator before the name it consumes, and the filter benchmark timed the
+  creation of futures rather than the decoding.
 
 ### Breaking changes
 
@@ -99,6 +108,16 @@ binaries, and targets the Dart VM, `dart2js`, and `dart2wasm`.
   content, replacing the silently empty file with an explicit error; the new
   `PendingLayoutContent` contract is what that check reads.
 
+- Form-field flag setters return `Future<void>` instead of `void`, matching
+  `setReadOnly` and the other setters on `PdfFormField` that already did:
+  `setRadio`, `setToggleOff`, `setPushButton`, `setRadiosInUnison`, `setCombo`,
+  `setEdit`, `setSort`, `setMultiSelect`, `setSpellCheck`,
+  `setCommitOnSelChange`, `setTopIndex`, `setFileSelect`, `setScroll`,
+  `setComb`, `setRichText`, `setBackgroundLayer` and
+  `setSignatureAppearanceLayer`. They write the flag asynchronously, and the
+  `void` signature hid that the write had not happened yet when they returned.
+  `PdfCanvas.setRenderingIntent` and `TransparentColor.applyFillTransparency` /
+  `applyStrokeTransparency` became asynchronous for the same reason.
 - Removed the legacy `Craft` prefix from 481 API identifiers before the first
   publication. For example, `CraftPdfDocument`, `CraftPdfName`, and
   `CraftSvgConverter` became `PdfDocument`, `PdfName`, and `SvgConverter`.

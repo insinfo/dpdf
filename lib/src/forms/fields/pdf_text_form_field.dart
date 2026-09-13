@@ -73,41 +73,35 @@ class PdfTextFormField extends PdfFormField {
     return getFieldFlag(ffFileSelect);
   }
 
-  void setFileSelect(bool fileSelect) {
-    setFieldFlag(ffFileSelect, fileSelect);
-  }
+  Future<void> setFileSelect(bool fileSelect) async =>
+      await setFieldFlag(ffFileSelect, fileSelect);
 
   Future<bool> isSpellCheck() async {
     return !(await getFieldFlag(ffDoNotSpellCheck));
   }
 
-  void setSpellCheck(bool spellCheck) {
-    setFieldFlag(ffDoNotSpellCheck, !spellCheck);
-  }
+  Future<void> setSpellCheck(bool spellCheck) async =>
+      await setFieldFlag(ffDoNotSpellCheck, !spellCheck);
 
   Future<bool> isScroll() async {
     return !(await getFieldFlag(ffDoNotScroll));
   }
 
-  void setScroll(bool scroll) {
-    setFieldFlag(ffDoNotScroll, !scroll);
-  }
+  Future<void> setScroll(bool scroll) async =>
+      await setFieldFlag(ffDoNotScroll, !scroll);
 
   Future<bool> isComb() async {
     return getFieldFlag(ffComb);
   }
 
-  void setComb(bool comb) {
-    setFieldFlag(ffComb, comb);
-  }
+  Future<void> setComb(bool comb) async => await setFieldFlag(ffComb, comb);
 
   Future<bool> isRichText() async {
     return getFieldFlag(ffRichText);
   }
 
-  void setRichText(bool richText) {
-    setFieldFlag(ffRichText, richText);
-  }
+  Future<void> setRichText(bool richText) async =>
+      await setFieldFlag(ffRichText, richText);
 
   Future<int?> getMaxLen() async {
     PdfNumber? num = await pdfRepresentation().numberEntry(PdfName.maxLen);

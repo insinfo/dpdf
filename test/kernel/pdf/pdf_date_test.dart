@@ -6,7 +6,7 @@ void main() {
     test('creates from DateTime', () {
       final d = DateTime(2024, 12, 25, 10, 30, 45);
       final pdfDate = PdfDate(d);
-      expectLater(pdfDate.getValue(), startsWith('D:20241225103045'));
+      expect(pdfDate.getValue(), startsWith('D:20241225103045'));
     });
 
     test('creates now', () {

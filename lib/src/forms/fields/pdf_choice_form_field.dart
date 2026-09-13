@@ -23,9 +23,9 @@ class PdfChoiceFormField extends PdfFormField {
     return PdfName.ch;
   }
 
-  void setTopIndex(int index) {
+  Future<void> setTopIndex(int index) async {
     put(PdfName.ti, PdfNumber(index.toDouble()));
-    regenerateField();
+    await regenerateField();
   }
 
   Future<PdfNumber?> getTopIndex() async {
@@ -44,49 +44,40 @@ class PdfChoiceFormField extends PdfFormField {
     return getFieldFlag(ffCombo);
   }
 
-  void setCombo(bool combo) {
-    setFieldFlag(ffCombo, combo);
-  }
+  Future<void> setCombo(bool combo) async => await setFieldFlag(ffCombo, combo);
 
   Future<bool> isEdit() async {
     return getFieldFlag(ffEdit);
   }
 
-  void setEdit(bool edit) {
-    setFieldFlag(ffEdit, edit);
-  }
+  Future<void> setEdit(bool edit) async => await setFieldFlag(ffEdit, edit);
 
   Future<bool> isSort() async {
     return getFieldFlag(ffSort);
   }
 
-  void setSort(bool sort) {
-    setFieldFlag(ffSort, sort);
-  }
+  Future<void> setSort(bool sort) async => await setFieldFlag(ffSort, sort);
 
   Future<bool> isMultiSelect() async {
     return getFieldFlag(ffMultiSelect);
   }
 
-  void setMultiSelect(bool multiSelect) {
-    setFieldFlag(ffMultiSelect, multiSelect);
-  }
+  Future<void> setMultiSelect(bool multiSelect) async =>
+      await setFieldFlag(ffMultiSelect, multiSelect);
 
   Future<bool> isSpellCheck() async {
     return !(await getFieldFlag(ffDoNotSpellCheck));
   }
 
-  void setSpellCheck(bool spellCheck) {
-    setFieldFlag(ffDoNotSpellCheck, !spellCheck);
-  }
+  Future<void> setSpellCheck(bool spellCheck) async =>
+      await setFieldFlag(ffDoNotSpellCheck, !spellCheck);
 
   Future<bool> isCommitOnSelChange() async {
     return getFieldFlag(ffCommitOnSelChange);
   }
 
-  void setCommitOnSelChange(bool commitOnSelChange) {
-    setFieldFlag(ffCommitOnSelChange, commitOnSelChange);
-  }
+  Future<void> setCommitOnSelChange(bool commitOnSelChange) async =>
+      await setFieldFlag(ffCommitOnSelChange, commitOnSelChange);
 
   Future<PdfArray> getOptions() async {
     PdfArray? options = await pdfRepresentation().arrayEntry(PdfName.opt);
@@ -155,7 +146,7 @@ class PdfChoiceFormField extends PdfFormField {
     }
 
     if (generateAppearance) {
-      regenerateField();
+      await regenerateField();
     }
   }
 

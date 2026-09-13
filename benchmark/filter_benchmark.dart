@@ -6,7 +6,7 @@ import 'package:dpdf/dpdf.dart';
 /// Simple benchmark for FilterHandlers
 ///
 /// Run with: dart run benchmark/filter_benchmark.dart
-void main() {
+Future<void> main() async {
   print('='.padRight(60, '='));
   print('FilterHandlers Benchmark');
   print('='.padRight(60, '='));
@@ -33,24 +33,24 @@ void main() {
     final rlEncoded = _runLengthEncode(data);
 
     // Benchmark FlateDecode
-    _benchmark('FlateDecode', iterations, () {
+    await _benchmark('FlateDecode', iterations, () async {
       final dict = PdfDictionary();
       dict.put(PdfName.filter, PdfName.flateDecodeFilter);
-      FilterHandlers.decodeBytes(Uint8List.fromList(compressed), dict);
+      await FilterHandlers.decodeBytes(Uint8List.fromList(compressed), dict);
     });
 
     // Benchmark ASCIIHexDecode
-    _benchmark('ASCIIHexDecode', iterations, () {
+    await _benchmark('ASCIIHexDecode', iterations, () async {
       final dict = PdfDictionary();
       dict.put(PdfName.filter, PdfName.asciiHexDecodeFilter);
-      FilterHandlers.decodeBytes(hexEncoded, dict);
+      await FilterHandlers.decodeBytes(hexEncoded, dict);
     });
 
     // Benchmark RunLengthDecode
-    _benchmark('RunLengthDecode', iterations, () {
+    await _benchmark('RunLengthDecode', iterations, () async {
       final dict = PdfDictionary();
       dict.put(PdfName.filter, PdfName.runLengthDecodeFilter);
-      FilterHandlers.decodeBytes(rlEncoded, dict);
+      await FilterHandlers.decodeBytes(rlEncoded, dict);
     });
 
     print('');
@@ -140,17 +140,21 @@ Uint8List _runLengthEncode(Uint8List data) {
   return Uint8List.fromList(result);
 }
 
-/// Runs a benchmark
-void _benchmark(String name, int iterations, void Function() fn) {
+/// Runs a benchmark.
+///
+/// The filters are asynchronous, so every call has to be awaited: timing the
+/// mere creation of the futures measured nothing at all.
+Future<void> _benchmark(
+    String name, int iterations, Future<void> Function() fn) async {
   // Warm up
   for (var i = 0; i < 5; i++) {
-    fn();
+    await fn();
   }
 
   // Measure
   final sw = Stopwatch()..start();
   for (var i = 0; i < iterations; i++) {
-    fn();
+    await fn();
   }
   sw.stop();
 

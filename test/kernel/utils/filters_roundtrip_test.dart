@@ -782,9 +782,11 @@ void main() {
       }
     });
 
-    test('encoding an image filter is refused rather than silently wrong', () {
+    test('encoding an image filter is refused rather than silently wrong',
+        () async {
       for (final name in ['DCTDecode', 'JPXDecode', 'JBIG2Decode', 'Crypt']) {
-        expect(() => FilterHandlers.encodeBytes(Uint8List(4), PdfName(name)),
+        await expectLater(
+            FilterHandlers.encodeBytes(Uint8List(4), PdfName(name)),
             throwsA(isA<UnsupportedError>()),
             reason: name);
       }

@@ -17,16 +17,17 @@ class TransparentColor {
   double getOpacity() => opacity;
 
   /// Sets the opacity value for non-stroking operations in the transparent imaging model.
-  void applyFillTransparency(PdfCanvas canvas) {
-    _applyTransparency(canvas, false);
-  }
+  Future<void> applyFillTransparency(PdfCanvas canvas) =>
+      _applyTransparency(canvas, false);
 
   /// Sets the opacity value for stroking operations in the transparent imaging model.
-  void applyStrokeTransparency(PdfCanvas canvas) {
-    _applyTransparency(canvas, true);
-  }
+  Future<void> applyStrokeTransparency(PdfCanvas canvas) =>
+      _applyTransparency(canvas, true);
 
-  void _applyTransparency(PdfCanvas canvas, bool isStroke) {
+  /// The graphics state has to reach the content stream before the operators
+  /// it governs, and registering it in the resource dictionary is asynchronous,
+  /// so the caller has to wait for it.
+  Future<void> _applyTransparency(PdfCanvas canvas, bool isStroke) async {
     if (isTransparent()) {
       PdfExtGState extGState = PdfExtGState();
       if (isStroke) {
@@ -34,7 +35,7 @@ class TransparentColor {
       } else {
         extGState.setFillOpacity(opacity);
       }
-      canvas.setExtGState(extGState);
+      await canvas.setExtGState(extGState);
     }
   }
 

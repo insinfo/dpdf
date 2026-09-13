@@ -65,18 +65,18 @@ class PdfSignatureFormField extends PdfFormField {
   }
 
   /// Assigns the signature field's background appearance layer.
-  void setBackgroundLayer(PdfFormXObject n0) {
+  Future<void> setBackgroundLayer(PdfFormXObject n0) async {
     this.n0 = n0;
-    regenerateField();
+    await regenerateField();
   }
 
   /// Returns the configured background appearance, when present.
   PdfFormXObject? getBackgroundLayer() => n0;
 
   /// Sets the signature appearance layer that contains information about the signature.
-  void setSignatureAppearanceLayer(PdfFormXObject n2) {
+  Future<void> setSignatureAppearanceLayer(PdfFormXObject n2) async {
     this.n2 = n2;
-    regenerateField();
+    await regenerateField();
   }
 
   /// Returns the configured signature information appearance, when present.

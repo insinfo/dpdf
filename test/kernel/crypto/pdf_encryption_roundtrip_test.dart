@@ -203,36 +203,36 @@ void main() {
   });
 
   group('Malformed encryption dictionaries', () {
-    test('a non-standard /Filter is refused by the standard reader', () {
+    test('a non-standard /Filter is refused by the standard reader', () async {
       final dictionary = PdfDictionary();
       dictionary.put(PdfName.filter, PdfName.intern('Adobe.PubSec'));
       dictionary.put(PdfName.v, PdfNumber.fromInt(1));
-      expect(
+      await expectLater(
           PdfEncryption.createFromDictionary(
               dictionary, Uint8List(0), documentId),
           throwsA(isA<Object>()));
     });
 
-    test('a missing /O entry is reported', () {
+    test('a missing /O entry is reported', () async {
       final dictionary = PdfDictionary();
       dictionary.put(PdfName.filter, PdfName.standard);
       dictionary.put(PdfName.v, PdfNumber.fromInt(1));
       dictionary.put(PdfName.r, PdfNumber.fromInt(2));
       dictionary.put(PdfName.p, PdfNumber.fromInt(-1));
       dictionary.put(PdfName.u, PdfString.fromBytes(Uint8List(32), true));
-      expect(
+      await expectLater(
           PdfEncryption.createFromDictionary(
               dictionary, Uint8List(0), documentId),
           throwsA(isA<Object>()));
     });
 
-    test('an unsupported revision is reported', () {
+    test('an unsupported revision is reported', () async {
       final dictionary = PdfDictionary();
       dictionary.put(PdfName.filter, PdfName.standard);
       dictionary.put(PdfName.v, PdfNumber.fromInt(3));
       dictionary.put(PdfName.r, PdfNumber.fromInt(1));
       dictionary.put(PdfName.length, PdfNumber.fromInt(128));
-      expect(
+      await expectLater(
           PdfEncryption.createFromDictionary(
               dictionary, Uint8List(0), documentId),
           throwsA(isA<Object>()));

@@ -48,7 +48,7 @@ class PdfFormAnnotationUtil {
       PdfDictionary? kidDict = await kids.dictionaryEntry(0);
       if (kidDict != null && await isPureWidget(kidDict)) {
         kidDict.remove(PdfName.parent);
-        field.pdfRepresentation().mergeDifferent(kidDict);
+        await field.pdfRepresentation().mergeDifferent(kidDict);
         // field.removeChildren(); // Need usage
         // kidRef setFree?
 

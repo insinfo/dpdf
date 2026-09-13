@@ -325,7 +325,7 @@ class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
         PdfArray? annots =
             await page.pdfRepresentation().arrayEntry(PdfName.annots);
         if (annots != null) {
-          annots.remove(widget.pdfRepresentation());
+          await annots.remove(widget.pdfRepresentation());
         }
 
         // Remove field from AcroForm
@@ -478,7 +478,7 @@ class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
   }
 
   Future<void> setSignatureFlags(int flags) async {
-    setSigFlags(flags);
+    await setSigFlags(flags);
   }
 
   Future<void> setGenerateAppearance(bool generateAppearance) async {
@@ -635,14 +635,14 @@ class PdfAcroForm extends PdfObjectWrapper<PdfDictionary> {
   /// Removes a field from its parent and from the AcroForm fields array.
   Future<void> _removeFieldFromParentAndAcroForm(
       PdfArray formFields, PdfDictionary fieldObject) async {
-    formFields.remove(fieldObject);
+    await formFields.remove(fieldObject);
     PdfDictionary? parent = await fieldObject.dictionaryEntry(PdfName.parent);
     if (parent != null) {
       PdfArray? kids = await parent.arrayEntry(PdfName.kids);
       if (kids == null) {
-        formFields.remove(parent);
+        await formFields.remove(parent);
       } else {
-        kids.remove(fieldObject);
+        await kids.remove(fieldObject);
         if (kids.isEmpty()) {
           await _removeFieldFromParentAndAcroForm(formFields, parent);
         }

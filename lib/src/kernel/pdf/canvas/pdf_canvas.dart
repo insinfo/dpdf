@@ -647,10 +647,15 @@ class PdfCanvas {
     return this;
   }
 
-  PdfCanvas setRenderingIntent(PdfName intent) {
-    contentStream!.getOutputStream()
-      ..writePdfObject(intent)
-      ..writeBytes(ByteUtils.getIsoBytes(" ri\n"));
+  /// Writes the `ri` operator (ISO 32000-1, 8.6.5.8).
+  ///
+  /// Serializing the name is asynchronous, and it has to land in the
+  /// stream before the operator that consumes it, so this cannot be a
+  /// plain cascade.
+  Future<PdfCanvas> setRenderingIntent(PdfName intent) async {
+    final stream = contentStream!.getOutputStream();
+    await stream.writePdfObject(intent);
+    stream.writeBytes(ByteUtils.getIsoBytes(" ri\n"));
     return this;
   }
 

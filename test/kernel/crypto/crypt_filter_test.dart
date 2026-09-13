@@ -175,10 +175,10 @@ void main() {
       }
     });
 
-    test('an unknown CFM is reported as unsupported', () {
+    test('an unknown CFM is reported as unsupported', () async {
       final dictionary = PdfDictionary();
       dictionary.put(PdfName.cfm, PdfName.intern('AESV9'));
-      expect(CryptFilter.fromDictionary(PdfName.stdCF, dictionary),
+      await expectLater(CryptFilter.fromDictionary(PdfName.stdCF, dictionary),
           throwsA(isA<PdfException>()));
     });
 

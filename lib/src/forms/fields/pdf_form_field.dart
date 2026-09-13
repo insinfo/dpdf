@@ -161,7 +161,7 @@ class PdfFormField extends AbstractPdfFormField {
   Future<void> removeChild(PdfFormField child) async {
     PdfArray? kids = await getKids();
     if (kids != null) {
-      kids.remove(child.pdfRepresentation());
+      await kids.remove(child.pdfRepresentation());
     }
   }
 

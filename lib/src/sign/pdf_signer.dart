@@ -484,7 +484,7 @@ class PdfSigner {
       if (rect.getWidth() > 0 && rect.getHeight() > 0) {
         final app = SimpleSignatureAppearance(_signerProperties);
         final n2 = await app.generate(_document!);
-        fieldWrapper.setSignatureAppearanceLayer(n2);
+        await fieldWrapper.setSignatureAppearanceLayer(n2);
       }
 
       // Add to form

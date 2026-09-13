@@ -8,3 +8,9 @@ linter:
     # correspondence a reader checks against the spec.
     constant_identifier_names: false
     non_constant_identifier_names: false
+
+    # A discarded Future is how `Document.add()` used to lose a paragraph: no
+    # error, no warning, nothing on the page. These two rules are what makes
+    # the next one of those fail the build instead of the document.
+    discarded_futures: true
+    unawaited_futures: true

@@ -159,7 +159,14 @@ class PdfDocument {
     _initCatalog();
   }
 
+  /// Builds the catalog of a freshly created document.
+  ///
+  /// A constructor cannot await, and this one does not have to: a document
+  /// created from a writer starts from an empty catalog, so `init` never
+  /// reaches a `/Pages` dictionary it would have to read back and completes
+  /// before it yields. The future is discarded knowingly.
   void _initCatalog() {
+    // ignore: discarded_futures
     _catalog?.init();
   }
 
@@ -595,7 +602,7 @@ class PdfDocument {
 
     // Keep the existing cleanup hooks; widget cleanup is currently a stub.
     if (usesTagging()) {
-      taggingContext()?.removePageTags(detached);
+      await taggingContext()?.removePageTags(detached);
     }
     _removeUnusedWidgetsFromFields(detached);
     await rootCatalog().removeOutlines(detached);

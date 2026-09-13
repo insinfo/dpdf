@@ -40,6 +40,9 @@ class CidUnicodeRepository {
       if (generation == _generation) _completed[key] = table;
       return table;
     } finally {
+      // `Map.remove` hands back the stored future; it starts no work of its
+      // own, and awaiting the entry here would mean awaiting ourselves.
+      // ignore: unawaited_futures
       if (generation == _generation) _pending.remove(key);
     }
   }

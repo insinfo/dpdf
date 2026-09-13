@@ -56,33 +56,28 @@ class PdfButtonFormField extends PdfFormField {
     return getFieldFlag(ffRadio);
   }
 
-  void setRadio(bool radio) {
-    setFieldFlag(ffRadio, radio);
-  }
+  Future<void> setRadio(bool radio) async => await setFieldFlag(ffRadio, radio);
 
   Future<bool> isToggleOff() async {
     return !(await getFieldFlag(ffNoToggleToOff));
   }
 
-  void setToggleOff(bool toggleOff) {
-    setFieldFlag(ffNoToggleToOff, !toggleOff);
-  }
+  Future<void> setToggleOff(bool toggleOff) async =>
+      await setFieldFlag(ffNoToggleToOff, !toggleOff);
 
   Future<bool> isPushButton() async {
     return getFieldFlag(ffPushButton);
   }
 
-  void setPushButton(bool pushButton) {
-    setFieldFlag(ffPushButton, pushButton);
-  }
+  Future<void> setPushButton(bool pushButton) async =>
+      await setFieldFlag(ffPushButton, pushButton);
 
   Future<bool> isRadiosInUnison() async {
     return getFieldFlag(ffRadiosInUnison);
   }
 
-  void setRadiosInUnison(bool radiosInUnison) {
-    setFieldFlag(ffRadiosInUnison, radiosInUnison);
-  }
+  Future<void> setRadiosInUnison(bool radiosInUnison) async =>
+      await setFieldFlag(ffRadiosInUnison, radiosInUnison);
 
   @override
   Future<void> addKid(PdfWidgetAnnotation kid) async {

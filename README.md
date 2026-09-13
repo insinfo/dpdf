@@ -237,7 +237,11 @@ The platform check covers VM/JIT, VM/AOT, `dart2js`, and `dart2wasm`; Wasm
 requires Node.js with WasmGC support. To regenerate the embedded Adobe glyph and
 standard-font metric resources, run `dart run tool/generate_font_resources.dart`.
 `dart run tool/generate_standard_fonts.dart` regenerates the embedded URW
-programs from `assets/fonts/urw-core35/`.
+programs from `assets/fonts/urw-core35/` into
+`lib/src/render/resources/standard_font_programs_vm.dart`, which carries them
+gzipped and base64-encoded. That file is generated: edit the tool, never it.
+It is reached through the conditional facade `lib/src/render/standard_fonts.dart`,
+so the programs load on the VM and are absent from a web build.
 
 ## License
 

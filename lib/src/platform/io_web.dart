@@ -37,6 +37,17 @@ class File {
 
   bool existsSync() => BrowserFileStore._files.containsKey(path);
   Future<bool> exists() async => existsSync();
+
+  /// Size in bytes of the registered asset.
+  ///
+  /// `PdfReader.fromFile` asks for this to decide whether a document is large
+  /// enough to be worth reading in blocks. Without it the whole package stops
+  /// compiling for the web, which is what `tool/check_platforms.dart` is there
+  /// to catch.
+  int lengthSync() =>
+      BrowserFileStore.bytes(path)?.length ??
+      (throw StateError('Register browser asset bytes before reading: $path'));
+  Future<int> length() async => lengthSync();
   Uint8List readAsBytesSync() =>
       BrowserFileStore.bytes(path) ??
       (throw StateError('Register browser asset bytes before reading: $path'));

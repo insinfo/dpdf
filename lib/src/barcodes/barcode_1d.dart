@@ -28,7 +28,7 @@ abstract class Barcode1D {
   /// The bar multiplier for wide bars or the distance between bars for Postnet and Planet.
   double n = 0;
 
-  /// The text font. [null] if no text.
+  /// The text font. `null` if no text.
   PdfFont? font;
 
   /// The size of the text or the height of the shorter bar in Postnet.
@@ -91,12 +91,12 @@ abstract class Barcode1D {
 
   /// Gets the text font.
   ///
-  /// Returns the text font. [null] if no text.
+  /// Returns the text font. `null` if no text.
   PdfFont? resolveTypeface() => font;
 
   /// Sets the text font.
   ///
-  /// [font] - the text font. Set to [null] to suppress any text
+  /// [font] - the text font. Set to `null` to suppress any text
   void setFont(PdfFont? font) => this.font = font;
 
   /// Gets the size of the text.
@@ -178,8 +178,8 @@ abstract class Barcode1D {
   /// The barcode is always placed at coordinates (0, 0). Use the translation matrix to move it elsewhere.
   ///
   /// [canvas] - the [PdfCanvas] where the barcode will be placed
-  /// [barColor] - the color of the bars. It can be [null]
-  /// [textColor] - the color of the text. It can be [null]
+  /// [barColor] - the color of the bars. It can be `null`
+  /// [textColor] - the color of the text. It can be `null`
   /// Returns the dimensions the barcode occupies
   Future<Rectangle?> placeBarcode(
       PdfCanvas canvas, Color? barColor, Color? textColor);

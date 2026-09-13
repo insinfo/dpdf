@@ -6,8 +6,6 @@ enum PdfRepairedSaveMode { reject, fullRewrite }
 /// Class with additional properties for [PdfDocument] processing in stamping mode.
 ///
 /// Needs to be passed at document initialization.
-/// See [PageFlushingHelper] documentation to find more information about modes
-/// of document processing.
 class StampingProperties extends DocumentProperties {
   PdfRepairedSaveMode repairedSaveMode = PdfRepairedSaveMode.reject;
   bool _appendMode = false;

@@ -21,10 +21,11 @@ jobs:
         sdk: ['3.6', stable]
 
     steps:
-      # `dependency_overrides` aponta para `../jbig2` e `../dgfx`, então os
-      # três precisam estar lado a lado. Enquanto esses dois não estiverem no
-      # pub.dev, o CI resolve pelo código-fonte do próprio GitHub — o que
-      # também detecta quando uma mudança lá quebra o dpdf.
+      # `dependency_overrides` aponta para `../jbig2`, `../dgfx` e
+      # `../jpeg2000`, então os quatro precisam estar lado a lado. Enquanto
+      # esses três não estiverem no pub.dev, o CI resolve pelo código-fonte do
+      # próprio GitHub — o que também detecta quando uma mudança lá quebra o
+      # dpdf.
       - uses: actions/checkout@v4
         with:
           path: dpdf
@@ -39,6 +40,11 @@ jobs:
           repository: insinfo/dgfx
           path: dgfx
 
+      - uses: actions/checkout@v4
+        with:
+          repository: insinfo/jpeg2000
+          path: jpeg2000
+
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: ${{ matrix.sdk }}
@@ -51,7 +57,7 @@ jobs:
         working-directory: dpdf
         run: dart format --output=none --set-exit-if-changed lib test example
 
-      # Sem `--fatal-infos` por enquanto: restam 77 avisos informativos
+      # Sem `--fatal-infos` por enquanto: restam 74 avisos informativos
       # (`use_super_parameters` e afins). Erros e warnings reprovam.
       - name: Analisar
         working-directory: dpdf
@@ -60,3 +66,17 @@ jobs:
       - name: Testar
         working-directory: dpdf
         run: dart test --reporter=github -j4
+
+      # A documentação é parte da entrega: um comentário que não resolve uma
+      # referência vira link morto na página do pub.dev.
+      - name: Gerar documentação
+        working-directory: dpdf
+        run: dart doc --validate-links
+
+      # Pega cedo o que só apareceria na hora de publicar: arquivo grande
+      # demais, licença ausente, recurso que o `.pubignore` deixou de fora.
+      # O aviso de `dependency_overrides` é esperado enquanto os três
+      # dependentes não estiverem publicados.
+      - name: Conferir o empacotamento
+        working-directory: dpdf
+        run: dart pub publish --dry-run || true

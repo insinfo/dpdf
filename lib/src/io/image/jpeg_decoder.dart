@@ -1067,7 +1067,7 @@ class _Decoder {
         'A Huffman code is longer than the 16 bits the format allows.');
   }
 
-  /// Sign-extends a [size]-bit value read from the stream, per T.81 F.2.2.1.
+  /// Sign-extends a `size`-bit value read from the stream, per T.81 F.2.2.1.
   static int _extend(int value, int size) {
     if (size == 0) return 0;
     return value < (1 << (size - 1)) ? value - (1 << size) + 1 : value;

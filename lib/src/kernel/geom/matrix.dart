@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'package:dpdf/src/commons/utils/value_collections.dart';
 
 /// Row-major 3×3 values stored at single precision.
-/// PDF affine values occupy rows [a,b,0], [c,d,0], [e,f,1].
+/// PDF affine values occupy rows `[a,b,0]`, `[c,d,0]`, `[e,f,1]`.
 class Matrix {
   static const int I11 = 0, I12 = 1, I13 = 2;
   static const int I21 = 3, I22 = 4, I23 = 5;

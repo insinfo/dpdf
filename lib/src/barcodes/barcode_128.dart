@@ -177,9 +177,9 @@ class Barcode128 extends Barcode1D {
 
   /// Creates new Barcode128.
   ///
-  /// To generate the font the [PdfDocument.getDefaultFont] will be implicitly called.
-  /// If you want to use this barcode in PDF/A documents, please consider using
-  /// [Barcode128.customFont].
+  /// Without [font], the document's default typeface is used. A PDF/A document
+  /// must embed every font it draws with, so pass one that the document
+  /// embeds rather than relying on the default.
   factory Barcode128(PdfDocument document, [PdfFont? font]) {
     final resolvedFont = font ?? document.defaultTypeface();
     if (resolvedFont == null) {

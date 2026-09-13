@@ -20,7 +20,7 @@ class AffineTransform {
   static const int _typeUnknown = -1;
   static const double _zero = 1E-10;
 
-  /// Matrix values: [m00, m10, m01, m11, m02, m12]
+  /// Matrix values: `[m00, m10, m01, m11, m02, m12]`
   double m00 = 1.0;
   double m10 = 0.0;
   double m01 = 0.0;
@@ -63,7 +63,7 @@ class AffineTransform {
     }
   }
 
-  /// Returns the matrix as a list [m00, m10, m01, m11, m02, m12].
+  /// Returns the matrix as a list `[m00, m10, m01, m11, m02, m12]`.
   List<double> get matrix => [m00, m10, m01, m11, m02, m12];
 
   /// Classifies the current coefficients, including direct public-field changes.
@@ -303,7 +303,7 @@ class AffineTransform {
     );
   }
 
-  /// Transforms a point (x, y) and returns [newX, newY].
+  /// Transforms a point (x, y) and returns `[newX, newY]`.
   List<double> transformPoint(double x, double y) {
     return [
       x * m00 + y * m01 + m02,
@@ -311,7 +311,7 @@ class AffineTransform {
     ];
   }
 
-  /// Transforms an array of coordinates [x1, y1, x2, y2, ...].
+  /// Transforms an array of coordinates `[x1, y1, x2, y2, ...]`.
   List<double> transformPoints(List<double> src) {
     final dst = List<double>.filled(src.length, 0);
     for (int i = 0; i < src.length; i += 2) {

@@ -46,6 +46,13 @@ class PdfImageXObject extends PdfXObject {
 
     if (image.filter != null) {
       stream.put(PdfName.filter, PdfName(image.filter!));
+    } else if (image.isDeflated()) {
+      // Um PNG entra com os dados do `IDAT` intactos: já vêm comprimidos com
+      // deflate e com o preditor por linha do próprio formato. Sem dizer
+      // `/Filter /FlateDecode`, o `/DecodeParms` abaixo não significa coisa
+      // alguma — a 7.3.8.2 define os parâmetros como sendo DO filtro — e o
+      // fluxo fica indecodificável para qualquer leitor que siga a norma.
+      stream.put(PdfName.filter, PdfName.flateDecodeFilter);
     }
 
     // Colorspace

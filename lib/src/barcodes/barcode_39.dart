@@ -81,7 +81,7 @@ class Barcode39 extends Barcode1D {
 
   /// Creates a new [Barcode39].
   ///
-  /// To generate the font the [PdfDocument.getDefaultFont] will be implicitly called.
+  /// Without an explicit font, the document's default typeface is used.
   /// If you want to use this barcode in PDF/A documents, please consider using
   /// [Barcode39](PdfDocument document, PdfFont font).
   factory Barcode39(PdfDocument document, [PdfFont? font]) {

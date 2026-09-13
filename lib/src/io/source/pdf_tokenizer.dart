@@ -895,7 +895,7 @@ class PdfTokenizer {
 
   /// Check whether line starts with object declaration.
   ///
-  /// Returns [objectNumber, generation] if check is successful, otherwise null.
+  /// Returns `[objectNumber, generation]` if check is successful, otherwise null.
   static List<int>? checkObjectStart(PdfTokenizer lineTokenizer) {
     try {
       lineTokenizer.seek(0);

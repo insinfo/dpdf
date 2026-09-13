@@ -21,7 +21,7 @@ abstract class Barcode2D {
   /// The barcode is always placed at coordinates (0, 0). Use the translation matrix to move it elsewhere.
   ///
   /// [canvas] - the [PdfCanvas] where the barcode will be placed
-  /// [foreground] - the foreground color. It can be [null]
+  /// [foreground] - the foreground color. It can be `null`
   /// Returns the dimensions the barcode occupies
   Rectangle? placeBarcode(PdfCanvas canvas, Color? foreground);
 

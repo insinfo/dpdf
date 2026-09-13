@@ -98,8 +98,8 @@ class ByteBuffer {
 
   /// Gets the internal buffer.
   ///
-  /// Note: The buffer may be larger than [size]. Only bytes from 0 to
-  /// [size] - 1 are valid.
+  /// Note: the buffer may be larger than `size`. Only bytes from 0 to
+  /// `size` - 1 are valid.
   Uint8List getInternalBuffer() => _buffer;
 
   /// Returns the number of valid bytes in the buffer.

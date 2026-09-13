@@ -49,11 +49,13 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -----------------------------------------------------------
 
-## Helvetica AFM metrics
+## Core 14 AFM metrics
 
-File: `lib/src/io/resources/afm/Helvetica.afm`. These are metrics, not the
-Helvetica font program. The full permission also travels with the file in
-`lib/src/io/resources/afm/LICENSE-Adobe.txt`.
+Files: the fourteen `lib/src/io/resources/afm/*.afm` — Courier, Helvetica,
+Times, Symbol and ZapfDingbats in their four cuts each where they have them.
+These are metrics, not the font programs. The permission below requires that
+the AFM files are not distributed without it, so it travels beside them in
+`lib/src/io/resources/afm/LICENSE-Adobe.txt`, inside the published package.
 Source of the permission: https://github.com/apache/pdfbox/blob/21661b79f0e2c90ad53e322b80be3a3bf777b1c5/LICENSE.txt
 
 Copyright (c) 1985, 1987, 1989, 1990, 1997 Adobe Systems Incorporated.

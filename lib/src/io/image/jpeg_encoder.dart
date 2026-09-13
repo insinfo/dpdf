@@ -467,7 +467,7 @@ class _Encoder {
     return size;
   }
 
-  /// The [size]-bit form of [value]; a negative value is stored as its
+  /// The `size`-bit form of `value`; a negative value is stored as its
   /// one's complement, which is what `_extend` in the decoder undoes.
   static int _encodedValue(int value, int size) {
     return value < 0 ? value - 1 + (1 << size) : value;

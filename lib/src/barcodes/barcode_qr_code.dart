@@ -97,7 +97,7 @@ class BarcodeQRCode extends Barcode2D {
   /// translation matrix to move it elsewhere.
   ///
   /// [canvas] - the [PdfCanvas] where the barcode will be placed
-  /// [foreground] - the foreground color. It can be [null]
+  /// [foreground] - the foreground color. It can be `null`
   /// [moduleSide] - the size of the square grid cell
   /// Returns the dimensions the barcode occupies
   Rectangle placeBarcodeWithModuleSide(
@@ -131,7 +131,7 @@ class BarcodeQRCode extends Barcode2D {
   }
 
   /// Creates a PdfFormXObject with the barcode.
-  /// [foreground] - the color of the pixels. It can be [null]
+  /// [foreground] - the color of the pixels. It can be `null`
   /// Returns the XObject.
   @override
   Future<PdfFormXObject> createFormXObject(PdfDocument document,
@@ -141,7 +141,7 @@ class BarcodeQRCode extends Barcode2D {
   }
 
   /// Creates a PdfFormXObject with the barcode.
-  /// [foreground] - The color of the pixels. It can be [null]
+  /// [foreground] - The color of the pixels. It can be `null`
   /// [moduleSize] - The size of the pixels.
   /// [document] - The document
   /// Returns the XObject.

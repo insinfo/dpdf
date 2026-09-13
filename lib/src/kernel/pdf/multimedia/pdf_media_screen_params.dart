@@ -289,7 +289,7 @@ class PdfMediaScreenParams extends PdfObjectWrapper<PdfDictionary>
   }
 
   /// Sets `/B`, the DeviceRGB background colour of the play rectangle.
-  /// Table 283 constrains each component to [0.0, 1.0].
+  /// Table 283 constrains each component to `[0.0, 1.0]`.
   PdfMediaScreenParams setBackgroundColour(List<double> rgb,
       {bool bestEffortOnly = true}) {
     if (rgb.length != 3) {
@@ -315,7 +315,7 @@ class PdfMediaScreenParams extends PdfObjectWrapper<PdfDictionary>
   }
 
   /// Sets `/O`, the constant opacity used to paint `/B`. Table 283 constrains
-  /// it to [0.0, 1.0].
+  /// it to `[0.0, 1.0]`.
   PdfMediaScreenParams setOpacity(double opacity,
       {bool bestEffortOnly = true}) {
     if (opacity.isNaN || opacity < 0 || opacity > 1) {

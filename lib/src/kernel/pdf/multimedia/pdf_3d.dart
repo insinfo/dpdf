@@ -273,7 +273,7 @@ class Pdf3DProjection extends PdfObjectWrapper<PdfDictionary> {
 
   /// Creates a perspective projection with the given field of view, in
   /// degrees. Table 305 requires `/FOV` when `/Subtype` is `/P` and
-  /// constrains it to [0, 180]; Table 304 defaults a view's projection to a
+  /// constrains it to `[0, 180]`; Table 304 defaults a view's projection to a
   /// perspective one with `/FOV` 90.
   Pdf3DProjection.perspective({double fieldOfView = 90})
       : super(PdfDictionary()) {

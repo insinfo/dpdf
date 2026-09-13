@@ -295,7 +295,7 @@ class PdfMovieActivation extends PdfObjectWrapper<PdfDictionary> {
   bool isFloatingWindow() => pdfRepresentation().containsKey(_fwScale);
 
   /// Sets `/FWPosition`, the relative `[horiz vert]` position of a floating
-  /// window; Table 296 constrains each number to [0.0, 1.0].
+  /// window; Table 296 constrains each number to `[0.0, 1.0]`.
   PdfMovieActivation setFloatingWindowPosition(
       double horizontal, double vertical) {
     for (final value in [horizontal, vertical]) {

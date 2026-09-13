@@ -103,7 +103,7 @@ class TrueTypeCollectionEntry {
 /// single TTC header table, one or more table directories (each corresponding
 /// to a different font resource), and a number of OpenType tables", the point
 /// of the format being that "font tables that are identical between two or
-/// more fonts [can] be shared". Two directories may therefore name one and the
+/// more fonts can be shared". Two directories may therefore name one and the
 /// same table: the tables meant to be shared are "those that define glyph and
 /// instruction data or use glyph indices to access data: 'glyf', 'loca',
 /// 'hmtx', 'hdmx', LTSH, 'cvt ', 'fpgm', 'prep', EBLC, EBDT, EBSC, 'maxp'",

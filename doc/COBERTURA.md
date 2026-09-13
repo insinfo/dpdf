@@ -28,12 +28,17 @@ Estado da implementação do `dpdf` e dos pacotes auxiliares `jbig2` e `dgfx` em
 
 ## Números
 
-| | `dpdf` | `jbig2` | `dgfx` |
-|---|---|---|---|
-| Linhas em `lib/` | 108 629 | ~12 000 | ~11 800 |
-| Arquivos em `lib/` | 618 | 60 | 45 |
-| Testes passando | 2 176 | 104 | 306 |
-| `dart analyze` | sem erros nem avisos | limpo | limpo |
+| | `dpdf` | `jbig2` | `dgfx` | `j2k` |
+|---|---|---|---|---|
+| Linhas em `lib/` | 108 629 | ~12 000 | ~11 800 | 51 530 |
+| Arquivos em `lib/` | 618 | 60 | 45 | 240 |
+| Testes passando | 2 180 | 104 | 306 | 318 |
+| `dart analyze` | sem erros nem avisos | limpo | limpo | limpo |
+
+Os três pacotes auxiliares são projetos separados. `jbig2` e `dgfx` entram no `dpdf` por
+`dependency_overrides` apontando para o repositório local; **`j2k` não** — ele vem do
+pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só chegam ao
+`dpdf` depois de uma publicação nova.
 
 ---
 
@@ -51,7 +56,7 @@ Estado da implementação do `dpdf` e dos pacotes auxiliares `jbig2` e `dgfx` em
 | 7.4.6 `CCITTFaxDecode` | OK | Grupo 4, Grupo 3 1-D e 2-D misto, `EncodedByteAlign`, `BlackIs1`, `EndOfLine`, `DamagedRowsBeforeError`. **Codificação só escreve Grupo 4.** |
 | 7.4.7 `JBIG2Decode` | OK | Via `package:jbig2`; ver seção própria |
 | 7.4.8 `DCTDecode` | Parcial | Baseline e progressivo Huffman. Aritmético, lossless e hierárquico **em curso** |
-| 7.4.9 `JPXDecode` | Parcial | Via `package:j2k`; `SMaskInData` tratado |
+| 7.4.9 `JPXDecode` | Parcial | Via `package:j2k`; `SMaskInData` tratado. Uma recusa do codec vira imagem pulada no `PdfRenderReport`, não exceção. Codestream cru com componentes subamostrados ainda é recusado — ver a seção do `j2k` |
 | 7.4.10 `Crypt` | OK | Filtro `/Identity` e os nomeados em `/CF` |
 | 7.5.2 Cabeçalho | OK | |
 | 7.5.4 Tabela de referência cruzada | OK | |
@@ -207,6 +212,29 @@ declarada aprovada. O valor do relatório está nessa honestidade.
 | 7.4.x Páginas listradas, end-of-stripe | OK | Parcial |
 | MMR dentro de região genérica | OK | Ausente |
 
+### `j2k` — ISO/IEC 15444-1 (ITU-T T.800), JPEG 2000 Parte 1
+
+Porte do JJ2000, a implementação de referência. Bit-exato contra ela no subconjunto de
+conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de imagens.
+
+| Área | Estado | Observação |
+|---|---|---|
+| Análise de codestream, EBCOT/MQ | OK | |
+| Wavelets 5x3 reversível e 9x7 irreversível | OK | |
+| RCT/ICT inversos, de-escalonamento de ROI | OK | |
+| Cores JP2: sRGB, greyscale, sYCC, paletas, `cdef` | OK | |
+| Perfis ICC restritos | OK | Monocromático e RGB de três componentes |
+| Ladrilhamento, camadas, as cinco ordens de progressão | OK | |
+| Sondagem de cabeçalho e orçamentos | OK | `maxPixels`, `maxDimension` |
+| Codificador: pixels entrelaçados, PGM/PPM, J2K e JP2 | OK | Sem perdas ou com controle de taxa |
+| **Componentes subamostrados em codestream cru** | Ausente | **Em curso.** O caso mais comum em PDF: o codestream vem sem envoltório JP2 e com croma subamostrado. Hoje lança `Jpeg2000UnsupportedException` |
+| Reamostragem além de 2:1 | Ausente | **Em curso.** `Resampler` recusa outros fatores; a norma permite `XRsiz`/`YRsiz` de 1 a 255 |
+| Saída com profundidade diferente de 8 ou 16 bits | Parcial | Reescalonada; a profundidade original fica em `sourceBitsPerComponent` |
+| Codificador com amostras com sinal | Ausente | Só amostras sem sinal; profundidade por componente não exposta |
+| Filtros wavelet customizados (id ≥ 128) | Fora do alcance | Parte 2 (JPX) |
+| Part 2 / JPX | Fora do alcance | |
+| Decodificação em paralelo | Ausente | Monothread; várias vezes mais lento que codecs nativos |
+
 ### `dgfx` — rasterizador
 
 | Área | Estado | Observação |
@@ -235,16 +263,18 @@ declarada aprovada. O valor do relatório está nessa honestidade.
 2. **Multimídia do capítulo 13** — em curso.
 3. **Fios de artigo, transições, preferências de visualização, requisitos** — em curso.
 4. **Pré-impressão: separações, `/BoxColorInfo`, trapping** — em curso.
-5. **Imagens inline na extração de texto** (8.9.7 + 9.10) — a extração as ignora.
-6. **WOFF 2.0** — exige Brotli e a transformação de `glyf`/`loca`. Hoje é rejeitado com
+5. **Componentes subamostrados em codestream JPEG 2000 cru** (`j2k`) — em curso. É o caso
+   comum de `/JPXDecode` em PDF, e hoje a imagem é pulada em vez de desenhada.
+6. **Imagens inline na extração de texto** (8.9.7 + 9.10) — a extração as ignora.
+7. **WOFF 2.0** — exige Brotli e a transformação de `glyf`/`loca`. Hoje é rejeitado com
    erro explícito, e não silenciosamente.
-7. **Redação de arte vetorial** — `PdfAreaRedaction` reescreve texto e imagens; vetores
+8. **Redação de arte vetorial** — `PdfAreaRedaction` reescreve texto e imagens; vetores
    ainda exigem cobertura por sobreposição.
-8. **Gouraud no `dgfx`** — remove a emulação cara e as costuras visíveis entre facetas nos
+9. **Gouraud no `dgfx`** — remove a emulação cara e as costuras visíveis entre facetas nos
    sombreamentos de tipo 4 a 7.
-9. **Paralelismo real no `dgfx`** — a API pública promete o que não entrega.
-10. **Meios-tons na rasterização** (10.5) e **casos de *knockout*** (11.4).
-11. **Captura web** (14.10) — baixo valor prático.
+10. **Paralelismo real no `dgfx`** — a API pública promete o que não entrega.
+11. **Meios-tons na rasterização** (10.5) e **casos de *knockout*** (11.4).
+12. **Captura web** (14.10) — baixo valor prático.
 
 ## O que não está no alcance
 

@@ -3940,12 +3940,39 @@ class _Renderer {
     // Point sampling is the default because the format says so: an image is
     // interpolated only when its dictionary sets /Interpolate true. Filtering
     // everything would blur a barcode or a screenshot placed at 1:1.
+    //
+    // Reduzir e outro caso. A 8.9.5.1 fala de /Interpolate ao AMPLIAR; ao
+    // reduzir, amostrar por ponto nao e fidelidade, e alias: uma pagina de
+    // 1171 px desenhada em 842 visita cinco de cada sete linhas da origem e as
+    // duas restantes somem. Num brasao com tracos de um pixel, o traco
+    // desaparece — foi assim que isto apareceu, num diario oficial cujo
+    // logotipo perdia o contorno prateado que o MuPDF e o pdf.js desenham.
+    // Por isso a integracao de area vale sempre que houver reducao, tenha o
+    // dicionario pedido interpolacao ou nao.
+    final reduzindo = _reduz(inverse);
     context.setPattern(BLPattern(
       image: surface,
       transform: inverse,
-      filter: interpolate ? BLPatternFilter.bilinear : BLPatternFilter.nearest,
+      filter: reduzindo
+          ? BLPatternFilter.box
+          : interpolate
+              ? BLPatternFilter.bilinear
+              : BLPatternFilter.nearest,
     ));
     await context.fillPath(path, rule: BLFillRule.nonZero);
     context.setFillStyle(state.fillColour);
+  }
+
+  /// True quando um passo de um pixel no device anda mais de um texel na
+  /// origem, em algum eixo.
+  ///
+  /// [inverse] leva do device para a imagem, entao o comprimento das colunas e
+  /// exatamente esse passo. Olhar as colunas, e nao o determinante, e o que faz
+  /// esta conta enxergar uma matriz que achata so num eixo.
+  static bool _reduz(BLMatrix2D inverse) {
+    final colX = inverse.m00 * inverse.m00 + inverse.m10 * inverse.m10;
+    final colY = inverse.m01 * inverse.m01 + inverse.m11 * inverse.m11;
+    const limite = 1.0 + 1e-6;
+    return colX > limite || colY > limite;
   }
 }

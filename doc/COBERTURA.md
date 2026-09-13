@@ -58,7 +58,7 @@ pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só
 | 7.4.8 `DCTDecode` | OK | Baseline e progressivo com Huffman **e aritmético** (SOF9/SOF10), lossless (SOF3/SOF11) com os sete preditores do Anexo H, e hierárquico sobre os processos sem perdas (Anexo J). 8 e 12 bits por amostra. Quadro diferencial por DCT (SOF5/6/13/14) é recusado com mensagem explícita |
 | 7.4.9 `JPXDecode` | Parcial | Via `package:j2k`; `SMaskInData` tratado. Uma recusa do codec vira imagem pulada no `PdfRenderReport`, não exceção. Codestream cru com componentes subamostrados ainda é recusado — ver a seção do `j2k` |
 | 7.4.10 `Crypt` | OK | Filtro `/Identity` e os nomeados em `/CF` |
-| 7.5.2 Cabeçalho | OK | |
+| 7.5.2 Cabeçalho | OK | Bytes arbitrários antes do `%PDF-` são aceitos, com os deslocamentos contados a partir do sinal de porcentagem, como a 7.5.2 do PDF 2.0 exige |
 | 7.5.4 Tabela de referência cruzada | OK | |
 | 7.5.5 Trailer | OK | |
 | 7.5.6 Atualizações incrementais | OK | |
@@ -91,7 +91,7 @@ pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só
 | 8.7.4 Sombreamentos | OK | Tipos 1–7; malhas Gouraud e retalhos Coons/tensoriais |
 | 8.8 XObjects externos | OK | |
 | 8.9 Imagens | OK | 1–16 bpc, `/Decode`, `/ImageMask`, `/Mask` por estêncil e por chave de cor, `/SMask` com `/Matte` |
-| 8.9.7 Imagens inline | Parcial | Desenhadas pelo renderizador; **a extração de texto ainda as ignora** |
+| 8.9.7 Imagens inline | OK | Desenhadas e puladas com segurança na extração: o fim da imagem é calculado de `/W`, `/H`, `/BPC` e `/CS` e o `EI` é verificado, não procurado, então bytes que contenham `EI` não confundem o leitor |
 | 8.10 Form XObjects | OK | `/BBox`, `/Matrix`, `/Group` |
 | 8.11 Conteúdo opcional | OK | OCG, OCMD com `/VE`, `/OCProperties`, configurações alternativas, `/OC` em XObject e anotação |
 
@@ -101,12 +101,12 @@ pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só
 |---|---|---|
 | 9.3 Parâmetros de estado de texto | OK | |
 | 9.4 Objetos de texto | OK | |
-| 9.6 Fontes simples | OK | Type1, TrueType, Type3; resolução completa de codificação de 9.6.6 |
+| 9.6 Fontes simples | OK | Type1, TrueType e Type3, este com os procedimentos de glifo executados pelo renderizador; resolução completa de codificação de 9.6.6 |
 | 9.6.6 Codificação | OK | `/BaseEncoding`, `/Differences`, tabelas padrão, TrueType simbólica com `cmap` (3,0) e (1,0) |
 | 9.7 Fontes compostas | OK | CIDFont, `/CIDToGIDMap`, CMaps predefinidos e embutidos, `/W`, `/W2`, escrita vertical |
 | 9.8 Descritores de fonte | OK | |
 | 9.9 Programas de fonte embutidos | OK | Type1, TrueType, CFF/Type1C, CFF2, OpenType, WOFF 1.0 e **WOFF 2.0**, este com as transformações de `glyf`/`loca` e `hmtx` e Brotli embutido no pacote. Coleções `ttcf` são reconstruídas mas o leitor sfnt ainda não as abre |
-| 9.10 Extração de texto | Parcial | `/ToUnicode` e mapeamento reverso; imagens inline ignoradas |
+| 9.10 Extração de texto | OK | `/ToUnicode` e mapeamento reverso; imagens inline são atravessadas corretamente |
 
 ## 10 — Renderização
 
@@ -114,7 +114,7 @@ pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só
 |---|---|---|
 | 10.2/10.3 Conversão de cor | OK | |
 | 10.4 Funções de transferência | OK | |
-| 10.5 Meios-tons | Parcial | Reconhecidos e preservados; não aplicados na rasterização |
+| 10.5 Meios-tons | Fora do alcance | Preservados no documento, deliberadamente não aplicados: a saída é de tom contínuo, e aplicar a trama viraria degradê e borda antisserrilhada em padrão de pontos numa frequência de papel. Justificativa no código |
 | 10.6 Conversão de varredura | OK | Rasterizador analítico com antisserrilhamento |
 
 ## 11 — Transparência
@@ -122,7 +122,7 @@ pub.dev na versão `^0.9.0`. Melhorias feitas no repositório local do `j2k` só
 | Cláusula | Estado | Observação |
 |---|---|---|
 | 11.3.5 Modos de mistura | OK | Os 12 separáveis e os 4 não separáveis |
-| 11.4 Grupos de transparência | Parcial | Isolados e não isolados; alguns casos de *knockout* seguem parciais |
+| 11.4 Grupos de transparência | OK | Isolados, não isolados e *knockout*, este auditado e coberto por teste. O `/TK` de texto da 9.3.8 também é honrado |
 | 11.5 Máscaras suaves | OK | `/Alpha` e `/Luminosity`, `/BC`, `/TR` |
 | 11.6.6 Grupos como XObject | OK | |
 | 11.7 Espaço de cor do grupo | OK | |
@@ -231,7 +231,7 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 | Codificador com profundidade por componente e sinal | OK | `bitsPerComponent` e `signedComponents`; a MCT é desligada quando os três primeiros componentes divergem, como a G.2 exige |
 | Saída com profundidade diferente de 8 ou 16 bits | Parcial | Reescalonada; a profundidade original fica em `sourceBitsPerComponent` |
 
-| Filtros wavelet customizados (id ≥ 128) | Ausente | Trabalho **limitado**: o marcador ATK da Parte 2 descreve núcleos por *lifting*, e uma síntese genérica por lifting atende a todos. Não é questão de princípio, só não foi feito |
+| Filtros wavelet customizados (ATK) | OK | Síntese genérica por *lifting* do Anexo G da 15444-2. Validada por reproduzir **bit a bit** os filtros 5-3 e 9-7 especializados. A categoria arbitrária do Anexo H é recusada citando a cláusula |
 | Part 2 / JPX (demais extensões) | Ausente | Trabalho **grande e aberto**: decomposição arbitrária (DFS/ADS), transformada multicomponente (MCT), precisão estendida, deslocamento DC variável, ROI arbitrária. Cada uma é independente e pode ser feita isoladamente |
 | Decodificação em paralelo | OK | `decodeJpeg2000Parallel`, assíncrona, com isolates atrás de `if (dart.library.io)` e caminho sequencial como padrão na Web. Paraleliza por tile e, quando há menos tiles que workers, por code-block — que é o caso de tile único do PDF. Medido 2,6x a 3,8x em 8 núcleos acima de 0,2 MP, com saída bit a bit idêntica. `decodeJpeg2000` segue síncrona e inalterada |
 
@@ -261,11 +261,11 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 
 1. **Quadros diferenciais por DCT no JPEG** (SOF5, SOF6, SOF13, SOF14) — exigem IDCT com
    saída assinada sem *level shift*; o plano de componente hoje é `Uint8List`.
-2. **`Jpeg2000DecodeOptions.resolution` quebrado** (`j2k`) — pedir resolução reduzida lança
-   `Índice fora de alcance` no decodificador **síncrono**, com ou sem ladrilhos. Bug
-   pré-existente, encontrado ao paralelizar; o buffer parece ser dimensionado com a largura
-   reduzida enquanto os ladrilhos são posicionados pela grade de referência.
-3. **Imagens inline na extração de texto** (8.9.7 + 9.10) — a extração as ignora.
+2. **Recorte geométrico na redação de arte vetorial** — um caminho que atravessa a borda da
+   área é recusado, não recortado. Exige subdividir Bézier e reconstruir o *winding*.
+3. **Cobertura de borda curva no `dgfx`** — subestima a área em cerca de 10%: um círculo de
+   raio 2 px rasteriza 11,3 em vez de 12,57, enquanto um retângulo 4×4 dá exato. Aponta para
+   a tolerância de achatamento em raios pequenos.
 4. **Coleções `ttcf`** — reconstruídas a partir de WOFF 2.0, mas o leitor sfnt não abre
    coleção, então a fonte falha depois da conversão.
 5. **Redação de arte vetorial** — `PdfAreaRedaction` reescreve texto e imagens; vetores

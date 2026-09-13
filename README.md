@@ -46,6 +46,10 @@ style inheritance.
 
 ## Render PDF pages
 
+Arbitrary bytes may precede the `%PDF-` header, as ISO 32000-2 7.5.2 allows,
+provided the header starts within the first 1024 bytes; `PdfReader.headerOffset`
+reports how many were skipped, and rewriting the document drops them.
+
 ```dart
 final document = await PdfDocument.open(PdfReader.fromBytes(input));
 final result = await PdfPageRenderer.render(document.getPage(1));
@@ -53,9 +57,13 @@ final png = result.toPng();
 ```
 
 The renderer handles paths, arbitrary clipping, supported PDF color spaces,
-image and Form XObjects, masks, and embedded font outlines. `PdfRenderReport`
+image and Form XObjects, masks, embedded font outlines and Type 3 glyph
+procedures, and honours transparency and text knockout. `PdfRenderReport`
 identifies skipped work rather than silently claiming a complete rendering.
 Applications may provide a font fallback for PDFs that omit font programs.
+Halftones and the other device-bound entries of clause 10 are deliberately not
+applied: the output is a continuous-tone surface, and screening it would match
+no viewer.
 
 ## Compress documents
 
@@ -121,9 +129,13 @@ final redacted = await PdfAreaRedaction.apply(input, [
 ```
 
 Area redaction removes matching text, replaces covered pixels in direct or
-Form-nested images (cloning shared resources), preserves transparency outside
-the rectangle, and draws an opaque cover. `PdfTextRedaction` offers a stricter
-reconstruction path and rejects documents it cannot safely rebuild.
+Form-nested images (cloning shared resources), and **deletes** vector artwork
+that falls wholly inside an area, in page content and in nested Form XObjects.
+A path that crosses an area edge is refused rather than merely covered: a file
+that only *looks* redacted is worse than one that admits it cannot be. Clipping
+paths, shadings and Type 3 glyph procedures are still only covered.
+`PdfTextRedaction` offers a stricter reconstruction path and rejects documents
+it cannot safely rebuild.
 
 ## CCITT fax support
 

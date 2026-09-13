@@ -249,7 +249,9 @@ MIT for the code. The package also bundles fourteen faces of the URW Core 35
 (version 2.00) under the SIL Open Font License 1.1, Copyright (c) 2014,2015 by
 (URW)++ Design & Development, used to draw the fourteen standard PDF fonts when
 a document references them without embedding a program; the copyright statement
-declares no Reserved Font Name. The licence text travels with the fonts in
-`assets/fonts/urw-core35/LICENSE.OFL`. See
+declares no Reserved Font Name. The full licence text travels in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); the original `.otf` files and
+their `LICENSE.OFL` live in `assets/fonts/urw-core35/` in the repository, which
+is not part of the published package. See
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for this and the other notices
 covering embedded third-party data.

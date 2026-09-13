@@ -1,5 +1,9 @@
 .git/
 .dart_tool/
+
+# Regras de trabalho para agentes neste repositorio; nao diz nada a quem
+# consome a biblioteca.
+AGENTS.md
 build/
 coverage/
 test/tmp/
@@ -23,3 +27,26 @@ test/assets/ghostscript-tiger/
 # oficiais de orgao publico, sem protecao autoral pela Lei 9.610/98 art. 8, IV.
 # Veja test/assets/jornal-oficial/NOTICE.md.
 test/assets/jornal-oficial/
+
+# Fora do pacote publicado: nada disso e lido em tempo de execucao, e quem
+# depende da biblioteca nao precisa baixar. O codigo esta todo em lib/, e as
+# fontes URW viajam embutidas como fonte Dart em
+# lib/src/render/resources/, com o texto integral da OFL em
+# THIRD_PARTY_NOTICES.md. example/ fica, por ser o que documenta o uso.
+.dart_tool/
+
+# Regras de trabalho para agentes neste repositorio; nao diz nada a quem
+# consome a biblioteca.
+AGENTS.md
+.github/
+.githooks/
+assets/
+benchmark/
+doc/
+scripts/
+test/
+tool/
+
+# Regras de trabalho para agentes neste repositorio; nao diz nada a quem
+# consome a biblioteca.
+AGENTS.md

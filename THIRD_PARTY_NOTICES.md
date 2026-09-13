@@ -71,8 +71,8 @@ Adobe Font Metrics (AFM) for PDF Core 14 Fonts
 
 ## URW Core 35 fonts
 
-Unmodified files: `assets/fonts/urw-core35/*.otf`, fourteen of the thirty-eight
-faces of version 2.00. They are the metric-compatible substitutes for the
+Unmodified files in the repository: `assets/fonts/urw-core35/*.otf`, fourteen
+of the thirty-eight faces of version 2.00. They are the metric-compatible substitutes for the
 fourteen standard PDF fonts (NimbusSans for Helvetica, NimbusRoman for Times,
 NimbusMonoPS for Courier, StandardSymbolsPS for Symbol and D050000L for
 ZapfDingbats), and the renderer draws with them when a document references one
@@ -83,12 +83,13 @@ from the original files.
 
 The programs stay under SIL OFL 1.1 — travelling beside MIT code does not
 relicense them, and the OFL does not reach the documents drawn with them. The
-full licence text accompanies the files in
-`assets/fonts/urw-core35/LICENSE.OFL` and is reproduced further down, in the
-ABeeZee test font section. URW++ also published the same fonts under AGPL3 and
-LPPL 1.3c, as `assets/fonts/urw-core35/LICENSE.md` records, leaving the choice
-to whoever redistributes them; this package chooses the OFL, and it is the OFL
-text that travels with the files.
+full licence text is reproduced in this file, further down, in the ABeeZee test
+font section; that is the copy that travels in the published package, since
+`assets/` is excluded from it and only the embedded copy in `lib/` ships. The
+original `.otf` files and `assets/fonts/urw-core35/LICENSE.OFL` are in the
+repository. URW++ also published the same fonts under AGPL3 and LPPL 1.3c, as
+`assets/fonts/urw-core35/LICENSE.md` records, leaving the choice to whoever
+redistributes them; this package chooses the OFL.
 
 The copyright statement declares no Reserved Font Name, so the family names can
 be carried as they are.

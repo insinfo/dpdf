@@ -1,43 +1,47 @@
-# Fixtures distribuídas
+# Distributed fixtures
 
-Hashes e fontes: `manifest.json`. As nove fixtures próprias estão cobertas
-por `LICENSE.generated.txt`; ABeeZee-Regular.ttf mantém `OFL.txt` integral;
-pdf20-offset-start.pdf é da PDF Association e mantém CC BY-SA 4.0.
-Os avisos de licença usam finais de linha LF, conforme `.gitattributes`, para
-que os hashes também confiram após checkout em outras plataformas.
-Os termos também estão reunidos em `../../THIRD_PARTY_NOTICES.md`.
+Hashes and sources: `manifest.json`. The nine in-house fixtures are covered by
+`LICENSE.generated.txt`; ABeeZee-Regular.ttf keeps the full `OFL.txt`;
+pdf20-offset-start.pdf comes from the PDF Association and keeps CC BY-SA 4.0.
+The licence notices use LF line endings, per `.gitattributes`, so that the
+hashes still match after a checkout on other platforms. The terms are also
+collected in `../../THIRD_PARTY_NOTICES.md`.
 
-As imagens próprias são padrões geométricos sintéticos, e os nomes dizem o
-que elas são: shapes-rgb.jpg, shapes-rgb.png e shapes-rgb-large.bmp trazem o
-mesmo desenho — retângulo azul, elipse laranja e uma diagonal vermelha — em
-três formatos e dois tamanhos, e blue-square-16.gif é um quadrado azul de
-16 px com paleta. Antes chamavam-se Desert.jpg, bee.png, WP_20140410_001.bmp
-e bulb.gif, nomes herdados que não descreviam nada do conteúdo e faziam o
-teste parecer exercitar uma fotografia. test.pdf contém uma página sintética
-com dois retângulos. image.jb2 exercita região genérica MMR, sem representar
-cobertura completa do formato JBIG2.
+The in-house images are synthetic geometric patterns, and the names say what
+they are: shapes-rgb.jpg, shapes-rgb.png and shapes-rgb-large.bmp carry the
+same drawing — a blue rectangle, an orange ellipse and a red diagonal — in
+three formats and two sizes, and blue-square-16.gif is a 16 px palette-indexed
+blue square. They used to be called Desert.jpg, bee.png, WP_20140410_001.bmp
+and bulb.gif, inherited names that described none of the content and made each
+test look as if it exercised a photograph. test.pdf holds a synthetic page with
+two rectangles. image.jb2 exercises a generic MMR region, and does not stand
+for full JBIG2 coverage.
 
-Os oito `.svg` são de domínio público, de publicdomainvectors.org; o
-`manifest.json` traz a URL de cada um. Servem de corpus de conversão porque
-não foram desenhados por este projeto: trazem caminhos, gradientes, grupos e
-transformações que os nossos próprios geradores nunca emitem. Os nomes foram
-passados para kebab-case e um deles foi corrigido — `tiger1.svg` virou
-`bengal-tiger-head.svg`, que é o que a ilustração mostra.
+The eight `.svg` files are public domain, from publicdomainvectors.org;
+`manifest.json` carries the URL of each. They serve as a conversion corpus
+precisely because this project did not draw them: they bring paths, gradients,
+groups and transforms that our own generators never emit. The names were moved
+to kebab-case, and one was corrected — `tiger1.svg` became
+`bengal-tiger-head.svg`, which is what the illustration shows.
 
-pdf20-offset-start.pdf é cópia inalterada de `PDF 2.0 with offset start.pdf`
-do repositório pdf20examples da PDF Association, renomeada apenas para tirar os
-espaços do caminho. É o exemplo oficial da ISO 32000-2, 7.5.2: o `%PDF-` começa
-no byte 656, depois de 656 bytes de comentário em texto puro, e os
-deslocamentos do xref são contados a partir do sinal de porcentagem, não do
-início do arquivo. A atribuição exigida pela CC BY-SA 4.0 está em
-`../../THIRD_PARTY_NOTICES.md`.
+`ghostscript-tiger/` is the one exception to public domain: it is AGPL. It sits
+in its own directory with the full licence text and its provenance beside it,
+and is excluded from the published package by `.pubignore`. See
+`ghostscript-tiger/NOTICE.md`.
 
-rootRsa.cer é um certificado RSA-2048 autoassinado de teste, de nome
-DPDF Synthetic Test CA e serial 1491571158. Não contém chave privada.
-Foi gerado para a fixture; não representa confiança pública ou ICP-Brasil.
+pdf20-offset-start.pdf is an unmodified copy of `PDF 2.0 with offset start.pdf`
+from the PDF Association's pdf20examples repository, renamed only to take the
+spaces out of the path. It is the official ISO 32000-2, 7.5.2 example: `%PDF-`
+starts at byte 656, after 656 bytes of plain-text comment, and the xref offsets
+are counted from the percent sign, not from the start of the file. The
+attribution that CC BY-SA 4.0 requires is in `../../THIRD_PARTY_NOTICES.md`.
 
-Os campos source do manifesto registram o gerador usado originalmente,
-`tool/generate_test_assets.py`, que não está mais presente nesta árvore.
-Não são instruções de recriação. Os hashes permitem verificar os bytes
-preservados. Os geradores antigos dos dados embutidos também não são
-necessários para consumir os recursos existentes.
+rootRsa.cer is a self-signed RSA-2048 test certificate, named
+DPDF Synthetic Test CA, serial 1491571158. It holds no private key. It was
+generated for the fixture; it stands for no public or ICP-Brasil trust.
+
+The manifest's source fields record the generator originally used,
+`tool/generate_test_assets.py`, which is no longer present in this tree. They
+are not recreation instructions. The hashes are what let you verify the
+preserved bytes. The old generators of the embedded data are likewise not
+needed in order to consume the existing resources.

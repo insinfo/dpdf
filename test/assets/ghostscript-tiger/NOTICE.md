@@ -1,37 +1,40 @@
 # Ghostscript Tiger
 
-`ghostscript-tiger.svg` — 68 630 bytes,
-sha256 `5211e169283f43ab8ad7ea7998d917d5fbb3c568ac85c1a0217e86792822684d` (completo abaixo).
+`ghostscript-tiger.svg` — 68,630 bytes,
+sha256 `5211e169283f43ab8ad7ea7998d917d5fbb3c568ac85c1a0217e86792822684d`.
 
-Origem: <https://commons.wikimedia.org/wiki/File:Ghostscript_Tiger.svg>,
-derivado de `examples/tiger.eps` do Ghostscript.
+Source: <https://commons.wikimedia.org/wiki/File:Ghostscript_Tiger.svg>,
+derived from `examples/tiger.eps` in Ghostscript.
 
-Autoria: Ghostscript authors.
+Authorship: Ghostscript authors.
 
-## Licença
+## Licence
 
-**GNU Affero General Public License**, texto integral em
-`LICENSE.AGPL-3.0.txt`. Não é domínio público, ao contrário das demais
-ilustrações usadas como corpus neste projeto.
+**GNU Affero General Public License**, full text in `LICENSE.AGPL-3.0.txt`.
+This file is not public domain, unlike the other illustrations this project
+uses as a corpus.
 
-## Por que está aqui, e fora do pacote publicado
+## Why it is here, and outside the published package
 
-Este diretório é versionado, para que a suíte rode em qualquer clone, e
-consta do `.pubignore`, então não viaja no pacote publicado no pub.dev.
+This directory is checked into git, so that the suite runs from any clone, and
+it is listed in `.pubignore`, so it does not travel in the package published to
+pub.dev.
 
-A razão é prática, não jurídica: incluir um asset de teste ao lado de código
-MIT é mera agregação (AGPL-3.0, seção 5), mas um arquivo AGPL dentro de um
-pacote publicado dispara alarme nos verificadores de licença que muitos
-consumidores rodam na integração contínua. Deixando-o de fora do pacote, a
-questão não chega a quem depende do `dpdf`, e os testes continuam podendo
-usá-lo.
+The reason is practical rather than legal: shipping a test asset alongside MIT
+code is mere aggregation (AGPL-3.0, section 5), but an AGPL file inside a
+published package trips the licence scanners that many consumers run in
+continuous integration. Keeping it out of the package means the question never
+reaches anyone who depends on `dpdf`, while the tests can still use it.
 
-Toda ilustração em `test/assets` que **não** esteja neste diretório é de
-domínio público; esta é a única exceção, e é por isso que ela fica separada
-numa pasta com a licença ao lado.
+Every illustration in `test/assets` that is **not** in this directory is public
+domain. This is the single exception, and that is why it sits apart, in a
+directory with its licence beside it.
 
-## Por que vale tê-lo
+A test that needs this file must skip when it is absent, since a consumer who
+only has the published package will not have it.
 
-É a imagem de esforço clássica do PostScript e do PDF: centenas de caminhos
-preenchidos, muitos com contorno, e é o desenho com que geradores de PDF são
-comparados há décadas.
+## Why it is worth having
+
+It is the classic stress image of PostScript and PDF: hundreds of filled paths,
+many of them also stroked, and the drawing against which PDF generators have
+been compared for decades.

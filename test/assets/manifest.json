@@ -9,7 +9,7 @@
     },
     {
       "file": "LICENSE.generated.txt",
-      "sha256": "992187965761031b0077dce09a57e7f13e6a9c99df34e5d1c05d2bb270172edf",
+      "sha256": "f6724923528fbdce76a03999ffe09fb526ff25718d50f1f493962fbaa043244f",
       "license": "MIT",
       "source": "tool/generate_test_assets.py; test/assets/LICENSE.generated.txt"
     },

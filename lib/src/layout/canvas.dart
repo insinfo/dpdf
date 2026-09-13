@@ -67,8 +67,9 @@ class Canvas extends RootElement<Canvas> {
 
   CanvasRenderer? getRenderer() => rootRenderer as CanvasRenderer?;
 
-  /// Renders everything that is still waiting to be drawn.
+  /// Lays out everything queued by `add` and renders what is waiting.
   Future<void> flush() async {
+    await layoutQueuedContent();
     await ensureRootRendererNotNull().flush();
   }
 
@@ -80,7 +81,7 @@ class Canvas extends RootElement<Canvas> {
   }
 
   @override
-  Future<void> close() async {
+  Future<void> closeRootRenderer() async {
     if (rootRenderer != null) {
       await rootRenderer!.close();
     }

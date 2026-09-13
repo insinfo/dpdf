@@ -36,7 +36,7 @@ class Document extends RootElement<Document> {
   }
 
   @override
-  Future<void> close() async {
+  Future<void> closeRootRenderer() async {
     if (rootRenderer != null) {
       await (rootRenderer as DocumentRenderer).close();
     }

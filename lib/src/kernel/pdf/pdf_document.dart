@@ -34,6 +34,7 @@ import 'tagging/pdf_struct_tree_root.dart';
 import 'tagging/tag_structure_context.dart';
 import 'filespec/pdf_file_spec.dart';
 import 'pdf_outline.dart';
+import 'pending_layout_content.dart';
 
 /// Document operations, page access and serialization lifecycle.
 class PdfDocument {
@@ -78,6 +79,9 @@ class PdfDocument {
 
   /// Whether the closing process has started.
   bool _isClosing = false;
+
+  /// Layout roots that still hold content queued for layout. See [close].
+  final List<PendingLayoutContent> _pendingLayoutContent = [];
 
   /// Default page size.
   PageSize _defaultPageSize = PageSize.defaultSize;
@@ -1216,6 +1220,39 @@ class PdfDocument {
 
   // ============== HELPERS ==============
 
+  /// Registers a layout root whose queued content must be laid out before this
+  /// document may be closed. `Document` and `Canvas` call this themselves.
+  void registerPendingLayoutContent(PendingLayoutContent source) {
+    if (_pendingLayoutContent.any((e) => identical(e, source))) return;
+    _pendingLayoutContent.add(source);
+  }
+
+  /// Forgets a layout root, which a closed one no longer needs to be watched
+  /// for.
+  void unregisterPendingLayoutContent(PendingLayoutContent source) {
+    _pendingLayoutContent.removeWhere((e) => identical(e, source));
+  }
+
+  /// Refuses to close while a layout root still holds content.
+  ///
+  /// `Document.add` only queues, so a document whose `close` was never awaited
+  /// would be written without the content that was added to it. Saying so is
+  /// the whole point: the silent empty page is the defect this replaces.
+  void _checkPendingLayoutContent() {
+    final open = <String>[];
+    for (final source in _pendingLayoutContent) {
+      final count = source.pendingContentCount();
+      if (count > 0) {
+        open.add('${source.pendingContentOwner()} ($count element(s))');
+      }
+    }
+    if (open.isEmpty) return;
+    throw PdfException(
+        'Cannot close the PdfDocument: content is still queued for layout in '
+        '${open.join(', ')}. Await close() on every Document and Canvas built '
+        'on this document first, or the content would be dropped.');
+  }
+
   /// Checks if the document is closed or closing.
   void _checkClosingStatus() {
     if (_closed) {
@@ -1228,6 +1265,8 @@ class PdfDocument {
   /// Closes the document.
   Future<void> close() async {
     if (_closed) return;
+
+    _checkPendingLayoutContent();
 
     _isClosing = true;
 

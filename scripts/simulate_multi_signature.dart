@@ -91,7 +91,7 @@ void main() async {
     final p = Paragraph(
         "Este é o parágrafo número $i de teste do documento assinado.");
     p.setProperty(Property.FONT_SIZE, UnitValue.createPointValue(14));
-    await doc.add(p);
+    doc.add(p);
   }
 
   print('Páginas antes de fechar: ${pdfDoc.pageTotal()}');

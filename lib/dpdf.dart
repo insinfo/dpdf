@@ -55,6 +55,7 @@ export 'src/kernel/pdf/pdf_literal.dart';
 export 'src/kernel/pdf/pdf_xref_table.dart';
 export 'src/kernel/pdf/pdf_reader.dart';
 export 'src/kernel/pdf/pdf_document.dart';
+export 'src/kernel/pdf/pending_layout_content.dart';
 export 'src/kernel/pdf/pdf_catalog.dart';
 export 'src/kernel/pdf/pdf_page.dart';
 export 'src/kernel/pdf/pdf_pages_tree.dart';

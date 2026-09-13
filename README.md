@@ -1,8 +1,21 @@
 # dpdf
 
+[![CI](https://github.com/insinfo/dpdf/actions/workflows/ci.yml/badge.svg)](https://github.com/insinfo/dpdf/actions/workflows/ci.yml)
+[![AI Assisted](https://img.shields.io/badge/AI-Assisted-purple.svg)](https://github.com/insinfo/dpdf#how-this-package-was-built)
+
 A pure-Dart toolkit for creating, reading, editing, rendering, compressing,
 signing, and validating PDF documents. It uses no FFI or external binaries and
 supports the Dart VM (JIT/AOT), `dart2js`, and `dart2wasm`.
+
+## How this package was built
+
+Parts of the code, the tests and the documentation were written with the help
+of LLM tooling. Everything in the package goes through the test suite
+(`dart test`), the analyzer (`dart analyze`) and `dart pub publish --dry-run`
+before it lands, and the person who commits it is responsible for it. Treat the
+disclosure as information about how the work was produced, not as a disclaimer
+about its quality: the checks are the same either way, and so is the
+accountability.
 
 ```dart
 import 'package:dpdf/dpdf.dart';

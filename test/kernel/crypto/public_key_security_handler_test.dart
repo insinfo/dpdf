@@ -66,18 +66,17 @@ void main() {
       final pcPrivate = oracle.RSAPrivateKey(alice.privateKey.modulus,
           alice.privateKey.exponent, alice.privateKey.p, alice.privateKey.q);
       final engine = oracle.PKCS1Encoding(oracle.RSAEngine())
-        ..init(false,
-            oracle.PrivateKeyParameter<oracle.RSAPrivateKey>(pcPrivate));
+        ..init(
+            false, oracle.PrivateKeyParameter<oracle.RSAPrivateKey>(pcPrivate));
       expect(engine.process(wrapped), key);
     });
 
     test('the library decrypts what an independent oracle produced', () {
       final key = bytes('fedcba9876543210');
-      final pcPublic =
-          oracle.RSAPublicKey(alice.publicKey.modulus, alice.publicKey.exponent);
+      final pcPublic = oracle.RSAPublicKey(
+          alice.publicKey.modulus, alice.publicKey.exponent);
       final engine = oracle.PKCS1Encoding(oracle.RSAEngine())
-        ..init(
-            true, oracle.PublicKeyParameter<oracle.RSAPublicKey>(pcPublic));
+        ..init(true, oracle.PublicKeyParameter<oracle.RSAPublicKey>(pcPublic));
       final wrapped = engine.process(key);
       expect(RsaKeyTransport.decrypt(alice.privateKey, wrapped), key);
     });
@@ -100,8 +99,7 @@ void main() {
     test('every recipient recovers the same payload', () {
       final payload = bytes('20-byte seed plus perm');
       final encoded = CmsEnvelopedData.encode(
-          certificates: [alice.certificate, bob.certificate],
-          content: payload);
+          certificates: [alice.certificate, bob.certificate], content: payload);
       final decoded = CmsEnvelopedData.decode(encoded);
       expect(decoded.recipients.length, 2);
       expect(decoded.contentEncryption, CmsContentEncryption.aes128Cbc);
@@ -150,11 +148,9 @@ void main() {
 
   group('Public-key encryption dictionary', () {
     test('adbe.pkcs7.s3 is written for RC4 40', () async {
-      final encryption = PdfEncryption.publicKey(
-          recipients: [
-            PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
-          ],
-          encryptionAlgorithm: EncryptionConstants.standardEncryption40);
+      final encryption = PdfEncryption.publicKey(recipients: [
+        PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
+      ], encryptionAlgorithm: EncryptionConstants.standardEncryption40);
       final dictionary = encryption.pdfRepresentation();
       expect((await dictionary.nameEntry(PdfName.filter))!.getValue(),
           'Adobe.PubSec');
@@ -169,11 +165,9 @@ void main() {
     });
 
     test('adbe.pkcs7.s4 is written for RC4 128', () async {
-      final encryption = PdfEncryption.publicKey(
-          recipients: [
-            PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
-          ],
-          encryptionAlgorithm: EncryptionConstants.standardEncryption128);
+      final encryption = PdfEncryption.publicKey(recipients: [
+        PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
+      ], encryptionAlgorithm: EncryptionConstants.standardEncryption128);
       final dictionary = encryption.pdfRepresentation();
       expect((await dictionary.nameEntry(PdfName.subFilter))!.getValue(),
           'adbe.pkcs7.s4');
@@ -182,13 +176,10 @@ void main() {
       expect(encryption.getFileEncryptionKey().length, 16);
     });
 
-    test('adbe.pkcs7.s5 puts the recipients inside the crypt filter',
-        () async {
-      final encryption = PdfEncryption.publicKey(
-          recipients: [
-            PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
-          ],
-          encryptionAlgorithm: EncryptionConstants.encryptionAes128);
+    test('adbe.pkcs7.s5 puts the recipients inside the crypt filter', () async {
+      final encryption = PdfEncryption.publicKey(recipients: [
+        PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
+      ], encryptionAlgorithm: EncryptionConstants.encryptionAes128);
       final dictionary = encryption.pdfRepresentation();
       expect((await dictionary.nameEntry(PdfName.subFilter))!.getValue(),
           'adbe.pkcs7.s5');
@@ -206,11 +197,9 @@ void main() {
     });
 
     test('AES-256 public-key encryption writes /V 5 and AESV3', () async {
-      final encryption = PdfEncryption.publicKey(
-          recipients: [
-            PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
-          ],
-          encryptionAlgorithm: EncryptionConstants.encryptionAes256);
+      final encryption = PdfEncryption.publicKey(recipients: [
+        PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
+      ], encryptionAlgorithm: EncryptionConstants.encryptionAes256);
       final dictionary = encryption.pdfRepresentation();
       expect((await dictionary.numberEntry(PdfName.v))!.intValue(), 5);
       expect((await dictionary.numberEntry(PdfName.r))!.intValue(), 6);
@@ -228,12 +217,10 @@ void main() {
     }.entries) {
       test('${entry.key} recovers the file key for a listed recipient',
           () async {
-        final written = PdfEncryption.publicKey(
-            recipients: [
-              PublicKeyRecipientGroup(
-                  [alice.certificate, bob.certificate], 0xFFFFFFFC)
-            ],
-            encryptionAlgorithm: entry.value);
+        final written = PdfEncryption.publicKey(recipients: [
+          PublicKeyRecipientGroup(
+              [alice.certificate, bob.certificate], 0xFFFFFFFC)
+        ], encryptionAlgorithm: entry.value);
         for (final holder in [alice, bob]) {
           final read = await PdfEncryption.createFromDictionaryWithCertificate(
               written.pdfRepresentation(),
@@ -248,11 +235,9 @@ void main() {
 
       test('${entry.key} refuses a certificate that is not a recipient',
           () async {
-        final written = PdfEncryption.publicKey(
-            recipients: [
-              PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
-            ],
-            encryptionAlgorithm: entry.value);
+        final written = PdfEncryption.publicKey(recipients: [
+          PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
+        ], encryptionAlgorithm: entry.value);
         expect(
             PdfEncryption.createFromDictionaryWithCertificate(
                 written.pdfRepresentation(),
@@ -266,12 +251,10 @@ void main() {
     test('each recipient group keeps its own permissions', () async {
       const ownerPermissions = 0xFFFFFFFC;
       const readerPermissions = 0xFFFFF0C4;
-      final written = PdfEncryption.publicKey(
-          recipients: [
-            PublicKeyRecipientGroup([alice.certificate], ownerPermissions),
-            PublicKeyRecipientGroup([bob.certificate], readerPermissions),
-          ],
-          encryptionAlgorithm: EncryptionConstants.encryptionAes128);
+      final written = PdfEncryption.publicKey(recipients: [
+        PublicKeyRecipientGroup([alice.certificate], ownerPermissions),
+        PublicKeyRecipientGroup([bob.certificate], readerPermissions),
+      ], encryptionAlgorithm: EncryptionConstants.encryptionAes128);
       final dictionary = written.pdfRepresentation();
       final cf = await dictionary.dictionaryEntry(PdfName.cf);
       final filter =
@@ -357,8 +340,8 @@ void main() {
           encryptionAlgorithm: EncryptionConstants.encryptionAes128 |
               EncryptionConstants.embeddedFilesOnly);
       final dictionary = written.pdfRepresentation();
-      expect((await dictionary.nameEntry(PdfName.stmF))!.getValue(),
-          'Identity');
+      expect(
+          (await dictionary.nameEntry(PdfName.stmF))!.getValue(), 'Identity');
       expect((await dictionary.nameEntry(PdfName.eff))!.getValue(),
           'DefEmbeddedFile');
       final read = await PdfEncryption.createFromDictionaryWithCertificate(
@@ -372,11 +355,9 @@ void main() {
 
     test('content encrypted for a recipient decrypts after reading back',
         () async {
-      final written = PdfEncryption.publicKey(
-          recipients: [
-            PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
-          ],
-          encryptionAlgorithm: EncryptionConstants.encryptionAes256);
+      final written = PdfEncryption.publicKey(recipients: [
+        PublicKeyRecipientGroup([alice.certificate], 0xFFFFFFFC)
+      ], encryptionAlgorithm: EncryptionConstants.encryptionAes256);
       final payload = bytes('public-key protected stream payload');
       final encrypted = written.encryptStream(payload, 9, 0);
       final read = await PdfEncryption.createFromDictionaryWithCertificate(

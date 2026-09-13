@@ -43,8 +43,8 @@ void main() {
       final encryption =
           writeStandard(EncryptionConstants.standardEncryption40);
       final dictionary = encryption.pdfRepresentation();
-      expect((await dictionary.nameEntry(PdfName.filter))!.getValue(),
-          'Standard');
+      expect(
+          (await dictionary.nameEntry(PdfName.filter))!.getValue(), 'Standard');
       expect((await dictionary.numberEntry(PdfName.v))!.intValue(), 1);
       expect((await dictionary.numberEntry(PdfName.r))!.intValue(), 2);
       expect((await dictionary.stringEntry(PdfName.o))!.getValueBytes()!.length,
@@ -169,8 +169,7 @@ void main() {
           version: PdfVersion.PDF_2_0);
       final read = await readBack(written, bytes('user-secret'));
       expect(read.getFileEncryptionKey(), written.getFileEncryptionKey());
-      expect(
-          (written.getSecurityHandler() as dynamic).isRevision6(), isTrue);
+      expect((written.getSecurityHandler() as dynamic).isRevision6(), isTrue);
     });
 
     test('an empty user password opens the document', () async {
@@ -201,8 +200,7 @@ void main() {
       expect(read.getFileEncryptionKey(), written.getFileEncryptionKey());
     });
 
-    test('a password longer than 127 bytes is truncated for AES-256',
-        () async {
+    test('a password longer than 127 bytes is truncated for AES-256', () async {
       final long = bytes('y' * 200);
       final written = PdfEncryption.standard(
         userPassword: long,
@@ -212,8 +210,8 @@ void main() {
         documentId: documentId,
         version: PdfVersion.PDF_2_0,
       );
-      final read = await readBack(
-          written, Uint8List.fromList(long.sublist(0, 127)));
+      final read =
+          await readBack(written, Uint8List.fromList(long.sublist(0, 127)));
       expect(read.getFileEncryptionKey(), written.getFileEncryptionKey());
     });
   });
@@ -259,8 +257,8 @@ void main() {
       final padded = handler.padPassword(bytes('ab'));
       expect(padded.length, 32);
       expect(padded.sublist(0, 2), bytes('ab'));
-      expect(padded.sublist(2),
-          StandardHandlerUsingStandard40.pad.sublist(0, 30));
+      expect(
+          padded.sublist(2), StandardHandlerUsingStandard40.pad.sublist(0, 30));
     });
   });
 
@@ -289,10 +287,10 @@ void main() {
       final encryption = writeStandard(EncryptionConstants.encryptionAes128 |
           EncryptionConstants.embeddedFilesOnly);
       final dictionary = encryption.pdfRepresentation();
-      expect((await dictionary.nameEntry(PdfName.stmF))!.getValue(),
-          'Identity');
-      expect((await dictionary.nameEntry(PdfName.strF))!.getValue(),
-          'Identity');
+      expect(
+          (await dictionary.nameEntry(PdfName.stmF))!.getValue(), 'Identity');
+      expect(
+          (await dictionary.nameEntry(PdfName.strF))!.getValue(), 'Identity');
       expect((await dictionary.nameEntry(PdfName.eff))!.getValue(), 'StdCF');
       final cf = await dictionary.dictionaryEntry(PdfName.cf);
       final stdcf = await cf!.dictionaryEntry(PdfName.stdCF);

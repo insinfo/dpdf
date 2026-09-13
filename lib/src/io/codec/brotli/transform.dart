@@ -17,7 +17,8 @@ final class Transforms {
 
 final class Transform {
   static const int NUM_RFC_TRANSFORMS = 121;
-  static final Transforms RFC_TRANSFORMS = Transforms(NUM_RFC_TRANSFORMS, 167, 50);
+  static final Transforms RFC_TRANSFORMS =
+      Transforms(NUM_RFC_TRANSFORMS, 167, 50);
 
   static const int OMIT_FIRST_LAST_LIMIT = 9;
 
@@ -29,18 +30,32 @@ final class Transform {
   static const int SHIFT_FIRST = OMIT_FIRST_BASE + OMIT_FIRST_LAST_LIMIT + 1;
   static const int SHIFT_ALL = SHIFT_FIRST + 1;
 
-  static const String PREFIX_SUFFIX_SRC = "# #s #, #e #.# the #.com/#\u00C2\u00A0# of # and" " # in # to #\"#\">#\n#]# for # a # that #. # with #'# from # by #. The # on # as # is #ing" " #\n\t#:#ed #(# at #ly #=\"# of the #. This #,# not #er #al #='#ful #ive #less #est #ize #" "ous #";
-  static const String TRANSFORMS_SRC = "     !! ! ,  *!  &!  \" !  ) *   * -  ! # !  #!*!  " "+  ,\$ !  -  %  .  / #   0  1 .  \"   2  3!*   4%  ! # /   5  6  7  8 0  1 &   \$   9 +   : " " ;  < '  !=  >  ?! 4  @ 4  2  &   A *# (   B  C& ) %  ) !*# *-% A +! *.  D! %'  & E *6  F " " G% ! *A *%  H! D  I!+!  J!+   K +- *4! A  L!*4  M  N +6  O!*% +.! K *G  P +%(  ! G *D +D " " Q +# *K!*G!+D!+# +G +A +4!+% +K!+4!*D!+K!*K";
+  static const String PREFIX_SUFFIX_SRC =
+      "# #s #, #e #.# the #.com/#\u00C2\u00A0# of # and"
+      " # in # to #\"#\">#\n#]# for # a # that #. # with #'# from # by #. The # on # as # is #ing"
+      " #\n\t#:#ed #(# at #ly #=\"# of the #. This #,# not #er #al #='#ful #ive #less #est #ize #"
+      "ous #";
+  static const String TRANSFORMS_SRC =
+      "     !! ! ,  *!  &!  \" !  ) *   * -  ! # !  #!*!  "
+      "+  ,\$ !  -  %  .  / #   0  1 .  \"   2  3!*   4%  ! # /   5  6  7  8 0  1 &   \$   9 +   : "
+      " ;  < '  !=  >  ?! 4  @ 4  2  &   A *# (   B  C& ) %  ) !*# *-% A +! *.  D! %'  & E *6  F "
+      " G% ! *A *%  H! D  I!+!  J!+   K +- *4! A  L!*4  M  N +6  O!*% +.! K *G  P +%(  ! G *D +D "
+      " Q +# *K!*G!+D!+# +G +A +4!+% +K!+4!*D!+K!*K";
 
-  static void unpackTransforms(Uint8List prefixSuffix,
-      Int32List prefixSuffixHeads, Int32List transforms, String prefixSuffixSrc, String transformsSrc) {
+  static void unpackTransforms(
+      Uint8List prefixSuffix,
+      Int32List prefixSuffixHeads,
+      Int32List transforms,
+      String prefixSuffixSrc,
+      String transformsSrc) {
     final Int32List prefixSuffixBytes = Utils.toUtf8Runes(prefixSuffixSrc);
     final int n = prefixSuffixBytes.length;
     int index = 1;
     int j = 0;
     for (int i = 0; i < n; ++i) {
       final int c = prefixSuffixBytes[i];
-      if (c == 35) { // == #
+      if (c == 35) {
+        // == #
         prefixSuffixHeads[index++] = j;
       } else {
         prefixSuffix[j++] = c;
@@ -53,8 +68,12 @@ final class Transform {
   }
 
   static final bool _init = () {
-    unpackTransforms(RFC_TRANSFORMS.prefixSuffixStorage, RFC_TRANSFORMS.prefixSuffixHeads,
-        RFC_TRANSFORMS.triplets, PREFIX_SUFFIX_SRC, TRANSFORMS_SRC);
+    unpackTransforms(
+        RFC_TRANSFORMS.prefixSuffixStorage,
+        RFC_TRANSFORMS.prefixSuffixHeads,
+        RFC_TRANSFORMS.triplets,
+        PREFIX_SUFFIX_SRC,
+        TRANSFORMS_SRC);
     return true;
   }();
 
@@ -64,8 +83,14 @@ final class Transform {
     }
   }
 
-  static int transformDictionaryWord(Uint8List dst, int dstOffset, Uint8List src, int srcOffset,
-      int wordLen, Transforms transforms, int transformIndex) {
+  static int transformDictionaryWord(
+      Uint8List dst,
+      int dstOffset,
+      Uint8List src,
+      int srcOffset,
+      int wordLen,
+      Transforms transforms,
+      int transformIndex) {
     _ensureInitialized();
     int offset = dstOffset;
     final Int32List triplets = transforms.triplets;
@@ -117,7 +142,8 @@ final class Transform {
       while (len > 0) {
         final int c0 = dst[uppercaseOffset] & 0xFF;
         if (c0 < 0xC0) {
-          if (c0 >= 97 && c0 <= 122) { // in [a..z] range
+          if (c0 >= 97 && c0 <= 122) {
+            // in [a..z] range
             dst[uppercaseOffset] = dst[uppercaseOffset] ^ 32;
           }
           uppercaseOffset += 1;
@@ -176,7 +202,10 @@ final class Transform {
             final int c1 = dst[shiftOffset + 1];
             final int c2 = dst[shiftOffset + 2];
             final int c3 = dst[shiftOffset + 3];
-            scalar += (c3 & 0x3F) | ((c2 & 0x3F) << 6) | ((c1 & 0x3F) << 12) | ((c0 & 0x07) << 18);
+            scalar += (c3 & 0x3F) |
+                ((c2 & 0x3F) << 6) |
+                ((c1 & 0x3F) << 12) |
+                ((c0 & 0x07) << 18);
             dst[shiftOffset] = 0xF0 | ((scalar >> 18) & 0x07);
             dst[shiftOffset + 1] = (c1 & 0xC0) | ((scalar >> 12) & 0x3F);
             dst[shiftOffset + 2] = (c2 & 0xC0) | ((scalar >> 6) & 0x3F);

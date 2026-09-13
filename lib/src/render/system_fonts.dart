@@ -5,5 +5,4 @@
 /// renderizador segue relatando o texto como não desenhado, como antes.
 library;
 
-export 'system_fonts_portable.dart'
-    if (dart.library.io) 'system_fonts_vm.dart';
+export 'system_fonts_portable.dart' if (dart.library.io) 'system_fonts_vm.dart';

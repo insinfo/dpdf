@@ -110,8 +110,8 @@ class PdfSigFieldLock extends PdfObjectWrapper<PdfDictionary> {
     if (action == null) return false;
     if (action == LockAction.all) return true;
     final listed = await getFieldLockFields();
-    final named = listed.any((name) =>
-        name == fieldName || fieldName.startsWith('$name.'));
+    final named = listed
+        .any((name) => name == fieldName || fieldName.startsWith('$name.'));
     return action == LockAction.include ? named : !named;
   }
 

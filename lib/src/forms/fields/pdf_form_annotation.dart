@@ -103,8 +103,8 @@ class PdfFormAnnotation extends AbstractPdfFormField {
 
   /// A zero size in `/DA` means the font shall be auto-sized as a function of
   /// the height of the annotation rectangle (ISO 32000-1, 12.7.3.3).
-  static double computeAutoFontSize(
-      PdfFont font, String text, double availableWidth, double availableHeight) {
+  static double computeAutoFontSize(PdfFont font, String text,
+      double availableWidth, double availableHeight) {
     double size = availableHeight * 0.75;
     if (text.isNotEmpty && availableWidth > 0) {
       final unitWidth = font.getWidthPoint(text, 1.0);
@@ -120,8 +120,8 @@ class PdfFormAnnotation extends AbstractPdfFormField {
 
   /// Horizontal offset of [text] for the quadding code [quadding]
   /// (0 left, 1 centered, 2 right - ISO 32000-1, Table 222).
-  static double alignmentOffset(
-      PdfFont font, String text, double fontSize, double boxWidth, int quadding) {
+  static double alignmentOffset(PdfFont font, String text, double fontSize,
+      double boxWidth, int quadding) {
     final textWidth = font.getWidthPoint(text, fontSize);
     switch (quadding) {
       case 1:
@@ -156,8 +156,8 @@ class PdfFormAnnotation extends AbstractPdfFormField {
     final shown = password ? '*' * value.length : value;
     final xObject = PdfFormXObject(Rectangle(0, 0, width, height));
     xObject.attachToDocument(doc);
-    final canvas =
-        PdfCanvas(xObject.pdfRepresentation(), await xObject.resourceDirectory(), doc);
+    final canvas = PdfCanvas(
+        xObject.pdfRepresentation(), await xObject.resourceDirectory(), doc);
 
     await _drawBoxDecorations(canvas, width, height);
 
@@ -210,8 +210,8 @@ class PdfFormAnnotation extends AbstractPdfFormField {
 
     final xObject = PdfFormXObject(Rectangle(0, 0, width, height));
     xObject.attachToDocument(doc);
-    final canvas =
-        PdfCanvas(xObject.pdfRepresentation(), await xObject.resourceDirectory(), doc);
+    final canvas = PdfCanvas(
+        xObject.pdfRepresentation(), await xObject.resourceDirectory(), doc);
 
     await _drawBoxDecorations(canvas, width, height);
 
@@ -354,8 +354,8 @@ class PdfFormAnnotation extends AbstractPdfFormField {
 
     final xObject = PdfFormXObject(Rectangle(0, 0, width, height));
     xObject.attachToDocument(doc);
-    final canvas =
-        PdfCanvas(xObject.pdfRepresentation(), await xObject.resourceDirectory(), doc);
+    final canvas = PdfCanvas(
+        xObject.pdfRepresentation(), await xObject.resourceDirectory(), doc);
     await _drawBoxDecorations(canvas, width, height, defaultBorder: true);
 
     if (text.isNotEmpty) {
@@ -473,8 +473,7 @@ class PdfFormAnnotation extends AbstractPdfFormField {
       canvas.fill();
       canvas.restoreState();
     }
-    final effectiveBorder =
-        border ?? (defaultBorder ? DeviceGray.BLACK : null);
+    final effectiveBorder = border ?? (defaultBorder ? DeviceGray.BLACK : null);
     if (effectiveBorder != null && borderWidth > 0) {
       canvas.saveState();
       canvas.setStrokeColor(effectiveBorder);
@@ -519,8 +518,8 @@ class PdfFormAnnotation extends AbstractPdfFormField {
 
   void _writeMultiline(PdfCanvas canvas, String text, FieldTextStyle style,
       double width, double height, int quadding) {
-    final lines = wrapLines(
-        text, style.font, style.fontSize, width - 2 * innerPadding);
+    final lines =
+        wrapLines(text, style.font, style.fontSize, width - 2 * innerPadding);
     final leading = style.fontSize * multilineLeadingRatio;
     double y = height - innerPadding - style.fontSize;
     for (final line in lines) {
@@ -538,7 +537,8 @@ class PdfFormAnnotation extends AbstractPdfFormField {
   void _writeComb(PdfCanvas canvas, String text, FieldTextStyle style,
       double width, double height, int maxLen) {
     final cellWidth = width / maxLen;
-    final ascent = style.font.getAscent(text.isEmpty ? 'X' : text, style.fontSize);
+    final ascent =
+        style.font.getAscent(text.isEmpty ? 'X' : text, style.fontSize);
     final descent =
         style.font.getDescent(text.isEmpty ? 'X' : text, style.fontSize);
     final y = (height - (ascent - descent)) / 2 - descent;
@@ -608,7 +608,8 @@ extension PdfFormAnnotationFactory on PdfWidgetAnnotation {
 }
 
 /// Marks [dictionary] as belonging to [document] when it is not attached yet.
-Future<void> ensureAttached(PdfDictionary dictionary, PdfDocument? document) async {
+Future<void> ensureAttached(
+    PdfDictionary dictionary, PdfDocument? document) async {
   if (document == null) return;
   if (dictionary.indirectHandle() == null) {
     dictionary.attachToDocument(document);

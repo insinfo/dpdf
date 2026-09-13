@@ -300,8 +300,8 @@ class _SystemFonts {
   _SystemFonts._(this._directories);
 
   factory _SystemFonts.forDirectories(List<String>? directories) {
-    final list = List<String>.unmodifiable(
-        directories ?? systemFontDirectories());
+    final list =
+        List<String>.unmodifiable(directories ?? systemFontDirectories());
     return _instances.putIfAbsent(
         list.join('\u0000'), () => _SystemFonts._(list));
   }
@@ -352,7 +352,8 @@ class _SystemFonts {
   /// normalizado.
   static String _strippedFamily(PdfFontRequest request) {
     final family = request.familyName.replaceFirst(
-      RegExp(r'[-,]?(BoldItalic|BoldOblique|Bold|Italic|Oblique|Regular|MT|PS)+$',
+      RegExp(
+          r'[-,]?(BoldItalic|BoldOblique|Bold|Italic|Oblique|Regular|MT|PS)+$',
           caseSensitive: false),
       '',
     );
@@ -412,7 +413,10 @@ class _SystemFonts {
         ..._tables[kind]!.forStyle(bold: bold, italic: italic),
     ];
     final seen = <String>{};
-    return <String>[for (final name in names) if (seen.add(name)) name];
+    return <String>[
+      for (final name in names)
+        if (seen.add(name)) name
+    ];
   }
 
   /// Decide se [face] pode desenhar no lugar de [family].
@@ -464,7 +468,8 @@ class _SystemFonts {
               extension != '.ttc') {
             continue;
           }
-          final name = _normalize(path.substring(path.lastIndexOf('/') + 1, dot));
+          final name =
+              _normalize(path.substring(path.lastIndexOf('/') + 1, dot));
           // O primeiro diretório da lista tem precedência sobre os seguintes.
           index.putIfAbsent(name, () => entity.path);
         }

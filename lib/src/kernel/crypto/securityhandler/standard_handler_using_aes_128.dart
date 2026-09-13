@@ -28,7 +28,8 @@ class StandardHandlerUsingAes128 extends StandardHandlerUsingStandard128 {
       {super.keyLength = 128});
 
   StandardHandlerUsingAes128.read(super.encryptionDictionary, super.password,
-      super.documentId, super.encryptMetadata, {super.keyLength = 128})
+      super.documentId, super.encryptMetadata,
+      {super.keyLength = 128})
       : super.read();
 
   @override

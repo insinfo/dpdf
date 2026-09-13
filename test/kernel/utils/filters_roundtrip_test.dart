@@ -31,7 +31,8 @@ PdfDictionary _dict(Map<String, PdfObject> entries) {
 
 Future<Uint8List> _roundTrip(Uint8List data, String filter,
     [PdfDictionary? parms]) async {
-  final encoded = await FilterHandlers.encodeBytes(data, PdfName(filter), parms);
+  final encoded =
+      await FilterHandlers.encodeBytes(data, PdfName(filter), parms);
   final streamDictionary = PdfDictionary();
   streamDictionary.put(PdfName.filter, PdfName(filter));
   if (parms != null) streamDictionary.put(PdfName.decodeParms, parms);
@@ -337,8 +338,7 @@ void main() {
           'Columns': PdfNumber.fromInt(columns),
           'Rows': PdfNumber.fromInt(rows),
         });
-        expect(
-            await _roundTrip(image, 'CCITTFaxDecode', parms), equals(image));
+        expect(await _roundTrip(image, 'CCITTFaxDecode', parms), equals(image));
       });
     }
 
@@ -412,8 +412,13 @@ void main() {
     });
 
     test('mixed Group 3 two-dimensional data decodes tagged lines', () {
-      final data = _bits('000000000001' '1' '10011' // EOL, 1-D tag, white 8
-          '000000000001' '1' '1011' '011'); // EOL, 1-D tag, white 4, black 4
+      final data = _bits('000000000001'
+          '1'
+          '10011' // EOL, 1-D tag, white 8
+          '000000000001'
+          '1'
+          '1011'
+          '011'); // EOL, 1-D tag, white 4, black 4
       final decoded =
           FilterHandlers.ccittFaxDecode(data, k: 4, columns: 8, rows: 2);
       expect(decoded, equals([0xFF, 0xF0]));
@@ -587,10 +592,7 @@ void main() {
           ccittParms(-1, columns, rows, encodedByteAlign: true));
       expect(
           FilterHandlers.ccittFaxDecode(encoded,
-              k: -1,
-              columns: columns,
-              rows: rows,
-              encodedByteAlign: true),
+              k: -1, columns: columns, rows: rows, encodedByteAlign: true),
           equals(image));
     });
 
@@ -608,8 +610,7 @@ void main() {
       expect(withoutEol[0], isNot(equals(0x00)));
     });
 
-    test('every mixed Group 3 line carries its one or two dimensional tag',
-        () {
+    test('every mixed Group 3 line carries its one or two dimensional tag', () {
       // Two lines, K = 2: the first is coded one-dimensionally and tagged 1,
       // the second two-dimensionally and tagged 0.
       const columns = 16;
@@ -634,9 +635,8 @@ void main() {
             zeros++;
           }
           if (zeros == 11) {
-            final one = (encoded[(start + 11) >> 3] >>
-                    (7 - ((start + 11) & 7))) &
-                1;
+            final one =
+                (encoded[(start + 11) >> 3] >> (7 - ((start + 11) & 7))) & 1;
             if (one == 1) return start;
           }
         }

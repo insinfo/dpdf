@@ -11,7 +11,8 @@ class Huffman {
     return (key & (step - 1)) + step;
   }
 
-  static void replicateValue(Int32List table, int offset, int step, int end, int item) {
+  static void replicateValue(
+      Int32List table, int offset, int step, int end, int item) {
     int pos = end;
     while (pos > 0) {
       pos -= step;
@@ -33,7 +34,8 @@ class Huffman {
     return bits - rootBits;
   }
 
-  static int buildHuffmanTable(Int32List tableGroup, int tableIdx, int rootBits, Int32List codeLengths, int codeLengthsSize) {
+  static int buildHuffmanTable(Int32List tableGroup, int tableIdx, int rootBits,
+      Int32List codeLengths, int codeLengthsSize) {
     final int tableOffset = tableGroup[tableIdx];
     final Int32List sorted = Int32List(codeLengthsSize);
     final Int32List count = Int32List(MAX_LENGTH + 1);
@@ -71,7 +73,8 @@ class Huffman {
     for (int len = 1; len <= rootBits; ++len) {
       step = step << 1;
       while (count[len] > 0) {
-        replicateValue(tableGroup, tableOffset + key, step, tableSize, (len << 16) | sorted[symbol++]);
+        replicateValue(tableGroup, tableOffset + key, step, tableSize,
+            (len << 16) | sorted[symbol++]);
         key = getNextKey(key, len);
         count[len]--;
       }
@@ -90,9 +93,11 @@ class Huffman {
           tableSize = 1 << tableBits;
           totalSize += tableSize;
           low = key & mask;
-          tableGroup[tableOffset + low] = ((tableBits + rootBits) << 16) | (currentOffset - tableOffset - low);
+          tableGroup[tableOffset + low] = ((tableBits + rootBits) << 16) |
+              (currentOffset - tableOffset - low);
         }
-        replicateValue(tableGroup, currentOffset + (key >> rootBits), step, tableSize, ((len - rootBits) << 16) | sorted[symbol++]);
+        replicateValue(tableGroup, currentOffset + (key >> rootBits), step,
+            tableSize, ((len - rootBits) << 16) | sorted[symbol++]);
         key = getNextKey(key, len);
         count[len]--;
       }

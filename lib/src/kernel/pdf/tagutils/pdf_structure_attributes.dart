@@ -148,10 +148,9 @@ class PdfStructureAttributes extends PdfObjectWrapper<PdfDictionary> {
       _putNumbers('Color', _rgb(rgb));
 
   /// Table 343 /Padding, one number or one per edge.
-  PdfStructureAttributes setPadding(List<double> padding) =>
-      padding.length == 1
-          ? _putNumber('Padding', padding.first)
-          : _putNumbers('Padding', padding);
+  PdfStructureAttributes setPadding(List<double> padding) => padding.length == 1
+      ? _putNumber('Padding', padding.first)
+      : _putNumbers('Padding', padding);
 
   // --------------------------------------------- BLSE layout attributes (344)
 
@@ -320,8 +319,11 @@ class PdfStructureAttributes extends PdfObjectWrapper<PdfDictionary> {
   /// Table 346 /ColumnCount.
   PdfStructureAttributes setColumnCount(int count) {
     if (count < 1) {
-      throw ArgumentError.value(count, 'count', '/ColumnCount must be at '
-          'least 1.');
+      throw ArgumentError.value(
+          count,
+          'count',
+          '/ColumnCount must be at '
+              'least 1.');
     }
     return _putInt('ColumnCount', count);
   }
@@ -331,10 +333,9 @@ class PdfStructureAttributes extends PdfObjectWrapper<PdfDictionary> {
       _putNumbers('ColumnWidths', widths);
 
   /// Table 346 /ColumnGap.
-  PdfStructureAttributes setColumnGaps(List<double> gaps) =>
-      gaps.length == 1
-          ? _putNumber('ColumnGap', gaps.first)
-          : _putNumbers('ColumnGap', gaps);
+  PdfStructureAttributes setColumnGaps(List<double> gaps) => gaps.length == 1
+      ? _putNumber('ColumnGap', gaps.first)
+      : _putNumbers('ColumnGap', gaps);
 
   // ---------------------------------------------- list attribute (Table 347)
 
@@ -434,8 +435,8 @@ class PdfStructureAttributes extends PdfObjectWrapper<PdfDictionary> {
     }
     for (final component in rgb) {
       if (component < 0 || component > 1) {
-        throw ArgumentError.value(rgb, 'rgb',
-            'Colour components run from 0.0 to 1.0.');
+        throw ArgumentError.value(
+            rgb, 'rgb', 'Colour components run from 0.0 to 1.0.');
       }
     }
     return rgb;
@@ -443,8 +444,8 @@ class PdfStructureAttributes extends PdfObjectWrapper<PdfDictionary> {
 
   static void _expect(String attribute, String value, Set<String> allowed) {
     if (!allowed.contains(value)) {
-      throw ArgumentError.value(value, attribute,
-          'Allowed values are ${allowed.join(', ')}.');
+      throw ArgumentError.value(
+          value, attribute, 'Allowed values are ${allowed.join(', ')}.');
     }
   }
 }

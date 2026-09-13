@@ -89,8 +89,8 @@ void main() {
     });
 
     test('AES-256 revision 6 round trips a stream', () async {
-      final encryption =
-          writer(EncryptionConstants.encryptionAes256, version: PdfVersion.PDF_2_0);
+      final encryption = writer(EncryptionConstants.encryptionAes256,
+          version: PdfVersion.PDF_2_0);
       final encrypted = encryption.encryptStream(payload, 2, 0);
       final reader = await PdfEncryption.createFromDictionary(
           encryption.pdfRepresentation(), bytes('open-me'), documentId);
@@ -152,8 +152,8 @@ void main() {
       final asIdentity = encryption.encryptStream(metadata, 6, 0,
           cryptFilterName: PdfName.identity);
       expect(asIdentity, metadata);
-      final asStdCF =
-          encryption.encryptStream(metadata, 6, 0, cryptFilterName: PdfName.stdCF);
+      final asStdCF = encryption.encryptStream(metadata, 6, 0,
+          cryptFilterName: PdfName.stdCF);
       expect(asStdCF, isNot(metadata));
       expect(
           encryption.decryptStream(asStdCF, 6, 0,
@@ -174,8 +174,8 @@ void main() {
       final encryption = writer(EncryptionConstants.encryptionAes128 |
           EncryptionConstants.doNotEncryptMetadata);
       final metadata = bytes('plaintext metadata');
-      expect(encryption.encryptStream(metadata, 6, 0, isMetadata: true),
-          metadata);
+      expect(
+          encryption.encryptStream(metadata, 6, 0, isMetadata: true), metadata);
       expect(encryption.encryptStream(metadata, 6, 0), isNot(metadata));
     });
 
@@ -187,8 +187,7 @@ void main() {
       final encrypted =
           encryption.encryptStream(attachment, 8, 0, isEmbeddedFile: true);
       expect(encrypted, isNot(attachment));
-      expect(
-          encryption.decryptStream(encrypted, 8, 0, isEmbeddedFile: true),
+      expect(encryption.decryptStream(encrypted, 8, 0, isEmbeddedFile: true),
           attachment);
     });
 
@@ -260,16 +259,18 @@ void main() {
 
     test('WriterProperties switches between the two encryption kinds', () {
       final properties = WriterProperties()
-        ..setStandardEncryption(bytes('u'), bytes('o'),
+        ..setStandardEncryption(
+            bytes('u'),
+            bytes('o'),
             EncryptionConstants.allowPrinting,
             EncryptionConstants.encryptionAes256);
       expect(properties.isStandardEncryptionUsed, isTrue);
       expect(properties.isPublicKeyEncryptionUsed, isFalse);
-      expect(properties.encryptionAlgorithm,
-          EncryptionConstants.encryptionAes256);
+      expect(
+          properties.encryptionAlgorithm, EncryptionConstants.encryptionAes256);
 
-      properties.setPublicKeyEncryption(
-          [], EncryptionConstants.encryptionAes128);
+      properties
+          .setPublicKeyEncryption([], EncryptionConstants.encryptionAes128);
       expect(properties.isPublicKeyEncryptionUsed, isTrue);
       expect(properties.isStandardEncryptionUsed, isFalse);
       expect(properties.userPassword, isNull);

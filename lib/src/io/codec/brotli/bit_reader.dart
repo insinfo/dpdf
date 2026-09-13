@@ -31,7 +31,8 @@ class BitReader {
     s.halfOffset = 0;
     while (bytesInBuffer < CAPACITY) {
       final int spaceLeft = CAPACITY - bytesInBuffer;
-      final int len = Utils.readInput(s, s.byteBuffer, bytesInBuffer, spaceLeft);
+      final int len =
+          Utils.readInput(s, s.byteBuffer, bytesInBuffer, spaceLeft);
       if (len < BrotliError.BROTLI_ERROR) {
         return len;
       }
@@ -51,12 +52,14 @@ class BitReader {
     if (s.endOfStreamReached == 0) {
       return BrotliError.BROTLI_OK;
     }
-    final int byteOffset = (s.halfOffset << 2) + ((s.bitOffset + 7) >> 3) - BYTENESS;
+    final int byteOffset =
+        (s.halfOffset << 2) + ((s.bitOffset + 7) >> 3) - BYTENESS;
     if (byteOffset > s.tailBytes) {
       return Utils.makeError(s, BrotliError.BROTLI_ERROR_READ_AFTER_END);
     }
     if ((endOfStream != 0) && (byteOffset != s.tailBytes)) {
-      return Utils.makeError(s, BrotliError.BROTLI_ERROR_UNUSED_BYTES_AFTER_END);
+      return Utils.makeError(
+          s, BrotliError.BROTLI_ERROR_UNUSED_BYTES_AFTER_END);
     }
     return BrotliError.BROTLI_OK;
   }
@@ -70,7 +73,8 @@ class BitReader {
   static void fillBitWindow(State s) {
     if (s.bitOffset >= HALF_BITNESS) {
       int nextVal = s.intBuffer[s.halfOffset++];
-      s.accumulator64 = ((nextVal & 0xFFFFFFFF) << HALF_BITNESS) | (s.accumulator64 >>> HALF_BITNESS);
+      s.accumulator64 = ((nextVal & 0xFFFFFFFF) << HALF_BITNESS) |
+          (s.accumulator64 >>> HALF_BITNESS);
       s.bitOffset -= HALF_BITNESS;
     }
   }
@@ -141,7 +145,8 @@ class BitReader {
     if (padding != 0) {
       final int paddingBits = readFewBits(s, padding);
       if (paddingBits != 0) {
-        return Utils.makeError(s, BrotliError.BROTLI_ERROR_CORRUPTED_PADDING_BITS);
+        return Utils.makeError(
+            s, BrotliError.BROTLI_ERROR_CORRUPTED_PADDING_BITS);
       }
     }
     return BrotliError.BROTLI_OK;

@@ -392,8 +392,8 @@ class FilterHandlers {
       final base = row * bytesPerRow;
       if (bitsPerComponent == 8) {
         for (var i = colors; i < bytesPerRow; i++) {
-          output[base + i] = (output[base + i] + output[base + i - colors]) &
-              0xFF;
+          output[base + i] =
+              (output[base + i] + output[base + i - colors]) & 0xFF;
         }
       } else if (bitsPerComponent == 16) {
         final step = colors * 2;
@@ -479,7 +479,8 @@ class FilterHandlers {
     if (byteIndex >= data.length) return;
     final shift = 8 - bits - (bitPosition & 7);
     final mask = ((1 << bits) - 1) << shift;
-    data[byteIndex] = (data[byteIndex] & ~mask & 0xFF) | ((value << shift) & mask);
+    data[byteIndex] =
+        (data[byteIndex] & ~mask & 0xFF) | ((value << shift) & mask);
   }
 
   /// Decodes `/ASCIIHexDecode` data (ISO 32000-1, 7.4.2).

@@ -22,8 +22,7 @@ class CryptFilterCipher {
   /// The four bytes appended to the key of an AES crypt filter, step (b):
   /// "the value `sAlT`, which corresponds to the hexadecimal values 0x73,
   /// 0x41, 0x6C, 0x54".
-  static final Uint8List aesSalt =
-      Uint8List.fromList([0x73, 0x41, 0x6c, 0x54]);
+  static final Uint8List aesSalt = Uint8List.fromList([0x73, 0x41, 0x6c, 0x54]);
 
   /// The filter this cipher implements.
   final CryptFilter filter;

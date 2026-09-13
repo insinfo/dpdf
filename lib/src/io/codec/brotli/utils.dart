@@ -26,7 +26,8 @@ class Utils {
     }
   }
 
-  static void copyBytes(Uint8List dst, int target, Uint8List src, int start, int end) {
+  static void copyBytes(
+      Uint8List dst, int target, Uint8List src, int start, int end) {
     dst.setRange(target, target + (end - start), src.sublist(start, end));
   }
 

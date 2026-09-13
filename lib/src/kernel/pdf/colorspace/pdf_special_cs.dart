@@ -168,8 +168,8 @@ class PdfSpecialCsSeparation extends PdfSpecialCs {
     if (isNone()) {
       return <double>[1.0, 1.0, 1.0];
     }
-    final tint = PdfColorSpace.clampUnit(
-        PdfColorSpace.componentAt(components, 0));
+    final tint =
+        PdfColorSpace.clampUnit(PdfColorSpace.componentAt(components, 0));
     if (isAll()) {
       // Clause 8.6.6.4 requires every reader to support /All and to ignore the
       // alternate space and the tint transform for it: the tint goes to all
@@ -301,8 +301,7 @@ class PdfSpecialCsDeviceN extends PdfSpecialCs {
 
   /// Whether every colourant is `/None`, in which case clause 8.6.6.5 says the
   /// space discards its output and never reverts to the alternate space.
-  bool paintsNothing() =>
-      colorantNames.every((name) => name == PdfName.none);
+  bool paintsNothing() => colorantNames.every((name) => name == PdfName.none);
 
   @override
   int getNumberOfComponents() => colorantNames.length;

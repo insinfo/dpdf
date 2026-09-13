@@ -137,9 +137,8 @@ void main() {
           (await annotation!.numberEntry(PdfName.structParent))?.intValue();
       expect(structParent, isNotNull);
 
-      final owner = await destination
-          .structureRoot()
-          .getParentTreeEntry(structParent!);
+      final owner =
+          await destination.structureRoot().getParentTreeEntry(structParent!);
       expect(owner, isA<PdfDictionary>());
       expect(
           (await PdfStructElem(owner as PdfDictionary).getRole())?.getValue(),
@@ -191,8 +190,7 @@ Future<Uint8List> _buildTwoPageTaggedDocument() async {
   final builder = BytesBuilder();
   final document = PdfDocument(writer: PdfWriter.fromBytesBuilder(builder));
   document.enableTagging();
-  await document.structureRoot()
-      .addRoleMapping('Title', StandardRoles.h1);
+  await document.structureRoot().addRoleMapping('Title', StandardRoles.h1);
 
   final first = await document.appendBlankPage();
   final second = await document.appendBlankPage();

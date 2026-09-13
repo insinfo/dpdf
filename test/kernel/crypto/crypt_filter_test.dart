@@ -16,8 +16,8 @@ import 'package:test/test.dart';
 
 Uint8List bytes(String value) => Uint8List.fromList(utf8.encode(value));
 
-CryptFilter filterOf(CryptFilterMethod method, {int? length}) => CryptFilter(
-    name: PdfName.stdCF, method: method, length: length);
+CryptFilter filterOf(CryptFilterMethod method, {int? length}) =>
+    CryptFilter(name: PdfName.stdCF, method: method, length: length);
 
 void main() {
   final fileKey128 =
@@ -29,11 +29,11 @@ void main() {
   group('Algorithm 1 object keys', () {
     test('V2 appends the object and generation numbers before the MD5 hash',
         () {
-      final cipher = CryptFilterCipher(filterOf(CryptFilterMethod.v2),
-          fileKey128);
+      final cipher =
+          CryptFilterCipher(filterOf(CryptFilterMethod.v2), fileKey128);
       final key = cipher.objectKey(0x030201, 0x0504);
-      final input = Uint8List.fromList(
-          [...fileKey128, 0x01, 0x02, 0x03, 0x04, 0x05]);
+      final input =
+          Uint8List.fromList([...fileKey128, 0x01, 0x02, 0x03, 0x04, 0x05]);
       final expected = DigestBytes.compute('MD5', input);
       expect(key, expected.sublist(0, 16));
     });
@@ -44,8 +44,15 @@ void main() {
       final key = cipher.objectKey(1, 0);
       final input = Uint8List.fromList([
         ...fileKey128,
-        1, 0, 0, 0, 0,
-        0x73, 0x41, 0x6c, 0x54,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0x73,
+        0x41,
+        0x6c,
+        0x54,
       ]);
       expect(key, DigestBytes.compute('MD5', input).sublist(0, 16));
     });
@@ -88,10 +95,8 @@ void main() {
     });
 
     for (final method in [CryptFilterMethod.aesV2, CryptFilterMethod.aesV3]) {
-      test('$method stores a 16-byte initialisation vector and pads to 16',
-          () {
-        final key =
-            method == CryptFilterMethod.aesV3 ? fileKey256 : fileKey128;
+      test('$method stores a 16-byte initialisation vector and pads to 16', () {
+        final key = method == CryptFilterMethod.aesV3 ? fileKey256 : fileKey128;
         final cipher = CryptFilterCipher(filterOf(method), key);
         final encrypted = cipher.encrypt(payload, 5, 0);
         expect(encrypted.length % 16, 0);
@@ -111,8 +116,7 @@ void main() {
       });
 
       test('$method uses a fresh initialisation vector on every call', () {
-        final key =
-            method == CryptFilterMethod.aesV3 ? fileKey256 : fileKey128;
+        final key = method == CryptFilterMethod.aesV3 ? fileKey256 : fileKey128;
         final cipher = CryptFilterCipher(filterOf(method), key);
         final first = cipher.encrypt(payload, 5, 0);
         final second = cipher.encrypt(payload, 5, 0);
@@ -121,8 +125,7 @@ void main() {
       });
 
       test('$method pads a message whose length is a multiple of 16', () {
-        final key =
-            method == CryptFilterMethod.aesV3 ? fileKey256 : fileKey128;
+        final key = method == CryptFilterMethod.aesV3 ? fileKey256 : fileKey128;
         final cipher = CryptFilterCipher(filterOf(method), key);
         final block = Uint8List.fromList(List<int>.generate(32, (i) => i));
         final encrypted = cipher.encrypt(block, 3, 0);
@@ -217,8 +220,8 @@ void main() {
         encryptMetadata: false,
         recipients: [recipient],
       );
-      final parsed = await CryptFilter.fromDictionary(
-          filter.name, filter.toDictionary());
+      final parsed =
+          await CryptFilter.fromDictionary(filter.name, filter.toDictionary());
       expect(parsed.recipients.single, recipient);
       expect(parsed.encryptMetadata, isFalse);
     });

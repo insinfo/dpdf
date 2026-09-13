@@ -148,8 +148,7 @@ Future<Uint8List> buildDocument({
       details.pdfRepresentation().put(PdfName(key), PdfString(value)));
 
   if (xmp != null) {
-    await document
-        .assignMetadataPayload(Uint8List.fromList(utf8.encode(xmp)));
+    await document.assignMetadataPayload(Uint8List.fromList(utf8.encode(xmp)));
   }
   await document.close();
   return output.takeBytes();
@@ -301,7 +300,8 @@ void main() {
       expect(found, contains('device-cmyk-without-cmyk-output-intent'));
     });
 
-    test('accepts an image in DeviceRGB under an RGB intent and rejects it '
+    test(
+        'accepts an image in DeviceRGB under an RGB intent and rejects it '
         'under a grayscale one', () async {
       PdfStream image() => PdfStream.withBytes(Uint8List(12), 0)
         ..put(PdfName.subtype, PdfName('Image'))
@@ -486,8 +486,7 @@ void main() {
         ..put(PdfName('Flags'), PdfNumber(4))
         ..put(PdfName.fontFile2, PdfStream.withBytes(Uint8List(8), 0));
       if (cidSet) {
-        descriptor.put(
-            PdfName('CIDSet'), PdfStream.withBytes(Uint8List(4), 0));
+        descriptor.put(PdfName('CIDSet'), PdfStream.withBytes(Uint8List(4), 0));
       }
       final descendant = PdfDictionary()
         ..put(PdfName.subtype, PdfName(descendantSubtype))
@@ -510,8 +509,8 @@ void main() {
       final found = await codes(await buildDocument(
         xmp: packet(),
         profile: iccProfile(),
-        resources: fontResources(compositeFont(
-            cidSet: false, cidToGidMap: PdfName('Identity'))),
+        resources: fontResources(
+            compositeFont(cidSet: false, cidToGidMap: PdfName('Identity'))),
       ));
 
       expect(found, contains('cidfont-without-cidset'));
@@ -521,8 +520,8 @@ void main() {
       final found = await codes(await buildDocument(
         xmp: packet(),
         profile: iccProfile(),
-        resources: fontResources(
-            compositeFont(cidToGidMap: PdfName('Identity'))),
+        resources:
+            fontResources(compositeFont(cidToGidMap: PdfName('Identity'))),
       ));
 
       expect(found, isNot(contains('cidfont-without-cidset')));
@@ -534,8 +533,7 @@ void main() {
       final found = await codes(await buildDocument(
         xmp: packet(),
         profile: iccProfile(),
-        resources:
-            fontResources(compositeFont(cidToGidMap: PdfName('Custom'))),
+        resources: fontResources(compositeFont(cidToGidMap: PdfName('Custom'))),
       ));
 
       expect(found, contains('cidfont-bad-cidtogidmap'));
@@ -566,8 +564,8 @@ void main() {
           xmp: packet(part: '2', conformance: 'U'),
           profile: iccProfile(),
           content: 'BT /F1 12 Tf <41425A> Tj ET',
-          resources: fontResources(
-              mappedFont('1 beginbfchar <41> <0041> endbfchar')),
+          resources:
+              fontResources(mappedFont('1 beginbfchar <41> <0041> endbfchar')),
         ),
         level: PdfAConformanceLevel.a2u,
       );
@@ -581,8 +579,8 @@ void main() {
           xmp: packet(part: '2', conformance: 'U'),
           profile: iccProfile(),
           content: 'BT /F1 12 Tf <41> Tj ET',
-          resources: fontResources(
-              mappedFont('1 beginbfchar <41> <0041> endbfchar')),
+          resources:
+              fontResources(mappedFont('1 beginbfchar <41> <0041> endbfchar')),
         ),
         level: PdfAConformanceLevel.a2u,
       );
@@ -606,8 +604,7 @@ void main() {
       expect(found, contains('font-without-tounicode'));
     });
 
-    test('accepts a simple font that uses a named standard encoding',
-        () async {
+    test('accepts a simple font that uses a named standard encoding', () async {
       final found = await codes(
         await buildDocument(
           xmp: packet(part: '2', conformance: 'U'),
@@ -705,8 +702,8 @@ void main() {
           xmp: packet(part: '1', conformance: 'B'),
           profile: iccProfile(),
           resources: PdfDictionary()
-            ..put(PdfName.xObject,
-                PdfDictionary()..put(PdfName('Im0'), image())),
+            ..put(
+                PdfName.xObject, PdfDictionary()..put(PdfName('Im0'), image())),
         ),
         level: PdfAConformanceLevel.a1b,
       );
@@ -730,7 +727,9 @@ void main() {
       final found = await codes(await buildDocument(
         xmp: packet(),
         profile: iccProfile(),
-        pageEntries: {'Annots': PdfArray.fromList([annotation])},
+        pageEntries: {
+          'Annots': PdfArray.fromList([annotation])
+        },
       ));
 
       expect(found, contains('annotation-additional-actions'));
@@ -739,14 +738,14 @@ void main() {
 
   group('embedded files', () {
     PdfDictionary tree(PdfDictionary specification) => PdfDictionary()
-      ..put(PdfName('EmbeddedFiles'),
+      ..put(
+          PdfName('EmbeddedFiles'),
           PdfDictionary()
-            ..put(
-                PdfName('Names'),
-                PdfArray.fromList(
-                    [PdfString('data.csv'), specification])));
+            ..put(PdfName('Names'),
+                PdfArray.fromList([PdfString('data.csv'), specification])));
 
-    test('reports an attachment that does not say how it relates to the '
+    test(
+        'reports an attachment that does not say how it relates to the '
         'document', () async {
       final found = await codes(
         await buildDocument(
@@ -786,7 +785,8 @@ void main() {
   group('XMP', () {
     final date = DateTime(2024, 1, 2, 3, 4, 5);
 
-    test('reports a title the XMP packet and the information dictionary '
+    test(
+        'reports a title the XMP packet and the information dictionary '
         'disagree about', () async {
       final found = await codes(await buildDocument(
         xmp: packet(title: 'The XMP title'),

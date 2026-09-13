@@ -422,7 +422,9 @@ class SignatureUtil {
     if (!covers) {
       final source = _document.inputReader()?.getOriginalBytes();
       final revision = await extractRevisionDocument(name);
-      if (source != null && revision != null && revision.length < source.length) {
+      if (source != null &&
+          revision != null &&
+          revision.length < source.length) {
         try {
           modifications =
               await SignatureModificationAnalyzer.compare(revision, source);
@@ -447,8 +449,8 @@ class SignatureUtil {
       }
       final locked = await _lockedFieldsAt(name);
       final touched = modifications.changedFieldValues
-          .where((field) => locked.any((lock) =>
-              lock == field || field.startsWith('$lock.')))
+          .where((field) =>
+              locked.any((lock) => lock == field || field.startsWith('$lock.')))
           .toList();
       if (touched.isNotEmpty) {
         issues.add(SignatureValidationIssue.fieldMdpViolation);
@@ -505,9 +507,8 @@ class SignatureUtil {
           candidates.addAll(fields);
           break;
         case LockAction.exclude:
-          candidates.addAll(allFields.where((field) => !fields.any(
-              (excluded) =>
-                  excluded == field || field.startsWith('$excluded.'))));
+          candidates.addAll(allFields.where((field) => !fields.any((excluded) =>
+              excluded == field || field.startsWith('$excluded.'))));
           break;
       }
     }

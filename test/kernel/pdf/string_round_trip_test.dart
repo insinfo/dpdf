@@ -7,8 +7,8 @@ String _chars(List<int> codes) => String.fromCharCodes(codes);
 
 /// Writes [values] as `/T` entries of one dictionary, reopens the document and
 /// returns what came back.
-Future<Map<String, List<int>>> _roundTrip(
-    Map<String, String> values, {bool hex = false}) async {
+Future<Map<String, List<int>>> _roundTrip(Map<String, String> values,
+    {bool hex = false}) async {
   final output = BytesBuilder(copy: false);
   final document = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await document.appendBlankPage();
@@ -22,7 +22,8 @@ Future<Map<String, List<int>>> _roundTrip(
   page.pdfRepresentation().put(PdfName('Probe'), probe);
   await document.close();
 
-  final reopened = await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
+  final reopened =
+      await PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
   final read = await (await reopened.pageAt(1))!
       .pdfRepresentation()
       .dictionaryEntry(PdfName('Probe'));
@@ -47,7 +48,9 @@ void main() {
     // byte. Silent data loss, in every string the caller did not mark as hex.
 
     test('a carriage return is still a carriage return', () async {
-      final back = await _roundTrip({'v': _chars([97, 13, 98])});
+      final back = await _roundTrip({
+        'v': _chars([97, 13, 98])
+      });
 
       expect(back['v'], orderedEquals([97, 13, 98]));
     });
@@ -56,7 +59,9 @@ void main() {
       // The pair is what matters most in practice: 14.10.5.3 requires HTTP
       // headers terminated by CRLF, and a mail or network payload carried in a
       // string has the same need.
-      final back = await _roundTrip({'v': _chars([97, 13, 10, 98])});
+      final back = await _roundTrip({
+        'v': _chars([97, 13, 10, 98])
+      });
 
       expect(back['v'], orderedEquals([97, 13, 10, 98]));
     });
@@ -100,7 +105,9 @@ void main() {
     });
 
     test('hex writing was never affected and stays exact', () async {
-      final back = await _roundTrip({'v': _chars([97, 13, 10, 98])}, hex: true);
+      final back = await _roundTrip({
+        'v': _chars([97, 13, 10, 98])
+      }, hex: true);
 
       expect(back['v'], orderedEquals([97, 13, 10, 98]));
     });

@@ -128,8 +128,7 @@ class CmsEnvelopedData {
     encrypted.setRange(head.length, encrypted.length, tail);
 
     final recipientInfos = ASN1Set(elements: [
-      for (final certificate in certificates)
-        _encodeRecipient(certificate, key)
+      for (final certificate in certificates) _encodeRecipient(certificate, key)
     ]);
 
     final encryptedContentInfo = ASN1Sequence(elements: [
@@ -221,8 +220,7 @@ class CmsEnvelopedData {
       }
     }
     if (algorithm == null) {
-      throw UnsupportedError(
-          'Unsupported content encryption algorithm '
+      throw UnsupportedError('Unsupported content encryption algorithm '
           '${algorithmOid.objectIdentifierAsString}');
     }
     final parameters = algorithmIdentifier.elements![1];

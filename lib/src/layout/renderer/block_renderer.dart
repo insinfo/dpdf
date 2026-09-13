@@ -137,10 +137,11 @@ class BlockRenderer extends AbstractRenderer {
     // We want to place content downwards.
 
     // Top offset for first child
-    double topOffset =
-        (collapseHandler != null ? collapseHandler.startMarginsCollapse() : mt) +
-            bt +
-            pt;
+    double topOffset = (collapseHandler != null
+            ? collapseHandler.startMarginsCollapse()
+            : mt) +
+        bt +
+        pt;
     double bottomOffset =
         collapseHandler != null ? bb + pb : mb + bb + pb; // added at the end
 
@@ -236,8 +237,8 @@ class BlockRenderer extends AbstractRenderer {
             return _nothing();
           }
           currentHeightUsed -= childHeight + collapsedSpacing;
-          return _partial(area, parentBox, currentHeightUsed, splitAt, null,
-              null, splitAt);
+          return _partial(
+              area, parentBox, currentHeightUsed, splitAt, null, null, splitAt);
         }
       } else if (result.getStatus() == LayoutResult.PARTIAL) {
         if (child is AbstractRenderer) {
@@ -260,16 +261,15 @@ class BlockRenderer extends AbstractRenderer {
                     result.getCauseOfNothing())
                 .setAreaBreak(result.getAreaBreak()!);
           }
-          return _partial(area, parentBox, currentHeightUsed, i, null, null,
-                  i + 1)
+          return _partial(
+                  area, parentBox, currentHeightUsed, i, null, null, i + 1)
               .setAreaBreak(result.getAreaBreak()!);
         }
         if (_keepTogether()) {
           return _nothing(result.getCauseOfNothing());
         }
         if (i > 0 && anyChildOccupiedSpace) {
-          return _partial(
-              area, parentBox, currentHeightUsed, i, null, null, i);
+          return _partial(area, parentBox, currentHeightUsed, i, null, null, i);
         }
         return _nothing(result.getCauseOfNothing());
       }
@@ -316,8 +316,8 @@ class BlockRenderer extends AbstractRenderer {
 
     if (parentCollapseInfo != null && collapseHandler != null) {
       parentCollapseInfo.collapseBefore = collapseHandler.getCollapseBefore();
-      parentCollapseInfo.isSelfCollapsing = MarginsCollapseHandler
-          .isSelfCollapsing(this, parentWidth,
+      parentCollapseInfo.isSelfCollapsing =
+          MarginsCollapseHandler.isSelfCollapsing(this, parentWidth,
               hasContentHeight: anyChildOccupiedSpace);
     }
 
@@ -352,8 +352,8 @@ class BlockRenderer extends AbstractRenderer {
   }
 
   LayoutResult _nothing([Renderer? causeOfNothing]) {
-    BlockRenderer overflowRenderer = createOverflowRenderer(LayoutResult.NOTHING)
-        as BlockRenderer;
+    BlockRenderer overflowRenderer =
+        createOverflowRenderer(LayoutResult.NOTHING) as BlockRenderer;
     overflowRenderer.childRenderers.addAll(childRenderers);
     return LayoutResult(LayoutResult.NOTHING, null, null, overflowRenderer,
         causeOfNothing ?? this);

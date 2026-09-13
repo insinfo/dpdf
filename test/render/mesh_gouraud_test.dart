@@ -88,13 +88,18 @@ void main() {
       // blue at the top. Averaging the three corners, which is what a
       // per-facet flat fill does, would paint the whole triangle the same
       // dull grey.
-      final shading = _mesh(<int>[
-        0, _coord(10), _coord(10), 255, 0, 0, //
-        0, _coord(90), _coord(10), 0, 255, 0,
-        0, _coord(50), _coord(90), 0, 0, 255,
-      ], 4, PdfName.deviceRgb, _rgbDecode, {
-        'BitsPerFlag': PdfNumber.fromInt(8),
-      });
+      final shading = _mesh(
+          <int>[
+            0, _coord(10), _coord(10), 255, 0, 0, //
+            0, _coord(90), _coord(10), 0, 255, 0,
+            0, _coord(50), _coord(90), 0, 0, 255,
+          ],
+          4,
+          PdfName.deviceRgb,
+          _rgbDecode,
+          {
+            'BitsPerFlag': PdfNumber.fromInt(8),
+          });
 
       final page = await _render('/S sh', _shadingResource(shading));
 
@@ -129,16 +134,21 @@ void main() {
       // out one colour. A patch this size is tessellated into 24 x 24 cells,
       // and compositing 1152 antialiased triangles one at a time used to
       // leave the white page showing through every shared edge.
-      final shading = _mesh(<int>[
-        0,
-        ..._squareBoundary,
-        128, 128, 128, //
-        128, 128, 128,
-        128, 128, 128,
-        128, 128, 128,
-      ], 6, PdfName.deviceRgb, _rgbDecode, {
-        'BitsPerFlag': PdfNumber.fromInt(8),
-      });
+      final shading = _mesh(
+          <int>[
+            0,
+            ..._squareBoundary,
+            128, 128, 128, //
+            128, 128, 128,
+            128, 128, 128,
+            128, 128, 128,
+          ],
+          6,
+          PdfName.deviceRgb,
+          _rgbDecode,
+          {
+            'BitsPerFlag': PdfNumber.fromInt(8),
+          });
 
       final page = await _render('/S sh', _shadingResource(shading));
 
@@ -164,16 +174,21 @@ void main() {
     test('a type 5 lattice has no bright line on its shared edges', () async {
       // Two columns of quads, so the mesh has an interior vertical edge at
       // x = 50 as well as the diagonal of each quad.
-      final shading = _mesh(<int>[
-        _coord(10), _coord(10), 26, 26, 26, //
-        _coord(50), _coord(10), 128, 128, 128,
-        _coord(90), _coord(10), 230, 230, 230,
-        _coord(10), _coord(90), 26, 26, 26,
-        _coord(50), _coord(90), 128, 128, 128,
-        _coord(90), _coord(90), 230, 230, 230,
-      ], 5, PdfName.deviceRgb, _rgbDecode, {
-        'VerticesPerRow': PdfNumber.fromInt(3),
-      });
+      final shading = _mesh(
+          <int>[
+            _coord(10), _coord(10), 26, 26, 26, //
+            _coord(50), _coord(10), 128, 128, 128,
+            _coord(90), _coord(10), 230, 230, 230,
+            _coord(10), _coord(90), 26, 26, 26,
+            _coord(50), _coord(90), 128, 128, 128,
+            _coord(90), _coord(90), 230, 230, 230,
+          ],
+          5,
+          PdfName.deviceRgb,
+          _rgbDecode,
+          {
+            'VerticesPerRow': PdfNumber.fromInt(3),
+          });
 
       final page = await _render('/S sh', _shadingResource(shading));
 
@@ -203,15 +218,20 @@ void main() {
         ..put(PdfName('C0'), PdfArray.fromDoubles(const [0]))
         ..put(PdfName('C1'), PdfArray.fromDoubles(const [1]))
         ..put(PdfName('N'), PdfNumber(2));
-      final shading = _mesh(<int>[
-        0, 0, 0, //
-        255, 0, 255,
-        0, 255, 0,
-        255, 255, 255,
-      ], 5, PdfName.deviceGray, const [0, 100, 0, 100, 0, 1], {
-        'VerticesPerRow': PdfNumber.fromInt(2),
-        'Function': function,
-      });
+      final shading = _mesh(
+          <int>[
+            0, 0, 0, //
+            255, 0, 255,
+            0, 255, 0,
+            255, 255, 255,
+          ],
+          5,
+          PdfName.deviceGray,
+          const [0, 100, 0, 100, 0, 1],
+          {
+            'VerticesPerRow': PdfNumber.fromInt(2),
+            'Function': function,
+          });
 
       final page = await _render('/S sh', _shadingResource(shading));
 

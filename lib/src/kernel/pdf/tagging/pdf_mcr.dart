@@ -35,8 +35,8 @@ abstract class PdfMcr extends PdfObjectWrapper<PdfObject>
   Future<PdfIndirectReference?> getPageIndirectReference() async {
     PdfObject? page;
     if (pdfRepresentation() is PdfDictionary) {
-      page =
-          await (pdfRepresentation() as PdfDictionary).get(TaggingNames.pg, false);
+      page = await (pdfRepresentation() as PdfDictionary)
+          .get(TaggingNames.pg, false);
     }
     if (page == null && parent != null) {
       page = await parent!.pdfRepresentation().get(TaggingNames.pg, false);
@@ -123,8 +123,7 @@ class PdfMcrDictionary extends PdfMcr {
     final dictionary = PdfDictionary();
     dictionary.put(PdfName.type, TaggingNames.mcr);
     final pageRef = page.pdfRepresentation().indirectHandle();
-    dictionary.put(
-        TaggingNames.pg, pageRef ?? page.pdfRepresentation());
+    dictionary.put(TaggingNames.pg, pageRef ?? page.pdfRepresentation());
     if (stream != null) {
       dictionary.put(TaggingNames.stm, stream.indirectHandle() ?? stream);
     }

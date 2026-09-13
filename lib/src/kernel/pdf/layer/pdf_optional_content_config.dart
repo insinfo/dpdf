@@ -60,8 +60,7 @@ class PdfUsageApplication extends PdfObjectWrapper<PdfDictionary> {
   bool requiresIndirectStorage() => false;
 
   /// The `/Event` entry: `/View`, `/Print` or `/Export`.
-  Future<PdfName?> getEvent() =>
-      pdfRepresentation().nameEntry(PdfOcName.event);
+  Future<PdfName?> getEvent() => pdfRepresentation().nameEntry(PdfOcName.event);
 
   /// The `/OCGs` entry; an absent entry means no group is affected.
   Future<List<PdfDictionary>> getGroups() async =>
@@ -138,12 +137,14 @@ class PdfOptionalContentConfiguration extends PdfObjectWrapper<PdfDictionary> {
   }
 
   /// The `/ON` array: groups forced ON when this configuration is applied.
-  Future<List<PdfDictionary>> getOnGroups() async => PdfUsageApplication
-      .readGroupArray(await pdfRepresentation().arrayEntry(PdfOcName.on));
+  Future<List<PdfDictionary>> getOnGroups() async =>
+      PdfUsageApplication.readGroupArray(
+          await pdfRepresentation().arrayEntry(PdfOcName.on));
 
   /// The `/OFF` array: groups forced OFF when this configuration is applied.
-  Future<List<PdfDictionary>> getOffGroups() async => PdfUsageApplication
-      .readGroupArray(await pdfRepresentation().arrayEntry(PdfOcName.off));
+  Future<List<PdfDictionary>> getOffGroups() async =>
+      PdfUsageApplication.readGroupArray(
+          await pdfRepresentation().arrayEntry(PdfOcName.off));
 
   void setOnGroups(List<PdfOptionalContentGroup> groups) {
     pdfRepresentation().put(PdfOcName.on, _groupArray(groups));
@@ -167,8 +168,9 @@ class PdfOptionalContentConfiguration extends PdfObjectWrapper<PdfDictionary> {
   }
 
   /// The `/Locked` array: groups a reader must not let the user toggle.
-  Future<List<PdfDictionary>> getLockedGroups() async => PdfUsageApplication
-      .readGroupArray(await pdfRepresentation().arrayEntry(PdfOcName.locked));
+  Future<List<PdfDictionary>> getLockedGroups() async =>
+      PdfUsageApplication.readGroupArray(
+          await pdfRepresentation().arrayEntry(PdfOcName.locked));
 
   void setLockedGroups(List<PdfOptionalContentGroup> groups) {
     pdfRepresentation().put(PdfOcName.locked, _groupArray(groups));

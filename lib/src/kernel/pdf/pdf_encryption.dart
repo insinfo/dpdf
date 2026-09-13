@@ -78,12 +78,11 @@ class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
     final encryption = PdfEncryption._(dictionary);
     encryption._cryptoMode = encryptionAlgorithm;
     encryption._documentId = documentId;
-    encryption._encryptMetadata = (encryptionAlgorithm &
-            EncryptionConstants.doNotEncryptMetadata) ==
-        0;
-    encryption._embeddedFilesOnly = (encryptionAlgorithm &
-            EncryptionConstants.embeddedFilesOnly) ==
-        EncryptionConstants.embeddedFilesOnly;
+    encryption._encryptMetadata =
+        (encryptionAlgorithm & EncryptionConstants.doNotEncryptMetadata) == 0;
+    encryption._embeddedFilesOnly =
+        (encryptionAlgorithm & EncryptionConstants.embeddedFilesOnly) ==
+            EncryptionConstants.embeddedFilesOnly;
     final mode = encryptionAlgorithm & EncryptionConstants.encryptionMask;
     final encryptMetadata = encryption._encryptMetadata;
     final embeddedFilesOnly = encryption._embeddedFilesOnly;
@@ -220,8 +219,7 @@ class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
     encryption._encryptMetadata = handler.encryptMetadata;
     encryption._embeddedFilesOnly = handler.embeddedFilesOnly;
     encryption._cryptoMode = handler.encryptionAlgorithm;
-    final version =
-        (await pdfDict.numberEntry(PdfName.v))?.intValue() ?? 1;
+    final version = (await pdfDict.numberEntry(PdfName.v))?.intValue() ?? 1;
     if (version >= 4) {
       encryption._cryptFilters =
           await CryptFilterConfiguration.fromEncryptionDictionary(pdfDict);
@@ -232,8 +230,8 @@ class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
     return encryption;
   }
 
-  Future<void> _readStandardHandler(PdfDictionary pdfDict, Uint8List password,
-      Uint8List? documentId) async {
+  Future<void> _readStandardHandler(
+      PdfDictionary pdfDict, Uint8List password, Uint8List? documentId) async {
     final filter = await pdfDict.nameEntry(PdfName.filter);
     if (filter != null && filter.getValue() != PdfName.standard.getValue()) {
       throw PdfException(
@@ -285,8 +283,8 @@ class PdfEncryption extends PdfObjectWrapper<PdfDictionary> {
         throw PdfException.withParams(
             KernelExceptionMessageConstant.unknownEncryptionTypeR, [revision]);
       }
-      final aes = await StandardHandlerUsingAes256.fromDictionary(
-          pdfDict, password);
+      final aes =
+          await StandardHandlerUsingAes256.fromDictionary(pdfDict, password);
       _encryptMetadata = aes.isEncryptMetadata();
       handler = aes;
       _cryptoMode = EncryptionConstants.encryptionAes256;

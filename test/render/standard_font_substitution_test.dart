@@ -120,8 +120,8 @@ void main() {
       final resources = _standardFont('Helvetica');
       const content = 'BT /F1 36 Tf 20 40 Td (Hamburg) Tj ET';
 
-      final sem = await _render(content,
-          resources: resources, useStandardFonts: false);
+      final sem =
+          await _render(content, resources: resources, useStandardFonts: false);
       final com = await _render(content, resources: resources);
 
       expect(sem.report.glyphsSkipped, greaterThan(0));
@@ -147,8 +147,8 @@ void main() {
           resources: _standardFont('Helvetica'), useStandardFonts: false);
 
       expect(page.report.fontsSubstituted, isEmpty);
-      expect(page.report.fontFailures['F1'],
-          equals(PdfGlyphFailure.notEmbedded));
+      expect(
+          page.report.fontFailures['F1'], equals(PdfGlyphFailure.notEmbedded));
     });
 
     test('escolhe o corte pedido: negrito, itálico e monoespaçado', () {
@@ -188,7 +188,8 @@ void main() {
           isNull);
     });
 
-    test('não substitui uma fonte composta, cujo CID não significa nada fora '
+    test(
+        'não substitui uma fonte composta, cujo CID não significa nada fora '
         'do programa original', () {
       expect(
           standardFaceName(const PdfFontRequest(
@@ -206,8 +207,8 @@ void main() {
         ('Symbol', 'StandardSymbolsPS'),
         ('ZapfDingbats', 'D050000L'),
       ]) {
-        final request = PdfFontRequest(
-            baseFont: pair.$1, flags: 4, composite: false);
+        final request =
+            PdfFontRequest(baseFont: pair.$1, flags: 4, composite: false);
         expect(standardFaceName(request), pair.$2);
 
         final bytes = await standardFontFallback()!(request);
@@ -226,8 +227,7 @@ void main() {
     });
 
     test('a linha de Symbol sai desenhada, não pulada', () async {
-      final page = await _render(
-          'BT /F1 24 Tf 20 40 Td (abgdez) Tj ET',
+      final page = await _render('BT /F1 24 Tf 20 40 Td (abgdez) Tj ET',
           resources: _standardFont('Symbol'));
 
       expect(page.report.glyphsSkipped, isZero);
@@ -237,8 +237,7 @@ void main() {
     });
 
     test('a linha de ZapfDingbats sai desenhada, não pulada', () async {
-      final page = await _render(
-          'BT /F1 24 Tf 20 40 Td (34567) Tj ET',
+      final page = await _render('BT /F1 24 Tf 20 40 Td (34567) Tj ET',
           resources: _standardFont('ZapfDingbats'));
 
       expect(page.report.glyphsSkipped, isZero);
@@ -251,8 +250,7 @@ void main() {
     Future<PdfGlyphSource> source(String baseFont,
         {String? encoding, Map<int, String>? differences}) async {
       final resolved = await PdfGlyphSource.resolve(
-          _standardFont(baseFont,
-              encoding: encoding, differences: differences),
+          _standardFont(baseFont, encoding: encoding, differences: differences),
           'F1');
       return resolved!;
     }

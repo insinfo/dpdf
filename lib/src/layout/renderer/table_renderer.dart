@@ -62,7 +62,8 @@ class TableRenderer extends AbstractRenderer {
     final List<double> footerHeights = skipFooter
         ? const <double>[]
         : measureRowHeights(footerRows, area.pageOrdinal());
-    final List<double> bodyHeights = measureRowHeights(rows, area.pageOrdinal());
+    final List<double> bodyHeights =
+        measureRowHeights(rows, area.pageOrdinal());
 
     final double headerHeight = headerHeights.fold(0.0, (a, b) => a + b);
     final double footerHeight = footerHeights.fold(0.0, (a, b) => a + b);
@@ -77,7 +78,8 @@ class TableRenderer extends AbstractRenderer {
       totalHeight += headerHeight;
     }
 
-    final double bodyLimit = parentBox.getHeight() - headerHeight - footerHeight;
+    final double bodyLimit =
+        parentBox.getHeight() - headerHeight - footerHeight;
     double bodyUsed = 0;
     int placedRows = rows.length;
     for (int r = 0; r < rows.length; r++) {
@@ -181,7 +183,8 @@ class TableRenderer extends AbstractRenderer {
 
   /// Measures every row of [grid], honouring rowspan by distributing the extra
   /// height of a spanning cell over the rows it covers.
-  List<double> measureRowHeights(List<List<CellRenderer?>> grid, int pageNumber) {
+  List<double> measureRowHeights(
+      List<List<CellRenderer?>> grid, int pageNumber) {
     final heights = List<double>.filled(grid.length, 0);
     final spanning = <List<int>>[];
     final spanningHeights = <double>[];
@@ -253,8 +256,8 @@ class TableRenderer extends AbstractRenderer {
           cell.layout(LayoutContext(finalArea));
           cell.occupiedArea = LayoutArea(
               pageNumber,
-              Rectangle(parentBox.getX() + currentColX, curY - cellH, cellW,
-                  cellH));
+              Rectangle(
+                  parentBox.getX() + currentColX, curY - cellH, cellW, cellH));
         }
         currentColX += colW;
       }

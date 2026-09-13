@@ -1,4 +1,3 @@
-
 import 'dart:typed_data';
 import 'dart:math' as math;
 import 'state.dart';
@@ -16,7 +15,8 @@ class BrotliInputStream implements InputStream {
   int bufferOffset;
   final State state = State();
 
-  BrotliInputStream(InputStream source, [int byteReadBufferSize = DEFAULT_INTERNAL_BUFFER_SIZE])
+  BrotliInputStream(InputStream source,
+      [int byteReadBufferSize = DEFAULT_INTERNAL_BUFFER_SIZE])
       : buffer = Uint8List(byteReadBufferSize),
         remainingBufferBytes = 0,
         bufferOffset = 0 {
@@ -26,7 +26,7 @@ class BrotliInputStream implements InputStream {
     state.input = source;
     int result = Decode.initState(state);
     if (result != BrotliError.BROTLI_OK) {
-        throw BrotliRuntimeException("Brotli decoder initialization failed");
+      throw BrotliRuntimeException("Brotli decoder initialization failed");
     }
   }
 
@@ -74,7 +74,8 @@ class BrotliInputStream implements InputStream {
     int copyLen = math.max(remainingBufferBytes - bufferOffset, 0);
     if (copyLen != 0) {
       copyLen = math.min(copyLen, destLen);
-      Utils.copyBytes(destBuffer, destOffset, buffer, bufferOffset, bufferOffset + copyLen);
+      Utils.copyBytes(
+          destBuffer, destOffset, buffer, bufferOffset, bufferOffset + copyLen);
       bufferOffset += copyLen;
       destOffset += copyLen;
       destLen -= copyLen;
@@ -88,8 +89,10 @@ class BrotliInputStream implements InputStream {
       state.outputLength = destLen;
       state.outputUsed = 0;
       int result = Decode.decompress(state);
-      if (result != BrotliError.BROTLI_OK && result != BrotliError.BROTLI_OK_DONE && result != BrotliError.BROTLI_OK_NEED_MORE_OUTPUT) {
-          throw BrotliRuntimeException("Brotli stream decoding failed");
+      if (result != BrotliError.BROTLI_OK &&
+          result != BrotliError.BROTLI_OK_DONE &&
+          result != BrotliError.BROTLI_OK_NEED_MORE_OUTPUT) {
+        throw BrotliRuntimeException("Brotli stream decoding failed");
       }
       copyLen += state.outputUsed;
       copyLen = (copyLen > 0) ? copyLen : END_OF_STREAM_MARKER;

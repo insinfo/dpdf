@@ -21,7 +21,7 @@ class ByteArrayInputStream implements InputStream {
     _pos += toRead;
     return toRead;
   }
-  
+
   @override
   void close() {}
 }

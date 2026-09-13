@@ -29,8 +29,8 @@ import 'reader_properties.dart';
 class PdfLinearizer {
   PdfLinearizer._();
 
-  static final Uint8List _header =
-      Uint8List.fromList(<int>[...'%PDF-1.7\n'.codeUnits, 0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A]);
+  static final Uint8List _header = Uint8List.fromList(
+      <int>[...'%PDF-1.7\n'.codeUnits, 0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A]);
 
   /// Width used for every file offset written into the linearization
   /// parameter dictionary and the first-page trailer.
@@ -478,7 +478,8 @@ class _Plan {
     };
     final remainingPageSections = <List<int>>[];
     for (var i = 1; i < pages.length; i++) {
-      final own = pageDependencies[i].where((n) => !claimed.contains(n)).toSet();
+      final own =
+          pageDependencies[i].where((n) => !claimed.contains(n)).toSet();
       final section = <int>[pages[i]];
       section.addAll(await _orderPageObjects(objects, pages[i], own, null));
       claimed.addAll(section);
@@ -562,8 +563,8 @@ class _Plan {
     // this is done a single time and reused across layout iterations.
     final bodies = <int, _Rendered>{};
     for (final number in <int>[...group2, ...group1]) {
-      bodies[number] = _Rendered(
-          renumber[number]!, await _serialize(renumber[number]!, objects[number]!));
+      bodies[number] = _Rendered(renumber[number]!,
+          await _serialize(renumber[number]!, objects[number]!));
     }
 
     final firstPageXref = _firstPageXrefLength(group1.length);
@@ -787,8 +788,12 @@ class _Plan {
     }
     buffer.write(_xrefEntry(hintOffset, 0));
     final head = ByteUtils.getIsoBytes(buffer.toString());
-    final trailer = _firstPageTrailerBytes(size, layout.mainXrefOffset,
-        renumber[rootNumber]!, infoNumber == null ? 0 : renumber[infoNumber]!, 0);
+    final trailer = _firstPageTrailerBytes(
+        size,
+        layout.mainXrefOffset,
+        renumber[rootNumber]!,
+        infoNumber == null ? 0 : renumber[infoNumber]!,
+        0);
     final out = BytesBuilder()
       ..add(head)
       ..add(trailer);
@@ -1200,8 +1205,9 @@ class _Plan {
 
   Future<void> _writeStream(BytesBuilder out, PdfStream stream) async {
     final bytes = await stream.getBytes(false) ?? Uint8List(0);
-    await _writeDictionary(out, stream,
-        overrides: <String, PdfObject>{'Length': PdfNumber.fromInt(bytes.length)});
+    await _writeDictionary(out, stream, overrides: <String, PdfObject>{
+      'Length': PdfNumber.fromInt(bytes.length)
+    });
     out.add(ByteUtils.getIsoBytes('\nstream\n'));
     out.add(bytes);
     out.add(ByteUtils.getIsoBytes('\nendstream'));
@@ -1521,8 +1527,8 @@ class _LinearizationParser {
       );
     }
 
-    final version = (await dictionary.numberEntry(PdfName('Linearized')))
-        ?.doubleValue();
+    final version =
+        (await dictionary.numberEntry(PdfName('Linearized')))?.doubleValue();
     final declaredLength = await dictionary.integerEntry(PdfName('L'));
     final firstPageObject = await dictionary.integerEntry(PdfName('O'));
     final endOfFirstPage = await dictionary.integerEntry(PdfName('E'));
@@ -1574,8 +1580,8 @@ class _LinearizationParser {
           problems.add('/H does not point at an indirect object.');
         }
         try {
-          tables = await _readHintTables(reader, offset, length,
-              pageCount ?? 0, firstPageObject ?? 0);
+          tables = await _readHintTables(
+              reader, offset, length, pageCount ?? 0, firstPageObject ?? 0);
         } on FormatException catch (error) {
           problems.add('The hint tables could not be read: ${error.message}');
         }
@@ -1674,7 +1680,8 @@ class _LinearizationParser {
     final window = _text(offset, 4096);
     final trailer = window.indexOf('trailer');
     if (trailer < 0) return null;
-    final match = RegExp(r'/Prev\s+(\d+)').firstMatch(window.substring(trailer));
+    final match =
+        RegExp(r'/Prev\s+(\d+)').firstMatch(window.substring(trailer));
     if (match == null) return null;
     return int.parse(match.group(1)!);
   }

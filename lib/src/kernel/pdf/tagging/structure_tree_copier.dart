@@ -280,8 +280,7 @@ class _CopyWorker {
   /// dropped unless the destination already registered content under it.
   Future<void> _resetCopiedStructParents() async {
     for (final page in _pages.values) {
-      final key =
-          (await page.numberEntry(PdfName.structParents))?.intValue();
+      final key = (await page.numberEntry(PdfName.structParents))?.intValue();
       if (key == null) continue;
       if (await destinationRoot.getParentTreeEntry(key) != null) continue;
       page.remove(PdfName.structParents);
@@ -346,8 +345,7 @@ class _CopyWorker {
       PdfDictionary element, PdfDictionary? inherited) async {
     final sourcePage =
         await element.dictionaryEntry(TaggingNames.pg) ?? inherited;
-    final destinationPage =
-        sourcePage == null ? null : _pages[sourcePage];
+    final destinationPage = sourcePage == null ? null : _pages[sourcePage];
 
     final copy = PdfDictionary();
     copy.attachToDocument(destination);
@@ -369,8 +367,7 @@ class _CopyWorker {
           continue;
         }
         kids.add(PdfNumber.fromInt(item.intValue()));
-        _pendingMcids.add(
-            _PendingMcid(destinationPage, item.intValue(), copy));
+        _pendingMcids.add(_PendingMcid(destinationPage, item.intValue(), copy));
         continue;
       }
       if (item is! PdfDictionary) {
@@ -396,8 +393,7 @@ class _CopyWorker {
         kids.add(copied);
         continue;
       }
-      final copied =
-          await _copyMarkedContentReference(item, sourcePage, copy);
+      final copied = await _copyMarkedContentReference(item, sourcePage, copy);
       if (copied == null) {
         _dropped++;
         continue;
@@ -408,13 +404,13 @@ class _CopyWorker {
     if (kids.isEmpty) {
       return null;
     }
-    copy.put(PdfName.k, kids.length == 1 ? kids.first : PdfArray.fromList(kids));
+    copy.put(
+        PdfName.k, kids.length == 1 ? kids.first : PdfArray.fromList(kids));
     copy.markChanged();
     return copy;
   }
 
-  Future<void> _copyElementId(
-      PdfDictionary element, PdfDictionary copy) async {
+  Future<void> _copyElementId(PdfDictionary element, PdfDictionary copy) async {
     final id = await element.stringEntry(PdfName.id);
     if (id == null) return;
     final existing = await destinationRoot.getElementById(id);
@@ -499,9 +495,8 @@ class _CopyWorker {
   }
 
   Future<void> _copyRoleMap() async {
-    final sourceMap = await sourceRoot
-        .pdfRepresentation()
-        .dictionaryEntry(PdfName.roleMap);
+    final sourceMap =
+        await sourceRoot.pdfRepresentation().dictionaryEntry(PdfName.roleMap);
     if (sourceMap == null || sourceMap.isEmpty()) return;
     final destinationMap = await destinationRoot.getRoleMap();
     for (final entry in await sourceMap.entrySet()) {
@@ -513,9 +508,8 @@ class _CopyWorker {
   }
 
   Future<void> _copyClassMap() async {
-    final sourceMap = await sourceRoot
-        .pdfRepresentation()
-        .dictionaryEntry(PdfName.classMap);
+    final sourceMap =
+        await sourceRoot.pdfRepresentation().dictionaryEntry(PdfName.classMap);
     if (sourceMap == null || sourceMap.isEmpty()) return;
     final destinationMap = await destinationRoot.getClassMap();
     for (final entry in await sourceMap.entrySet()) {

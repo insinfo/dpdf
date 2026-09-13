@@ -73,8 +73,8 @@ class AdobeGlyphList {
     if (_uniformScalars.hasMatch(component)) {
       final scalars = <int>[];
       for (var digit = 3; digit < component.length; digit += 4) {
-        final value = int.parse(component.substring(digit, digit + 4),
-            radix: 16);
+        final value =
+            int.parse(component.substring(digit, digit + 4), radix: 16);
         // Surrogate code units are not characters; such a name is unusable.
         if (value >= 0xd800 && value <= 0xdfff) return null;
         scalars.add(value);

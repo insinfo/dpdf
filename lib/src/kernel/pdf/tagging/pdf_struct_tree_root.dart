@@ -153,8 +153,7 @@ class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary>
   /// not remapped, guarding against the circular chains 14.7.3 explicitly
   /// permits.
   Future<String> resolveRole(String role) async {
-    final roleMap =
-        await pdfRepresentation().dictionaryEntry(PdfName.roleMap);
+    final roleMap = await pdfRepresentation().dictionaryEntry(PdfName.roleMap);
     if (roleMap == null) return role;
     var current = role;
     final seen = <String>{current};
@@ -190,7 +189,8 @@ class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary>
 
   /// Resolves an attribute class name through the /ClassMap.
   Future<PdfObject?> getAttributeClass(PdfName className) async {
-    final classMap = await pdfRepresentation().dictionaryEntry(PdfName.classMap);
+    final classMap =
+        await pdfRepresentation().dictionaryEntry(PdfName.classMap);
     if (classMap == null) return null;
     return await classMap.get(className, true);
   }
@@ -313,8 +313,7 @@ class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary>
         limits.add(PdfNumber.fromInt(keys[offset]));
         limits.add(PdfNumber.fromInt(keys[end - 1]));
         leaf.put(TaggingNames.limits, limits);
-        leaf.put(
-            TaggingNames.nums, _numsArrayFor(keys, offset, end, entries));
+        leaf.put(TaggingNames.nums, _numsArrayFor(keys, offset, end, entries));
         if (document != null) leaf.attachToDocument(document);
         kids.add(leaf);
       }
@@ -355,7 +354,8 @@ class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary>
   }
 
   void setParentTreeNextKey(int value) {
-    pdfRepresentation().put(PdfName.parentTreeNextKey, PdfNumber.fromInt(value));
+    pdfRepresentation()
+        .put(PdfName.parentTreeNextKey, PdfNumber.fromInt(value));
     markChanged();
   }
 
@@ -415,8 +415,7 @@ class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary>
   /// allocating its /StructParent key when needed (14.7.4.3 and 14.7.4.4).
   Future<int> registerObjectReference(
       PdfDictionary referenced, PdfStructElem parent) async {
-    var key =
-        (await referenced.numberEntry(PdfName.structParent))?.intValue();
+    var key = (await referenced.numberEntry(PdfName.structParent))?.intValue();
     if (key == null) {
       key = await allocateParentTreeKey();
       referenced.put(PdfName.structParent, PdfNumber.fromInt(key));
@@ -539,7 +538,8 @@ class PdfStructTreeRoot extends PdfObjectWrapper<PdfDictionary>
     PdfDictionary tree;
     if (keys.length <= _nodeSize) {
       tree = PdfDictionary();
-      tree.put(TaggingNames.names, _namesArrayFor(keys, 0, keys.length, entries));
+      tree.put(
+          TaggingNames.names, _namesArrayFor(keys, 0, keys.length, entries));
     } else {
       final kids = PdfArray();
       for (var offset = 0; offset < keys.length; offset += _nodeSize) {

@@ -48,7 +48,8 @@ void main() {
         markTestSkipped('Test image not found at $path');
         return;
       }
-      final image = Image(ImageDataFactory.create(File(path).readAsBytesSync()));
+      final image =
+          Image(ImageDataFactory.create(File(path).readAsBytesSync()));
       expect(image.getAccessibilityProperties().getRole(), 'Figure');
       image.setAlternateDescription('Deserto');
       expect(image.getAccessibilityProperties().getAlternateDescription(),

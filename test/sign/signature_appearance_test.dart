@@ -65,8 +65,7 @@ void main() {
           ..setSignerName('Isaque')
           ..setContent(['Documento conferido']));
       final lines = SimpleSignatureAppearance(properties).composeLines();
-      expect(lines,
-          ['Isaque', 'Documento conferido', 'Date: 2026-03-14']);
+      expect(lines, ['Isaque', 'Documento conferido', 'Date: 2026-03-14']);
     });
 
     test('signer property lines can be switched off', () {

@@ -61,7 +61,8 @@ class PdfSignatureReference extends PdfObjectWrapper<PdfDictionary> {
       {PdfObject? data, String? digestMethod}) {
     final parameters = PdfDictionary();
     parameters.put(PdfName.type, SignatureReferenceNames.transformParamsType);
-    parameters.put(PdfName.p, PdfNumber.fromInt(docMdpPermissionOf(permissions)));
+    parameters.put(
+        PdfName.p, PdfNumber.fromInt(docMdpPermissionOf(permissions)));
     parameters.put(PdfName.v, SignatureReferenceNames.version12);
     return PdfSignatureReference._build(
         PdfName.docMDP, parameters, data, digestMethod);
@@ -73,9 +74,7 @@ class PdfSignatureReference extends PdfObjectWrapper<PdfDictionary> {
   /// copied out of the lock dictionary, because the transform parameters
   /// dictionary cannot reference it indirectly.
   factory PdfSignatureReference.fieldMdp(LockAction action,
-      {List<String> fields = const [],
-      PdfObject? data,
-      String? digestMethod}) {
+      {List<String> fields = const [], PdfObject? data, String? digestMethod}) {
     final parameters = PdfDictionary();
     parameters.put(PdfName.type, SignatureReferenceNames.transformParamsType);
     parameters.put(PdfName.action, PdfSigFieldLock.actionName(action));
@@ -101,8 +100,8 @@ class PdfSignatureReference extends PdfObjectWrapper<PdfDictionary> {
       dictionary.put(SignatureReferenceNames.data, data);
     }
     if (digestMethod != null) {
-      dictionary.put(SignatureReferenceNames.digestMethod,
-          PdfName.intern(digestMethod));
+      dictionary.put(
+          SignatureReferenceNames.digestMethod, PdfName.intern(digestMethod));
     }
     return PdfSignatureReference(dictionary);
   }
@@ -131,10 +130,9 @@ class PdfSignatureReference extends PdfObjectWrapper<PdfDictionary> {
       pdfRepresentation().dictionaryEntry(PdfName.transformParams);
 
   /// The `/DigestMethod` name, or null when absent.
-  Future<String?> getDigestMethod() async =>
-      (await pdfRepresentation()
-              .nameEntry(SignatureReferenceNames.digestMethod))
-          ?.getValue();
+  Future<String?> getDigestMethod() async => (await pdfRepresentation()
+          .nameEntry(SignatureReferenceNames.digestMethod))
+      ?.getValue();
 
   /// The DocMDP `/P` value, clamped to the 1..3 range of table 254.
   ///

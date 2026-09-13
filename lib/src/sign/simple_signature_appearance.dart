@@ -77,8 +77,7 @@ class SimpleSignatureAppearance {
           .saveState()
           .setStrokeColor(appearance.getBorderColor())
           .setLineWidth(borderWidth)
-          .rectangle(
-              inset, inset, width - borderWidth, height - borderWidth)
+          .rectangle(inset, inset, width - borderWidth, height - borderWidth)
           .stroke()
           .restoreState();
     }

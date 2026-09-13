@@ -44,8 +44,8 @@ void main() {
 
     test('a name outside latin-1 round trips through UTF-16BE', () async {
       final ocg = PdfOptionalContentGroup('Kałá 中文');
-      final raw =
-          await ocg.pdfRepresentation().stringEntry(PdfOcName.name) as PdfString;
+      final raw = await ocg.pdfRepresentation().stringEntry(PdfOcName.name)
+          as PdfString;
       expect(raw.getValueBytes()!.take(2), <int>[0xFE, 0xFF]);
       expect(await ocg.getName(), 'Kałá 中文');
     });
@@ -60,8 +60,8 @@ void main() {
       expect(await ocg.getIntents(), <PdfName>[PdfOcName.design]);
 
       ocg.setIntents(<PdfName>[PdfOcName.view, PdfOcName.design]);
-      expect(await ocg.getIntents(),
-          <PdfName>[PdfOcName.view, PdfOcName.design]);
+      expect(
+          await ocg.getIntents(), <PdfName>[PdfOcName.view, PdfOcName.design]);
     });
 
     test('parse rejects a dictionary that is not an /OCG', () async {
@@ -275,8 +275,9 @@ void main() {
     test('/Locked marks a group as not user toggleable', () async {
       final a = _group('A');
       final b = _group('B');
-      final config =
-          _config(<String, PdfObject>{'Locked': _array(<PdfObject>[a])});
+      final config = _config(<String, PdfObject>{
+        'Locked': _array(<PdfObject>[a])
+      });
       final state = await PdfOptionalContentState.fromConfiguration(
           config, <PdfDictionary>[a, b]);
       expect(state.isLocked(a), isTrue);
@@ -504,8 +505,8 @@ void main() {
         ]),
       });
 
-      final brazilian = await PdfOptionalContentState.fromConfiguration(
-          config, groups);
+      final brazilian =
+          await PdfOptionalContentState.fromConfiguration(config, groups);
       await brazilian.applyUsageApplications(config, PdfOcName.view,
           context: const PdfOptionalContentUsageContext(language: 'pt-BR'));
       expect(brazilian.isGroupOn(groups[0]), isTrue);
@@ -581,8 +582,7 @@ void main() {
       final group = _group('A');
       final state = PdfOptionalContentState()..setGroupOn(group, false);
       final resources = PdfDictionary()
-        ..put(PdfOcName.properties,
-            PdfDictionary()..put(_n('oc1'), group));
+        ..put(PdfOcName.properties, PdfDictionary()..put(_n('oc1'), group));
 
       expect(await state.isMarkedContentVisible(resources, _n('oc1')), isFalse);
       // An unknown name is not optional content, so the section is drawn.
@@ -663,8 +663,8 @@ void main() {
 
       final names = <String?>[];
       for (final group in groups) {
-        names.add(
-            await PdfOptionalContentGroup.fromDictionary(group).getName());
+        names
+            .add(await PdfOptionalContentGroup.fromDictionary(group).getName());
       }
       expect(names, <String>['Visivel', 'Oculta']);
 

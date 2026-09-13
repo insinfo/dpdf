@@ -22,8 +22,7 @@ Uint8List _response(int status,
   if (withBytes) {
     final responseBytes = ASN1Sequence();
     responseBytes.add(ASN1ObjectIdentifier.fromIdentifierString(responseType));
-    responseBytes
-        .add(ASN1OctetString(octets: response ?? _basicResponse()));
+    responseBytes.add(ASN1OctetString(octets: response ?? _basicResponse()));
     final explicit = ASN1Sequence(tag: 0xa0);
     explicit.add(responseBytes);
     outer.add(explicit);
@@ -55,8 +54,7 @@ void main() {
     });
 
     test('the status is read before the response bytes are trusted', () {
-      final sequence =
-          ASN1Parser(_response(3)).nextObject() as ASN1Sequence;
+      final sequence = ASN1Parser(_response(3)).nextObject() as ASN1Sequence;
       expect(HttpOcspClient.readResponseStatusValue(sequence), 3);
     });
 
@@ -80,16 +78,15 @@ void main() {
           () {
         // A responder that violates the syntax must not be able to smuggle a
         // usable response past the status check.
-        expect(
-            () => HttpOcspClient.parseBasicResponse(_response(status.value)),
+        expect(() => HttpOcspClient.parseBasicResponse(_response(status.value)),
             throwsA(isA<OcspResponseStatusException>()));
       });
     }
 
     test('the unassigned status 4 is rejected as unknown', () {
       expect(
-          () => HttpOcspClient.parseBasicResponse(
-              _response(4, withBytes: false)),
+          () =>
+              HttpOcspClient.parseBasicResponse(_response(4, withBytes: false)),
           throwsA(isA<OcspResponseStatusException>()
               .having((e) => e.status, 'status', isNull)
               .having((e) => e.value, 'value', 4)));
@@ -97,8 +94,8 @@ void main() {
 
     test('a successful response without response bytes is malformed', () {
       expect(
-          () => HttpOcspClient.parseBasicResponse(
-              _response(0, withBytes: false)),
+          () =>
+              HttpOcspClient.parseBasicResponse(_response(0, withBytes: false)),
           throwsA(isA<FormatException>()));
     });
 

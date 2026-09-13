@@ -24,8 +24,7 @@ class PdfObjRef extends PdfObjectWrapper<PdfDictionary>
       {PdfPage? page}) {
     final dictionary = PdfDictionary();
     dictionary.put(PdfName.type, TaggingNames.objr);
-    dictionary.put(
-        TaggingNames.obj, referenced.indirectHandle() ?? referenced);
+    dictionary.put(TaggingNames.obj, referenced.indirectHandle() ?? referenced);
     if (page != null) {
       final pageObject = page.pdfRepresentation();
       dictionary.put(

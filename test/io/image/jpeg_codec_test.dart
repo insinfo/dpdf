@@ -209,8 +209,8 @@ void main() {
     test(
         're-encoding a real photograph is near lossless above its own '
         'quality', () {
-      final original =
-          JpegDecoder.decode(File('test/assets/shapes-rgb.jpg').readAsBytesSync());
+      final original = JpegDecoder.decode(
+          File('test/assets/shapes-rgb.jpg').readAsBytesSync());
 
       final again = JpegDecoder.decode(JpegEncoder.encode(
         original.pixels,

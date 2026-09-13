@@ -139,8 +139,9 @@ class PdfPageAssembly {
             ? await PdfFormMerge.prepare(doc, pages,
                 signaturePolicy: signaturePolicy)
             : null);
-        final openAction =
-            resolveNamedDestinations ? await _readOpenAction(catalog, pages) : null;
+        final openAction = resolveNamedDestinations
+            ? await _readOpenAction(catalog, pages)
+            : null;
         if (openAction != null) {
           // A merged file has a single initial view; two competing open
           // actions cannot be reconciled.

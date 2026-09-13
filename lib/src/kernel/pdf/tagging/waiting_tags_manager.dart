@@ -86,11 +86,11 @@ class WaitingTagsManager {
   /// another owner, are left alone.
   Future<bool> flushIfParentWasFlushed(PdfStructElem structElem) async {
     if (structElem.hasBeenWritten()) return false;
-    if (_waitingTagToAssociatedObj.containsKey(structElem.pdfRepresentation())) {
+    if (_waitingTagToAssociatedObj
+        .containsKey(structElem.pdfRepresentation())) {
       return false;
     }
-    final parent =
-        await structElem.pdfRepresentation().get(PdfName.p, false);
+    final parent = await structElem.pdfRepresentation().get(PdfName.p, false);
     PdfObject? parentObject = parent;
     if (parentObject is PdfIndirectReference) {
       if (!parentObject.checkState(PdfObject.flushed)) return false;

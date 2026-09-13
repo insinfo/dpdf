@@ -91,8 +91,7 @@ void main() {
       // a chunk of one byte is the degenerate case: the scan has to stitch
       // `%PDF-` together across five separate reads.
       for (final chunk in [1, 3, 7, 64]) {
-        final source = _DribblingSource(
-            _prefixed(300, _body('%PDF-1.7\nrest')),
+        final source = _DribblingSource(_prefixed(300, _body('%PDF-1.7\nrest')),
             chunk: chunk);
         expect(findPdfHeaderOffset(source), 300, reason: 'chunk $chunk');
         expect(source.reads, greaterThan(1), reason: 'chunk $chunk');

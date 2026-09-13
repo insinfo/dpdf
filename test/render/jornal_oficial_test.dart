@@ -43,8 +43,8 @@ void main() {
   group('capas do Jornal Oficial', () {
     for (final nome in edicoes) {
       test('$nome desenha a primeira página inteira', () async {
-        final bytes = Uint8List.fromList(
-            File('${pasta.path}/$nome').readAsBytesSync());
+        final bytes =
+            Uint8List.fromList(File('${pasta.path}/$nome').readAsBytesSync());
         final doc = await PdfDocument.open(PdfReader.fromBytes(bytes));
         try {
           final pagina = await doc.pageAt(1);
@@ -62,8 +62,7 @@ void main() {
 
           var tinta = 0.0;
           for (final c in r.pixels) {
-            final cinza =
-                ((c >> 16 & 0xFF) + (c >> 8 & 0xFF) + (c & 0xFF)) / 3;
+            final cinza = ((c >> 16 & 0xFF) + (c >> 8 & 0xFF) + (c & 0xFF)) / 3;
             tinta += (255 - cinza) / 255;
           }
           final fracao = tinta / (r.width * r.height);
@@ -71,7 +70,8 @@ void main() {
           // cima. Perto de zero significa página em branco; perto de um,
           // uma forma gigante pintada por cima de tudo.
           expect(fracao, greaterThan(0.10), reason: 'a capa saiu quase vazia');
-          expect(fracao, lessThan(0.95), reason: 'a capa saiu quase toda preta');
+          expect(fracao, lessThan(0.95),
+              reason: 'a capa saiu quase toda preta');
         } finally {
           await doc.close();
         }

@@ -1,4 +1,3 @@
-
 class BrotliError {
   static const int BROTLI_OK = 0;
   static const int BROTLI_OK_DONE = 1;

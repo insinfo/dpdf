@@ -163,10 +163,8 @@ class PubKeySecurityHandler extends SecurityHandler {
   ///
   /// Returns a handler whose [mkey] is the file encryption key, or throws when
   /// [certificate] is not among the recipients.
-  static Future<PubKeySecurityHandler> read(
-      PdfDictionary encryptionDictionary,
-      X509Certificate certificate,
-      RSAPrivateKey privateKey) async {
+  static Future<PubKeySecurityHandler> read(PdfDictionary encryptionDictionary,
+      X509Certificate certificate, RSAPrivateKey privateKey) async {
     final version =
         (await encryptionDictionary.numberEntry(PdfName.v))?.intValue() ?? 1;
     final lengthBits =
@@ -242,8 +240,8 @@ class PubKeySecurityHandler extends SecurityHandler {
           ((envelope[22] & 0xFF) << 16) |
           ((envelope[23] & 0xFF) << 24);
     }
-    handler.mkey = handler._computeKey(
-        Uint8List.fromList(envelope.sublist(0, 20)));
+    handler.mkey =
+        handler._computeKey(Uint8List.fromList(envelope.sublist(0, 20)));
     return handler;
   }
 
@@ -271,7 +269,8 @@ class PubKeySecurityHandler extends SecurityHandler {
     final bits = keyLengthBitsOf(encryptionAlgorithm);
     // ISO 32000-1 specifies SHA-1; the 256-bit AES extension of ISO 32000-2
     // uses SHA-256, whose output is exactly the required key length.
-    final digest = DigestAlgorithms.getMessageDigest(bits > 128 ? 'SHA-256' : 'SHA-1');
+    final digest =
+        DigestAlgorithms.getMessageDigest(bits > 128 ? 'SHA-256' : 'SHA-1');
     digest.updateAll(seed);
     for (final recipient in recipients) {
       digest.updateAll(recipient);

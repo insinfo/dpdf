@@ -44,9 +44,7 @@ class PdfCieBasedCsCalGray extends PdfCieBasedCs {
   final double gamma;
 
   PdfCieBasedCsCalGray(super.pdfObject,
-      {this.whitePoint,
-      List<double>? blackPoint,
-      double? gamma})
+      {this.whitePoint, List<double>? blackPoint, double? gamma})
       : blackPoint = blackPoint ?? const <double>[0.0, 0.0, 0.0],
         gamma = gamma ?? 1.0;
 
@@ -67,8 +65,7 @@ class PdfCieBasedCsCalGray extends PdfCieBasedCs {
 
   @override
   List<double> toRgb(List<double> components) {
-    final a = PdfColorSpace.clampUnit(
-        PdfColorSpace.componentAt(components, 0));
+    final a = PdfColorSpace.clampUnit(PdfColorSpace.componentAt(components, 0));
     final white = whitePoint;
     if (white == null) return PdfDeviceCsGray.grayToRgb(a);
 

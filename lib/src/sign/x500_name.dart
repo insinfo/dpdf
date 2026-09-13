@@ -163,8 +163,8 @@ class X500Name {
             return null;
           }
           final value = ava.elements![1];
-          attributes.add(X500Attribute(type.objectIdentifierAsString!,
-              value.tag, value.valueBytes));
+          attributes.add(X500Attribute(
+              type.objectIdentifierAsString!, value.tag, value.valueBytes));
         }
         if (attributes.isEmpty) return null;
         rdns.add(attributes);
@@ -180,8 +180,7 @@ class X500Name {
     final parts = <String>[];
     for (final rdn in rdns) {
       final attributes = rdn
-          .map((attribute) =>
-              '${attribute.type}=${attribute.canonicalValue}')
+          .map((attribute) => '${attribute.type}=${attribute.canonicalValue}')
           .toList()
         ..sort();
       parts.add(attributes.join('+'));

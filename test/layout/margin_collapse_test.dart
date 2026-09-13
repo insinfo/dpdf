@@ -12,8 +12,8 @@ import 'package:dpdf/src/layout/properties/property.dart';
 
 double _layoutHeight(Div root) {
   final renderer = root.createRendererSubTree()!;
-  final result = renderer
-      .layout(LayoutContext(LayoutArea(1, Rectangle(0, 0, 200, 2000))));
+  final result =
+      renderer.layout(LayoutContext(LayoutArea(1, Rectangle(0, 0, 200, 2000))));
   expect(result, isNotNull);
   expect(result!.getStatus(), LayoutResult.FULL);
   return result.getOccupiedArea()!.getBBox().getHeight();
@@ -53,8 +53,8 @@ void main() {
     });
 
     test('info keeps the ignore flags handed down to a child', () {
-      final info =
-          MarginsCollapseInfo(ignoreOwnMarginTop: true, ignoreOwnMarginBottom: false);
+      final info = MarginsCollapseInfo(
+          ignoreOwnMarginTop: true, ignoreOwnMarginBottom: false);
       expect(info.isIgnoreOwnMarginTop(), isTrue);
       expect(info.isIgnoreOwnMarginBottom(), isFalse);
       final clone = info.clone();

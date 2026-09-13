@@ -216,8 +216,8 @@ class SignatureModificationAnalyzer {
         category = _refine(category, number, signedRoles, currentRoles);
       }
       if (category == PdfChangeCategory.page) alteredPages++;
-      changes.add(PdfObjectChange(
-          number, kind, category, roles.fieldNames[number]));
+      changes.add(
+          PdfObjectChange(number, kind, category, roles.fieldNames[number]));
     }
 
     final changed = <String>{};
@@ -277,8 +277,8 @@ class SignatureModificationAnalyzer {
   /// levels 2 and 3, so they must not be reported as arbitrary page edits.
   static PdfChangeCategory _refine(PdfChangeCategory category, int number,
       _DocumentRoles signed, _DocumentRoles current) {
-    final changedKeys = _changedKeys(
-        signed.entries[number], current.entries[number]);
+    final changedKeys =
+        _changedKeys(signed.entries[number], current.entries[number]);
     if (changedKeys == null) return category;
     switch (category) {
       case PdfChangeCategory.page:
@@ -290,8 +290,7 @@ class SignatureModificationAnalyzer {
         if (before.any((annotation) => !after.contains(annotation))) {
           return PdfChangeCategory.annotation;
         }
-        final added =
-            after.where((annotation) => !before.contains(annotation));
+        final added = after.where((annotation) => !before.contains(annotation));
         return added.every((annotation) =>
                 current.categories[annotation] == PdfChangeCategory.signature)
             ? PdfChangeCategory.signature
@@ -481,8 +480,8 @@ class _DocumentRoles {
     }
   }
 
-  Future<void> _walkFields(PdfArray? fields, String? parentName,
-      Set<PdfDictionary> visited) async {
+  Future<void> _walkFields(
+      PdfArray? fields, String? parentName, Set<PdfDictionary> visited) async {
     if (fields == null) return;
     for (var index = 0; index < fields.size(); index++) {
       final field = await fields.get(index);
@@ -494,8 +493,11 @@ class _DocumentRoles {
       final kids = await field.arrayEntry(PdfName.kids);
       final type = await field.nameEntry(PdfName.ft);
       final isSignature = type == PdfName.sig;
-      _tag(field,
-          isSignature ? PdfChangeCategory.signature : PdfChangeCategory.formField,
+      _tag(
+          field,
+          isSignature
+              ? PdfChangeCategory.signature
+              : PdfChangeCategory.formField,
           field: name);
       final value = await field.get(PdfName.v, true);
       if (isSignature) {

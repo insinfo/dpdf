@@ -37,8 +37,9 @@ void main() {
       final doc = await PdfDocument.open(PdfReader.fromBytes(bytes));
       try {
         final pagina = await doc.pageAt(1);
-        final recursos =
-            await pagina!.pdfRepresentation().dictionaryEntry(PdfName.resources);
+        final recursos = await pagina!
+            .pdfRepresentation()
+            .dictionaryEntry(PdfName.resources);
         final xobjs = await recursos!.dictionaryEntry(PdfName('XObject'));
         expect(xobjs, isNotNull, reason: 'a imagem não entrou nos recursos');
 

@@ -11,8 +11,9 @@ Future<Uint8List> _document({int pages = 6}) async {
   final document = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   for (var i = 0; i < pages; i++) {
     final page = await document.appendBlankPage();
-    page.pdfRepresentation().put(
-        PdfName.mediaBox, PdfArray.fromDoubles([0, 0, 300, 300]));
+    page
+        .pdfRepresentation()
+        .put(PdfName.mediaBox, PdfArray.fromDoubles([0, 0, 300, 300]));
     final canvas = await PdfCanvas.fromPage(page);
     canvas.setFillColor(DeviceRgb(i / pages, 0.2, 0.6));
     canvas.rectangle(20, 20, 200, 100 + i.toDouble());
@@ -65,10 +66,12 @@ void main() {
       // vale zero, a estimativa saia menor que a realidade e o arquivo
       // planejado nao batia com o escrito.
       for (final pages in [1, 2, 6, 17]) {
-        final linear = await PdfLinearizer.linearize(await _document(pages: pages));
+        final linear =
+            await PdfLinearizer.linearize(await _document(pages: pages));
         final info = await PdfLinearizationInfo.read(linear);
         expect(info.declaredFileLength, equals(linear.length),
-            reason: '/L tem de descrever o arquivo inteiro, com $pages paginas');
+            reason:
+                '/L tem de descrever o arquivo inteiro, com $pages paginas');
       }
     });
 
@@ -79,7 +82,8 @@ void main() {
       expect(info.isLinearized, isTrue);
       expect(info.pageCount, equals(6));
       expect(info.problems, isEmpty,
-          reason: 'a saida do proprio linearizador tem de satisfazer o anexo F');
+          reason:
+              'a saida do proprio linearizador tem de satisfazer o anexo F');
       expect(info.isValid, isTrue);
       expect(info.hintStreamSpans, isNotEmpty);
       expect(info.firstPageObjectNumber, isNotNull);
@@ -102,9 +106,8 @@ void main() {
         final out = <String>[];
         for (var i = 1; i <= 3; i++) {
           final page = await document.pageAt(i);
-          final stream = await page!
-              .pdfRepresentation()
-              .streamEntry(PdfName.contents);
+          final stream =
+              await page!.pdfRepresentation().streamEntry(PdfName.contents);
           final data = await stream!.getBytes(true);
           out.add(latin1.decode(data ?? Uint8List(0), allowInvalid: true));
         }

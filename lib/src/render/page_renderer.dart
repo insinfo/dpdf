@@ -368,8 +368,7 @@ class _MeshAccumulator {
   bool get isEmpty => _indices.isEmpty;
 
   /// Adds one triangle whose vertices are already in device space.
-  void addTriangle(
-      _MeshVertex a, _MeshVertex b, _MeshVertex c, double alpha) {
+  void addTriangle(_MeshVertex a, _MeshVertex b, _MeshVertex c, double alpha) {
     _indices
       ..add(_slot(a, alpha))
       ..add(_slot(b, alpha))
@@ -383,9 +382,8 @@ class _MeshAccumulator {
     _xy
       ..add(vertex.x)
       ..add(vertex.y);
-    _colours.add(
-        _Renderer._withAlpha(_Renderer._rgb(vertex.r, vertex.g, vertex.b),
-            alpha));
+    _colours.add(_Renderer._withAlpha(
+        _Renderer._rgb(vertex.r, vertex.g, vertex.b), alpha));
     _slots[vertex] = index;
     return index;
   }
@@ -673,8 +671,7 @@ class PdfPageRenderer {
     final standard = options.useStandardFonts ? standardFontFallback() : null;
     if (system == null) return standard;
     if (standard == null) return system;
-    return (request) async =>
-        await system(request) ?? await standard(request);
+    return (request) async => await system(request) ?? await standard(request);
   }
 
   /// Renders [page] straight to PNG bytes.

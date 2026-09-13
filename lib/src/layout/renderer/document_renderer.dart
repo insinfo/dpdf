@@ -112,8 +112,8 @@ class DocumentRenderer extends RootRenderer {
       final result = renderer
           .layout(LayoutContext(LayoutArea(requestedPage, bounds.clone())));
       if (result != null && result.getOccupiedArea() != null) {
-        await _draw(renderer, result.getOccupiedArea()!.getBBox(),
-            requestedPage);
+        await _draw(
+            renderer, result.getOccupiedArea()!.getBBox(), requestedPage);
       }
       return;
     }

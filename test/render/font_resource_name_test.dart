@@ -25,13 +25,12 @@ PdfDictionary _fonte(String baseFont) => PdfDictionary()
 PdfStream _forma(String baseFont, String texto, double y) {
   final conteudo = 'BT /F1 24 Tf 4 $y Td ($texto) Tj ET';
   final fontes = PdfDictionary()..put(PdfName('F1'), _fonte(baseFont));
-  final stream = PdfStream.withBytes(
-      Uint8List.fromList(latin1.encode(conteudo)), 0)
-    ..put(PdfName.type, PdfName('XObject'))
-    ..put(PdfName.subtype, PdfName('Form'))
-    ..put(PdfName('BBox'), PdfArray.fromDoubles([0, 0, 120, 100]))
-    ..put(PdfName.resources,
-        PdfDictionary()..put(PdfName('Font'), fontes));
+  final stream =
+      PdfStream.withBytes(Uint8List.fromList(latin1.encode(conteudo)), 0)
+        ..put(PdfName.type, PdfName('XObject'))
+        ..put(PdfName.subtype, PdfName('Form'))
+        ..put(PdfName('BBox'), PdfArray.fromDoubles([0, 0, 120, 100]))
+        ..put(PdfName.resources, PdfDictionary()..put(PdfName('Font'), fontes));
   return stream;
 }
 

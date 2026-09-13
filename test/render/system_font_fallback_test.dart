@@ -15,14 +15,14 @@ PdfFontRequest _request(String baseFont, {int flags = 0}) =>
 /// Um teste que só passa numa instalação específica do Windows não prova nada
 /// sobre o resolvedor: prova que aquela máquina tem Arial.
 Directory _catalogue(String name, Map<String, String> files) {
-  final directory =
-      Directory.systemTemp.createTempSync('dpdf_fontes_$name');
+  final directory = Directory.systemTemp.createTempSync('dpdf_fontes_$name');
   addTearDown(() => directory.deleteSync(recursive: true));
   final bytes = File(_asset).readAsBytesSync();
   files.forEach((path, source) {
     final target = File('${directory.path}/$path');
     target.parent.createSync(recursive: true);
-    target.writeAsBytesSync(source == _asset ? bytes : File(source).readAsBytesSync());
+    target.writeAsBytesSync(
+        source == _asset ? bytes : File(source).readAsBytesSync());
   });
   return directory;
 }
@@ -70,8 +70,7 @@ void main() {
       expect(await fallback(_request('Arial-Bold')), isNotNull);
       expect(await fallback(_request('Arial-BoldItalic')), isNotNull);
 
-      final somenteNegrito =
-          _catalogue('so_negrito', {'arialbd.ttf': _asset});
+      final somenteNegrito = _catalogue('so_negrito', {'arialbd.ttf': _asset});
       final outro = systemFontFallback(directories: [somenteNegrito.path])!;
       expect(await outro(_request('Arial-Bold')), isNotNull);
       expect(await outro(_request('Helvetica')), isNull,

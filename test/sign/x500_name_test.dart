@@ -208,13 +208,19 @@ void main() {
 
     test('non textual values fall back to their content octets', () {
       final a = name([
-        {commonName: (0x04, const [1, 2, 3])}
+        {
+          commonName: (0x04, const [1, 2, 3])
+        }
       ]);
       final b = name([
-        {commonName: (0x04, const [1, 2, 3])}
+        {
+          commonName: (0x04, const [1, 2, 3])
+        }
       ]);
       final c = name([
-        {commonName: (0x04, const [1, 2, 4])}
+        {
+          commonName: (0x04, const [1, 2, 4])
+        }
       ]);
       expect(X500Name.derEquals(a, b), isTrue);
       expect(X500Name.derEquals(a, c), isFalse);

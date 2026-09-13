@@ -75,9 +75,7 @@ class CCITTG4Encoder {
   /// where the rows end, and the six trailing EOLs of an RTC would decode as
   /// six blank lines every time the row count is left to the data instead.
   static Uint8List compressG3(Uint8List data, int width, int height,
-      {int k = 0,
-      bool encodedByteAlign = false,
-      bool endOfLine = false}) {
+      {int k = 0, bool encodedByteAlign = false, bool endOfLine = false}) {
     final encoder = CCITTG4Encoder(width);
     encoder._byteAlign = encodedByteAlign;
     encoder.fax3Encode(data, height, k: k, endOfLine: endOfLine);

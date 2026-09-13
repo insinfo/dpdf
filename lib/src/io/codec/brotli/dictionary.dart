@@ -1,4 +1,3 @@
-
 import 'dart:typed_data';
 import 'utils.dart';
 import 'dictionary_data.dart';
@@ -45,10 +44,12 @@ class Dictionary {
         pos += i << (bits & 31);
         if (_DICTIONARY_DEBUG != 0) {
           if (bits >= 31) {
-            throw BrotliRuntimeException("newSizeBits values must be less than 31");
+            throw BrotliRuntimeException(
+                "newSizeBits values must be less than 31");
           }
           if (pos <= 0 || pos > newData.length) {
-            throw BrotliRuntimeException("newSizeBits is inconsistent: overflow");
+            throw BrotliRuntimeException(
+                "newSizeBits is inconsistent: overflow");
           }
         }
       }
@@ -72,7 +73,7 @@ class Dictionary {
 
     // Initialize dictionary using DictionaryData
     DictionaryData.init();
-    
+
     if (_data.isEmpty) {
       throw BrotliRuntimeException("brotli dictionary is not set");
     }

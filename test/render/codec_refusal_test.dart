@@ -27,13 +27,13 @@ Future<PdfDocument> _pageWithImage(String filter, List<int> data) async {
     ..put(
         PdfName.resources,
         PdfDictionary()
-          ..put(PdfName('XObject'), PdfDictionary()..put(PdfName('Im0'), image)))
+          ..put(
+              PdfName('XObject'), PdfDictionary()..put(PdfName('Im0'), image)))
     ..put(
         PdfName.contents,
         PdfStream.withBytes(
-            Uint8List.fromList(
-                latin1.encode('q 80 0 0 80 10 10 cm /Im0 Do Q '
-                    '1 0 0 RG 4 w 5 5 m 95 95 l S')),
+            Uint8List.fromList(latin1.encode('q 80 0 0 80 10 10 cm /Im0 Do Q '
+                '1 0 0 RG 4 w 5 5 m 95 95 l S')),
             0));
   await document.close();
   return PdfDocument.open(PdfReader.fromBytes(output.takeBytes()));
@@ -56,8 +56,8 @@ void main() {
 
     test('an unreadable JPEG is counted, not thrown', () async {
       // No SOI marker, so `JpegDecoder` refuses it outright.
-      final document = await _pageWithImage(
-          'DCTDecode', List<int>.filled(64, 0x41));
+      final document =
+          await _pageWithImage('DCTDecode', List<int>.filled(64, 0x41));
 
       final page = await _render(document);
 
@@ -66,8 +66,8 @@ void main() {
 
     test('an unreadable JPEG 2000 image is counted, not thrown', () async {
       // Neither a JP2 signature box nor an SOC marker.
-      final document = await _pageWithImage(
-          'JPXDecode', List<int>.filled(64, 0x42));
+      final document =
+          await _pageWithImage('JPXDecode', List<int>.filled(64, 0x42));
 
       final page = await _render(document);
 
@@ -77,8 +77,8 @@ void main() {
     test('a truncated JPEG 2000 codestream is counted, not thrown', () async {
       // Starts like a real codestream (SOC + SIZ) and then stops, which is the
       // truncation case rather than the "not a JPEG 2000 file" case.
-      final document = await _pageWithImage('JPXDecode',
-          [0xFF, 0x4F, 0xFF, 0x51, 0x00, 0x2F, 0x00, 0x00]);
+      final document = await _pageWithImage(
+          'JPXDecode', [0xFF, 0x4F, 0xFF, 0x51, 0x00, 0x2F, 0x00, 0x00]);
 
       final page = await _render(document);
 
@@ -89,8 +89,8 @@ void main() {
       // The point of not throwing: everything that is not the broken image
       // still reaches the canvas. The content stream draws a red diagonal
       // after the image, and it has to be there.
-      final document = await _pageWithImage(
-          'JPXDecode', List<int>.filled(64, 0x42));
+      final document =
+          await _pageWithImage('JPXDecode', List<int>.filled(64, 0x42));
 
       final page = await _render(document);
 

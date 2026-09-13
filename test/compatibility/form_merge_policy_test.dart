@@ -15,7 +15,6 @@ import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'package:dpdf/src/kernel/pdf/annot/pdf_widget_annotation.dart';
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 
-
 /// Writes `/T` without going through `setFieldName`.
 ///
 /// ISO 32000-1 12.7.3.2 forbids a PERIOD inside a partial name, and
@@ -50,8 +49,8 @@ Future<Uint8List> source(
     field = PdfFormField(dictionary);
     _putPartialName(field, name);
   } else {
-    field = await PdfTextFormField.createText(doc, 'placeholder', 'valor',
-        widget);
+    field =
+        await PdfTextFormField.createText(doc, 'placeholder', 'valor', widget);
     _putPartialName(field, name);
   }
   if (resources) {

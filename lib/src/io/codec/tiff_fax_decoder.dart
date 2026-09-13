@@ -301,11 +301,6 @@ class TIFFFaxDecoder {
     0xff
   ]);
 
-
-
-
-
-
   static final List<int> _twoDCodes = List<int>.generate(128, (lookahead) {
     final word = lookahead.toRadixString(2).padLeft(7, '0');
     const modes = <String, int>{
@@ -995,8 +990,7 @@ class TIFFFaxDecoder {
     // 4.1.3: a line is an alternating sequence of white and black runs that
     // starts white, and every run ends where the colour changes.
     while (bitOffset < _w) {
-      final run =
-          isWhite ? _decodeWhiteCodeWord() : _decodeBlackCodeWord();
+      final run = isWhite ? _decodeWhiteCodeWord() : _decodeBlackCodeWord();
       if (_runEndedLine) return;
       var painted = run;
       if (bitOffset + painted > _w) painted = _w - bitOffset;
@@ -1190,10 +1184,10 @@ class TIFFFaxDecoder {
       lines++;
       lineOffset += scanlineStride;
     }
-      // One scan line was written per advance of lineOffset, which is what the
+    // One scan line was written per advance of lineOffset, which is what the
     // caller trims an undetermined /Rows to.
     rowsDecoded = scanlineStride > 0 ? lineOffset ~/ scanlineStride : 0;
-}
+  }
 
   int _findNextLine() {
     int bitIndexMax = (_data!.length * 8) - 1;

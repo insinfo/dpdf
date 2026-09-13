@@ -213,8 +213,8 @@ class PdfSigner {
     dic.setSignatureCreator(_signerProperties.getSignatureCreator());
     dic.setContact(_signerProperties.getContact());
     // Table 252: /M is the claimed time of signing.
-    dic.setDate(PdfString(
-        PdfDate(_signerProperties.getClaimedSignDate()).getValue()));
+    dic.setDate(
+        PdfString(PdfDate(_signerProperties.getClaimedSignDate()).getValue()));
 
     container.modifySigningDictionary(dic.pdfRepresentation());
 
@@ -301,8 +301,8 @@ class PdfSigner {
     dic.setContact(_signerProperties.getContact());
 
     // Table 252: /M is the claimed time of signing.
-    dic.setDate(PdfString(
-        PdfDate(_signerProperties.getClaimedSignDate()).getValue()));
+    dic.setDate(
+        PdfString(PdfDate(_signerProperties.getClaimedSignDate()).getValue()));
 
     _cryptoDictionary = dic;
 
@@ -607,9 +607,8 @@ class PdfSigner {
       if (latest.length == source.length) {
         counts = const <int>[0, 0, 0];
       } else {
-        counts =
-            (await SignatureModificationAnalyzer.compare(latest, source))
-                .toChangesArray();
+        counts = (await SignatureModificationAnalyzer.compare(latest, source))
+            .toChangesArray();
       }
       final changes = PdfArray();
       for (final value in counts) {

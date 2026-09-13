@@ -202,8 +202,7 @@ class PdfOptionalContentState {
   Future<bool> isMarkedContentVisible(
       PdfDictionary? resources, PdfObject? operand) async {
     if (operand is PdfName) {
-      final properties =
-          await resources?.dictionaryEntry(PdfOcName.properties);
+      final properties = await resources?.dictionaryEntry(PdfOcName.properties);
       if (properties == null) return true;
       return isVisible(await properties.get(operand, false));
     }
@@ -247,8 +246,8 @@ class PdfOptionalContentState {
           } else if (category == PdfOcName.export) {
             recommendation = await usage.getExportState();
           } else if (category == PdfOcName.zoom) {
-            recommendation = _zoomRecommendation(
-                context.zoom, await usage.getZoomMin(), await usage.getZoomMax());
+            recommendation = _zoomRecommendation(context.zoom,
+                await usage.getZoomMin(), await usage.getZoomMax());
           } else if (category == PdfOcName.user) {
             recommendation =
                 await _userRecommendation(usage, context.userNames);
@@ -256,7 +255,8 @@ class PdfOptionalContentState {
             recommendation = languageStates[key];
           }
           if (recommendation == null) continue;
-          recommendations[key] = (recommendations[key] ?? true) && recommendation;
+          recommendations[key] =
+              (recommendations[key] ?? true) && recommendation;
         }
       }
     }
@@ -277,8 +277,7 @@ class PdfOptionalContentState {
       for (final leaf in leaves) {
         // A group the configuration ignores has no effect on visibility, so
         // it must not be able to hide the expression on its own: it reads ON.
-        states[keyOf(leaf)] =
-            await isConsidered(leaf) ? isGroupOn(leaf) : true;
+        states[keyOf(leaf)] = await isConsidered(leaf) ? isGroupOn(leaf) : true;
       }
       return expression.evaluate((group) => states[keyOf(group)] ?? true);
     }
@@ -341,7 +340,8 @@ class PdfOptionalContentState {
 
     final result = <Object, bool>{};
     for (final key in known) {
-      result[key] = exact.isNotEmpty ? exact.contains(key) : partial.contains(key);
+      result[key] =
+          exact.isNotEmpty ? exact.contains(key) : partial.contains(key);
     }
     return result;
   }

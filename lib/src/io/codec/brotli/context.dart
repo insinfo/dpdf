@@ -8,10 +8,13 @@ final class Context {
     return lookup;
   }();
 
-  static const String UTF_MAP = "         !!  !                  \"#\$##%#\$&'##(#)#+++++++++" "+((&*'##,---,---,-----,-----,-----&#'###.///.///./////./////./////&#'# ";
+  static const String UTF_MAP =
+      "         !!  !                  \"#\$##%#\$&'##(#)#+++++++++"
+      "+((&*'##,---,---,-----,-----,-----&#'###.///.///./////./////./////&#'# ";
   static const String UTF_RLE = "A/*  ':  & : \$  \u0081 @";
 
-  static void unpackLookupTable(Int32List lookup, String utfMap, String utfRle) {
+  static void unpackLookupTable(
+      Int32List lookup, String utfMap, String utfRle) {
     // LSB6, MSB6, SIGNED
     for (int i = 0; i < 256; ++i) {
       lookup[i] = i & 0x3F;

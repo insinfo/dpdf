@@ -45,12 +45,12 @@ void main() {
       expect(context.forbidUnknownRoles, isTrue);
       await expectLater(pointer.addTag('Frobnicate'), throwsArgumentError);
 
-      await document.structureRoot()
+      await document
+          .structureRoot()
           .addRoleMapping('Frobnicate', StandardRoles.p);
       await pointer.addTag('Frobnicate');
       expect(await pointer.getRole(), equals('Frobnicate'));
-      expect(await context.resolveRole('Frobnicate'),
-          equals(StandardRoles.p));
+      expect(await context.resolveRole('Frobnicate'), equals(StandardRoles.p));
 
       context.forbidUnknownRoles = false;
       await pointer.addTag('Whatever');
@@ -66,15 +66,24 @@ void main() {
       expect(StandardRoles.groupingTypes, contains(StandardRoles.toci));
       expect(StandardRoles.blockLevelTypes, contains(StandardRoles.p));
       expect(StandardRoles.blockLevelTypes, contains(StandardRoles.tHead));
-      expect(StandardRoles.listTypes,
-          equals({StandardRoles.l, StandardRoles.li, StandardRoles.lbl,
-            StandardRoles.lBody}));
+      expect(
+          StandardRoles.listTypes,
+          equals({
+            StandardRoles.l,
+            StandardRoles.li,
+            StandardRoles.lbl,
+            StandardRoles.lBody
+          }));
       expect(StandardRoles.tableTypes, contains(StandardRoles.td));
       expect(StandardRoles.inlineLevelTypes, contains(StandardRoles.quote));
       expect(StandardRoles.inlineLevelTypes, contains(StandardRoles.warichu));
-      expect(StandardRoles.illustrationTypes,
-          equals({StandardRoles.figure, StandardRoles.formula,
-            StandardRoles.form}));
+      expect(
+          StandardRoles.illustrationTypes,
+          equals({
+            StandardRoles.figure,
+            StandardRoles.formula,
+            StandardRoles.form
+          }));
 
       expect(StandardRoles.isStandardType(StandardRoles.bibEntry), isTrue);
       expect(StandardRoles.isStandardType('Frobnicate'), isFalse);
@@ -151,8 +160,8 @@ void main() {
       final element = pointer.getCurrentStructElem();
       final stored = await element.getNamespace();
       expect(stored, isNotNull);
-      expect(await stored!.getNamespaceName(),
-          equals(StandardNamespaces.pdf17));
+      expect(
+          await stored!.getNamespaceName(), equals(StandardNamespaces.pdf17));
 
       await document.close();
     });
@@ -175,14 +184,14 @@ void main() {
       final document = _newTaggedDocument();
       final source =
           await PdfNamespace.fetch(document, 'http://example.org/source');
-      final target = await PdfNamespace.fetch(document, StandardNamespaces.pdf20);
+      final target =
+          await PdfNamespace.fetch(document, StandardNamespaces.pdf20);
       await source.addNamespaceRoleMappingWithTarget(
           'Chapter', StandardRoles.title, target);
 
       expect(await source.resolveNamespaceRole('Chapter'),
           equals(PdfName(StandardRoles.title)));
-      final resolvedTarget =
-          await source.resolveNamespaceRoleTarget('Chapter');
+      final resolvedTarget = await source.resolveNamespaceRoleTarget('Chapter');
       expect(resolvedTarget, isNotNull);
       expect(await resolvedTarget!.getNamespaceName(),
           equals(StandardNamespaces.pdf20));

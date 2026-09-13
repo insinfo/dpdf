@@ -730,18 +730,19 @@ class PdfGlyphSource {
   /// nada foi trocado — o programa estava embutido, não havia substituto, ou
   /// o substituto não pôde ser lido.
   static Future<
-      ({
-        BLFontFace? face,
-        PdfGlyphFailure? failure,
-        String? substituted
-      })> _applyFallback(
+          ({BLFontFace? face, PdfGlyphFailure? failure, String? substituted})>
+      _applyFallback(
     ({BLFontFace? face, PdfGlyphFailure? failure}) program,
     PdfFontFallback? fallback,
     String baseFont, {
     required PdfDictionary? descriptor,
     required bool composite,
   }) async {
-    ({BLFontFace? face, PdfGlyphFailure? failure, String? substituted}) keep() =>
+    ({
+      BLFontFace? face,
+      PdfGlyphFailure? failure,
+      String? substituted
+    }) keep() =>
         (face: program.face, failure: program.failure, substituted: null);
 
     if (program.face != null || fallback == null) return keep();

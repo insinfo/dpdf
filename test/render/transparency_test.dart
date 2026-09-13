@@ -85,7 +85,8 @@ PdfStream _form(
   return stream;
 }
 
-PdfDictionary _transparencyGroup({bool isolated = false, bool knockout = false}) =>
+PdfDictionary _transparencyGroup(
+        {bool isolated = false, bool knockout = false}) =>
     PdfDictionary()
       ..put(PdfName.s, PdfName('Transparency'))
       ..put(PdfName('I'), PdfBoolean(isolated))
@@ -179,8 +180,7 @@ void main() {
       expect(page.report.unsupportedOperators.keys, contains('gs:BM/Gouache'));
     });
 
-    test('an array of blend modes selects the first one implemented',
-        () async {
+    test('an array of blend modes selects the first one implemented', () async {
       final state = PdfDictionary()
         ..put(
             PdfName('BM'),
@@ -249,15 +249,15 @@ void main() {
         () async {
       // Two opaque overlapping squares at 50% alpha. Painted separately the
       // overlap would compound to 25%; as a group the alpha applies once.
-      final resources = _extGState({'A': PdfDictionary()
-        ..put(PdfName('ca'), PdfNumber(0.5))})
-        ..put(
-            PdfName('XObject'),
-            PdfDictionary()
-              ..put(
-                  PdfName('Fm'),
-                  _form('0 g 10 10 50 50 re f 30 30 50 50 re f',
-                      group: _transparencyGroup(isolated: true))));
+      final resources =
+          _extGState({'A': PdfDictionary()..put(PdfName('ca'), PdfNumber(0.5))})
+            ..put(
+                PdfName('XObject'),
+                PdfDictionary()
+                  ..put(
+                      PdfName('Fm'),
+                      _form('0 g 10 10 50 50 re f 30 30 50 50 re f',
+                          group: _transparencyGroup(isolated: true))));
 
       final page = await _render('/A gs /Fm Do', resources: resources);
 
@@ -279,8 +279,8 @@ void main() {
                       group: _transparencyGroup(isolated: true),
                       resources: inner)));
 
-      final page = await _render('0.5 g 0 0 100 100 re f /Fm Do',
-          resources: resources);
+      final page =
+          await _render('0.5 g 0 0 100 100 re f /Fm Do', resources: resources);
 
       // Multiply inside an isolated group sees a transparent backdrop, so it
       // contributes the source colour unchanged.
@@ -299,16 +299,16 @@ void main() {
                       group: _transparencyGroup(isolated: false),
                       resources: inner)));
 
-      final page = await _render('0.5 g 0 0 100 100 re f /Fm Do',
-          resources: resources);
+      final page =
+          await _render('0.5 g 0 0 100 100 re f /Fm Do', resources: resources);
 
       // 0.50196 * 0.50196 = 0.25196.
       _expectRgb(_at(page, 50, 50), [64, 64, 64]);
     });
 
     test('a knockout group lets the topmost object win', () async {
-      final inner = _extGState({'A': PdfDictionary()
-        ..put(PdfName('ca'), PdfNumber(0.5))});
+      final inner = _extGState(
+          {'A': PdfDictionary()..put(PdfName('ca'), PdfNumber(0.5))});
       const content = '/A gs 1 0 0 rg 10 10 50 50 re f '
           '0 0 1 rg 30 30 50 50 re f';
 
@@ -411,8 +411,7 @@ void main() {
                   _form('0.25 g 20 20 60 60 re f',
                       group: _transparencyGroup(isolated: true))));
 
-      final page = await _render(
-          '0.8 0.4 0.2 rg 0 0 100 100 re f /M gs /Fm Do',
+      final page = await _render('0.8 0.4 0.2 rg 0 0 100 100 re f /M gs /Fm Do',
           resources: resources);
 
       _expectRgb(_at(page, 50, 50), [140, 38, 13]);
@@ -422,12 +421,11 @@ void main() {
   group('function-based shading', () {
     /// A 2-in 3-out PostScript function that ignores y and returns x as a
     /// grey, i.e. a horizontal ramp across the shading's domain.
-    PdfStream rampFunction() =>
-        PdfStream.withBytes(Uint8List.fromList(latin1.encode('{ pop dup dup }')),
-            0)
-          ..put(PdfName('FunctionType'), PdfNumber.fromInt(4))
-          ..put(PdfName('Domain'), PdfArray.fromDoubles([0, 1, 0, 1]))
-          ..put(PdfName('Range'), PdfArray.fromDoubles([0, 1, 0, 1, 0, 1]));
+    PdfStream rampFunction() => PdfStream.withBytes(
+        Uint8List.fromList(latin1.encode('{ pop dup dup }')), 0)
+      ..put(PdfName('FunctionType'), PdfNumber.fromInt(4))
+      ..put(PdfName('Domain'), PdfArray.fromDoubles([0, 1, 0, 1]))
+      ..put(PdfName('Range'), PdfArray.fromDoubles([0, 1, 0, 1, 0, 1]));
 
     test('paints a type 1 shading through its function and matrix', () async {
       final shading = PdfDictionary()
@@ -546,8 +544,7 @@ void main() {
         ..put(PdfName.height, PdfNumber.fromInt(2))
         ..put(PdfName('BitsPerComponent'), PdfNumber.fromInt(8))
         ..put(PdfName('ColorSpace'), PdfName('DeviceRGB'))
-        ..put(PdfName('Mask'),
-            PdfArray.fromDoubles([255, 255, 0, 0, 0, 0]));
+        ..put(PdfName('Mask'), PdfArray.fromDoubles([255, 255, 0, 0, 0, 0]));
 
       final resources = PdfDictionary()
         ..put(PdfName('XObject'), PdfDictionary()..put(PdfName('Im0'), image));
@@ -563,8 +560,7 @@ void main() {
     });
 
     test('a range that matches nothing leaves the image intact', () async {
-      final image = PdfStream.withBytes(
-          Uint8List.fromList([255, 0, 0]), 0)
+      final image = PdfStream.withBytes(Uint8List.fromList([255, 0, 0]), 0)
         ..put(PdfName.subtype, PdfName('Image'))
         ..put(PdfName.width, PdfNumber.fromInt(1))
         ..put(PdfName.height, PdfNumber.fromInt(1))
@@ -582,8 +578,8 @@ void main() {
 
     test('masks an indexed image by palette index', () async {
       // Two palette entries, red and green; index 0 is masked out.
-      final palette = PdfStream.withBytes(
-          Uint8List.fromList([255, 0, 0, 0, 255, 0]), 0);
+      final palette =
+          PdfStream.withBytes(Uint8List.fromList([255, 0, 0, 0, 255, 0]), 0);
       final space = PdfArray()
         ..add(PdfName('Indexed'))
         ..add(PdfName('DeviceRGB'))

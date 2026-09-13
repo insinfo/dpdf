@@ -189,8 +189,7 @@ void main() {
 
       final root = document.structureRoot();
       expect(await root.getElementById(PdfString('p-1')), isNull);
-      expect(
-          root.pdfRepresentation().containsKey(PdfName.idTree), isFalse);
+      expect(root.pdfRepresentation().containsKey(PdfName.idTree), isFalse);
 
       await document.close();
     });
@@ -275,16 +274,15 @@ void main() {
           attributes: shared.pdfRepresentation());
 
       final element = pointer.getCurrentStructElem();
-      expect(await element.getAttributeClasses(),
-          equals([PdfName('Indented')]));
+      expect(
+          await element.getAttributeClasses(), equals([PdfName('Indented')]));
 
       final root = document.structureRoot();
       expect(await root.getAttributeClass(PdfName('Indented')),
           same(shared.pdfRepresentation()));
 
       await element.addAttributeClass(PdfName('Emphasised'), revision: 2);
-      expect(
-          await element.getAttributeClassRevision(PdfName('Emphasised')),
+      expect(await element.getAttributeClassRevision(PdfName('Emphasised')),
           equals(2));
       expect(await element.getAttributeClasses(), hasLength(2));
 
@@ -341,8 +339,8 @@ void main() {
         ..setLanguage('en-US')
         ..setTitle('Revenue')
         ..setStructureElementId('figure-1')
-        ..addAttributes(PdfStructureAttributes.layout()
-          ..setBBox([0, 0, 100, 50]));
+        ..addAttributes(
+            PdfStructureAttributes.layout()..setBBox([0, 0, 100, 50]));
       await properties.applyTo(element);
 
       expect((await element.getAlt())?.getValue(),

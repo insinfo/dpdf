@@ -188,8 +188,10 @@ void main() {
         expect(await references.single.getTransformMethod(),
             SignatureTransformMethod.docMdp);
         expect(await references.single.getDocMdpPermission(), 1);
-        expect(await util.validateSignature(name), isA<SignatureValidationReport>()
-            .having((r) => r.isValid, 'isValid', isTrue));
+        expect(
+            await util.validateSignature(name),
+            isA<SignatureValidationReport>()
+                .having((r) => r.isValid, 'isValid', isTrue));
       });
     });
 
@@ -204,8 +206,8 @@ void main() {
         final signed = await _sign(await _blankDocument(), identity,
             certification: entry.key);
         await _withDocument(signed, (document) async {
-          expect(await SignatureUtil(document).getDocMdpPermission(),
-              entry.value);
+          expect(
+              await SignatureUtil(document).getDocMdpPermission(), entry.value);
         });
       }
     });
@@ -216,21 +218,21 @@ void main() {
       final certified = await _sign(await _blankDocument(), identity,
           fieldName: 'Certification',
           certification: AccessPermissions.noChangesPermitted);
-      final twice =
-          await _sign(certified, identity, fieldName: 'Approval');
+      final twice = await _sign(certified, identity, fieldName: 'Approval');
 
       await _withDocument(twice, (document) async {
         final util = SignatureUtil(document);
         expect(await util.getSignatureNames(), ['Certification', 'Approval']);
         // The byte range digest of the first signature still matches: the
         // second signature was an incremental update (12.8.1, note 1).
-        expect((await util.readSignatureData('Certification'))!.verify(),
-            isTrue);
-        expect(await util.signatureCoversWholeDocument('Certification'),
-            isFalse);
+        expect(
+            (await util.readSignatureData('Certification'))!.verify(), isTrue);
+        expect(
+            await util.signatureCoversWholeDocument('Certification'), isFalse);
         final report = await util.validateSignature('Certification');
         expect(report.digestValid, isTrue);
-        expect(report.issues, contains(SignatureValidationIssue.docMdpViolation));
+        expect(
+            report.issues, contains(SignatureValidationIssue.docMdpViolation));
         expect(report.modifications, isNotNull);
         // The signature applied last always covers the whole file.
         expect(await util.signatureCoversWholeDocument('Approval'), isTrue);
@@ -255,8 +257,8 @@ void main() {
       await _withDocument(withExtraPage, (document) async {
         final report =
             await SignatureUtil(document).validateSignature('Certification');
-        expect(report.issues,
-            contains(SignatureValidationIssue.docMdpViolation));
+        expect(
+            report.issues, contains(SignatureValidationIssue.docMdpViolation));
       });
     });
 
@@ -305,7 +307,8 @@ void main() {
         expect(await references.single.getFieldMdpAction(), LockAction.include);
         expect(await references.single.getFieldMdpFields(), ['nome']);
 
-        final field = (await util.getSignatureFormFieldDictionary('Aprovacao'))!;
+        final field =
+            (await util.getSignatureFormFieldDictionary('Aprovacao'))!;
         final stored = await field.dictionaryEntry(PdfName.lock);
         expect(stored, isNotNull);
         final wrapper = PdfSigFieldLock.fromDictionary(stored!);
@@ -395,8 +398,7 @@ void main() {
 
     test('a byte range that stops short of the file is not full coverage', () {
       // "<00>" occupies the four bytes at offset 10.
-      final source = Uint8List.fromList(
-          '0123456789<00>abcdefghij'.codeUnits);
+      final source = Uint8List.fromList('0123456789<00>abcdefghij'.codeUnits);
       expect(SignatureUtil.byteRangeCoversDocument([0, 10, 14, 10], source),
           isTrue);
       expect(SignatureUtil.byteRangeCoversDocument([0, 10, 14, 5], source),
@@ -408,8 +410,8 @@ void main() {
           isFalse);
       expect(SignatureUtil.byteRangeCoversDocument([0, 10, 15, 9], source),
           isFalse);
-      expect(SignatureUtil.byteRangeCoversDocument([0, 10, 14], source),
-          isFalse);
+      expect(
+          SignatureUtil.byteRangeCoversDocument([0, 10, 14], source), isFalse);
     });
 
     test('trailing end of line bytes still count as full coverage', () {
@@ -420,8 +422,7 @@ void main() {
     });
 
     test('a non hexadecimal gap is rejected', () {
-      final source =
-          Uint8List.fromList('0123456789<zz>abcdefghij'.codeUnits);
+      final source = Uint8List.fromList('0123456789<zz>abcdefghij'.codeUnits);
       expect(SignatureUtil.byteRangeCoversDocument([0, 10, 14, 10], source),
           isFalse);
     });

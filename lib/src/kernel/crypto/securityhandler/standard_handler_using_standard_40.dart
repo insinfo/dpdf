@@ -116,15 +116,16 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
     permissions = pObj.intValue();
     this.documentId = documentId;
 
-    if (oValue == null || uValue == null || oValue.length < 32 ||
+    if (oValue == null ||
+        uValue == null ||
+        oValue.length < 32 ||
         uValue.length < userKeyComparisonLength) {
       throw PdfException(
           KernelExceptionMessageConstant.standardHandlerBadDictionary);
     }
 
     // "Algorithm 6": try the supplied password as the user password.
-    computeGlobalEncryptionKey(
-        padPassword(password), oValue, _encryptMetadata);
+    computeGlobalEncryptionKey(padPassword(password), oValue, _encryptMetadata);
     if (_matchesUserKey(uValue)) {
       usedOwnerPassword = false;
       return;

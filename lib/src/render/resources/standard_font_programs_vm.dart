@@ -54,8 +54,7 @@ abstract final class StandardFontPrograms {
     'D050000L': _d050000L,
   };
 
-  static const _nimbusSansRegular =
-      'H4sIAAAAAAAACpy7B1QTW9c/nBBmJpmBocRYEiex'
+  static const _nimbusSansRegular = 'H4sIAAAAAAAACpy7B1QTW9c/nBBmJpmBocRYEiex'
       'V0B6sdPBBlIUENEAoUgIEBIp9q6AvV5b7F1UsDfs'
       'XRGvBQuIIFdst4iPe7gHn/tfkxCv7/d+3/qv9a2V'
       'NXufffb+7X32OWfOmTOTsKioMJ4VbzZPwBvuHxTU'
@@ -2131,10 +2130,8 @@ abstract final class StandardFontPrograms {
       'f0zBHHv9DESildfyJKbYHXozMR1TMAMpGIrHMB0T'
       'MRdzEIkH8DBmYA6GYwoexVw8gYcx2+s5vsa1N69s'
       '+71r472Zdfm3rh6JKZht55ls53kn2iEOcf/WvU4l'
-      'Yek5dPhHkcD/BzvCMy1YQQEA'
-      ;
-  static const _nimbusSansBold =
-      'H4sIAAAAAAAACpy7d1gTW9c3nJDMJJmBgRDj0cTJ'
+      'Yek5dPhHkcD/BzvCMy1YQQEA';
+  static const _nimbusSansBold = 'H4sIAAAAAAAACpy7d1gTW9c3nJDMJJmBgRDj0cTJ'
       'xI6o9GpBkSoWUMAuEiBAJCGQBATsvYANC1ix9wIq'
       '9t47drF7jh6Peux6XIMbz/1+kxD1fq7vef94Ly5m'
       'rb3XXr+19tp19uzEJiTE8hx5E3gCXvewyEj1H4HD'
@@ -4213,10 +4210,8 @@ abstract final class StandardFontPrograms {
       'LIb3O894MQgzsUD7z4UXrdyWJzFTT+fNwxzMxFws'
       'xL14BHMwDU9gAbx4AA9iLhYgBvF4DDPcMaOr9Crv'
       '076iV7S7mu7/ot9YzMR8XVW8rqoTOiAKUf/iKTdt'
-      'xmUY/EPRvv8DvXLaK0BFAQA='
-      ;
-  static const _nimbusSansOblique =
-      'H4sIAAAAAAAACpy6d1hTWdc+nBDOITkHQsnEkcST'
+      'xmUY/EPRvv8DvXLaK0BFAQA=';
+  static const _nimbusSansOblique = 'H4sIAAAAAAAACpy6d1hTWdc+nBDOITkHQsnEkcST'
       'YBsbKr0IolTFBop0VAIECIQAIaF3ROmKAoKUUBTE'
       'ihVU7A1FbFjQsY3oqOM4M+LM7MNsZp7fm4Q4Pu/v'
       '+74/vuvKddbae69132uv3U6J19q1XhRdSi6FRlns'
@@ -6445,8 +6440,7 @@ abstract final class StandardFontPrograms {
       '1MejgSSDlr8XjwpXM0zS/s6vnx6S9DJEC130kGAn'
       'g2xkG70Msp4E3XTxADtJOrmRS3JWfYk34vSq+1bc'
       '7SQZsFr2WS1ruJlqqr9VX/O+pywED7PoUt8G/h+H'
-      'k9GC0FcBAA=='
-      ;
+      'k9GC0FcBAA==';
   static const _nimbusSansBoldOblique =
       'H4sIAAAAAAAACpy6d1gT2fc/nhBmSGYglBhL4mSw'
       'V5Re7HSxYUOKCAYSIRASTKEpUiyIgF0EBCmCFQXb'
@@ -8664,10 +8658,8 @@ abstract final class StandardFontPrograms {
       'KXCcaTxbATJBLx55Gnj/0/HI4FOz95fx2OyuzODb'
       'P/+qTOJTZpqXKDJJnjo1XmGMMjV2UqHEMTyGyFOi'
       'yEnq+O4NyVV1epa0/quTdJb2PZDWKD5T1v6KtT+q'
-      'dBkn/kDPiM5Z+hPCr9i12g7ivxUMzgL4VwEA'
-      ;
-  static const _nimbusRomanRegular =
-      'H4sIAAAAAAAACpy6d1RT2foGnBBOIQdCCUFITI6O'
+      'dBkn/kDPiM5Z+hPCr9i12g7ivxUMzgL4VwEA';
+  static const _nimbusRomanRegular = 'H4sIAAAAAAAACpy6d1RT2foGnBBOIQdCCUFITI6O'
       'Yy9DFVBHRYplsFBUFFuAAJGQQAoECL2H0HsNTap0'
       'FbB3HbujjqMzo+P0du+MM3Nnh9nMvd9KAo6/tb7v'
       'n2+trPO8u7zP8+5373POPidnZ3DwToo5JYNCo2z0'
@@ -11203,10 +11195,8 @@ abstract final class StandardFontPrograms {
       'Z23c6I84PGfqT4IbkU7JC4gzp/QS8CziMAmJeAhP'
       '41mMwfN4Dm4MRDyexWhMwkDE4Sk8j4kYjSlO3zH1'
       'al+re/PPasc4s+v2L9YfjDhMMbONN7O9BZ0Qjeh/'
-      'sbXlJTJNxq2/tiv4fwC3cBHlmH8BAA=='
-      ;
-  static const _nimbusRomanBold =
-      'H4sIAAAAAAAACpy6Z0Bbx9YuLCGkvaUNAiTkA5Kl'
+      'sbXlJTJNxq2/tiv4fwC3cBHlmH8BAA==';
+  static const _nimbusRomanBold = 'H4sIAAAAAAAACpy6Z0Bbx9YuLCGkvaUNAiTkA5Kl'
       '7d4LvbjbFHdjG2zcKAKEEKiACogmehe9V9HBFBsM'
       'xgb3mrjGiR3HyYnT7JM4cYpTR2TIe74rCSV+vx/3'
       'x/2jtWZmredZs6bs2doTEBQUQLAiZBJIhC0+/v7z'
@@ -13802,10 +13792,8 @@ abstract final class StandardFontPrograms {
       '0Q8T8JR9fhL8aOGVPIMJ9oTeZDyJCZiEBNyDR/Ek'
       'xuFpPAU/hiIeT+JBTEIfxOMJjPd6ja323D+eurXy'
       'uVhvRp3+2yeHYwKm2rnF27m1QxvEIOa/beeF0LQG'
-      'd/yc5+//ALU1Qll4igEA'
-      ;
-  static const _nimbusRomanItalic =
-      'H4sIAAAAAAAACpy6d1xTSfs2nhDOSciBUGIQEpOD'
+      'd/yc5+//ALU1Qll4igEA';
+  static const _nimbusRomanItalic = 'H4sIAAAAAAAACpy6d1xTSfs2nhDOSciBUGIQEpOD'
       '6666Vjpip6osdrBgI0CAQJoplIQSWiB0Qq+hF0FU'
       'FAXsbV1776tur+669ZngsN/n/SUB1+9f7+f3/nOu'
       '+8zMfV333DNnziRnNoaFbSRYE9QEEmF1QHCwy/q7'
@@ -16555,8 +16543,7 @@ abstract final class StandardFontPrograms {
       'wRM+AQOEzDj7LAFNvmaW0D2pN80UIVkKHCPDFGO8'
       'yQwBg+SYYpQsRygwyiQZxn3LPY/ZPrJse8y2x0eW'
       'firrYULyLs6ci7Od/e5NKE/ja7+htP4u5htS/3dH'
-      '8D7Ps/vv1JwBAA=='
-      ;
+      '8D7Ps/vv1JwBAA==';
   static const _nimbusRomanBoldItalic =
       'H4sIAAAAAAAACpy7d1wbxxY2LCF2JbQgihBFsrR2'
       'HNu4Uw24YwPuBlOMC9gWSAiBGir03nvvGETv3cbG'
@@ -19278,10 +19265,8 @@ abstract final class StandardFontPrograms {
       'OpbgbbwFf8xBNF7HC1iB8YjGa3gR/piKVXgBr+Fl'
       'LLXmCH+k1zd9+rX0at0n3FrrsH+pVySW4U39BNH6'
       'CQaiP0IR+i+NYf4vp8ovB3Mfnv6uKOL/B+4lgihE'
-      'mQEA'
-      ;
-  static const _nimbusMonoPSRegular =
-      'H4sIAAAAAAAACpx7d1xT1xt3QnJvknsgQMIFTXrv'
+      'mQEA';
+  static const _nimbusMonoPSRegular = 'H4sIAAAAAAAACpx7d1xT1xt3QnJvknsgQMIFTXrv'
       'VXFrlT2sm+HeA9Q6AgSIhAAZ7BES9h5J2AKKigPB'
       'vRO1te46O+2wtrV22vXrSXv5te+bhFh/75/vR83z'
       '3HPO8/0+5znznntctX79KgZgaBkshl9EdPSYVbGk'
@@ -21274,10 +21259,8 @@ abstract final class StandardFontPrograms {
       '4xKPcETw1JYhHJGIxTgsxjKEIQ4xsGIsohCJKFgx'
       'AZMwEeFYiDhEYC6iPekHNYrxILwausufwgd53rHP'
       'fx1jKsIRzd86ir91dz6zdfuv44vuRueqRs+/2pv8'
-      'P5W3yLRwMAEA'
-      ;
-  static const _nimbusMonoPSBold =
-      'H4sIAAAAAAAACqy7eVRT1xc/mhByA/dAGEIAc3vv'
+      'P5W3yLRwMAEA';
+  static const _nimbusMonoPSBold = 'H4sIAAAAAAAACqy7eVRT1xc/mhByA/dAGEIAc3vv'
       '1Tq3VhkdqrUq4ISKijhPAQIEQgIZgDBmYJYxA1OY'
       'J5nFWXBorWO1VlutVjt8O88jtj2p1/6+7yWXWL9r'
       'vT/eeuutxcre95yzP3ufc/aZN1HbtkUxAEPDYDEC'
@@ -23481,10 +23464,8 @@ abstract final class StandardFontPrograms {
       'vUEHLmZKEKwHTzE0L1gP3hAAs2AzeMFaCAR/0MFM'
       '8AFv8AEdzIH5MB58wBPczSG7vub2hUvB3VsvXbqa'
       '0zXif+F2IawHPzGNPmIaB8PbMAgG/S98mrcpTbfB'
-      '+7/af/x/AILGKFrgVQEA'
-      ;
-  static const _nimbusMonoPSItalic =
-      'H4sIAAAAAAAACqS8B1RbV9Y/KiHuBe4BUWRRJF9d'
+      '+7/af/x/AILGKFrgVQEA';
+  static const _nimbusMonoPSItalic = 'H4sIAAAAAAAACqS8B1RbV9Y/KiHuBe4BUWRRJF9d'
       'jOPeqLZxN83d2GAC7hYgQCAkUKEXNRC9qdCrMcY2'
       '4G5cBe6eJHbsxJm0ccYZp0++OJlkcpRcJt//XQk5'
       'nrX+a7213lteS3vfc/b+7X326QXH7tkTSwM0JY1B'
@@ -25620,8 +25601,7 @@ abstract final class StandardFontPrograms {
       'IBBCYSL4w3KYD6sgBAwwAVZAIKwAA0yGaTAGQsEX'
       'AsAfFlju7vle/Dexxbhd3ovtaXm+Pv9l/BmwCIKl'
       '510hPW936Aoe4PFfppYBmH8HMNdDz3+1L/l/AN2A'
-      'xRLYQgEA'
-      ;
+      'xRLYQgEA';
   static const _nimbusMonoPSBoldItalic =
       'H4sIAAAAAAAACqS7d1gbVxY3LCFmgLkgmoVh5Jlx'
       'EifuDtU1zQbce++2AAEyKlgFkFCn9yaBBKIX09yN'
@@ -27941,10 +27921,8 @@ abstract final class StandardFontPrograms {
       's5hqan1r86mmjkZKqWE+c1jEQqJcRL2PLaKUMY3x'
       '1FN7PAOJMpFGqqilhsvD5xSegvwaF6CGdeFORhWG'
       'PS74lrhLqKbBW1LvLcljOLnkfstWImCHwT6g7n9x'
-      'mf8BTONwg+xdAQA='
-      ;
-  static const _standardSymbolsPS =
-      'H4sIAAAAAAAACrx7CVQbR7a2wHS3EjuabO2I7qTb'
+      'mf8BTONwg+xdAQA=';
+  static const _standardSymbolsPS = 'H4sIAAAAAAAACrx7CVQbR7a2wHS3EjuabO2I7qTb'
       'cfbEsWM7thNv8ZrYxiuL8QZYgACBkIQWEFpBQisC'
       'tCIkQCBA7LsXjDccQ7zFjhPHcRZnXyeZJJPJzKRE'
       'Ss77f2Enmfdm3rzzn/POf3xM3aq+de/Xt27dKlXd'
@@ -28529,10 +28507,8 @@ abstract final class StandardFontPrograms {
       '7GUfteymniJ8rKSZXbSymwa2sZ29+Agwn2IexMdm'
       'WvEl+WvZSy07qYuz6+L+WmliM800sgcfq1jLGurZ'
       'RguN8V0J5uL/yl18N+b/FqWaenazhwaa2RnPeB7z'
-      'mf819pe5JvPuNzzmMec9fl3+DV1LDzG4UgAA'
-      ;
-  static const _d050000L =
-      'H4sIAAAAAAAACky7B3wbRdo/LpmMJA4QB3ebWLuw'
+      'mf819pe5JvPuNzzmMec9fl3+DV1LDzG4UgAA';
+  static const _d050000L = 'H4sIAAAAAAAACky7B3wbRdo/LpmMJA4QB3ebWLuw'
       'mwQSINVyN4EkpDdSSBzHNVn3XuUmW7Kturvaomq5'
       '995S7DhxGikkhCOQ0OEOjrvjgAMOeO8oo9yY9/5/'
       '5d7P+/60H2lmZ+Z5ZueZ0e7z/c6z+w4d2id7UNYo'
@@ -29359,6 +29335,5 @@ abstract final class StandardFontPrograms {
       'UQO7gCPwU9B7AjWwYKYkEDgqXj/pDTyAI/AE/mAX'
       'WAnWgpUzHwNwADgCJxAA3IEt8J2pc9P/oNr0T/n/'
       'jjEGjoq51AV4KSSvAssVmH+n++dv4bs++fs6/2f4'
-      'P2+NdayIdAAA'
-      ;
+      'P2+NdayIdAAA';
 }

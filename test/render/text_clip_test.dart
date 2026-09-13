@@ -91,7 +91,8 @@ void main() {
       expect(red, lessThan(page.width * page.height ~/ 4),
           reason: 'the cover is confined to the glyphs');
       // A corner well away from the text stays as the page was.
-      expect(_count(page, _isWhite), greaterThan(page.width * page.height ~/ 2));
+      expect(
+          _count(page, _isWhite), greaterThan(page.width * page.height ~/ 2));
     });
 
     test('mode 4 fills the glyphs and also clips', () async {
@@ -100,7 +101,8 @@ void main() {
       // The red cover lands on top of the blue text, so the glyphs end up red
       // and nothing outside them is touched.
       expect(_count(page, _isRed), greaterThan(200));
-      expect(_count(page, _isWhite), greaterThan(page.width * page.height ~/ 2));
+      expect(
+          _count(page, _isWhite), greaterThan(page.width * page.height ~/ 2));
     });
 
     test('mode 0 does not clip anything', () async {
@@ -110,8 +112,7 @@ void main() {
       expect(_count(page, _isRed), equals(page.width * page.height));
     });
 
-    test('a clipping mode that shows no glyph clips everything away',
-        () async {
+    test('a clipping mode that shows no glyph clips everything away', () async {
       final page = await _render(await _page('', renderMode: 7));
 
       expect(_count(page, _isRed), isZero);
@@ -144,13 +145,13 @@ void main() {
       await pdf.close();
 
       final rendered = await _render(output.takeBytes());
-      expect(_count(rendered, _isRed),
-          equals(rendered.width * rendered.height));
+      expect(
+          _count(rendered, _isRed), equals(rendered.width * rendered.height));
     });
 
     test('mode 2 fills and strokes the same glyphs', () async {
-      final filled = await _render(await _page('Hamburg',
-          renderMode: 0, coverAfterwards: false));
+      final filled = await _render(
+          await _page('Hamburg', renderMode: 0, coverAfterwards: false));
       final both = await _render(await _page('Hamburg',
           renderMode: 2, coverAfterwards: false, lineWidth: 2));
 

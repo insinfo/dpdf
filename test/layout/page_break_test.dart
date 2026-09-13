@@ -36,8 +36,8 @@ void main() {
   test('an area break renderer reports the break it carries', () {
     final areaBreak = AreaBreak(AreaBreakType.NEXT_PAGE);
     final renderer = AreaBreakRenderer(areaBreak);
-    final result =
-        renderer.layout(LayoutContext(LayoutArea(1, Rectangle(0, 0, 100, 100))));
+    final result = renderer
+        .layout(LayoutContext(LayoutArea(1, Rectangle(0, 0, 100, 100))));
     expect(result, isNotNull);
     expect(result!.getStatus(), LayoutResult.NOTHING);
     expect(result.getAreaBreak(), same(areaBreak));
@@ -56,7 +56,8 @@ void main() {
     await doc.close();
     await pdf.close();
 
-    final reopened = await PdfDocument.open(PdfReader.fromBytes(bytes.toBytes()));
+    final reopened =
+        await PdfDocument.open(PdfReader.fromBytes(bytes.toBytes()));
     addTearDown(reopened.close);
     expect(reopened.pageTotal(), 2);
   });
@@ -73,7 +74,8 @@ void main() {
     await doc.close();
     await pdf.close();
 
-    final reopened = await PdfDocument.open(PdfReader.fromBytes(bytes.toBytes()));
+    final reopened =
+        await PdfDocument.open(PdfReader.fromBytes(bytes.toBytes()));
     addTearDown(reopened.close);
     expect(reopened.pageTotal(), 2);
     final second = await reopened.pageAt(2);
@@ -95,7 +97,8 @@ void main() {
     await doc.close();
     await pdf.close();
 
-    final reopened = await PdfDocument.open(PdfReader.fromBytes(bytes.toBytes()));
+    final reopened =
+        await PdfDocument.open(PdfReader.fromBytes(bytes.toBytes()));
     addTearDown(reopened.close);
     expect(reopened.pageTotal(), greaterThan(1));
   });

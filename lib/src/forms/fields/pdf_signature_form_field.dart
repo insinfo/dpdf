@@ -37,9 +37,31 @@ class PdfSignatureFormField extends PdfFormField {
     }
   }
 
+  /// Reads the `/Lock` entry, ISO 32000-1 table 233.
   Future<PdfSigFieldLock?> getSigFieldLockDictionary() async {
     PdfObject? sigLockDict = await pdfRepresentation().get(PdfName.lock, true);
-    return sigLockDict is PdfDictionary ? PdfSigFieldLock(sigLockDict) : null;
+    return sigLockDict is PdfDictionary
+        ? PdfSigFieldLock.fromDictionary(sigLockDict)
+        : null;
+  }
+
+  /// Writes the `/Lock` entry, ISO 32000-1 table 233.
+  ///
+  /// The lock dictionary shall be an indirect object, so the field is attached
+  /// to the document of this form field before the reference is stored.
+  void setSigFieldLockDictionary(PdfSigFieldLock? fieldLock) {
+    if (fieldLock == null) {
+      pdfRepresentation().remove(PdfName.lock);
+      markChanged();
+      return;
+    }
+    final document = getDocument();
+    final lockDictionary = fieldLock.pdfRepresentation();
+    if (document != null) {
+      lockDictionary.attachToDocument(document);
+    }
+    put(PdfName.lock, lockDictionary.indirectHandle() ?? lockDictionary);
+    markChanged();
   }
 
   /// Assigns the signature field's background appearance layer.

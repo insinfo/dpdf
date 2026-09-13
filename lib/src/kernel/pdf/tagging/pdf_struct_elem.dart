@@ -8,17 +8,21 @@ import '../pdf_object.dart';
 import '../pdf_page.dart';
 import '../pdf_number.dart';
 import 'pdf_mcr.dart';
+import 'pdf_obj_ref.dart';
 import 'pdf_namespace.dart';
+import 'pdf_struct_tree_root.dart';
+import 'tagging_names.dart';
 
-/// Access to a PDF structure-element dictionary.
+/// Access to a PDF structure-element dictionary
+/// (ISO 32000-1:2008, 14.7.2, Table 323).
 ///
-/// Document semantics are organized as a tree of objects,
-/// with a dictionary at its root. The structure tree
-/// called the structure tree root (see [PdfStructTreeRoot]). Immediate children of the structure tree root
-/// contains structure elements and references to content items.
+/// Document semantics are organized as a tree of objects rooted at the
+/// structure tree root (see [PdfStructTreeRoot]). Immediate children of the
+/// structure tree root are structure elements; a structure element's own
+/// children are further structure elements and references to content items.
 class PdfStructElem extends PdfObjectWrapper<PdfDictionary>
     implements StructureNode {
-  PdfStructElem(PdfDictionary pdfObject) : super(pdfObject) {
+  PdfStructElem(super.pdfObject) {
     setForbidRelease();
   }
 
@@ -26,7 +30,8 @@ class PdfStructElem extends PdfObjectWrapper<PdfDictionary>
       : super(PdfDictionary()) {
     attachToDocument(document);
     pdfRepresentation().put(PdfName.type, PdfName.structElem);
-    pdfRepresentation().put(PdfName('S'), role);
+    pdfRepresentation().put(PdfName.s, role);
+    setForbidRelease();
   }
 
   PdfStructElem.withRoleAndPage(
@@ -34,96 +39,42 @@ class PdfStructElem extends PdfObjectWrapper<PdfDictionary>
       : super(PdfDictionary()) {
     attachToDocument(document);
     pdfRepresentation().put(PdfName.type, PdfName.structElem);
-    pdfRepresentation().put(PdfName('S'), role);
+    pdfRepresentation().put(PdfName.s, role);
     // Uses the indirect handle so released objects remain addressable.
     final pageRef = page.pdfRepresentation().indirectHandle();
     if (pageRef != null) {
-      pdfRepresentation().put(PdfName('Pg'), pageRef);
+      pdfRepresentation().put(TaggingNames.pg, pageRef);
     }
+    setForbidRelease();
   }
 
   /// Recognizes structure elements among logical-tree entries.
   static Future<bool> isStructElem(PdfDictionary dictionary) async {
-    // S is required key of the struct elem
+    // S is a required key of a structure element.
     final type = await dictionary.nameEntry(PdfName.type);
     if (PdfName.structElem == type) {
       return true;
     }
-    return dictionary.containsKey(PdfName('S'));
-  }
-
-  /// Gets attributes object.
-  Future<PdfObject?> getAttributes([bool createNewIfNull = false]) async {
-    var attributes = await pdfRepresentation().get(PdfName('A'), true);
-    if (attributes == null && createNewIfNull) {
-      attributes = PdfDictionary();
-      setAttributes(attributes);
+    if (TaggingNames.mcr == type || TaggingNames.objr == type) {
+      return false;
     }
-    return attributes;
+    return dictionary.containsKey(PdfName.s);
   }
 
-  /// Sets attributes object.
-  void setAttributes(PdfObject attributes) {
-    put(PdfName('A'), attributes);
-  }
+  // ---------------------------------------------------------------- S and NS
 
-  /// Gets the Lang value.
-  Future<PdfString?> getLang() async {
-    return await pdfRepresentation().stringEntry(PdfName('Lang'));
-  }
-
-  /// Sets the Lang value.
-  void setLang(PdfString lang) {
-    put(PdfName('Lang'), lang);
-  }
-
-  /// Gets the Alt (alternative text) value.
-  Future<PdfString?> getAlt() async {
-    return await pdfRepresentation().stringEntry(PdfName('Alt'));
-  }
-
-  /// Sets the Alt (alternative text) value.
-  void setAlt(PdfString alt) {
-    put(PdfName('Alt'), alt);
-  }
-
-  /// Gets the ActualText value.
-  Future<PdfString?> getActualText() async {
-    return await pdfRepresentation().stringEntry(PdfName('ActualText'));
-  }
-
-  /// Sets the ActualText value.
-  void setActualText(PdfString actualText) {
-    put(PdfName('ActualText'), actualText);
-  }
-
-  /// Gets the E (expanded form of abbreviation) value.
-  Future<PdfString?> getE() async {
-    return await pdfRepresentation().stringEntry(PdfName('E'));
-  }
-
-  /// Sets the E (expanded form of abbreviation) value.
-  void setE(PdfString e) {
-    put(PdfName('E'), e);
-  }
-
-  /// Gets the structure element's ID string, if it has one.
-  Future<PdfString?> getStructureElementId() async {
-    return await pdfRepresentation().stringEntry(PdfName.id);
-  }
-
-  /// Gets the role of this structure element.
+  /// Gets the structure type of this element (the required /S entry).
   @override
   Future<PdfName?> getRole() async {
-    return await pdfRepresentation().nameEntry(PdfName('S'));
+    return await pdfRepresentation().nameEntry(PdfName.s);
   }
 
-  /// Sets the role of this structure element.
+  /// Sets the structure type of this element.
   void setRole(PdfName role) {
-    put(PdfName('S'), role);
+    put(PdfName.s, role);
   }
 
-  /// Gets the namespace of this structure element.
+  /// Gets the namespace of this structure element (PDF 2.0 /NS).
   Future<PdfNamespace?> getNamespace() async {
     final ns = await pdfRepresentation().dictionaryEntry(PdfName.namespace);
     return ns == null ? null : PdfNamespace(ns);
@@ -140,10 +91,310 @@ class PdfStructElem extends PdfObjectWrapper<PdfDictionary>
     return this;
   }
 
+  // -------------------------------------------------------------------- Pg
+
+  /// Gets the page some or all of this element's content items live on.
+  Future<PdfDictionary?> getPageObject() async {
+    return await pdfRepresentation().dictionaryEntry(TaggingNames.pg);
+  }
+
+  /// Sets the page some or all of this element's content items live on.
+  PdfStructElem setPage(PdfPage page) {
+    final pageObject = page.pdfRepresentation();
+    return put(TaggingNames.pg, pageObject.indirectHandle() ?? pageObject);
+  }
+
+  // ----------------------------------------------------- A: attribute objects
+
+  /// Gets the raw /A value, creating an empty attribute dictionary when
+  /// [createNewIfNull] is set.
+  Future<PdfObject?> getAttributes([bool createNewIfNull = false]) async {
+    var attributes = await pdfRepresentation().get(PdfName.a, true);
+    if (attributes == null && createNewIfNull) {
+      attributes = PdfDictionary();
+      setAttributes(attributes);
+    }
+    return attributes;
+  }
+
+  /// Replaces the whole /A value.
+  void setAttributes(PdfObject attributes) {
+    put(PdfName.a, attributes);
+  }
+
+  /// Gets every attribute object attached through /A, dropping the interleaved
+  /// revision numbers described in 14.7.5.3.
+  Future<List<PdfObject>> getAttributesList() async {
+    final attributes = await pdfRepresentation().get(PdfName.a, true);
+    final result = <PdfObject>[];
+    if (attributes == null) return result;
+    if (attributes is PdfArray) {
+      for (var i = 0; i < attributes.size(); i++) {
+        final item = await attributes.get(i, true);
+        if (item == null || item is PdfNumber) continue;
+        result.add(item);
+      }
+    } else {
+      result.add(attributes);
+    }
+    return result;
+  }
+
+  /// Attaches [attribute] to this element with the given [revision]
+  /// (ISO 32000-1:2008, 14.7.5.1 and 14.7.5.3).
+  ///
+  /// A single attribute object without a revision is stored directly; the
+  /// value is promoted to an array as soon as a second object or a non-zero
+  /// revision has to be recorded.
+  Future<void> addAttribute(PdfObject attribute, {int revision = 0}) async {
+    if (revision < 0) {
+      throw ArgumentError.value(
+          revision, 'revision', 'A revision number cannot be negative.');
+    }
+    final current = await pdfRepresentation().get(PdfName.a, true);
+    if (current == null && revision == 0) {
+      put(PdfName.a, attribute);
+      return;
+    }
+    final array = current is PdfArray ? current : PdfArray();
+    if (current != null && current is! PdfArray) {
+      array.add(current);
+    }
+    array.add(attribute);
+    if (revision != 0) {
+      array.add(PdfNumber.fromInt(revision));
+    }
+    put(PdfName.a, array);
+  }
+
+  /// The revision number recorded for [attribute] in the /A array; 0 when the
+  /// object carries no explicit revision.
+  Future<int> getAttributeRevision(PdfObject attribute) async {
+    final current = await pdfRepresentation().get(PdfName.a, true);
+    if (current is! PdfArray) return 0;
+    for (var i = 0; i < current.size(); i++) {
+      final item = await current.get(i, true);
+      if (item is PdfNumber) continue;
+      if (!identical(item, attribute)) continue;
+      final next = await current.get(i + 1, true);
+      return next is PdfNumber ? next.intValue() : 0;
+    }
+    return 0;
+  }
+
+  /// Detaches [attribute] together with its revision number, if any.
+  Future<bool> removeAttribute(PdfObject attribute) async {
+    final current = await pdfRepresentation().get(PdfName.a, true);
+    if (current == null) return false;
+    if (current is! PdfArray) {
+      if (!identical(current, attribute)) return false;
+      pdfRepresentation().remove(PdfName.a);
+      markChanged();
+      return true;
+    }
+    for (var i = 0; i < current.size(); i++) {
+      final item = await current.get(i, true);
+      if (item is PdfNumber) continue;
+      if (!identical(item, attribute)) continue;
+      final next = await current.get(i + 1, true);
+      if (next is PdfNumber) {
+        current.removeAt(i + 1);
+      }
+      current.removeAt(i);
+      if (current.isEmpty()) {
+        pdfRepresentation().remove(PdfName.a);
+      }
+      markChanged();
+      return true;
+    }
+    return false;
+  }
+
+  // -------------------------------------------------- C: attribute class names
+
+  /// Gets the attribute class names attached through /C (14.7.5.2).
+  Future<List<PdfName>> getAttributeClasses() async {
+    final current = await pdfRepresentation().get(PdfName.c, true);
+    final result = <PdfName>[];
+    if (current == null) return result;
+    if (current is PdfArray) {
+      for (var i = 0; i < current.size(); i++) {
+        final item = await current.get(i, true);
+        if (item is PdfName) result.add(item);
+      }
+    } else if (current is PdfName) {
+      result.add(current);
+    }
+    return result;
+  }
+
+  /// Attaches the attribute class [className] with the given [revision].
+  Future<void> addAttributeClass(PdfName className, {int revision = 0}) async {
+    if (revision < 0) {
+      throw ArgumentError.value(
+          revision, 'revision', 'A revision number cannot be negative.');
+    }
+    final current = await pdfRepresentation().get(PdfName.c, true);
+    if (current == null && revision == 0) {
+      put(PdfName.c, className);
+      return;
+    }
+    final array = current is PdfArray ? current : PdfArray();
+    if (current != null && current is! PdfArray) {
+      array.add(current);
+    }
+    array.add(className);
+    if (revision != 0) {
+      array.add(PdfNumber.fromInt(revision));
+    }
+    put(PdfName.c, array);
+  }
+
+  /// The revision number recorded for the attribute class [className].
+  Future<int> getAttributeClassRevision(PdfName className) async {
+    final current = await pdfRepresentation().get(PdfName.c, true);
+    if (current is! PdfArray) return 0;
+    for (var i = 0; i < current.size(); i++) {
+      final item = await current.get(i, true);
+      if (item != className) continue;
+      final next = await current.get(i + 1, true);
+      return next is PdfNumber ? next.intValue() : 0;
+    }
+    return 0;
+  }
+
+  // --------------------------------------------------------------------- R
+
+  /// The current revision number of this structure element (14.7.5.3).
+  /// An absent /R means revision 0.
+  Future<int> getRevision() async {
+    return (await pdfRepresentation().numberEntry(PdfName.r))?.intValue() ?? 0;
+  }
+
+  /// Sets the revision number of this structure element.
+  PdfStructElem setRevision(int revision) {
+    if (revision < 0) {
+      throw ArgumentError.value(
+          revision, 'revision', 'A revision number cannot be negative.');
+    }
+    return put(PdfName.r, PdfNumber.fromInt(revision));
+  }
+
+  /// Bumps the revision number, materializing /R when it was defaulted to 0.
+  Future<int> incrementRevision() async {
+    final next = await getRevision() + 1;
+    setRevision(next);
+    return next;
+  }
+
+  // ------------------------------------------------ text and language entries
+
+  /// Gets the /T title of the structure element.
+  Future<PdfString?> getTitle() async {
+    return await pdfRepresentation().stringEntry(PdfName.t);
+  }
+
+  /// Sets the /T title of the structure element.
+  void setTitle(PdfString title) {
+    put(PdfName.t, title);
+  }
+
+  /// Gets the Lang value.
+  Future<PdfString?> getLang() async {
+    return await pdfRepresentation().stringEntry(TaggingNames.lang);
+  }
+
+  /// Sets the Lang value.
+  void setLang(PdfString lang) {
+    put(TaggingNames.lang, lang);
+  }
+
+  /// Gets the Alt (alternative text) value.
+  Future<PdfString?> getAlt() async {
+    return await pdfRepresentation().stringEntry(TaggingNames.alt);
+  }
+
+  /// Sets the Alt (alternative text) value.
+  void setAlt(PdfString alt) {
+    put(TaggingNames.alt, alt);
+  }
+
+  /// Gets the ActualText value.
+  Future<PdfString?> getActualText() async {
+    return await pdfRepresentation().stringEntry(TaggingNames.actualText);
+  }
+
+  /// Sets the ActualText value.
+  void setActualText(PdfString actualText) {
+    put(TaggingNames.actualText, actualText);
+  }
+
+  /// Gets the E (expanded form of abbreviation) value.
+  Future<PdfString?> getE() async {
+    return await pdfRepresentation().stringEntry(TaggingNames.e);
+  }
+
+  /// Sets the E (expanded form of abbreviation) value.
+  void setE(PdfString e) {
+    put(TaggingNames.e, e);
+  }
+
+  // -------------------------------------------------------------------- ID
+
+  /// Gets the structure element's ID string, if it has one.
+  Future<PdfString?> getStructureElementId() async {
+    return await pdfRepresentation().stringEntry(PdfName.id);
+  }
+
+  /// Sets the element identifier and records it in the structure tree root's
+  /// /IDTree, which Table 322 requires whenever any element carries an /ID.
+  Future<void> setStructureElementId(PdfString id) async {
+    final previous = await getStructureElementId();
+    final root = await _structTreeRoot();
+    if (previous != null && root != null) {
+      await root.removeElementId(previous);
+    }
+    put(PdfName.id, id);
+    if (root != null) {
+      await root.registerElementId(id, this);
+    }
+  }
+
+  /// Drops the element identifier and its /IDTree entry.
+  Future<void> removeStructureElementId() async {
+    final previous = await getStructureElementId();
+    if (previous == null) return;
+    pdfRepresentation().remove(PdfName.id);
+    markChanged();
+    final root = await _structTreeRoot();
+    await root?.removeElementId(previous);
+  }
+
+  Future<PdfStructTreeRoot?> _structTreeRoot() async {
+    final document = getDocument();
+    if (document == null) return null;
+    return await document.loadStructureRoot();
+  }
+
+  // ----------------------------------------------------------------- K and P
+
   /// Adds a child structure element.
   Future<PdfStructElem> addKid(PdfStructElem kid, [int index = -1]) async {
     await _addKidObject(pdfRepresentation(), index, kid.pdfRepresentation());
     return kid;
+  }
+
+  /// Adds a marked-content reference as a content item of this element.
+  Future<PdfMcr> addMcr(PdfMcr mcr, [int index = -1]) async {
+    mcr.parent = this;
+    await _addKidObject(pdfRepresentation(), index, mcr.pdfRepresentation());
+    return mcr;
+  }
+
+  /// Adds an object reference as a content item of this element.
+  Future<PdfObjRef> addObjRef(PdfObjRef objRef, [int index = -1]) async {
+    await _addKidObject(pdfRepresentation(), index, objRef.pdfRepresentation());
+    return objRef;
   }
 
   /// Removes a child at the given index.
@@ -158,7 +409,7 @@ class PdfStructElem extends PdfObjectWrapper<PdfDictionary>
       if (index < 0 || index >= kidsArray.size()) return null;
       removedKidObj = await kidsArray.get(index, true);
       if (removedKidObj != null) {
-        await kidsArray.remove(removedKidObj);
+        kidsArray.removeAt(index);
         if (kidsArray.isEmpty()) {
           pdfRepresentation().remove(PdfName.k);
         }
@@ -189,21 +440,28 @@ class PdfStructElem extends PdfObjectWrapper<PdfDictionary>
     markChanged();
   }
 
-  /// Gets the parent of this structure element.
+  /// Gets the parent of this structure element: either another element or the
+  /// structure tree root.
   Future<StructureNode?> getParent() async {
     final parentObj = await pdfRepresentation().dictionaryEntry(PdfName.p);
     if (parentObj == null) return null;
+    final type = await parentObj.nameEntry(PdfName.type);
+    if (PdfName.structTreeRoot == type) {
+      final root = PdfStructTreeRoot(parentObj);
+      final document = getDocument();
+      if (document != null) root.setDocument(document);
+      return root;
+    }
     if (await isStructElem(parentObj)) {
       return PdfStructElem(parentObj);
     }
-    // Could be PdfStructTreeRoot
-    if (parentObj.nameEntry(PdfName.type) == PdfName.structTreeRoot) {
-      // We lack a way to wrap PdfStructTreeRoot without PdfDocument easily here
-      // but it implements IStructureNode.
-      // Actually, PdfStructTreeRoot(parentObj) might work if we setDocument later.
-      return null; // For now return null or implement a better way
-    }
     return null;
+  }
+
+  /// Points /P at [parent], which the specification requires to be an
+  /// indirect reference.
+  void setParent(PdfObject parent) {
+    put(PdfName.p, parent.indirectHandle() ?? parent);
   }
 
   /// Gets list of the direct kids of structure element.
@@ -230,10 +488,13 @@ class PdfStructElem extends PdfObjectWrapper<PdfDictionary>
     if (kid is PdfDictionary) {
       if (await isStructElem(kid)) {
         return PdfStructElem(kid);
-      } else {
-        final mcr = await PdfMcr.fromDictionary(kid, this);
-        return mcr!;
       }
+      final type = await kid.nameEntry(PdfName.type);
+      if (TaggingNames.objr == type) {
+        return PdfObjRef(kid, this);
+      }
+      final mcr = await PdfMcr.fromDictionary(kid, this);
+      return mcr!;
     } else if (kid is PdfNumber) {
       return PdfMcr.fromObject(kid, this);
     }
@@ -255,27 +516,17 @@ class PdfStructElem extends PdfObjectWrapper<PdfDictionary>
   @override
   bool requiresIndirectStorage() => true;
 
-  /// Adds a child MCR.
-  Future<PdfMcr> addMcr(PdfMcr mcr) async {
-    await _addKidObject(pdfRepresentation(), -1, mcr.pdfRepresentation());
-    return mcr;
-  }
-
   /// Internal method to add kid object to parent.
   Future<void> _addKidObject(
       PdfDictionary parent, int index, PdfObject kid) async {
     final k = await parent.get(PdfName.k, true);
     if (k == null) {
-      if (index == -1) {
+      if (index <= 0) {
         parent.put(PdfName.k, kid);
       } else {
-        if (index == 0) {
-          parent.put(PdfName.k, kid);
-        } else {
-          final a = PdfArray();
-          a.insert(index, kid);
-          parent.put(PdfName.k, a);
-        }
+        final a = PdfArray();
+        a.add(kid);
+        parent.put(PdfName.k, a);
       }
     } else {
       PdfArray a;
@@ -286,7 +537,7 @@ class PdfStructElem extends PdfObjectWrapper<PdfDictionary>
         a.add(k);
         parent.put(PdfName.k, a);
       }
-      if (index == -1) {
+      if (index < 0 || index >= a.size()) {
         a.add(kid);
       } else {
         a.insert(index, kid);
@@ -294,7 +545,7 @@ class PdfStructElem extends PdfObjectWrapper<PdfDictionary>
     }
     parent.markChanged();
     if (kid is PdfDictionary && await PdfStructElem.isStructElem(kid)) {
-      kid.put(PdfName.p, parent);
+      kid.put(PdfName.p, parent.indirectHandle() ?? parent);
       kid.markChanged();
     }
   }

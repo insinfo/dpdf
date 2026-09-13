@@ -15,6 +15,18 @@ import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'package:dpdf/src/kernel/pdf/annot/pdf_widget_annotation.dart';
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 
+
+/// Writes `/T` without going through `setFieldName`.
+///
+/// ISO 32000-1 12.7.3.2 forbids a PERIOD inside a partial name, and
+/// `setFieldName` enforces that. These tests deliberately build the
+/// non-conforming documents that the merge has to survive in the wild: a flat
+/// field whose partial name already looks like a fully qualified one, which is
+/// exactly what collides with a real `group` -> `item` hierarchy.
+void _putPartialName(PdfFormField field, String name) {
+  field.pdfRepresentation().put(PdfName.t, PdfString(name));
+}
+
 Future<Uint8List> source(
     {bool signature = false,
     String name = 'nome',
@@ -35,9 +47,12 @@ Future<Uint8List> source(
     appearance.put(PdfName.subtype, PdfName('Form'));
     appearance.put(PdfName.bBox, Rectangle(0, 0, 100, 20).toPdfArray());
     dictionary.put(PdfName.ap, PdfDictionary()..put(PdfName.n, appearance));
-    field = PdfFormField(dictionary)..setFieldName(name);
+    field = PdfFormField(dictionary);
+    _putPartialName(field, name);
   } else {
-    field = await PdfTextFormField.createText(doc, name, 'valor', widget);
+    field = await PdfTextFormField.createText(doc, 'placeholder', 'valor',
+        widget);
+    _putPartialName(field, name);
   }
   if (resources) {
     final typeface = PdfDictionary()

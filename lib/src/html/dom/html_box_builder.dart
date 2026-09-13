@@ -137,6 +137,7 @@ class HtmlBoxBuilder {
                     : 1.0;
     final fontSize =
         _fontSize(css['font-size'], inherited.fontSize) * headingScale;
+    final lineHeight = _lineHeight(css['line-height'], fontSize, inherited);
     final text = HtmlTextStyle(fontSize,
         fontFamily: css['font-family'] ?? inherited.fontFamily,
         bold: _fontWeight(
@@ -148,7 +149,10 @@ class HtmlBoxBuilder {
                 tag.startsWith('h')),
         italic: _fontStyle(
             css['font-style'], inherited.italic || tag == 'em' || tag == 'i'),
-        color: CssColors.parse(css['color']) ?? inherited.color);
+        color: CssColors.parse(css['color']) ?? inherited.color,
+        lineHeightFactor: lineHeight.factor,
+        lineHeightLength: lineHeight.length,
+        decoration: _decoration(css['text-decoration'], tag, inherited));
     final declared = css['display']?.toLowerCase();
     final display = declared == 'flex'
         ? HtmlDisplay.flex
@@ -169,6 +173,7 @@ class HtmlBoxBuilder {
       gridTemplateColumns: css['grid-template-columns'],
       gap: _length(css['gap']),
       width: CssValues.lengthValue(css['width']),
+      height: CssValues.lengthValue(css['height']),
       margin: _edges(css, 'margin'),
       padding: _edges(css, 'padding'),
       textAlign: _textAlign(css['text-align']),
@@ -194,6 +199,79 @@ class HtmlBoxBuilder {
 
   CssLength? _overrideLength(Map<String, String> css, String name) =>
       css.containsKey(name) ? CssValues.lengthValue(css[name]) : null;
+
+  /// Resolves `line-height` (CSS 2.1 §10.8.1).
+  ///
+  /// A bare number keeps its factor, so descendants scale it by their own
+  /// font size; a length or a percentage is computed here and inherits as
+  /// that computed length. `normal` and any unreadable value drop back to the
+  /// engine default instead of inheriting.
+  ({double? factor, double? length}) _lineHeight(
+      String? source, double fontSize, HtmlTextStyle inherited) {
+    final value = source?.trim().toLowerCase();
+    if (value == null || value.isEmpty) {
+      return (
+        factor: inherited.lineHeightFactor,
+        length: inherited.lineHeightLength
+      );
+    }
+    if (value == 'normal' || value == 'inherit') {
+      return value == 'inherit'
+          ? (
+              factor: inherited.lineHeightFactor,
+              length: inherited.lineHeightLength
+            )
+          : (factor: null, length: null);
+    }
+    if (value.endsWith('%')) {
+      final percentage = double.tryParse(value.substring(0, value.length - 1));
+      return percentage == null || !percentage.isFinite || percentage < 0
+          ? (factor: null, length: null)
+          : (factor: null, length: fontSize * percentage / 100);
+    }
+    final number = double.tryParse(value);
+    if (number != null) {
+      return number.isFinite && number >= 0
+          ? (factor: number, length: null)
+          : (factor: null, length: null);
+    }
+    final length = CssValues.length(value, fallback: -1);
+    return length < 0
+        ? (factor: null, length: null)
+        : (factor: null, length: length);
+  }
+
+  /// Resolves `text-decoration` (CSS 2.1 §16.3.1).
+  ///
+  /// The property is not inherited, but its lines are drawn across the whole
+  /// subtree of the box that declared it, which propagating the resolved set
+  /// reproduces. `<u>`, `<ins>`, `<s>` and `<del>` carry the usual presentation
+  /// of a browser default stylesheet.
+  Set<HtmlTextDecoration> _decoration(
+      String? source, String tag, HtmlTextStyle inherited) {
+    final implied = <HtmlTextDecoration>{
+      ...inherited.decoration,
+      if (tag == 'u' || tag == 'ins') HtmlTextDecoration.underline,
+      if (tag == 's' || tag == 'del' || tag == 'strike')
+        HtmlTextDecoration.lineThrough,
+    };
+    final value = source?.trim().toLowerCase();
+    if (value == null || value.isEmpty) return implied;
+    final declared = <HtmlTextDecoration>{};
+    for (final token in value.split(RegExp(r'[\s,]+'))) {
+      switch (token) {
+        case 'underline':
+          declared.add(HtmlTextDecoration.underline);
+        case 'overline':
+          declared.add(HtmlTextDecoration.overline);
+        case 'line-through':
+          declared.add(HtmlTextDecoration.lineThrough);
+        case 'none':
+          return const <HtmlTextDecoration>{};
+      }
+    }
+    return declared.isEmpty ? implied : {...implied, ...declared};
+  }
 
   HtmlTextAlign _textAlign(String? source) =>
       switch (source?.trim().toLowerCase()) {

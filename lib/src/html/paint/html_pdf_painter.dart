@@ -118,6 +118,7 @@ class HtmlPdfPainter {
           // adjacent PDF text-show operations.
           .showText('${fragment.text} ')
           .endText();
+      _paintDecoration(canvas, fragment, pageSize.height - margin - baseline);
       final target = fragment.linkTarget;
       if (target != null && target.isNotEmpty) {
         final textWidth = HtmlTextMeasure.text(fragment.text, fragment.style)
@@ -134,6 +135,36 @@ class HtmlPdfPainter {
         ));
       }
     }
+  }
+
+  /// Draws the `text-decoration` rules of one fragment (CSS 2.1 §16.3.1).
+  ///
+  /// The lines are painted in the colour of the text, as the specification
+  /// requires, and only span the glyphs of this fragment: the display list
+  /// keeps each styled run separate, so a partially decorated line never gets
+  /// an unbroken rule across a style change it does not cover.
+  void _paintDecoration(
+      PdfCanvas canvas, HtmlTextFragment fragment, double baseline) {
+    final decoration = fragment.style.decoration;
+    if (decoration.isEmpty) return;
+    final width = HtmlTextMeasure.text(fragment.text, fragment.style);
+    if (width <= 0) return;
+    final size = fragment.style.fontSize;
+    final thickness = size * .06;
+    canvas.saveState();
+    canvas.setFillColor(_pdfColor(fragment.style.color));
+    for (final line in decoration) {
+      final offset = switch (line) {
+        HtmlTextDecoration.underline => -size * .13,
+        HtmlTextDecoration.overline => size * .78,
+        HtmlTextDecoration.lineThrough => size * .28,
+      };
+      canvas
+          .rectangle(margin + fragment.x, baseline + offset - thickness / 2,
+              width, thickness)
+          .fill();
+    }
+    canvas.restoreState();
   }
 
   DeviceRgb _pdfColor(CssColor color) =>

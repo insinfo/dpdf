@@ -8,14 +8,18 @@ import 'package:dpdf/src/layout/properties/list_symbol_position.dart';
 import 'package:dpdf/src/layout/renderer/renderer.dart';
 import 'package:dpdf/src/layout/renderer/list_renderer.dart';
 import 'package:dpdf/src/layout/element/image.dart';
-import 'package:dpdf/src/kernel/pdf/tagutils/accessibility_properties.dart';
+import 'package:dpdf/src/kernel/pdf/tagging/standard_roles.dart';
+import 'package:dpdf/src/layout/tagging/default_accessibility_properties.dart';
 
 class PdfList extends BlockElement<PdfList> {
   static const String DEFAULT_LIST_SYMBOL = "- ";
 
+  DefaultAccessibilityProperties? _accessibilityProperties;
+
   @override
-  AccessibilityProperties getAccessibilityProperties() {
-    return AccessibilityProperties();
+  DefaultAccessibilityProperties getAccessibilityProperties() {
+    return _accessibilityProperties ??=
+        DefaultAccessibilityProperties(StandardRoles.l);
   }
 
   PdfList([ListNumberingType? numberingType]) : super() {

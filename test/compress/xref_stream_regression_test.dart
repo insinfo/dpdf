@@ -118,16 +118,35 @@ void main() {
       // Se um `/Index` for escrito, ele precisa somar o número de entradas da
       // tabela. Pares `[primeiro, quantidade]`.
       expect(index.length.isEven, isTrue);
-      var declared = 0;
-      for (var i = 1; i < index.length; i += 2) {
-        declared += index[i];
-      }
-      final size = RegExp(r'/Size\s+(\d+)')
+
+      // O `/Index` tem de ser CALCULADO para esta tabela, nunca herdado da
+      // origem: é essa herança que fazia o leitor associar cada entrada ao
+      // objeto errado. A origem carrega `[0 12]` injetado pelo fixture.
+      expect(index, isNot(equals([0, 12])),
+          reason: 'o /Index da origem não pode sobreviver ao rewrite');
+
+      // As subseções têm de ser crescentes e disjuntas, e ficar dentro de
+      // /Size. Um escritor pode legitimamente deixar buracos: 7.5.8.2 só
+      // exige um par por subseção presente, e os números ausentes são objetos
+      // livres, que o leitor trata como tal.
+      final size = int.parse(RegExp(r'/Size\s+(\d+)')
           .allMatches(latin1.decode(result.bytes, allowInvalid: true))
-          .last;
-      expect(declared, equals(int.parse(size.group(1)!)),
-          reason: 'um /Index que não cobre todas as entradas faz o leitor '
-              'associá-las aos objetos errados');
+          .last
+          .group(1)!);
+      var previousEnd = -1;
+      for (var i = 0; i < index.length; i += 2) {
+        final first = index[i];
+        final count = index[i + 1];
+        expect(count, greaterThan(0), reason: 'subseção vazia não faz sentido');
+        expect(first, greaterThan(previousEnd),
+            reason: 'as subseções têm de ser crescentes e não se sobrepor');
+        previousEnd = first + count - 1;
+        expect(previousEnd, lessThan(size),
+            reason: 'nenhuma entrada pode cair fora de /Size');
+      }
+
+      // E o que fecha o caso: o documento reabre com as páginas intactas.
+      expect(await _countPages(result.bytes), equals(3));
     });
 
     test('a second compression round is still readable', () async {

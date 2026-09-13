@@ -6,6 +6,11 @@ class AdobeGlyphList {
   static final Map<String, int> _names2unicode = {};
   static bool _initialized = false;
 
+  /// Glyph names built from hexadecimal scalars, as used by the algorithm
+  /// ISO 32000-1:2008, 9.10.2 relies on when a name is absent from the list.
+  static final RegExp _uniformScalars = RegExp(r'^uni([0-9A-Fa-f]{4})+$');
+  static final RegExp _singleScalar = RegExp(r'^u([0-9A-Fa-f]{4,6})$');
+
   static void _ensureInitialized() {
     if (_initialized) return;
     for (final line
@@ -26,15 +31,63 @@ class AdobeGlyphList {
     _initialized = true;
   }
 
+  /// The single scalar [name] stands for, or -1 when it stands for none or
+  /// for a sequence of several. Names absent from the list are resolved by
+  /// the conventional constructions `uniXXXX` and `uXXXX` to `uXXXXXX`.
   static int nameToUnicode(String name) {
+    final text = nameToUnicodeText(name);
+    if (text == null) return -1;
+    if (text.runes.length != 1) return -1;
+    return text.runes.first;
+  }
+
+  /// The text [name] stands for, or `null` when the name cannot be resolved.
+  ///
+  /// Implements the glyph-name conventions a conforming reader applies when
+  /// building the reverse mapping of 9.10.2, "Mapping character codes to
+  /// Unicode values": a trailing variant suffix is dropped, underscores
+  /// separate the components of a ligature name, and the remaining
+  /// components are looked up in the Adobe Glyph List or decoded from their
+  /// hexadecimal spelling.
+  static String? nameToUnicodeText(String name) {
     _ensureInitialized();
-    int? v = _names2unicode[name];
-    if (v == null && name.length == 7 && name.toLowerCase().startsWith('uni')) {
-      try {
-        return int.parse(name.substring(3), radix: 16);
-      } catch (_) {}
+    if (name.isEmpty) return null;
+    // A period introduces a variant suffix ("a.sc"); it is never part of the
+    // base name. A bare ".notdef" has no text of its own.
+    final period = name.indexOf('.');
+    final base = period < 0 ? name : name.substring(0, period);
+    if (base.isEmpty) return null;
+    final result = StringBuffer();
+    for (final component in base.split('_')) {
+      final text = _componentToText(component);
+      if (text == null) return null;
+      result.write(text);
     }
-    return v ?? -1;
+    return result.toString();
+  }
+
+  static String? _componentToText(String component) {
+    if (component.isEmpty) return null;
+    final listed = _names2unicode[component];
+    if (listed != null) return String.fromCharCode(listed);
+    if (_uniformScalars.hasMatch(component)) {
+      final scalars = <int>[];
+      for (var digit = 3; digit < component.length; digit += 4) {
+        final value = int.parse(component.substring(digit, digit + 4),
+            radix: 16);
+        // Surrogate code units are not characters; such a name is unusable.
+        if (value >= 0xd800 && value <= 0xdfff) return null;
+        scalars.add(value);
+      }
+      return String.fromCharCodes(scalars);
+    }
+    final single = _singleScalar.firstMatch(component);
+    if (single != null) {
+      final value = int.parse(single.group(1)!, radix: 16);
+      if (value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff)) return null;
+      return String.fromCharCode(value);
+    }
+    return null;
   }
 
   static String? unicodeToName(int num) {

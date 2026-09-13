@@ -166,9 +166,72 @@ class PdfXrefTable {
     }
   }
 
-  /// Initializes the list of free references.
+  /// Rebuilds the linked list of free entries required by 7.5.4.
+  ///
+  /// A cross-reference table's free entries form a chain: the second field of
+  /// a free entry is the object number of the next free object, and the last
+  /// link is 0. The head of the chain is the mandatory entry for object 0,
+  /// whose generation number is 65535. Before this ran, every free entry was
+  /// written with a next-object field of 0, which makes the chain claim there
+  /// are no further free objects and leaves a conforming reader unable to
+  /// reuse any of those numbers.
+  ///
+  /// Object numbers with no reference at all are free as well (7.5.4 requires
+  /// an entry for every number below /Size), so they join the chain and get a
+  /// reference of their own with generation 65535 — the value 7.5.4 reserves
+  /// for a number that shall not be reused.
+  ///
+  /// [document] is accepted for call-site symmetry with the rest of the
+  /// document lifecycle and is not otherwise consulted.
   void initFreeReferencesList(dynamic document) {
-    // TODO Stub
+    final head = _xref[0];
+    if (head == null) {
+      add(PdfIndirectReference(0, maxGeneration)
+        ..setOffset(0)
+        ..setState(PdfObjectState.free));
+    } else if (!head.isFree()) {
+      head.setState(PdfObjectState.free);
+    }
+
+    final freeNumbers = <int>[];
+    for (var i = 1; i <= _count; i++) {
+      final reference = _xref[i];
+      if (reference == null) {
+        _xref[i] = PdfIndirectReference(i, maxGeneration)
+          ..setOffset(0)
+          ..setState(PdfObjectState.free);
+        freeNumbers.add(i);
+      } else if (reference.isFree()) {
+        freeNumbers.add(i);
+      }
+    }
+
+    var previous = _xref[0]!;
+    for (final number in freeNumbers) {
+      previous.setOffset(number);
+      previous = _xref[number]!;
+    }
+    // The chain ends by pointing back at object 0.
+    previous.setOffset(0);
+  }
+
+  /// The object numbers of the free entries, in chain order (7.5.4).
+  ///
+  /// The head entry for object 0 is not included; the list is what a writer
+  /// needs to emit the free entries of a table or of a cross-reference stream.
+  List<int> freeReferencesChain() {
+    final chain = <int>[];
+    final visited = <int>{};
+    var current = _xref[0];
+    while (current != null) {
+      final next = current.getOffset();
+      if (next <= 0 || next > _count || !visited.add(next)) break;
+      final reference = _xref[next];
+      if (reference == null || !reference.isFree()) break;
+      chain.add(next);
+      current = reference;
+    }
+    return chain;
   }
 
   @override

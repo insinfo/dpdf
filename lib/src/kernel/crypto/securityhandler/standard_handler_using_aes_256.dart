@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dpdf/src/kernel/crypto/aes_cipher.dart';
@@ -17,14 +18,24 @@ import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_version.dart';
 
-/// Standard security handler using AES-256 algorithm.
+/// The AES-256 standard security handler.
+///
+/// Revision 5 is the Adobe Extension Level 3 handler, whose password hash is
+/// a single SHA-256 ("Algorithm 2.A" without the hardening loop). Revision 6
+/// is the ISO 32000-2 handler, which runs the iterated hardening of
+/// "Algorithm 2.B".
 class StandardHandlerUsingAes256 extends StandardSecurityHandler {
+  /// Offset of the validation salt inside the 48-byte `/O` and `/U` strings.
   static const int VALIDATION_SALT_OFFSET = 32;
+
+  /// Offset of the key salt inside the 48-byte `/O` and `/U` strings.
   static const int KEY_SALT_OFFSET = 40;
+
+  /// Length of both salts.
   static const int SALT_LENGTH = 8;
 
   bool _encryptMetadata = true;
-  bool _isPdf2 = false;
+  bool _revision6 = false;
 
   StandardHandlerUsingAes256(
       PdfDictionary encryptionDictionary,
@@ -34,18 +45,15 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
       bool encryptMetadata,
       bool embeddedFilesOnly,
       PdfVersion? version) {
-    _isPdf2 = version != null && version.compareTo(PdfVersion.PDF_2_0) >= 0;
+    _revision6 = version != null && version.compareTo(PdfVersion.PDF_2_0) >= 0;
     _initKeyAndFillDictionary(encryptionDictionary, userPassword, ownerPassword,
         permissions, encryptMetadata, embeddedFilesOnly);
   }
 
-  StandardHandlerUsingAes256.read(
-      PdfDictionary encryptionDictionary, Uint8List password) {
-    // Intentionally left empty or private, essentially disabled.
-    // Ideally we should remove it, but to keep 'read' logic we make a static method.
-    throw UnimplementedError("Use fromDictionary instead");
-  }
+  StandardHandlerUsingAes256._internal() : super();
 
+  /// Reads an existing AES-256 encryption dictionary and authenticates
+  /// [password] with "Algorithm 12" (owner) and "Algorithm 11" (user).
   static Future<StandardHandlerUsingAes256> fromDictionary(
       PdfDictionary encryptionDictionary, Uint8List password) async {
     final handler = StandardHandlerUsingAes256._internal();
@@ -53,13 +61,32 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
     return handler;
   }
 
-  StandardHandlerUsingAes256._internal() : super();
-
   bool isEncryptMetadata() => _encryptMetadata;
+
+  /// Whether the handler runs the revision 6 hardening of "Algorithm 2.B".
+  bool isRevision6() => _revision6;
+
+  /// Prepares a password for hashing.
+  ///
+  /// ISO 32000-2 requires the password to be a UTF-8 encoding of the SASLprep
+  /// profile of the supplied text, truncated to 127 bytes. The truncation and
+  /// the UTF-8 encoding are applied here; the SASLprep mapping is left to the
+  /// caller, which normally already holds UTF-8 bytes.
+  static Uint8List preparePassword(Uint8List? password) {
+    final bytes = password ?? Uint8List(0);
+    return bytes.length > 127
+        ? Uint8List.fromList(bytes.sublist(0, 127))
+        : bytes;
+  }
+
+  /// Convenience wrapper encoding [password] as UTF-8 before truncation.
+  static Uint8List preparePasswordString(String password) =>
+      preparePassword(Uint8List.fromList(utf8.encode(password)));
 
   @override
   void setHashKeyForNextObject(int objNumber, int objGeneration) {
-    // In AES256 we don't recalculate nextObjectKey
+    // ISO 32000-2: the 256-bit file encryption key is used as is, so no
+    // per-object derivation takes place.
   }
 
   @override
@@ -76,7 +103,8 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
   void setPermissions(int permissions, PdfDictionary encryptionDictionary) {
     super.setPermissions(permissions, encryptionDictionary);
     final aes256Perms = getAes256Perms(permissions, isEncryptMetadata());
-    encryptionDictionary.put(PdfName.perms, PdfString.fromBytes(aes256Perms));
+    encryptionDictionary.put(
+        PdfName.perms, PdfString.fromBytes(aes256Perms, true));
   }
 
   void _initKeyAndFillDictionary(
@@ -91,28 +119,23 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
     permissions &= StandardSecurityHandler.permsMask2;
 
     try {
-      Uint8List up = userPassword ?? Uint8List(0);
-      if (up.length > 127) {
-        up = up.sublist(0, 127);
-      }
-      Uint8List op = ownerPassword;
-      if (op.length > 127) {
-        op = op.sublist(0, 127);
-      }
+      final up = preparePassword(userPassword);
+      final op = preparePassword(ownerPassword);
 
       final userValAndKeySalt = IVGenerator.getIVLen(16);
       final ownerValAndKeySalt = IVGenerator.getIVLen(16);
       nextObjectKey = IVGenerator.getIVLen(32);
       nextObjectKeySize = 32;
+      mkey = Uint8List.fromList(nextObjectKey!);
 
-      // Algorithm 8.1
+      // "Algorithm 8", step 1: the /U string.
       final userValSalt = userValAndKeySalt.sublist(0, 8);
       final userKey = Uint8List(48);
       final hashUP = computeHash(up, userValSalt, null);
       userKey.setRange(0, 32, hashUP);
       userKey.setRange(32, 48, userValAndKeySalt);
 
-      // Algorithm 8.2
+      // "Algorithm 8", step 2: the /UE string.
       final userKeySalt = userValAndKeySalt.sublist(8, 16);
       final hashUPKey = computeHash(up, userKeySalt, null);
       final cipherUP =
@@ -120,14 +143,14 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
       final ueKey =
           cipherUP.processBlock(nextObjectKey!, 0, nextObjectKey!.length);
 
-      // Algorithm 9.1
+      // "Algorithm 9", step 1: the /O string.
       final ownerValSalt = ownerValAndKeySalt.sublist(0, 8);
       final ownerKey = Uint8List(48);
       final hashOP = computeHash(op, ownerValSalt, userKey);
       ownerKey.setRange(0, 32, hashOP);
       ownerKey.setRange(32, 48, ownerValAndKeySalt);
 
-      // Algorithm 9.2
+      // "Algorithm 9", step 2: the /OE string.
       final ownerKeySalt = ownerValAndKeySalt.sublist(8, 16);
       final hashOPKey = computeHash(op, ownerKeySalt, userKey);
       final cipherOP =
@@ -135,11 +158,11 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
       final oeKey =
           cipherOP.processBlock(nextObjectKey!, 0, nextObjectKey!.length);
 
-      // Algorithm 10
-      final aes256Perms = getAes256Perms(permissions, encryptMetadata);
-
       this.permissions = permissions;
       _encryptMetadata = encryptMetadata;
+
+      // "Algorithm 10": the /Perms string.
+      final aes256Perms = getAes256Perms(permissions, encryptMetadata);
 
       setStandardHandlerDicEntries(encryptionDictionary, userKey, ownerKey);
       _setAES256DicEntries(encryptionDictionary, oeKey, ueKey, aes256Perms,
@@ -153,26 +176,36 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
   Future<void> _initKeyAndReadDictionary(
       PdfDictionary encryptionDictionary, Uint8List password) async {
     try {
-      Uint8List pw = password;
-      if (pw.length > 127) {
-        pw = pw.sublist(0, 127);
+      final pw = preparePassword(password);
+
+      final revision =
+          (await encryptionDictionary.numberEntry(PdfName.r))?.intValue() ?? 6;
+      _revision6 = revision >= 6;
+
+      final oEntry = await encryptionDictionary.stringEntry(PdfName.o);
+      final uEntry = await encryptionDictionary.stringEntry(PdfName.u);
+      final oeEntry = await encryptionDictionary.stringEntry(PdfName.oe);
+      final ueEntry = await encryptionDictionary.stringEntry(PdfName.ue);
+      final permsEntry = await encryptionDictionary.stringEntry(PdfName.perms);
+      final pValue = await encryptionDictionary.numberEntry(PdfName.p);
+      if (oEntry == null ||
+          uEntry == null ||
+          oeEntry == null ||
+          ueEntry == null ||
+          permsEntry == null ||
+          pValue == null) {
+        throw PdfException(
+            KernelExceptionMessageConstant.standardHandlerBadDictionary);
       }
 
-      _isPdf2 = await _checkIsPdf2(encryptionDictionary);
-
-      final oValue = _truncateArray(
-          getIsoBytes((await encryptionDictionary.stringEntry(PdfName.o))!));
-      final uValue = _truncateArray(
-          getIsoBytes((await encryptionDictionary.stringEntry(PdfName.u))!));
-      final oeValue =
-          getIsoBytes((await encryptionDictionary.stringEntry(PdfName.oe))!);
-      final ueValue =
-          getIsoBytes((await encryptionDictionary.stringEntry(PdfName.ue))!);
-      final perms =
-          getIsoBytes((await encryptionDictionary.stringEntry(PdfName.perms))!);
-      final pValue = (await encryptionDictionary.numberEntry(PdfName.p))!;
+      final oValue = _truncateArray(getIsoBytes(oEntry));
+      final uValue = _truncateArray(getIsoBytes(uEntry));
+      final oeValue = getIsoBytes(oeEntry);
+      final ueValue = getIsoBytes(ueEntry);
+      final perms = getIsoBytes(permsEntry);
       permissions = pValue.intValue();
 
+      // "Algorithm 12: Authenticating the owner password".
       final oValSalt = oValue.sublist(
           VALIDATION_SALT_OFFSET, VALIDATION_SALT_OFFSET + SALT_LENGTH);
       final hashPO = computeHash(pw, oValSalt, uValue);
@@ -186,6 +219,7 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
             AESCipher(false, hashOK, Uint8List(16), usePadding: false);
         nextObjectKey = cipherOK.processBlock(oeValue, 0, oeValue.length);
       } else {
+        // "Algorithm 11: Authenticating the user password".
         final uValSalt = uValue.sublist(
             VALIDATION_SALT_OFFSET, VALIDATION_SALT_OFFSET + SALT_LENGTH);
         final hashPU = computeHash(pw, uValSalt, null);
@@ -202,25 +236,33 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
       }
 
       nextObjectKeySize = 32;
+      mkey = Uint8List.fromList(nextObjectKey!);
+
+      // "Algorithm 13: Validating the permissions". The 16-byte /Perms string
+      // is decrypted with AES-256 and no padding; with a single block, CBC
+      // under a zero initialisation vector is the ECB the algorithm asks for.
+      if (perms.length < 16) {
+        throw PdfException(
+            KernelExceptionMessageConstant.standardHandlerBadDictionary);
+      }
       final cipherPerms =
           AESCipher(false, nextObjectKey!, Uint8List(16), usePadding: false);
-      final decPerms = cipherPerms.processBlock(perms, 0, perms.length);
+      final decPerms = cipherPerms.processBlock(perms, 0, 16);
 
       if (decPerms[9] != 0x61 || decPerms[10] != 0x64 || decPerms[11] != 0x62) {
-        // 'adb'
+        // The bytes 'a', 'd', 'b' mark a well-formed /Perms string.
         throw BadPasswordException(
             KernelExceptionMessageConstant.badUserPassword);
       }
 
-      final permissionsDecoded = (decPerms[0] & 0xff) |
+      permissions = (decPerms[0] & 0xff) |
           ((decPerms[1] & 0xff) << 8) |
           ((decPerms[2] & 0xff) << 16) |
           ((decPerms[3] & 0xff) << 24);
-      final encryptMetadata = decPerms[8] == 0x54; // 'T'
-
-      permissions = permissionsDecoded;
-      _encryptMetadata = encryptMetadata;
+      _encryptMetadata = decPerms[8] == 0x54; // 'T'
     } on BadPasswordException {
+      rethrow;
+    } on PdfException {
       rethrow;
     } catch (e) {
       throw PdfException(KernelExceptionMessageConstant.unknownPdfException,
@@ -228,6 +270,8 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
     }
   }
 
+  /// "Algorithm 10: Computing the encryption dictionary's Perms (permissions)
+  /// value".
   Uint8List getAes256Perms(int permissions, bool encryptMetadata) {
     final permsp = IVGenerator.getIVLen(16);
     permsp[0] = permissions & 0xFF;
@@ -255,15 +299,17 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
       Uint8List aes256Perms,
       bool encryptMetadata,
       bool embeddedFilesOnly) {
-    int version = 5;
-    int revision = _isPdf2 ? 6 : 5;
-    PdfName cryptoFilter = PdfName.aesV3;
+    const int version = 5;
+    final int revision = _revision6 ? 6 : 5;
+    final PdfName cryptoFilter = PdfName.aesV3;
 
-    encryptionDictionary.put(PdfName.oe, PdfString.fromBytes(oeKey));
-    encryptionDictionary.put(PdfName.ue, PdfString.fromBytes(ueKey));
-    encryptionDictionary.put(PdfName.perms, PdfString.fromBytes(aes256Perms));
+    encryptionDictionary.put(PdfName.oe, PdfString.fromBytes(oeKey, true));
+    encryptionDictionary.put(PdfName.ue, PdfString.fromBytes(ueKey, true));
+    encryptionDictionary.put(
+        PdfName.perms, PdfString.fromBytes(aes256Perms, true));
     encryptionDictionary.put(PdfName.r, PdfNumber.fromInt(revision));
     encryptionDictionary.put(PdfName.v, PdfNumber.fromInt(version));
+    encryptionDictionary.put(PdfName.length, PdfNumber.fromInt(256));
 
     final stdcf = PdfDictionary();
     stdcf.put(PdfName.length, PdfNumber.fromInt(32));
@@ -286,11 +332,8 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
     encryptionDictionary.put(PdfName.cf, cf);
   }
 
-  Future<bool> _checkIsPdf2(PdfDictionary encryptionDictionary) async {
-    final r = await encryptionDictionary.numberEntry(PdfName.r);
-    return r != null && r.intValue() == 6;
-  }
-
+  /// "Algorithm 2.A" and, for revision 6, the hardening loop of
+  /// "Algorithm 2.B".
   Uint8List computeHash(
       Uint8List password, Uint8List salt, Uint8List? userKey) {
     final sha256 = DigestAlgorithms.getMessageDigest("SHA-256");
@@ -301,15 +344,15 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
     }
     Uint8List k = sha256.digest();
 
-    if (_isPdf2) {
+    if (_revision6) {
       final sha384 = DigestAlgorithms.getMessageDigest("SHA-384");
       final sha512 = DigestAlgorithms.getMessageDigest("SHA-512");
-      int userKeyLen = userKey?.length ?? 0;
-      int passAndUserKeyLen = password.length + userKeyLen;
+      final int userKeyLen = userKey?.length ?? 0;
+      final int passAndUserKeyLen = password.length + userKeyLen;
       int roundNum = 0;
 
       while (true) {
-        // a) k1 repetition length 64 times
+        // a) K1 is the password, K and the user key, repeated 64 times.
         final k1Len = passAndUserKeyLen + k.length;
         final k1 = Uint8List(k1Len * 64);
         final base = Uint8List(k1Len);
@@ -322,38 +365,38 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
           k1.setRange(i * k1Len, (i + 1) * k1Len, base);
         }
 
-        // b) AES-128-CBC encryption with key from first 16 bytes of k and IV from next 16 bytes.
+        // b) AES-128-CBC with the first 16 bytes of K as key and the next 16
+        // as initialisation vector, no padding.
         final aesKey = k.sublist(0, 16);
         final aesIv = k.sublist(16, 32);
         final cipher = AESCipher(true, aesKey, aesIv, usePadding: false);
         final e = cipher.processBlock(k1, 0, k1.length);
 
-        // c) Choose SHA based on remainder of e[0..15] % 3
-        final bigE = BigInt.parse(
-            e
-                .sublist(0, 16)
-                .map((b) => b.toRadixString(16).padLeft(2, '0'))
-                .join(),
-            radix: 16);
-        final remainder = (bigE % BigInt.from(3)).toInt();
+        // c) The first 16 bytes of E, taken as a big-endian number modulo 3,
+        // select SHA-256, SHA-384 or SHA-512.
+        var remainder = 0;
+        for (var i = 0; i < 16; i++) {
+          remainder = (remainder * 256 + e[i]) % 3;
+        }
 
         final md =
             (remainder == 0) ? sha256 : (remainder == 1 ? sha384 : sha512);
 
-        // d) k = hash(e)
+        // d) K becomes the digest of E.
         k = md.digestWithInput(e);
         roundNum++;
 
-        // e) Termination condition
+        // e) After 64 rounds, stop once the last byte of E is at most the
+        // round number minus 32.
         if (roundNum > 63) {
-          int condVal = e[e.length - 1] & 0xFF;
+          final condVal = e[e.length - 1] & 0xFF;
           if (condVal <= roundNum - 32) {
             break;
           }
         }
       }
       if (k.length != 32) {
-        k = k.sublist(0, 32);
+        k = Uint8List.fromList(k.sublist(0, 32));
       }
     }
     return k;
@@ -364,11 +407,11 @@ class StandardHandlerUsingAes256 extends StandardSecurityHandler {
     if (array.length > 48) {
       for (int i = 48; i < array.length; i++) {
         if (array[i] != 0) {
-          throw PdfException(KernelExceptionMessageConstant
-              .alreadyClosed); // Using alreadyClosed as generic error for now
+          throw PdfException(
+              KernelExceptionMessageConstant.standardHandlerBadDictionary);
         }
       }
-      return array.sublist(0, 48);
+      return Uint8List.fromList(array.sublist(0, 48));
     }
     final truncated = Uint8List(48);
     truncated.setRange(0, array.length, array);

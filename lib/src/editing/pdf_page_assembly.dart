@@ -76,6 +76,7 @@ class PdfPageAssembly {
     final selected = <List<PdfPage>>[];
     final formPlans = <PdfFormMergePlan?>[];
     final outlines = <List<_OutlineEntry>>[];
+    final openActions = <_LocalDestination?>[];
     try {
       // Validate every source before allocating the output document.
       for (final source in sources) {
@@ -95,7 +96,7 @@ class PdfPageAssembly {
           if (!resolveNamedDestinations) 'Dests',
           if (!preserveLayers) 'OCProperties',
           if (!preservePageLabels) 'PageLabels',
-          'OpenAction',
+          if (!resolveNamedDestinations) 'OpenAction',
           'AA',
           'Collection',
         ]) {
@@ -138,6 +139,17 @@ class PdfPageAssembly {
             ? await PdfFormMerge.prepare(doc, pages,
                 signaturePolicy: signaturePolicy)
             : null);
+        final openAction =
+            resolveNamedDestinations ? await _readOpenAction(catalog, pages) : null;
+        if (openAction != null) {
+          // A merged file has a single initial view; two competing open
+          // actions cannot be reconciled.
+          if (openActions.any((entry) => entry != null)) {
+            throw UnsupportedError(
+                'Page assembly cannot reconcile competing /OpenAction entries.');
+          }
+        }
+        openActions.add(openAction);
         selected.add(pages);
         outlines.add(preserveOutlines
             ? await _readOutlines(catalog, pages)
@@ -298,6 +310,32 @@ class PdfPageAssembly {
         }
         mergedOutlines.addAll(await _writeOutlineEntries(
             outlines[sourceIndex], output, pageTargets));
+        final openAction = openActions[sourceIndex];
+        if (openAction != null) {
+          final target = pageTargets[openAction.target];
+          if (target == null) {
+            throw StateError('Validated open action target was not imported.');
+          }
+          final destination = PdfArray.withObject(target);
+          for (final value in openAction.parameters) {
+            destination.add(value.clone());
+          }
+          // Table 199: a /GoTo action and a bare destination are equivalent,
+          // so the source's own form is preserved.
+          final PdfObject value;
+          if (openAction.wrappedInGoToAction) {
+            value = PdfDictionary()
+              ..put(PdfName.type, PdfName('Action'))
+              ..put(PdfName('S'), PdfName('GoTo'))
+              ..put(PdfName('D'), destination);
+          } else {
+            value = destination;
+          }
+          output
+              .rootCatalog()
+              .pdfRepresentation()
+              .put(PdfName('OpenAction'), value);
+        }
       }
       if (mergedOutlines.isNotEmpty) {
         final root = PdfDictionary()
@@ -748,6 +786,19 @@ class PdfPageAssembly {
 
     final outlines = await catalog.dictionaryEntry(PdfName('Outlines'));
     if (outlines != null) await patch(outlines);
+    // 12.3.2.3: the catalog's /OpenAction may also name its destination.
+    final openAction = await catalog.get(PdfName('OpenAction'), true);
+    if (openAction is PdfDictionary && openAction is! PdfStream) {
+      if ((await openAction.nameEntry(PdfName('S')))?.getValue() == 'GoTo') {
+        final target = await openAction.get(PdfName('D'), true);
+        if (target == null) {
+          throw FormatException('Missing open action destination.');
+        }
+        openAction.put(PdfName('D'), await resolve(target));
+      }
+    } else if (openAction is PdfName || openAction is PdfString) {
+      catalog.put(PdfName('OpenAction'), await resolve(openAction!));
+    }
     for (var p = 1; p <= doc.pageTotal(); p++) {
       final annotations = await (await doc.pageAt(p))!
           .pdfRepresentation()
@@ -847,44 +898,10 @@ class PdfPageAssembly {
         PdfDictionary? target;
         final parameters = <PdfObject>[];
         if (destination != null) {
-          if (destination is! PdfArray || destination.size() < 2) {
-            throw UnsupportedError(
-                'Outline destinations must be explicit local arrays.');
-          }
-          final page = await destination.get(0, true);
-          if (page is! PdfDictionary || !selected.contains(page)) {
-            throw UnsupportedError(
-                'Outline destination targets an omitted or foreign page.');
-          }
-          target = page;
-          final mode = await destination.get(1, true);
-          const lengths = {
-            'XYZ': 5,
-            'Fit': 2,
-            'FitB': 2,
-            'FitH': 3,
-            'FitV': 3,
-            'FitBH': 3,
-            'FitBV': 3,
-            'FitR': 6
-          };
-          if (mode is! PdfName ||
-              lengths[mode.getValue()] != destination.size()) {
-            throw FormatException(
-                'Outline destination has invalid fit mode or parameter count.');
-          }
-          parameters.add(mode);
-          for (var index = 2; index < destination.size(); index++) {
-            final value = await destination.get(index, true);
-            if (value == null ||
-                (value is! PdfNumber &&
-                    !(value.objectKind() == PdfObjectType.nullType &&
-                        mode.getValue() != 'FitR'))) {
-              throw FormatException(
-                  'Outline coordinates must be numbers or permitted nulls.');
-            }
-            parameters.add(value);
-          }
+          final resolved =
+              await _explicitDestination(destination, selected, 'Outline');
+          target = resolved.target;
+          parameters.addAll(resolved.parameters);
         }
         final appearance = <PdfName, PdfObject>{};
         for (final key in ['C', 'F']) {
@@ -928,6 +945,86 @@ class PdfPageAssembly {
     }
 
     return children(root, 0);
+  }
+
+  /// Validates an explicit destination array against ISO 32000-1:2008,
+  /// Table 151 and resolves its target page inside [selected].
+  static Future<_LocalDestination> _explicitDestination(PdfObject? destination,
+      Set<PdfDictionary> selected, String context) async {
+    if (destination is! PdfArray || destination.size() < 2) {
+      throw UnsupportedError(
+          '$context destinations must be explicit local arrays.');
+    }
+    final page = await destination.get(0, true);
+    if (page is! PdfDictionary || !selected.contains(page)) {
+      throw UnsupportedError(
+          '$context destination targets an omitted or foreign page.');
+    }
+    final mode = await destination.get(1, true);
+    // Table 151 fixes the length of every destination syntax form.
+    const lengths = {
+      'XYZ': 5,
+      'Fit': 2,
+      'FitB': 2,
+      'FitH': 3,
+      'FitV': 3,
+      'FitBH': 3,
+      'FitBV': 3,
+      'FitR': 6
+    };
+    if (mode is! PdfName || lengths[mode.getValue()] != destination.size()) {
+      throw FormatException(
+          '$context destination has invalid fit mode or parameter count.');
+    }
+    final parameters = <PdfObject>[mode];
+    for (var index = 2; index < destination.size(); index++) {
+      final value = await destination.get(index, true);
+      // Table 151 lets left, top and zoom be null, but /FitR takes only
+      // numbers.
+      if (value == null ||
+          (value is! PdfNumber &&
+              !(value.objectKind() == PdfObjectType.nullType &&
+                  mode.getValue() != 'FitR'))) {
+        throw FormatException(
+            '$context coordinates must be numbers or permitted nulls.');
+      }
+      parameters.add(value);
+    }
+    return _LocalDestination(page, parameters);
+  }
+
+  /// Reads the catalog's /OpenAction (ISO 32000-1:2008, 12.3.2 and 12.6.1),
+  /// accepting a bare explicit destination array and the equivalent /GoTo
+  /// action of Table 199. Every other form still fails.
+  static Future<_LocalDestination?> _readOpenAction(
+      PdfDictionary catalog, List<PdfPage> selection) async {
+    final value = await catalog.get(PdfName('OpenAction'), true);
+    if (value == null) return null;
+    final selected = HashSet<PdfDictionary>.identity()
+      ..addAll(selection.map((page) => page.pdfRepresentation()));
+    PdfObject? destination = value;
+    var wrapped = false;
+    if (value is PdfDictionary && value is! PdfStream) {
+      if ((await value.nameEntry(PdfName('S')))?.getValue() != 'GoTo') {
+        throw UnsupportedError(
+            'Page assembly can only reconcile a /GoTo open action.');
+      }
+      for (final entry in await value.entrySet()) {
+        if (!const {'Type', 'S', 'D'}.contains(entry.key.getValue())) {
+          throw UnsupportedError(
+              'Open action /${entry.key.getValue()} requires reconciliation.');
+        }
+      }
+      destination = await value.get(PdfName('D'), true);
+      if (destination == null) {
+        throw FormatException('Open action has no destination.');
+      }
+      wrapped = true;
+    }
+    final resolved =
+        await _explicitDestination(destination, selected, 'Open action');
+    return _LocalDestination(resolved.target, resolved.parameters,
+        wrappedInGoToAction: wrapped);
   }
 
   static Future<List<PdfDictionary>> _writeOutlineEntries(
@@ -989,6 +1086,73 @@ class PdfPageAssembly {
     return result;
   }
 
+  /// Validates the link actions that carry no reference into the source
+  /// document, so importing them cannot silently break.
+  ///
+  /// ISO 32000-1:2008: /URI (Table 206), /GoToR (Table 200), /Launch
+  /// (Table 203) and /Named (Table 212) all resolve outside the file being
+  /// assembled. /GoTo is reconciled separately against the selected pages.
+  static Future<void> _validateLinkAction(PdfDictionary action) async {
+    final kind = (await action.nameEntry(PdfName('S')))?.getValue();
+    switch (kind) {
+      case 'URI':
+        _rejectExtraEntries(action, const {'Type', 'S', 'URI', 'IsMap'}, kind!);
+        if (await action.stringEntry(PdfName('URI')) == null) {
+          throw FormatException('URI action must contain a URI string.');
+        }
+        return;
+      case 'GoToR':
+        _rejectExtraEntries(
+            action, const {'Type', 'S', 'F', 'D', 'NewWindow'}, kind!);
+        if (await action.get(PdfName('F'), true) == null) {
+          throw FormatException('Remote go-to actions require a /F entry.');
+        }
+        final destination = await action.get(PdfName('D'), true);
+        if (destination == null) {
+          throw FormatException('Remote go-to actions require a /D entry.');
+        }
+        if (destination is PdfArray) {
+          // Table 200: the first element is a page number in the remote
+          // document, never a page object of this one.
+          if (await destination.get(0, true) is! PdfNumber) {
+            throw UnsupportedError(
+                'Remote go-to destinations shall start with a remote page number.');
+          }
+        } else if (destination is! PdfName && destination is! PdfString) {
+          throw FormatException('Invalid remote go-to destination.');
+        }
+        return;
+      case 'Launch':
+        _rejectExtraEntries(action,
+            const {'Type', 'S', 'F', 'Win', 'Mac', 'Unix', 'NewWindow'}, kind!);
+        if (await action.get(PdfName('F'), true) == null &&
+            await action.get(PdfName('Win'), true) == null) {
+          throw FormatException(
+              'Launch actions require /F or a platform parameter dictionary.');
+        }
+        return;
+      case 'Named':
+        _rejectExtraEntries(action, const {'Type', 'S', 'N'}, kind!);
+        if (await action.nameEntry(PdfName('N')) == null) {
+          throw FormatException('Named actions require a /N name.');
+        }
+        return;
+      default:
+        throw UnsupportedError(
+            'Page assembly cannot import the /$kind link action.');
+    }
+  }
+
+  static void _rejectExtraEntries(
+      PdfDictionary dictionary, Set<String> allowed, String kind) {
+    for (final key in dictionary.getMap()?.keys ?? const <PdfName>[]) {
+      if (!allowed.contains(key.getValue())) {
+        throw UnsupportedError(
+            '/$kind action contains an unsupported /${key.getValue()} entry.');
+      }
+    }
+  }
+
   static Future<void> _validateAnnotations(PdfPage page,
       {bool allowLocalLinks = false, bool allowWidgets = false}) async {
     final pageObject = page.pdfRepresentation();
@@ -1022,6 +1186,13 @@ class PdfPageAssembly {
       'Ink',
       'Popup',
       'Link',
+      // Self-contained subtypes of Table 169: their subtype specific entries
+      // reference only their own objects, never the page tree or the catalog.
+      'FileAttachment',
+      'Sound',
+      'PrinterMark',
+      'Watermark',
+      'Redact',
     };
     for (final annotation in annotations) {
       final kind = (await annotation.nameEntry(PdfName.subtype))?.getValue();
@@ -1079,23 +1250,11 @@ class PdfPageAssembly {
         continue;
       }
       if (action != null) {
-        if (kind != 'Link' ||
-            action is! PdfDictionary ||
-            action is PdfStream ||
-            (await action.nameEntry(PdfName('S')))?.getValue() != 'URI') {
+        if (kind != 'Link' || action is! PdfDictionary || action is PdfStream) {
           throw UnsupportedError(
-              'Only URI actions on link annotations can be imported.');
+              'Only document-independent actions on link annotations can be imported.');
         }
-        for (final entry in await action.entrySet()) {
-          if (!const {'Type', 'S', 'URI', 'IsMap'}
-              .contains(entry.key.getValue())) {
-            throw UnsupportedError(
-                'URI action contains an unsupported /${entry.key.getValue()} entry.');
-          }
-        }
-        if (await action.stringEntry(PdfName('URI')) == null) {
-          throw FormatException('URI action must contain a URI string.');
-        }
+        await _validateLinkAction(action);
       }
     }
   }
@@ -1157,6 +1316,14 @@ class _PageGraphCopy {
     copies[object] = result;
     return result;
   }
+}
+
+class _LocalDestination {
+  final PdfDictionary target;
+  final List<PdfObject> parameters;
+  final bool wrappedInGoToAction;
+  _LocalDestination(this.target, this.parameters,
+      {this.wrappedInGoToAction = false});
 }
 
 class _OutlineEntry {

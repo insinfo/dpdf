@@ -21,6 +21,18 @@ class TIFFFaxDecoder {
   int _oneD = 0;
 
   int fails = 0;
+
+  /// Number of scan lines the last decode call actually produced.
+  ///
+  /// A `/Rows` value of 0 leaves the height undetermined (ISO 32000-1,
+  /// Table 11), so the caller allocates an upper bound and trims to this.
+  int rowsDecoded = 0;
+
+  /// Indices of the scan lines whose decoding reported an error.
+  ///
+  /// This backs `/DamagedRowsBeforeError`, which tolerates a bounded number of
+  /// damaged rows by substituting the previous row's pixels.
+  final List<int> damagedRows = <int>[];
   // int _lineBitNum = 0; // Unused
 
   bool recoverFromImageError = false;
@@ -289,1423 +301,10 @@ class TIFFFaxDecoder {
     0xff
   ]);
 
-  static const List<int> _white = [
-    6430,
-    6400,
-    6400,
-    6400,
-    3225,
-    3225,
-    3225,
-    3225,
-    944,
-    944,
-    944,
-    944,
-    976,
-    976,
-    976,
-    976,
-    1456,
-    1456,
-    1456,
-    1456,
-    1488,
-    1488,
-    1488,
-    1488,
-    718,
-    718,
-    718,
-    718,
-    718,
-    718,
-    718,
-    718,
-    750,
-    750,
-    750,
-    750,
-    750,
-    750,
-    750,
-    750,
-    1520,
-    1520,
-    1520,
-    1520,
-    1552,
-    1552,
-    1552,
-    1552,
-    428,
-    428,
-    428,
-    428,
-    428,
-    428,
-    428,
-    428,
-    428,
-    428,
-    428,
-    428,
-    428,
-    428,
-    428,
-    428,
-    654,
-    654,
-    654,
-    654,
-    654,
-    654,
-    654,
-    654,
-    1072,
-    1072,
-    1072,
-    1072,
-    1104,
-    1104,
-    1104,
-    1104,
-    1136,
-    1136,
-    1136,
-    1136,
-    1168,
-    1168,
-    1168,
-    1168,
-    1200,
-    1200,
-    1200,
-    1200,
-    1232,
-    1232,
-    1232,
-    1232,
-    622,
-    622,
-    622,
-    622,
-    622,
-    622,
-    622,
-    622,
-    1008,
-    1008,
-    1008,
-    1008,
-    1040,
-    1040,
-    1040,
-    1040,
-    44,
-    44,
-    44,
-    44,
-    44,
-    44,
-    44,
-    44,
-    44,
-    44,
-    44,
-    44,
-    44,
-    44,
-    44,
-    44,
-    396,
-    396,
-    396,
-    396,
-    396,
-    396,
-    396,
-    396,
-    396,
-    396,
-    396,
-    396,
-    396,
-    396,
-    396,
-    396,
-    1712,
-    1712,
-    1712,
-    1712,
-    1744,
-    1744,
-    1744,
-    1744,
-    846,
-    846,
-    846,
-    846,
-    846,
-    846,
-    846,
-    846,
-    1264,
-    1264,
-    1264,
-    1264,
-    1296,
-    1296,
-    1296,
-    1296,
-    1328,
-    1328,
-    1328,
-    1328,
-    1360,
-    1360,
-    1360,
-    1360,
-    1392,
-    1392,
-    1392,
-    1392,
-    1424,
-    1424,
-    1424,
-    1424,
-    686,
-    686,
-    686,
-    686,
-    686,
-    686,
-    686,
-    686,
-    910,
-    910,
-    910,
-    910,
-    910,
-    910,
-    910,
-    910,
-    1968,
-    1968,
-    1968,
-    1968,
-    2000,
-    2000,
-    2000,
-    2000,
-    2032,
-    2032,
-    2032,
-    2032,
-    16,
-    16,
-    16,
-    16,
-    10257,
-    10257,
-    10257,
-    10257,
-    12305,
-    12305,
-    12305,
-    12305,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    330,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    362,
-    878,
-    878,
-    878,
-    878,
-    878,
-    878,
-    878,
-    878,
-    1904,
-    1904,
-    1904,
-    1904,
-    1936,
-    1936,
-    1936,
-    1936,
-    -18413,
-    -18413,
-    -16365,
-    -16365,
-    -14317,
-    -14317,
-    -10221,
-    -10221,
-    590,
-    590,
-    590,
-    590,
-    590,
-    590,
-    590,
-    590,
-    782,
-    782,
-    782,
-    782,
-    782,
-    782,
-    782,
-    782,
-    1584,
-    1584,
-    1584,
-    1584,
-    1616,
-    1616,
-    1616,
-    1616,
-    1648,
-    1648,
-    1648,
-    1648,
-    1680,
-    1680,
-    1680,
-    1680,
-    814,
-    814,
-    814,
-    814,
-    814,
-    814,
-    814,
-    814,
-    1776,
-    1776,
-    1776,
-    1776,
-    1808,
-    1808,
-    1808,
-    1808,
-    1840,
-    1840,
-    1840,
-    1840,
-    1872,
-    1872,
-    1872,
-    1872,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    6157,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    -12275,
-    14353,
-    14353,
-    14353,
-    14353,
-    16401,
-    16401,
-    16401,
-    16401,
-    22547,
-    22547,
-    24595,
-    24595,
-    20497,
-    20497,
-    20497,
-    20497,
-    18449,
-    18449,
-    18449,
-    18449,
-    26643,
-    26643,
-    28691,
-    28691,
-    30739,
-    30739,
-    -32749,
-    -32749,
-    -30701,
-    -30701,
-    -28653,
-    -28653,
-    -26605,
-    -26605,
-    -24557,
-    -24557,
-    -22509,
-    -22509,
-    -20461,
-    -20461,
-    8207,
-    8207,
-    8207,
-    8207,
-    8207,
-    8207,
-    8207,
-    8207,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    72,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    104,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    4107,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    266,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    298,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    136,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    168,
-    460,
-    460,
-    460,
-    460,
-    460,
-    460,
-    460,
-    460,
-    460,
-    460,
-    460,
-    460,
-    460,
-    460,
-    460,
-    460,
-    492,
-    492,
-    492,
-    492,
-    492,
-    492,
-    492,
-    492,
-    492,
-    492,
-    492,
-    492,
-    492,
-    492,
-    492,
-    492,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    2059,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    200,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232,
-    232
-  ];
 
-  static const List<int> _additionalMakeup = [
-    28679,
-    28679,
-    31752,
-    -32759,
-    -31735,
-    -30711,
-    -29687,
-    -28663,
-    29703,
-    29703,
-    30727,
-    30727,
-    -27639,
-    -26615,
-    -25591,
-    -24567
-  ];
 
-  static const List<int> _initBlack = [
-    3226,
-    6412,
-    200,
-    168,
-    38,
-    38,
-    134,
-    134,
-    100,
-    100,
-    100,
-    100,
-    68,
-    68,
-    68,
-    68
-  ];
 
-  static const List<int> _twoBitBlack = [292, 260, 226, 226];
 
-  static const List<int> _black = [
-    62,
-    62,
-    30,
-    30,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    3225,
-    588,
-    588,
-    588,
-    588,
-    588,
-    588,
-    588,
-    588,
-    1680,
-    1680,
-    20499,
-    22547,
-    24595,
-    26643,
-    1776,
-    1776,
-    1808,
-    1808,
-    -24557,
-    -22509,
-    -20461,
-    -18413,
-    1904,
-    1904,
-    1936,
-    1936,
-    -16365,
-    -14317,
-    782,
-    782,
-    782,
-    782,
-    814,
-    814,
-    814,
-    814,
-    -12269,
-    -10221,
-    10257,
-    10257,
-    12305,
-    12305,
-    14353,
-    14353,
-    16403,
-    18451,
-    1712,
-    1712,
-    1744,
-    1744,
-    28691,
-    30739,
-    -32749,
-    -30701,
-    -28653,
-    -26605,
-    2061,
-    2061,
-    2061,
-    2061,
-    2061,
-    2061,
-    2061,
-    2061,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    424,
-    750,
-    750,
-    750,
-    750,
-    1616,
-    1616,
-    1648,
-    1648,
-    1424,
-    1424,
-    1456,
-    1456,
-    1488,
-    1488,
-    1520,
-    1520,
-    1840,
-    1840,
-    1872,
-    1872,
-    1968,
-    1968,
-    8209,
-    8209,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    524,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    556,
-    1552,
-    1552,
-    1584,
-    1584,
-    2000,
-    2000,
-    2032,
-    2032,
-    976,
-    976,
-    1008,
-    1008,
-    1040,
-    1040,
-    1072,
-    1072,
-    1296,
-    1296,
-    1328,
-    1328,
-    718,
-    718,
-    718,
-    718,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    456,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    326,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    358,
-    490,
-    490,
-    490,
-    490,
-    490,
-    490,
-    490,
-    490,
-    490,
-    490,
-    490,
-    490,
-    490,
-    490,
-    490,
-    490,
-    4113,
-    4113,
-    6161,
-    6161,
-    848,
-    848,
-    880,
-    880,
-    912,
-    912,
-    944,
-    944,
-    622,
-    622,
-    622,
-    622,
-    654,
-    654,
-    654,
-    654,
-    1104,
-    1104,
-    1136,
-    1136,
-    1168,
-    1168,
-    1200,
-    1200,
-    1232,
-    1232,
-    1264,
-    1264,
-    686,
-    686,
-    686,
-    686,
-    1360,
-    1360,
-    1392,
-    1392,
-    12,
-    12,
-    12,
-    12,
-    12,
-    12,
-    12,
-    12,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390,
-    390
-  ];
 
   static final List<int> _twoDCodes = List<int>.generate(128, (lookahead) {
     final word = lookahead.toRadixString(2).padLeft(7, '0');
@@ -1752,6 +351,7 @@ class TIFFFaxDecoder {
     // _compression = 4;
     _bitPointer = 0;
     _bytePointer = 0;
+    fails = 0;
 
     int scanlineStride = (_w + 7) ~/ 8;
     int a0;
@@ -1780,8 +380,13 @@ class TIFFFaxDecoder {
 
     int lineOffset = 0;
     int bitOffset;
+    rowsDecoded = 0;
+    damagedRows.clear();
 
     for (int lines = 0; lines < height; lines++) {
+      if (lines > 0 && _bytePointer >= _data!.length - 1) break;
+      final int failsBefore = fails;
+      final int bitsBefore = _bytePointer * 8 + _bitPointer;
       a0 = -1;
       isWhite = true;
 
@@ -1909,14 +514,39 @@ class TIFFFaxDecoder {
       if (currIndex < cce.length) {
         cce[currIndex++] = bitOffset;
       }
+      // A line that consumed no bits is not a line: the data ran out, either
+      // at the EOFB of 4.2.1.4 or because the stream is truncated. The check
+      // has to be on bits consumed rather than on pixels produced, because a
+      // pass code read out of trailing zeroes carries bitOffset to the end of
+      // the row while reading nothing. Stopping here is what keeps an absent
+      // /Rows from turning the rest of the buffer into invented blank lines.
+      if (_bytePointer * 8 + _bitPointer <= bitsBefore) break;
+
       _changingElemSize = currIndex;
       lineOffset += scanlineStride;
+      if (fails > failsBefore) damagedRows.add(lines);
+      rowsDecoded = lines + 1;
     }
   }
 
   void _getNextChangingElement(int a0, bool isWhite, List<int> b) {
-    int start = _lastChangingElement & 0xFFFE;
-    if (isWhite) start += 0;
+    // 4.2.1.3.1: b1 is the first changing element on the reference line to the
+    // right of a0 and of opposite colour to a0's own colour. Changing elements
+    // alternate, so an even index changes to black and an odd index changes to
+    // white, and the search has to start on the matching parity.
+    //
+    // The scan resumes one element before the last hit, never at it: rounding
+    // the resume point up to an even index skips the odd element just behind
+    // it, and then b1 lands on the end of the line instead of the transition
+    // that is really there. That misses only when the previous lookup was for
+    // the opposite colour, which is why plain images decode and detailed ones
+    // drift.
+    var start = _lastChangingElement > 0 ? _lastChangingElement - 1 : 0;
+    if (isWhite) {
+      start &= ~0x1;
+    } else {
+      start |= 0x1;
+    }
 
     final pce = _prevChangingElems;
 
@@ -1946,6 +576,11 @@ class TIFFFaxDecoder {
 
   void _setToBlack(
       Uint8List buffer, int lineOffset, int bitOffset, int numBits) {
+    // A run cannot be negative. A reference line that disagrees with the
+    // coding line can still ask for one, and painting it would shift the whole
+    // rest of the image, so drop it and let the caller's error accounting
+    // report the line.
+    if (numBits <= 0) return;
     final begin = lineOffset * 8 + bitOffset;
     final limit = begin + numBits;
     for (var byte = begin ~/ 8; byte * 8 < limit; byte++) {
@@ -2041,241 +676,330 @@ class TIFFFaxDecoder {
     }
   }
 
-  int _decodeWhiteCodeWord() {
-    int current;
-    int entry;
-    int bits;
-    int isT;
-    int twoBits;
-    int code = -1;
-    int runLength = 0;
-    bool isWhite = true;
+  /// White run codes of ITU-T T.4: the terminating codes for runs 0..63 of
+  /// Table 2, the makeup codes 64..1728 of Table 3, and the extended makeup
+  /// codes 1792..2560 of Table 4 that both colours share. Each triple is
+  /// (bit length, code, run length).
+  ///
+  /// These are the very codes `CCITTG4Encoder` writes, and the lookup the
+  /// decoder uses is derived from them, so the two sides of a round trip
+  /// cannot drift apart.
+  static const List<List<int>> _whiteRunCodes = [
+    [8, 0x35, 0],
+    [6, 0x7, 1],
+    [4, 0x7, 2],
+    [4, 0x8, 3],
+    [4, 0xB, 4],
+    [4, 0xC, 5],
+    [4, 0xE, 6],
+    [4, 0xF, 7],
+    [5, 0x13, 8],
+    [5, 0x14, 9],
+    [5, 0x7, 10],
+    [5, 0x8, 11],
+    [6, 0x8, 12],
+    [6, 0x3, 13],
+    [6, 0x34, 14],
+    [6, 0x35, 15],
+    [6, 0x2A, 16],
+    [6, 0x2B, 17],
+    [7, 0x27, 18],
+    [7, 0xC, 19],
+    [7, 0x8, 20],
+    [7, 0x17, 21],
+    [7, 0x3, 22],
+    [7, 0x4, 23],
+    [7, 0x28, 24],
+    [7, 0x2B, 25],
+    [7, 0x13, 26],
+    [7, 0x24, 27],
+    [7, 0x18, 28],
+    [8, 0x2, 29],
+    [8, 0x3, 30],
+    [8, 0x1A, 31],
+    [8, 0x1B, 32],
+    [8, 0x12, 33],
+    [8, 0x13, 34],
+    [8, 0x14, 35],
+    [8, 0x15, 36],
+    [8, 0x16, 37],
+    [8, 0x17, 38],
+    [8, 0x28, 39],
+    [8, 0x29, 40],
+    [8, 0x2A, 41],
+    [8, 0x2B, 42],
+    [8, 0x2C, 43],
+    [8, 0x2D, 44],
+    [8, 0x4, 45],
+    [8, 0x5, 46],
+    [8, 0xA, 47],
+    [8, 0xB, 48],
+    [8, 0x52, 49],
+    [8, 0x53, 50],
+    [8, 0x54, 51],
+    [8, 0x55, 52],
+    [8, 0x24, 53],
+    [8, 0x25, 54],
+    [8, 0x58, 55],
+    [8, 0x59, 56],
+    [8, 0x5A, 57],
+    [8, 0x5B, 58],
+    [8, 0x4A, 59],
+    [8, 0x4B, 60],
+    [8, 0x32, 61],
+    [8, 0x33, 62],
+    [8, 0x34, 63],
+    [5, 0x1B, 64],
+    [5, 0x12, 128],
+    [6, 0x17, 192],
+    [7, 0x37, 256],
+    [8, 0x36, 320],
+    [8, 0x37, 384],
+    [8, 0x64, 448],
+    [8, 0x65, 512],
+    [8, 0x68, 576],
+    [8, 0x67, 640],
+    [9, 0xCC, 704],
+    [9, 0xCD, 768],
+    [9, 0xD2, 832],
+    [9, 0xD3, 896],
+    [9, 0xD4, 960],
+    [9, 0xD5, 1024],
+    [9, 0xD6, 1088],
+    [9, 0xD7, 1152],
+    [9, 0xD8, 1216],
+    [9, 0xD9, 1280],
+    [9, 0xDA, 1344],
+    [9, 0xDB, 1408],
+    [9, 0x98, 1472],
+    [9, 0x99, 1536],
+    [9, 0x9A, 1600],
+    [6, 0x18, 1664],
+    [9, 0x9B, 1728],
+    [11, 0x8, 1792],
+    [11, 0xC, 1856],
+    [11, 0xD, 1920],
+    [12, 0x12, 1984],
+    [12, 0x13, 2048],
+    [12, 0x14, 2112],
+    [12, 0x15, 2176],
+    [12, 0x16, 2240],
+    [12, 0x17, 2304],
+    [12, 0x1C, 2368],
+    [12, 0x1D, 2432],
+    [12, 0x1E, 2496],
+    [12, 0x1F, 2560],
+  ];
 
-    while (isWhite) {
-      current = _nextNBits(10);
-      entry = _white[current];
-      isT = entry & 0x0001;
-      bits = (entry >> 1) & 0x0f;
+  /// Black run codes of ITU-T T.4, in the same (bit length, code, run length)
+  /// form as [_whiteRunCodes].
+  static const List<List<int>> _blackRunCodes = [
+    [10, 0x37, 0],
+    [3, 0x2, 1],
+    [2, 0x3, 2],
+    [2, 0x2, 3],
+    [3, 0x3, 4],
+    [4, 0x3, 5],
+    [4, 0x2, 6],
+    [5, 0x3, 7],
+    [6, 0x5, 8],
+    [6, 0x4, 9],
+    [7, 0x4, 10],
+    [7, 0x5, 11],
+    [7, 0x7, 12],
+    [8, 0x4, 13],
+    [8, 0x7, 14],
+    [9, 0x18, 15],
+    [10, 0x17, 16],
+    [10, 0x18, 17],
+    [10, 0x8, 18],
+    [11, 0x67, 19],
+    [11, 0x68, 20],
+    [11, 0x6C, 21],
+    [11, 0x37, 22],
+    [11, 0x28, 23],
+    [11, 0x17, 24],
+    [11, 0x18, 25],
+    [12, 0xCA, 26],
+    [12, 0xCB, 27],
+    [12, 0xCC, 28],
+    [12, 0xCD, 29],
+    [12, 0x68, 30],
+    [12, 0x69, 31],
+    [12, 0x6A, 32],
+    [12, 0x6B, 33],
+    [12, 0xD2, 34],
+    [12, 0xD3, 35],
+    [12, 0xD4, 36],
+    [12, 0xD5, 37],
+    [12, 0xD6, 38],
+    [12, 0xD7, 39],
+    [12, 0x6C, 40],
+    [12, 0x6D, 41],
+    [12, 0xDA, 42],
+    [12, 0xDB, 43],
+    [12, 0x54, 44],
+    [12, 0x55, 45],
+    [12, 0x56, 46],
+    [12, 0x57, 47],
+    [12, 0x64, 48],
+    [12, 0x65, 49],
+    [12, 0x52, 50],
+    [12, 0x53, 51],
+    [12, 0x24, 52],
+    [12, 0x37, 53],
+    [12, 0x38, 54],
+    [12, 0x27, 55],
+    [12, 0x28, 56],
+    [12, 0x58, 57],
+    [12, 0x59, 58],
+    [12, 0x2B, 59],
+    [12, 0x2C, 60],
+    [12, 0x5A, 61],
+    [12, 0x66, 62],
+    [12, 0x67, 63],
+    [10, 0xF, 64],
+    [12, 0xC8, 128],
+    [12, 0xC9, 192],
+    [12, 0x5B, 256],
+    [12, 0x33, 320],
+    [12, 0x34, 384],
+    [12, 0x35, 448],
+    [13, 0x6C, 512],
+    [13, 0x6D, 576],
+    [13, 0x4A, 640],
+    [13, 0x4B, 704],
+    [13, 0x4C, 768],
+    [13, 0x4D, 832],
+    [13, 0x72, 896],
+    [13, 0x73, 960],
+    [13, 0x74, 1024],
+    [13, 0x75, 1088],
+    [13, 0x76, 1152],
+    [13, 0x77, 1216],
+    [13, 0x52, 1280],
+    [13, 0x53, 1344],
+    [13, 0x54, 1408],
+    [13, 0x55, 1472],
+    [13, 0x5A, 1536],
+    [13, 0x5B, 1600],
+    [13, 0x64, 1664],
+    [13, 0x65, 1728],
+    [11, 0x8, 1792],
+    [11, 0xC, 1856],
+    [11, 0xD, 1920],
+    [12, 0x12, 1984],
+    [12, 0x13, 2048],
+    [12, 0x14, 2112],
+    [12, 0x15, 2176],
+    [12, 0x16, 2240],
+    [12, 0x17, 2304],
+    [12, 0x1C, 2368],
+    [12, 0x1D, 2432],
+    [12, 0x1E, 2496],
+    [12, 0x1F, 2560],
+  ];
 
-      if (bits == 12) {
-        twoBits = _nextLesserThan8Bits(2);
-        current = ((current << 2) & 0x000c) | twoBits;
-        entry = _additionalMakeup[current];
-        bits = (entry >> 1) & 0x07;
-        code = (entry >> 4) & 0x0fff;
-        runLength += code;
-        _updatePointer(4 - bits);
-      } else {
-        if (bits == 0) {
-          return runLength;
-        }
-        if (bits == 15) {
-          return runLength;
-        }
-        code = (entry >> 5) & 0x07ff;
-        runLength += code;
-        _updatePointer(10 - bits);
-        if (isT == 0) {
-          isWhite = false;
-        }
+  /// Width of the window the run decoder peeks at. The longest code in either
+  /// table is 13 bits, and `_nextNBits` can serve 13 bits from its three byte
+  /// window at any bit position.
+  static const int _runCodeBits = 13;
+
+  static Int32List? _whiteRunLookup;
+  static Int32List? _blackRunLookup;
+
+  /// Expands a prefix code table into a flat lookup indexed by the next
+  /// [_runCodeBits] bits.
+  ///
+  /// Every index whose leading bits match a code stores that code, so one
+  /// array read resolves a run. The value packs the run length above the code
+  /// length; zero means no code matches, which is how the 12 zero bits of an
+  /// EOL stay distinguishable from a real code.
+  static Int32List _buildRunLookup(List<List<int>> codes) {
+    final table = Int32List(1 << _runCodeBits);
+    for (final entry in codes) {
+      final length = entry[0];
+      final shift = _runCodeBits - length;
+      final base = entry[1] << shift;
+      final value = (entry[2] << 8) | length;
+      for (var suffix = 0; suffix < (1 << shift); suffix++) {
+        table[base | suffix] = value;
       }
     }
-    return runLength;
+    return table;
   }
 
-  int _decodeBlackCodeWord() {
-    int current;
-    int entry;
-    int bits;
-    int isT;
-    int code = -1;
-    int runLength = 0;
-    bool isWhite = false;
+  /// Set when the last run decode stopped on an EOL or on bits no code
+  /// matches, so the caller can end the line instead of looping on a run of
+  /// zero that never advances.
+  bool _runEndedLine = false;
 
-    while (!isWhite) {
-      current = _nextLesserThan8Bits(4);
-      entry = _initBlack[current];
-      bits = (entry >> 1) & 0x000f;
-      code = (entry >> 5) & 0x07ff;
-
-      if (code == 100) {
-        current = _nextNBits(9);
-        entry = _black[current];
-        isT = entry & 0x0001;
-        bits = (entry >> 1) & 0x000f;
-        code = (entry >> 5) & 0x07ff;
-
-        if (bits == 12) {
-          _updatePointer(5);
-          current = _nextLesserThan8Bits(4);
-          entry = _additionalMakeup[current];
-          bits = (entry >> 1) & 0x07;
-          code = (entry >> 4) & 0x0fff;
-          runLength += code;
-          _updatePointer(4 - bits);
-        } else if (bits == 15) {
-          return runLength;
-        } else {
-          runLength += code;
-          _updatePointer(9 - bits);
-          if (isT == 0) {
-            isWhite = true;
-          }
-        }
-      } else if (code == 200) {
-        current = _nextLesserThan8Bits(2);
-        entry = _twoBitBlack[current];
-        code = (entry >> 5) & 0x07ff;
-        bits = (entry >> 1) & 0x0f;
-        runLength += code;
-        _updatePointer(2 - bits);
-        isWhite = true;
-      } else {
-        runLength += code;
-        _updatePointer(4 - bits);
-        isWhite = true;
+  /// Decodes one run: zero or more makeup codes followed by one terminating
+  /// code, which is what ITU-T T.4 4.1.3 calls a run length.
+  int _decodeRunLength(Int32List lookup) {
+    _runEndedLine = false;
+    var total = 0;
+    while (true) {
+      final int window;
+      try {
+        window = _nextNBits(_runCodeBits);
+      } on RangeError {
+        _runEndedLine = true;
+        return total;
       }
+      // 000000000001 is the EOL of 4.1.2, and a run of fill bits precedes it.
+      // Neither is a run code, and neither is an error.
+      if (window == 0 || (window >> 1) == 1) {
+        _updatePointer(_runCodeBits);
+        _runEndedLine = true;
+        return total;
+      }
+      final entry = lookup[window];
+      if (entry == 0) {
+        _updatePointer(_runCodeBits);
+        _runEndedLine = true;
+        fails++;
+        return total;
+      }
+      _updatePointer(_runCodeBits - (entry & 0xFF));
+      final run = entry >> 8;
+      total += run;
+      // Makeup codes are multiples of 64; only a terminating code of 0..63
+      // closes the run.
+      if (run < 64) return total;
     }
-    return runLength;
   }
+
+  int _decodeWhiteCodeWord() =>
+      _decodeRunLength(_whiteRunLookup ??= _buildRunLookup(_whiteRunCodes));
+
+  int _decodeBlackCodeWord() =>
+      _decodeRunLength(_blackRunLookup ??= _buildRunLookup(_blackRunCodes));
 
   /// Decodes a single scanline (1D).
   void _decodeNextScanline(Uint8List buffer, int lineOffset) {
-    int code = 0;
-    int isT = 0;
-    int current;
-    int entry;
-    // float bits;
-    int bits;
-    int twoBits;
-    bool isWhite = true;
-    int bitOffset = 0;
+    var isWhite = true;
+    var bitOffset = 0;
 
     _changingElemSize = 0;
     final cce = _currChangingElems;
 
+    // 4.1.3: a line is an alternating sequence of white and black runs that
+    // starts white, and every run ends where the colour changes.
     while (bitOffset < _w) {
-      int runOffset = bitOffset;
-      while (isWhite && bitOffset < _w) {
-        current = _nextNBits(10);
-        entry = _white[current];
-        isT = entry & 0x0001;
-        bits = (entry >> 1) & 0x0f;
-
-        if (bits == 12) {
-          twoBits = _nextLesserThan8Bits(2);
-          current = ((current << 2) & 0x000c) | twoBits;
-          entry = _additionalMakeup[current];
-          bits = (entry >> 1) & 0x07;
-          code = (entry >> 4) & 0x0fff;
-          bitOffset += code;
-          _updatePointer(4 - bits);
-        } else {
-          if (bits == 0) {
-            fails++;
-            // Invalid code encountered
-          } else {
-            if (bits == 15) {
-              fails++;
-              // EOL?
-              return;
-            } else {
-              code = (entry >> 5) & 0x07ff;
-              bitOffset += code;
-              _updatePointer(10 - bits);
-              if (isT == 0) {
-                isWhite = false;
-                cce[_changingElemSize++] = bitOffset;
-              }
-            }
-          }
-        }
+      final run =
+          isWhite ? _decodeWhiteCodeWord() : _decodeBlackCodeWord();
+      if (_runEndedLine) return;
+      var painted = run;
+      if (bitOffset + painted > _w) painted = _w - bitOffset;
+      if (!isWhite && painted > 0) {
+        _setToBlack(buffer, lineOffset, bitOffset, painted);
       }
-
-      if (bitOffset == _w) {
-        int runLength = bitOffset - runOffset;
-        if (isWhite && runLength != 0 && runLength % 64 == 0) {
-          // Ensure next code is terminating code for white run of length zero?
-          // C# check: NextNBits(8) != 0x35
-          // But here we might just consume.
-          try {
-            if (_nextNBits(8) != 0x35) {
-              fails++;
-            }
-            _updatePointer(8);
-          } catch (e) {
-            // ignore
-          }
-        }
-        break;
-      }
-
-      // Black run
-      // int runOffsetBlack = bitOffset;
-      while (!isWhite && bitOffset < _w) {
-        current = _nextLesserThan8Bits(4);
-        entry = _initBlack[current];
-        isT = entry & 0x0001;
-        bits = (entry >> 1) & 0x000f;
-        code = (entry >> 5) & 0x07ff;
-
-        if (code == 100) {
-          current = _nextNBits(9);
-          entry = _black[current];
-          isT = entry & 0x0001;
-          bits = (entry >> 1) & 0x000f;
-          code = (entry >> 5) & 0x07ff;
-
-          if (bits == 12) {
-            _updatePointer(5);
-            current = _nextLesserThan8Bits(4);
-            entry = _additionalMakeup[current];
-            bits = (entry >> 1) & 0x07;
-            code = (entry >> 4) & 0x0fff;
-            _setToBlack(buffer, lineOffset, bitOffset, code);
-            bitOffset += code;
-            _updatePointer(4 - bits);
-          } else {
-            if (bits == 15) {
-              fails++;
-              return;
-            } else {
-              _setToBlack(buffer, lineOffset, bitOffset, code);
-              bitOffset += code;
-              _updatePointer(9 - bits);
-              if (isT == 0) {
-                isWhite = true;
-                cce[_changingElemSize++] = bitOffset;
-              }
-            }
-          }
-        } else {
-          if (code == 200) {
-            current = _nextLesserThan8Bits(2);
-            entry = _twoBitBlack[current];
-            code = (entry >> 5) & 0x07ff;
-            bits = (entry >> 1) & 0x0f;
-            _setToBlack(buffer, lineOffset, bitOffset, code);
-            bitOffset += code;
-            _updatePointer(2 - bits);
-            isWhite = true;
-            cce[_changingElemSize++] = bitOffset;
-          } else {
-            _setToBlack(buffer, lineOffset, bitOffset, code);
-            bitOffset += code;
-            _updatePointer(4 - bits);
-            isWhite = true;
-            cce[_changingElemSize++] = bitOffset;
-          }
-        }
-      }
-
-      if (bitOffset == _w) {
-        // Check termination?
-        break;
-      }
+      bitOffset += painted;
+      if (_changingElemSize < cce.length) cce[_changingElemSize++] = bitOffset;
+      isWhite = !isWhite;
     }
-    cce[_changingElemSize++] = bitOffset;
+    if (_changingElemSize < cce.length) cce[_changingElemSize++] = bitOffset;
   }
 
   /// Decodes RLE.
@@ -2290,9 +1014,15 @@ class TIFFFaxDecoder {
 
     int scanlineStride = (_w + 7) ~/ 8;
     int lineOffset = 0;
+    rowsDecoded = 0;
+    damagedRows.clear();
 
     for (int i = 0; i < _h; i++) {
+      if (i > 0 && _bytePointer >= _data!.length) break;
+      final int failsBefore = fails;
       _decodeNextScanline(buffer, lineOffset);
+      if (fails > failsBefore) damagedRows.add(i);
+      rowsDecoded = i + 1;
       if (_bitPointer != 0) {
         _bytePointer++;
         _bitPointer = 0;
@@ -2314,6 +1044,8 @@ class TIFFFaxDecoder {
 
     int scanlineStride = (_w + 7) ~/ 8;
     int lineOffset = 0;
+    rowsDecoded = 0;
+    damagedRows.clear();
 
     // EOL check
     if (_data!.length < 2) {
@@ -2445,7 +1177,10 @@ class TIFFFaxDecoder {
       lines++;
       lineOffset += scanlineStride;
     }
-  }
+      // One scan line was written per advance of lineOffset, which is what the
+    // caller trims an undetermined /Rows to.
+    rowsDecoded = scanlineStride > 0 ? lineOffset ~/ scanlineStride : 0;
+}
 
   int _findNextLine() {
     int bitIndexMax = (_data!.length * 8) - 1;
@@ -2489,9 +1224,15 @@ class TIFFFaxDecoder {
 
     int scanlineStride = (_w + 7) ~/ 8;
     int lineOffset = 0;
+    rowsDecoded = 0;
+    damagedRows.clear();
 
     for (int lines = 0; lines < height; lines++) {
+      if (lines > 0 && _bytePointer >= _data!.length) break;
+      final int failsBefore = fails;
       _decodeNextScanline(buffer, lineOffset);
+      if (fails > failsBefore) damagedRows.add(lines);
+      rowsDecoded = lines + 1;
       lineOffset += scanlineStride;
     }
   }

@@ -9,6 +9,10 @@ import 'package:dpdf/src/layout/layout/layout_area.dart';
 import 'package:dpdf/src/layout/properties/unit_value.dart';
 import 'package:dpdf/src/layout/properties/property.dart';
 import 'package:dpdf/src/layout/properties/background.dart';
+import 'package:dpdf/src/layout/properties/clear_property_value.dart';
+import 'package:dpdf/src/layout/properties/float_property_value.dart';
+import 'package:dpdf/src/layout/properties/layout_position.dart';
+import 'package:dpdf/src/layout/properties/overflow_property_value.dart';
 import 'package:dpdf/src/layout/borders/border.dart';
 import 'package:dpdf/src/kernel/geom/rectangle.dart';
 import 'package:dpdf/src/kernel/pdf/canvas/pdf_canvas.dart';
@@ -180,11 +184,12 @@ abstract class AbstractRenderer implements Renderer {
     if (modelElement != null && modelElement!.hasProperty(property)) {
       return modelElement!.getProperty<T>(property);
     }
-    // Inherit from parent
-    if (parent != null) {
-      return parent!.getProperty<T>(property);
+    // Inherit from parent, but only for properties which are inheritable.
+    if (parent != null && Property.isPropertyInherited(property)) {
+      final inherited = parent!.getProperty<T>(property);
+      if (inherited != null) return inherited;
     }
-    return null;
+    return getDefaultProperty<T>(property);
   }
 
   @override
@@ -192,9 +197,58 @@ abstract class AbstractRenderer implements Renderer {
     return properties[property] as T?;
   }
 
+  /// Renderer level defaults. The model element is consulted first so that a
+  /// concrete element (list, list item, ...) can override them, then the
+  /// generic box model defaults are applied.
   @override
   T? getDefaultProperty<T>(int property) {
-    return null; // TODO: Implement defaults
+    final fromModel = modelElement?.getDefaultProperty<T>(property);
+    if (fromModel != null) return fromModel;
+    switch (property) {
+      case Property.MARGIN_TOP:
+      case Property.MARGIN_BOTTOM:
+      case Property.MARGIN_LEFT:
+      case Property.MARGIN_RIGHT:
+      case Property.PADDING_TOP:
+      case Property.PADDING_BOTTOM:
+      case Property.PADDING_LEFT:
+      case Property.PADDING_RIGHT:
+        return UnitValue.createPointValue(0) as T;
+      case Property.POSITION:
+        return LayoutPosition.STATIC as T;
+      case Property.FLOAT:
+        return FloatPropertyValue.none as T;
+      case Property.CLEAR:
+        return ClearPropertyValue.none as T;
+      case Property.OVERFLOW_X:
+      case Property.OVERFLOW_Y:
+        return OverflowPropertyValue.fit as T;
+      case Property.HORIZONTAL_ALIGNMENT:
+        return null;
+      case Property.KEEP_TOGETHER:
+      case Property.KEEP_WITH_NEXT:
+      case Property.FORCED_PLACEMENT:
+        return false as T;
+      case Property.OPACITY:
+        return 1.0 as T;
+      case Property.ROTATION_ANGLE:
+        return 0.0 as T;
+      case Property.COLSPAN:
+      case Property.ROWSPAN:
+        return 1 as T;
+      default:
+        return null;
+    }
+  }
+
+  /// Out of flow boxes (floats and absolutely/fixed positioned boxes) do not
+  /// take part in the vertical flow of their parent.
+  bool isOutOfFlow() {
+    final float = getProperty<FloatPropertyValue>(Property.FLOAT);
+    if (float != null && float != FloatPropertyValue.none) return true;
+    final position = getProperty<LayoutPosition>(Property.POSITION);
+    return position == LayoutPosition.ABSOLUTE ||
+        position == LayoutPosition.FIXED;
   }
 
   @override

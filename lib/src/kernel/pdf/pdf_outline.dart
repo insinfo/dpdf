@@ -102,11 +102,33 @@ class PdfOutline extends PdfObjectWrapper<PdfDictionary> {
   }
 
   /// Sets text style for the outline entry’s text.
+  ///
+  /// See ISO 32000-1:2008, 12.3.3, Table 154: bit 1 is italic and bit 2 is
+  /// bold, so the two flags may be combined.
   void setStyle(int style) {
-    if (style == flagBold || style == flagItalic) {
+    if (style >= 0 && style <= (flagItalic | flagBold)) {
       pdfRepresentation().put(PdfName.f, PdfNumber.fromInt(style));
     }
   }
+
+  /// Sets `/SE`, the structure element the outline item refers to
+  /// (Table 153).
+  void setStructureElement(PdfDictionary structureElement) {
+    pdfRepresentation().put(PdfName.intern('SE'), structureElement);
+  }
+
+  /// Gets `/SE`.
+  Future<PdfDictionary?> getStructureElement() async =>
+      await pdfRepresentation().dictionaryEntry(PdfName.intern('SE'));
+
+  /// Gets `/Count` as written. A negative value means the item is closed and
+  /// its absolute value is the number of visible descendants (Table 153).
+  Future<int?> getCount() async =>
+      await pdfRepresentation().integerEntry(PdfName.count);
+
+  /// Gets `/A`, the action performed when the outline item is activated.
+  Future<PdfDictionary?> getAction() async =>
+      await pdfRepresentation().dictionaryEntry(PdfName.a);
 
   /// Gets text style for the outline entry's text.
   Future<int?> getStyle() async {

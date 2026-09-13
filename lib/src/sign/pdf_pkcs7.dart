@@ -15,6 +15,7 @@ import 'x509_certificate.dart';
 import 'certificate_details.dart';
 import 'asn1_utils.dart';
 import 'der_objects.dart';
+import 'x500_name.dart';
 
 /// This class does all the processing related to signing
 /// and verifying a PKCS#7 / CMS signature.
@@ -82,14 +83,20 @@ class PdfPKCS7 {
   /// @param hashAlgorithm the hash algorithm (e.g., "SHA-256")
   /// @param interfaceDigest the digest interface
   /// @param hasEncapContent true if using adbe.pkcs7.sha1 subfilter
+  /// @param filterSubtype the /SubFilter the signature will declare; when it is
+  ///        ETSI.CAdES.detached the ESS signing-certificate-v2 signed attribute
+  ///        required by CAdES is added to the authenticated attributes
   PdfPKCS7.forSigning(
     SigningPrivateKey? privKey,
     List<Uint8List> certChain,
     String hashAlgorithm,
     ExternalDigest interfaceDigest, {
     bool hasEncapContent = false,
+    PdfName? filterSubtype,
   }) {
     _interfaceDigest = interfaceDigest;
+    _filterSubtype = filterSubtype;
+    _isCades = filterSubtype == PdfName.etsiCadesDetached;
 
     // Get digest algorithm OID
     _digestAlgorithmOid = DigestAlgorithms.getAllowedDigest(hashAlgorithm);
@@ -592,12 +599,12 @@ class PdfPKCS7 {
     if (_signerIssuer != null && _signerSerialNumber != null) {
       for (final certDer in _certsDer) {
         final cert = X509Certificate(certDer);
-        // TODO: proper DN comparison (normalization)
-        // For now, simple string comparison might fail if encoding differs
-        // But we can compare Serial Number at least
         if (cert.getSerialNumber() == _signerSerialNumber) {
+          // RFC 5280 section 7.1 name matching: identical encodings match
+          // outright, otherwise both names are compared attribute by attribute
+          // after the RFC 4518 preparation of their values.
           final certIssuer = cert.getIssuerX500Name();
-          if (_arraysEqual(certIssuer, _signerIssuer!)) {
+          if (X500Name.derEquals(certIssuer, _signerIssuer!)) {
             _signCert = cert;
             return;
           }
@@ -818,7 +825,34 @@ class PdfPKCS7 {
       ]),
     ]));
 
+    // ETSI.CAdES.detached binds the signing certificate through the ESS
+    // signing-certificate-v2 attribute of RFC 5035, which ISO 32000-2 and
+    // ETSI EN 319 142 require for the CAdES profile.
+    final signingCertificateAttribute = _buildSigningCertificateV2();
+    if (signingCertificateAttribute != null) {
+      attrs.add(signingCertificateAttribute);
+    }
+
     return ASN1Utils.createSet(attrs);
+  }
+
+  /// Builds the ESS signing-certificate-v2 signed attribute, or null when the
+  /// signature is not a CAdES one or the signing certificate is unknown.
+  ///
+  /// The hash algorithm of ESSCertIDv2 stays at its DEFAULT of SHA-256, so it
+  /// is omitted from the encoding as DER demands.
+  Uint8List? _buildSigningCertificateV2() {
+    if (!_isCades || _certsDer.isEmpty) return null;
+    final certHash = DigestAlgorithms.digestBytes(_certsDer.first, 'SHA-256');
+    final essCertIdV2 =
+        ASN1Utils.createSequence([ASN1Utils.createOctetString(certHash)]);
+    final signingCertificateV2 = ASN1Utils.createSequence([
+      ASN1Utils.createSequence([essCertIdV2])
+    ]);
+    return ASN1Utils.createSequence([
+      ASN1Utils.createOID(OID.signingCertificateV2),
+      ASN1Utils.createSet([signingCertificateV2]),
+    ]);
   }
 
   /// Gets the encoded PKCS#7 object.

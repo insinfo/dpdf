@@ -1,16 +1,17 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import '../kernel/pdf/pdf_array.dart';
 import '../kernel/pdf/pdf_dictionary.dart';
 import '../kernel/pdf/pdf_document.dart';
 import '../kernel/pdf/pdf_name.dart';
-import '../kernel/pdf/pdf_object.dart';
+import '../kernel/pdf/pdf_page.dart';
 import '../kernel/pdf/pdf_reader.dart';
 import '../kernel/pdf/reader_properties.dart';
+import 'content_stream_scan.dart';
 import 'finding_sink.dart';
 import 'pdf_conformance.dart';
 import 'pdf_conformance_report.dart';
+import 'structure_scan.dart';
 import 'xmp_identification.dart';
 
 /// Checks an existing document against PDF/UA, the accessibility profile.
@@ -18,15 +19,17 @@ import 'xmp_identification.dart';
 /// PDF/UA is largely about whether the structure tree says something true
 /// about the page. This verifier settles the machine checkable half: the file
 /// must be tagged, declare a language and a title, expose the title to the
-/// reader, embed its fonts, and give every figure and link a text alternative.
+/// reader, give every figure and link a text alternative, build its headings
+/// as an outline that steps down one level at a time, build its tables as
+/// grids whose headers say what they head, mark everything on the page as
+/// either content or an artifact, and tie every page and annotation back to
+/// the tree.
+///
 /// Judgements a person has to make — is the reading order right, does the
-/// alternative text describe the picture — are listed as unverified.
+/// alternative text describe the picture, is the contrast sufficient — are
+/// listed as unverified rather than quietly passed.
 class PdfUAVerifier {
   PdfUAVerifier._();
-
-  /// Structure types that stand in for something a reader cannot read, and so
-  /// need a text alternative.
-  static const Set<String> _needsAlternative = {'Figure', 'Formula'};
 
   /// Verifies [bytes] against [level].
   static Future<PdfConformanceReport> verify(
@@ -74,19 +77,30 @@ class PdfUAVerifier {
         profile: level.label,
         claimedProfile: claim.pdfUALevel?.label,
         findings: findings.build(),
-        unverifiedRules: const [
-          'Whether the reading order of the structure tree matches the visual '
-              'order of the page.',
-          'Whether alternative text actually describes what it replaces.',
-          'Heading nesting (H1 followed by H3), table header association, and '
-              'list semantics.',
-          'Colour contrast and any judgement about visual presentation.',
-        ],
+        unverifiedRules: _unverified,
       );
     } finally {
       reader.close();
     }
   }
+
+  /// The rules this verifier does not settle, each with the reason it cannot.
+  ///
+  /// All three need the page as a person sees it. Nothing in the object graph
+  /// says where a paragraph sits relative to a picture, what a picture is of,
+  /// or how two colours look side by side — so a validator that claimed to
+  /// decide them would be guessing, and a guess in an accessibility report is
+  /// worse than an admission.
+  static const List<String> _unverified = [
+    'Whether the reading order recorded in the structure tree matches the '
+        'order a reader would follow on the rendered page. The tree is '
+        'checked for shape — heading nesting, table geometry, list '
+        'composition, role mapping — but not against the layout.',
+    'Whether an /Alt or /ActualText actually describes what it replaces. '
+        'Their presence is checked; their aptness is a human judgement.',
+    'Colour contrast, text size and any other judgement about how the page '
+        'looks, which needs the page to be rendered.',
+  ];
 
   static Future<void> _checkTagging(
     PdfDictionary catalog,
@@ -194,49 +208,24 @@ class PdfUAVerifier {
       ));
       return;
     }
-    await _walkStructure(root, findings, 0, <PdfDictionary>{});
-  }
 
-  static const int _maxStructureDepth = 128;
-
-  static Future<void> _walkStructure(
-    PdfDictionary node,
-    FindingSink findings,
-    int depth,
-    Set<PdfDictionary> seen,
-  ) async {
-    if (depth > _maxStructureDepth || !seen.add(node)) return;
-
-    final type = (await node.nameEntry(PdfName('S')))?.getValue();
-    if (type != null && _needsAlternative.contains(type)) {
-      final alt = await node.stringEntry(PdfName('Alt'));
-      final actual = await node.stringEntry(PdfName('ActualText'));
-      if ((alt?.getValue().trim().isEmpty ?? true) &&
-          (actual?.getValue().trim().isEmpty ?? true)) {
-        findings.add(PdfConformanceFinding(
-          'figure-without-alternative',
-          PdfConformanceSeverity.violation,
-          'A /$type structure element has neither /Alt nor /ActualText, so it '
-              'is silent to a screen reader.',
-          clause: 'ISO 14289-1:7.3',
-        ));
-      }
-    }
-
-    final kids = await node.get(PdfName('K'));
-    if (kids == null) return;
-    if (kids.objectKind() == PdfObjectType.dictionary) {
-      await _walkStructure(kids as PdfDictionary, findings, depth + 1, seen);
+    final scan = await scanStructureTree(root);
+    if (!scan.hasElements) {
+      findings.add(const PdfConformanceFinding(
+        'empty-structure-tree',
+        PdfConformanceSeverity.violation,
+        'The structure tree carries no elements, so it describes nothing.',
+        clause: 'ISO 14289-1:7.1',
+      ));
       return;
     }
-    if (kids.objectKind() == PdfObjectType.array) {
-      final array = kids as PdfArray;
-      for (var i = 0; i < array.size(); i++) {
-        final kid = await array.dictionaryEntry(i);
-        if (kid != null) {
-          await _walkStructure(kid, findings, depth + 1, seen);
-        }
-      }
+    for (final issue in scan.issues) {
+      findings.add(PdfConformanceFinding(
+        issue.code,
+        PdfConformanceSeverity.violation,
+        issue.message,
+        clause: issue.uaClause,
+      ));
     }
   }
 
@@ -261,37 +250,126 @@ class PdfUAVerifier {
         ));
       }
 
-      final annotations = await dictionary.arrayEntry(PdfName.annots);
-      if (annotations == null) continue;
-      for (var i = 0; i < annotations.size(); i++) {
-        final annotation = await annotations.dictionaryEntry(i);
-        if (annotation == null) continue;
-        final subtype =
-            (await annotation.nameEntry(PdfName.subtype))?.getValue();
-        if (subtype == 'Popup') continue;
+      await _checkPageContent(page, number, findings);
+      await _checkPageAnnotations(page, number, findings);
+    }
+  }
 
-        final contents = await annotation.stringEntry(PdfName('Contents'));
-        if (subtype == 'Link' &&
-            (contents?.getValue().trim().isEmpty ?? true)) {
-          findings.add(PdfConformanceFinding(
-            'link-without-description',
-            PdfConformanceSeverity.violation,
-            'A /Link annotation has no /Contents, so a screen reader announces '
-                'a destination with no name.',
-            clause: 'ISO 14289-1:7.18.5',
-            page: number,
-          ));
-        }
-        if (!annotation.containsKey(PdfName('StructParent'))) {
-          findings.add(PdfConformanceFinding(
-            'annotation-without-structparent',
-            PdfConformanceSeverity.violation,
-            'A /$subtype annotation has no /StructParent, so it is outside the '
-                'structure tree.',
-            clause: 'ISO 14289-1:7.18.1',
-            page: number,
-          ));
-        }
+  /// Everything a page paints is either content, and then it belongs to the
+  /// structure tree through an `/MCID`, or decoration, and then it is an
+  /// artifact. A mark that is neither is invisible to a screen reader and
+  /// unexplained to everyone else.
+  static Future<void> _checkPageContent(
+    PdfPage page,
+    int number,
+    FindingSink findings,
+  ) async {
+    final Uint8List content;
+    try {
+      content = await page.contentPayload();
+    } on Object {
+      return;
+    }
+    if (content.isEmpty) return;
+
+    final resources =
+        await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
+    final scan = await scanContentStream(content, resources);
+    if (!scan.parsed) {
+      findings.add(PdfConformanceFinding(
+        'content-stream-unparsable',
+        PdfConformanceSeverity.violation,
+        'The content stream is not valid PDF content: ${scan.failure}.',
+        clause: 'ISO 14289-1:7.1',
+        page: number,
+      ));
+      return;
+    }
+
+    if (scan.paintsOutsideMarkedContent) {
+      findings.add(PdfConformanceFinding(
+        'content-not-tagged',
+        PdfConformanceSeverity.violation,
+        'The page paints outside any marked-content sequence. Content has to '
+            'sit inside a sequence that carries an /MCID, and decoration has '
+            'to be marked /Artifact; anything else is unreachable from the '
+            'structure tree and unexplained.',
+        clause: 'ISO 14289-1:7.1',
+        page: number,
+      ));
+    } else if (scan.paintsInUnidentifiedMarkedContent) {
+      findings.add(PdfConformanceFinding(
+        'marked-content-without-mcid',
+        PdfConformanceSeverity.violation,
+        'The page paints inside a marked-content sequence that is neither an '
+            'artifact nor carries an /MCID, so the marks belong to no '
+            'structure element.',
+        clause: 'ISO 14289-1:7.1',
+        page: number,
+      ));
+    }
+    if (scan.unbalancedMarkedContent) {
+      findings.add(PdfConformanceFinding(
+        'unbalanced-marked-content',
+        PdfConformanceSeverity.violation,
+        'The page does not pair its BDC/BMC operators with EMC, so where one '
+            'sequence ends and the next begins is undefined.',
+        clause: 'ISO 14289-1:7.1',
+        page: number,
+      ));
+    }
+  }
+
+  static Future<void> _checkPageAnnotations(
+    PdfPage page,
+    int number,
+    FindingSink findings,
+  ) async {
+    final annotations =
+        await page.pdfRepresentation().arrayEntry(PdfName.annots);
+    if (annotations == null || annotations.size() == 0) return;
+
+    // A page with annotations has a tab order, and a screen reader follows it.
+    // Leaving it unset makes the order whatever the reader decides.
+    final tabs = await page.pdfRepresentation().nameEntry(PdfName('Tabs'));
+    if (tabs?.getValue() != 'S') {
+      findings.add(PdfConformanceFinding(
+        'page-without-structure-tab-order',
+        PdfConformanceSeverity.violation,
+        'The page carries annotations but does not set /Tabs /S, so the order '
+            'a reader tabs through them in is not the order of the structure '
+            'tree.',
+        clause: 'ISO 14289-1:7.18.3',
+        page: number,
+      ));
+    }
+
+    for (var i = 0; i < annotations.size(); i++) {
+      final annotation = await annotations.dictionaryEntry(i);
+      if (annotation == null) continue;
+      final subtype = (await annotation.nameEntry(PdfName.subtype))?.getValue();
+      if (subtype == 'Popup') continue;
+
+      final contents = await annotation.stringEntry(PdfName('Contents'));
+      if (subtype == 'Link' && (contents?.getValue().trim().isEmpty ?? true)) {
+        findings.add(PdfConformanceFinding(
+          'link-without-description',
+          PdfConformanceSeverity.violation,
+          'A /Link annotation has no /Contents, so a screen reader announces '
+              'a destination with no name.',
+          clause: 'ISO 14289-1:7.18.5',
+          page: number,
+        ));
+      }
+      if (!annotation.containsKey(PdfName('StructParent'))) {
+        findings.add(PdfConformanceFinding(
+          'annotation-without-structparent',
+          PdfConformanceSeverity.violation,
+          'A /$subtype annotation has no /StructParent, so it is outside the '
+              'structure tree.',
+          clause: 'ISO 14289-1:7.18.1',
+          page: number,
+        ));
       }
     }
   }

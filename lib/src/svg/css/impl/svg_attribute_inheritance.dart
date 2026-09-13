@@ -23,6 +23,13 @@ class SvgAttributeInheritance implements StyleInheritance {
     SvgAttributes.STROKE_WIDTH,
     SvgAttributes.TEXT_ANCHOR,
     SvgAttributes.CLIP_RULE,
+    // SVG 1.1 §10.12 descreve `text-decoration` como propagada ao conteúdo
+    // do elemento de texto; propagar por herança dá o mesmo resultado no
+    // subconjunto suportado e evita um segundo mecanismo só para ela.
+    SvgAttributes.TEXT_DECORATION,
+    // `xml:space` é herdado pela própria definição de XML, e o tratamento de
+    // espaços da SVG 1.1 §10.15 precisa dele já resolvido em cada folha.
+    SvgAttributes.XML_SPACE,
   };
 
   @override

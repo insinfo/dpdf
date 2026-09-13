@@ -29,7 +29,13 @@ import 'signature_util.dart';
 import 'pdf_pkcs7.dart';
 import 'digest_algorithms.dart';
 import '../forms/pdf_acro_form.dart';
+import '../forms/pdf_sig_field_lock.dart';
 import '../forms/fields/pdf_form_creator.dart';
+import '../kernel/pdf/pdf_array.dart';
+import '../kernel/pdf/pdf_object.dart';
+import 'access_permissions.dart';
+import 'pdf_signature_reference.dart';
+import 'signature_modification_analyzer.dart';
 
 import '../forms/fields/pdf_signature_form_field.dart';
 import 'simple_signature_appearance.dart';
@@ -206,7 +212,9 @@ class PdfSigner {
     dic.setLocation(_signerProperties.getLocation());
     dic.setSignatureCreator(_signerProperties.getSignatureCreator());
     dic.setContact(_signerProperties.getContact());
-    dic.setDate(PdfString(PdfDate(DateTime.now()).getValue()));
+    // Table 252: /M is the claimed time of signing.
+    dic.setDate(PdfString(
+        PdfDate(_signerProperties.getClaimedSignDate()).getValue()));
 
     container.modifySigningDictionary(dic.pdfRepresentation());
 
@@ -243,6 +251,8 @@ class PdfSigner {
   /// @param externalSignature the external signature implementation
   /// @param chain the certificate chain (as list of DER-encoded certificates)
   /// @param estimatedSize the estimated size of the signature
+  /// @param subFilter the /SubFilter of table 252; one of adbe.pkcs7.detached,
+  ///        adbe.pkcs7.sha1 or ETSI.CAdES.detached
   Future<void> signDetached(
     ExternalSignature externalSignature,
     List<Uint8List> chain, {
@@ -251,6 +261,7 @@ class PdfSigner {
     TSAClient? tsaClient,
     int estimatedSize = 8192,
     ExternalDigest? externalDigest,
+    PdfName? subFilter,
   }) async {
     _checkClosed();
     await _document!.load();
@@ -268,10 +279,20 @@ class PdfSigner {
     }
 
     final hashAlgorithm = externalSignature.getDigestAlgorithmName();
+    final selectedSubFilter = subFilter ?? PdfName.adbePkcs7Detached;
+    if (selectedSubFilter != PdfName.adbePkcs7Detached &&
+        selectedSubFilter != PdfName.adbePkcs7Sha1 &&
+        selectedSubFilter != PdfName.etsiCadesDetached) {
+      throw PdfException(
+          'Unsupported signature /SubFilter ${selectedSubFilter.getValue()}');
+    }
+    // 12.8.3.3: adbe.pkcs7.sha1 encapsulates the SHA1 digest of the byte range
+    // in the SignedData, the detached subfilters encapsulate nothing.
+    final hasEncapContent = selectedSubFilter == PdfName.adbePkcs7Sha1;
 
     // Create Signature Dictionary
     final dic = PdfSignature.withFilter(
-        PdfName.intern('Adobe.PPKLite'), PdfName.adbePkcs7Detached);
+        PdfName.intern('Adobe.PPKLite'), selectedSubFilter);
 
     // Fixed: Removed unnecessary null checks
     dic.setReason(_signerProperties.getReason());
@@ -279,7 +300,9 @@ class PdfSigner {
     dic.setSignatureCreator(_signerProperties.getSignatureCreator());
     dic.setContact(_signerProperties.getContact());
 
-    dic.setDate(PdfString(PdfDate(DateTime.now()).getValue()));
+    // Table 252: /M is the claimed time of signing.
+    dic.setDate(PdfString(
+        PdfDate(_signerProperties.getClaimedSignDate()).getValue()));
 
     _cryptoDictionary = dic;
 
@@ -294,16 +317,28 @@ class PdfSigner {
     // Create PKCS7
     final sgn = PdfPKCS7.forSigning(
         null, chain, hashAlgorithm, externalDigest ?? _DefaultDigest(),
-        hasEncapContent: false);
+        hasEncapContent: hasEncapContent, filterSubtype: selectedSubFilter);
+    sgn.setSignDate(_signerProperties.getClaimedSignDate());
 
     // Get data to sign (the document with hole)
     final data = await _getRangeStream();
 
     // Calculate digest
-    final messageDigest = DigestAlgorithms.getMessageDigest(hashAlgorithm);
-    // data is Uint8List
-    messageDigest.update(data);
-    final hash = messageDigest.digest();
+    Uint8List? encapsulatedContent;
+    final Uint8List hash;
+    if (hasEncapContent) {
+      // The SHA1 digest of the byte range is the encapsulated content and the
+      // digest of that content is the one the signed attributes carry.
+      encapsulatedContent = DigestAlgorithms.digestBytes(data, 'SHA1');
+      final messageDigest = DigestAlgorithms.getMessageDigest(hashAlgorithm);
+      messageDigest.update(encapsulatedContent);
+      hash = messageDigest.digest();
+    } else {
+      final messageDigest = DigestAlgorithms.getMessageDigest(hashAlgorithm);
+      // data is Uint8List
+      messageDigest.update(data);
+      hash = messageDigest.digest();
+    }
 
     // Authenticated attributes
     final sh = sgn.buildAuthenticatedAttributes(hash);
@@ -311,8 +346,8 @@ class PdfSigner {
     // Sign
     final extSignature = await externalSignature.sign(sh);
 
-    sgn.setExternalSignatureValue(
-        extSignature, null, externalSignature.getSignatureAlgorithmName());
+    sgn.setExternalSignatureValue(extSignature, encapsulatedContent,
+        externalSignature.getSignatureAlgorithmName());
 
     // Get Final PKCS7
     // Get Final PKCS7
@@ -393,10 +428,21 @@ class PdfSigner {
 
     _cryptoDictionary!.pdfRepresentation().attachToDocument(_document!);
 
+    // Table 252: /Changes records what happened since the previous signature.
+    await _recordChanges();
+
+    PdfSigFieldLock? fieldLock = _signerProperties.getFieldLockDict();
+
     if (fieldExist) {
       // Populate existing field (Simplified)
       final field = await _acroForm!.getField(name);
       if (field != null) {
+        // 12.8.2.4: when the field already carries a lock dictionary its
+        // /Action and /Fields drive the FieldMDP transform of this signature.
+        fieldLock ??= await _readExistingFieldLock(field.pdfRepresentation());
+        if (_signerProperties.getFieldLockDict() != null) {
+          _attachFieldLock(field.pdfRepresentation(), fieldLock);
+        }
         field.put(PdfName.v, _cryptoDictionary!.pdfRepresentation());
         field.markChanged();
       }
@@ -427,6 +473,9 @@ class PdfSigner {
       // Flag
       sigField.put(PdfName.f, PdfNumber(4)); // Print
 
+      // Table 233: the signature field lock dictionary.
+      _attachFieldLock(sigField, fieldLock);
+
       // Create Wrapper
       final fieldWrapper = PdfSignatureFormField(sigField);
       fieldWrapper.pdfRepresentation().attachToDocument(_document!);
@@ -445,6 +494,9 @@ class PdfSigner {
       page.pdfRepresentation().put(PdfName.tabs, PdfName.s);
       page.pdfRepresentation().markChanged();
     }
+
+    // 12.8.2: transform methods that guide the modification analysis.
+    await _applyTransformMethods(fieldLock);
 
     // Set Up Exclusions (Placeholders)
     final byteRangePlaceholder = Uint8List(100);
@@ -465,6 +517,108 @@ class PdfSigner {
 
     // Write the document
     await _document!.close();
+  }
+
+  /// Reads the `/Lock` entry of an existing signature field, ISO 32000-1
+  /// table 233, and adopts it as the field lock of this signing operation.
+  Future<PdfSigFieldLock?> _readExistingFieldLock(PdfDictionary field) async {
+    final lock = await field.dictionaryEntry(PdfName.lock);
+    return lock == null ? null : PdfSigFieldLock.fromDictionary(lock);
+  }
+
+  /// Writes the `/Lock` entry of a signature field.
+  void _attachFieldLock(PdfDictionary field, PdfSigFieldLock? fieldLock) {
+    if (fieldLock == null) return;
+    final lockDictionary = fieldLock.pdfRepresentation();
+    lockDictionary.attachToDocument(_document!);
+    final handle = lockDictionary.indirectHandle();
+    field.put(PdfName.lock, handle ?? lockDictionary);
+  }
+
+  /// Adds the `/Reference` array of table 252 for the transform methods this
+  /// signature declares, and the `/Perms` entry a certification signature
+  /// needs (12.8.4).
+  Future<void> _applyTransformMethods(PdfSigFieldLock? fieldLock) async {
+    final catalog = _document!.rootCatalog();
+    final PdfObject? data = catalog.pdfRepresentation().indirectHandle();
+    final references = PdfArray();
+
+    final level = _signerProperties.getCertificationLevel();
+    if (level != AccessPermissions.unspecified) {
+      references.add(
+          PdfSignatureReference.docMdp(level, data: data).pdfRepresentation());
+    }
+
+    if (fieldLock != null) {
+      final action = await fieldLock.getFieldLockAction();
+      if (action != null) {
+        references.add(PdfSignatureReference.fieldMdp(action,
+                fields: await fieldLock.getFieldLockFields(), data: data)
+            .pdfRepresentation());
+      }
+    }
+
+    if (references.size() == 0) return;
+    _cryptoDictionary!.put(PdfName.reference, references);
+
+    if (level == AccessPermissions.unspecified) return;
+    final signatureHandle =
+        _cryptoDictionary!.pdfRepresentation().indirectHandle();
+    if (signatureHandle == null) return;
+    final existing =
+        await catalog.pdfRepresentation().dictionaryEntry(PdfName.perms);
+    final permissions = existing ?? PdfDictionary();
+    permissions.put(PdfName.docMDP, signatureHandle);
+    permissions.markChanged();
+    if (existing == null) {
+      catalog.put(PdfName.perms, permissions);
+    }
+    catalog.pdfRepresentation().markChanged();
+  }
+
+  /// Fills the optional `/Changes` array of table 252 with the number of pages
+  /// altered, fields altered and fields filled in since the previous signature.
+  ///
+  /// The computation compares the revision covered by the latest existing
+  /// signature with the document as it was loaded; it is skipped silently when
+  /// the document carries no signature yet or cannot be compared.
+  Future<void> _recordChanges() async {
+    try {
+      final source = _document!.inputReader()?.getOriginalBytes();
+      if (source == null) return;
+      final util = SignatureUtil(_document!);
+      final names = await util.getSignatureNames();
+      if (names.isEmpty) return;
+      Uint8List? latest;
+      for (final signature in names) {
+        final revision = await util.extractRevisionDocument(signature);
+        if (revision == null) continue;
+        if (latest == null || revision.length > latest.length) {
+          latest = revision;
+        }
+      }
+      if (latest == null || latest.length > source.length) return;
+      // When the previous signature already covers the whole loaded file,
+      // nothing was added between it and this one, and the three counts of
+      // table 252 are all zero. That is a real answer, not a reason to leave
+      // the entry out: a verifier reading /Changes is entitled to be told
+      // that the document did not move.
+      final List<int> counts;
+      if (latest.length == source.length) {
+        counts = const <int>[0, 0, 0];
+      } else {
+        counts =
+            (await SignatureModificationAnalyzer.compare(latest, source))
+                .toChangesArray();
+      }
+      final changes = PdfArray();
+      for (final value in counts) {
+        changes.add(PdfNumber.fromInt(value));
+      }
+      _cryptoDictionary!.put(SignatureReferenceNames.changes, changes);
+    } catch (_) {
+      // /Changes is optional; an unreadable earlier revision is not fatal.
+    }
   }
 
   Future<void> _close(PdfDictionary dic) async {

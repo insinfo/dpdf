@@ -7,7 +7,8 @@ import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 
-/// Standard security handler using Standard 128 algorithm (RC4).
+/// The revision 3 and 4 standard security handler, using RC4 with a key whose
+/// length comes from the `/Length` entry (ISO 32000-1:2008, 7.6.3).
 class StandardHandlerUsingStandard128 extends StandardHandlerUsingStandard40 {
   StandardHandlerUsingStandard128(
       super.encryptionDictionary,
@@ -16,11 +17,18 @@ class StandardHandlerUsingStandard128 extends StandardHandlerUsingStandard40 {
       super.permissions,
       super.encryptMetadata,
       super.embeddedFilesOnly,
-      super.documentId);
+      super.documentId,
+      {super.keyLength = 128});
 
   StandardHandlerUsingStandard128.read(super.encryptionDictionary,
-      super.password, super.documentId, super.encryptMetadata)
+      super.password, super.documentId, super.encryptMetadata,
+      {super.keyLength = 128})
       : super.read();
+
+  /// "Algorithm 6", step (b): revisions 3 and greater compare the first 16
+  /// bytes only, because "Algorithm 5" appends 16 bytes of arbitrary padding.
+  @override
+  int get userKeyComparisonLength => 16;
 
   @override
   void calculatePermissions(int permissions) {
@@ -29,17 +37,13 @@ class StandardHandlerUsingStandard128 extends StandardHandlerUsingStandard40 {
     this.permissions = permissions;
   }
 
+  /// "Algorithm 3", with the 50 extra MD5 rounds of step (c) and the 20 RC4
+  /// invocations of step (g).
   @override
   Uint8List computeOwnerKey(Uint8List userPad, Uint8List ownerPad) {
     final ownerKey = Uint8List(32);
-    Uint8List digest = md5.digestWithInput(ownerPad);
     final mkeyLen = keyLength ~/ 8;
-
-    for (int k = 0; k < 50; ++k) {
-      md5.reset();
-      md5.update(digest, 0, mkeyLen);
-      digest = md5.digest();
-    }
+    final digest = computeOwnerPasswordKey(ownerPad);
 
     ownerKey.setRange(0, 32, userPad);
     final mkeyForArcfour = Uint8List(mkeyLen);
@@ -53,6 +57,37 @@ class StandardHandlerUsingStandard128 extends StandardHandlerUsingStandard40 {
     return ownerKey;
   }
 
+  /// Steps (a) to (d) of "Algorithm 3" for revisions 3 and greater.
+  @override
+  Uint8List computeOwnerPasswordKey(Uint8List ownerPad) {
+    final mkeyLen = keyLength ~/ 8;
+    Uint8List digest = md5.digestWithInput(ownerPad);
+    for (int k = 0; k < 50; ++k) {
+      md5.reset();
+      md5.update(digest, 0, mkeyLen);
+      digest = md5.digest();
+    }
+    return Uint8List.fromList(digest.sublist(0, mkeyLen));
+  }
+
+  /// Step (b) of "Algorithm 7" for revisions 3 and greater: 20 RC4 passes with
+  /// the key XORed against the iteration counter, from 19 down to 0.
+  @override
+  Uint8List recoverUserPasswordPad(Uint8List oValue, Uint8List key) {
+    final recovered = Uint8List(32);
+    recovered.setRange(0, 32, oValue);
+    final iterationKey = Uint8List(key.length);
+    for (int i = 19; i >= 0; --i) {
+      for (int j = 0; j < key.length; ++j) {
+        iterationKey[j] = (key[j] ^ i) & 0xFF;
+      }
+      arcfour.prepareARCFOURKey(iterationKey);
+      arcfour.encryptARCFOURInPlace(recovered);
+    }
+    return recovered;
+  }
+
+  /// "Algorithm 2" with the 50 rehash rounds of step (h).
   @override
   void computeGlobalEncryptionKey(
       Uint8List userPad, Uint8List ownerKey, bool encryptMetadata) {
@@ -86,6 +121,8 @@ class StandardHandlerUsingStandard128 extends StandardHandlerUsingStandard40 {
     mkey.setRange(0, mkeyLen, digest);
   }
 
+  /// "Algorithm 5: Computing the encryption dictionary's U (user password)
+  /// value (Security handlers of revision 3 or greater)".
   @override
   Uint8List computeUserKey() {
     final userKey = Uint8List(32);
@@ -96,7 +133,7 @@ class StandardHandlerUsingStandard128 extends StandardHandlerUsingStandard40 {
     }
     final digest = md5.digest();
     userKey.setRange(0, 16, digest);
-    // bytes 16-31 are zeroes (already initialized in Uint8List)
+    // Step (f): the last 16 bytes are arbitrary padding, left as zeroes.
 
     final mkeyLen = keyLength ~/ 8;
     final tempDigest = Uint8List(mkeyLen);
@@ -117,12 +154,14 @@ class StandardHandlerUsingStandard128 extends StandardHandlerUsingStandard40 {
       encryptionDictionary.put(PdfName.r, PdfNumber.fromInt(3));
       encryptionDictionary.put(PdfName.v, PdfNumber.fromInt(2));
     } else {
+      // Table 21: /EncryptMetadata is meaningful only when /V is 4, so keeping
+      // the metadata in plaintext forces the crypt filter form.
       encryptionDictionary.put(PdfName.encryptMetadata, PdfBoolean.pdfFalse);
       encryptionDictionary.put(PdfName.r, PdfNumber.fromInt(4));
       encryptionDictionary.put(PdfName.v, PdfNumber.fromInt(4));
 
       final stdcf = PdfDictionary();
-      stdcf.put(PdfName.length, PdfNumber.fromInt(16));
+      stdcf.put(PdfName.length, PdfNumber.fromInt(keyLength ~/ 8));
       if (embeddedFilesOnly) {
         stdcf.put(PdfName.authEvent, PdfName.efOpen);
         encryptionDictionary.put(PdfName.eff, PdfName.stdCF);

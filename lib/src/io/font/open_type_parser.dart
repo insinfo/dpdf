@@ -3,6 +3,7 @@ import '../../platform/io.dart';
 import 'package:dpdf/src/io/source/random_access_file_or_array.dart';
 import 'package:dpdf/src/io/font/font_names.dart';
 import 'package:dpdf/src/commons/utils/tuple2.dart';
+import 'package:dpdf/src/io/font/base_encodings.dart';
 import 'package:dpdf/src/io/font/true_type_font_subsetter.dart';
 
 class HeaderTable {
@@ -74,6 +75,18 @@ class CmapTable {
   Map<int, List<int>>? cmap30;
   Map<int, List<int>>? cmap31;
   Map<int, List<int>>? cmap310;
+
+  /// The (1, 0) subtable exactly as the font stores it. Unlike [cmap10] it
+  /// is never stood in for by another subtable, because ISO 32000-1:2008,
+  /// 9.6.6.4 distinguishes the two: a glyph name reaches a (1, 0) subtable
+  /// through Mac OS Roman, while a symbolic code reaches (3, 0) directly.
+  Map<int, List<int>>? macRoman;
+
+  /// The (3, 0) subtable with its character codes unaltered, so that the
+  /// four code ranges 9.6.6.4 allows -- 0x0000, 0xF000, 0xF100 and 0xF200
+  /// -- stay distinguishable.
+  Map<int, List<int>>? symbolic;
+
   bool fontSpecific = false;
 }
 
@@ -282,6 +295,76 @@ class OpenTypeParser {
     os_2 = value;
   }
 
+  /// The glyph names the "post" table spells out, indexed by glyph.
+  ///
+  /// ISO 32000-1:2008, 9.6.6.4 ends its TrueType lookup here: when a glyph
+  /// name reaches no "cmap" subtable, "the glyph name shall be looked up in
+  /// the font program's post table (if one is present)". Versions 1.0 and
+  /// 2.0 carry names; version 3.0 declares that it has none, and the
+  /// deprecated 2.5 only permutes the standard ordering, so neither yields
+  /// a name here. Returns an empty list when the font offers no names.
+  List<String> readPostGlyphNames() {
+    final cached = _postGlyphNames;
+    if (cached != null) return cached;
+    return _postGlyphNames = List<String>.unmodifiable(_parsePostNames());
+  }
+
+  /// The glyph a name reaches through the "post" table, or null.
+  int? postGlyphIndex(String glyphName) {
+    final index = _postNameToGlyph ??= () {
+      final names = readPostGlyphNames();
+      return <String, int>{
+        for (var glyph = names.length - 1; glyph >= 0; glyph--)
+          names[glyph]: glyph,
+      };
+    }();
+    return index[glyphName];
+  }
+
+  List<String>? _postGlyphNames;
+  Map<String, int>? _postNameToGlyph;
+
+  List<String> _parsePostNames() {
+    final span = tables['post'];
+    if (span == null || span[1] < 32) return const [];
+    if (span[0] < 0 || span[0] > raf.length() - span[1]) {
+      throw FormatException('The "post" table span is outside the font data.');
+    }
+    final raw =
+        Uint8List.sublistView(raf.getBytes(), span[0], span[0] + span[1]);
+    final fields = ByteData.sublistView(raw);
+    final version = fields.getUint32(0);
+    if (version == 0x00010000) return BaseEncodings.macGlyphOrder;
+    if (version != 0x00020000) return const [];
+    if (raw.length < 34) {
+      throw FormatException('The "post" table has no glyph name index.');
+    }
+    final count = fields.getUint16(32);
+    if (raw.length < 34 + count * 2) {
+      throw FormatException('The "post" glyph name index is truncated.');
+    }
+    // Names above the standard ordering are Pascal strings, stored in the
+    // order the indices first refer to them rather than by glyph.
+    final custom = <String>[];
+    var cursor = 34 + count * 2;
+    while (cursor < raw.length) {
+      final length = raw[cursor];
+      if (cursor + 1 + length > raw.length) break;
+      custom.add(String.fromCharCodes(raw, cursor + 1, cursor + 1 + length));
+      cursor += 1 + length;
+    }
+    final standard = BaseEncodings.macGlyphOrder;
+    return [
+      for (var glyph = 0; glyph < count; glyph++)
+        switch (fields.getUint16(34 + glyph * 2)) {
+          final index when index < standard.length => standard[index],
+          final index when index - standard.length < custom.length =>
+            custom[index - standard.length],
+          _ => '',
+        }
+    ];
+  }
+
   void readPostTable() {
     List<int>? tableLocation = tables["post"];
     post = PostTable();
@@ -441,6 +524,7 @@ class OpenTypeParser {
       } else if (format == 6) {
         cmaps.cmap10 = readFormat6();
       }
+      cmaps.macRoman = cmaps.cmap10;
     }
     if (map30 > 0) {
       raf.seek(tableLocation[0] + map30);
@@ -448,6 +532,8 @@ class OpenTypeParser {
       if (format == 4) {
         cmaps.cmap30 = readFormat4(cmaps.fontSpecific);
         cmaps.cmap10 = cmaps.cmap30;
+        raf.seek(tableLocation[0] + map30 + 2);
+        cmaps.symbolic = readFormat4(false);
       } else {
         cmaps.fontSpecific = false;
       }

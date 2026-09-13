@@ -77,9 +77,9 @@ abstract class PdfColorSpace extends PdfObjectWrapper<PdfObject> {
     } else if (pdfObject is PdfArray) {
       PdfName? csType = await pdfObject.nameEntry(0);
       if (PdfName.calGray == csType) {
-        return PdfCieBasedCsCalGray(pdfObject);
+        return await PdfCieBasedCsCalGray.parseArray(pdfObject);
       } else if (PdfName.calRgb == csType) {
-        return PdfCieBasedCsCalRgb(pdfObject);
+        return await PdfCieBasedCsCalRgb.parseArray(pdfObject);
       } else if (PdfName.lab == csType) {
         return await PdfCieBasedCsLab.parseArray(pdfObject);
       } else if (PdfName.iccBased == csType) {

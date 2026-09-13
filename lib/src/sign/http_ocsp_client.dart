@@ -9,12 +9,71 @@ import 'certificate_util.dart';
 import 'ocsp_client.dart';
 import 'certificate_details.dart';
 
+/// `OCSPResponseStatus` of RFC 6960 section 4.2.1.
+enum OcspResponseStatus {
+  /// Response has valid confirmations.
+  successful(0),
+
+  /// Illegal confirmation request.
+  malformedRequest(1),
+
+  /// Internal error in issuer.
+  internalError(2),
+
+  /// Try again later.
+  tryLater(3),
+
+  /// Must sign the request.
+  sigRequired(5),
+
+  /// Request unauthorized.
+  unauthorized(6);
+
+  const OcspResponseStatus(this.value);
+
+  /// The ENUMERATED value carried on the wire.
+  final int value;
+
+  /// The status for [value], or null when the responder used the unassigned
+  /// value 4 or a value outside the enumeration.
+  static OcspResponseStatus? fromValue(int value) {
+    for (final status in OcspResponseStatus.values) {
+      if (status.value == value) return status;
+    }
+    return null;
+  }
+}
+
+/// A responder answered with something other than `successful`.
+class OcspResponseStatusException implements Exception {
+  /// The decoded status, or null when the responder used a reserved value.
+  final OcspResponseStatus? status;
+
+  /// The raw ENUMERATED value.
+  final int value;
+
+  OcspResponseStatusException(this.status, this.value);
+
+  @override
+  String toString() =>
+      'OCSP responder returned ${status?.name ?? 'unknown status'} ($value)';
+}
+
 /// OcspClient implementation using the local DER model and Dart HTTP client.
 class HttpOcspClient implements OcspClient {
   static final _logger = LogManager.getLoggerByName('HttpOcspClient');
 
+  /// `id-pkix-ocsp-basic`, the only response type defined by RFC 6960.
+  static const String basicResponseOid = '1.3.6.1.5.5.7.48.1.1';
+
+  OcspResponseStatus? _lastStatus;
+
   /// Creates an HttpOcspClient instance.
   HttpOcspClient();
+
+  /// The `responseStatus` of the last response that was parsed, or null when
+  /// no response arrived or its status could not be decoded.
+  OcspResponseStatus? getLastResponseStatus() => _lastStatus;
 
   @override
   Future<Uint8List?> getEncoded(CertificateDetails checkCert,
@@ -22,14 +81,77 @@ class HttpOcspClient implements OcspClient {
     try {
       final basicResponse = await _getBasicOCSPResp(checkCert, rootCert, url);
       if (basicResponse != null) {
-        // TODO: Validate response status
-        // For now return proper encoded response
         return basicResponse.encodedBytes;
       }
     } catch (e) {
       _logger.logError(e.toString());
     }
     return null;
+  }
+
+  /// Reads the `responseStatus` of an OCSPResponse, RFC 6960 section 4.2.1.
+  ///
+  /// Throws [FormatException] when the first element is not an ENUMERATED
+  /// holding a value the syntax allows.
+  static int readResponseStatusValue(ASN1Sequence response) {
+    final elements = response.elements;
+    if (elements == null || elements.isEmpty) {
+      throw const FormatException('OCSPResponse has no responseStatus');
+    }
+    final status = elements.first;
+    if (status is! ASN1Enumerated || status.integer == null) {
+      throw const FormatException(
+          'OCSPResponse responseStatus is not an ENUMERATED');
+    }
+    final value = status.integer!;
+    if (value < BigInt.zero || value > BigInt.from(255)) {
+      throw const FormatException('OCSPResponse responseStatus out of range');
+    }
+    return value.toInt();
+  }
+
+  /// Extracts the BasicOCSPResponse out of an OCSPResponse.
+  ///
+  /// RFC 6960 section 4.2.1 only permits `responseBytes` when `responseStatus`
+  /// is `successful`, so the status is checked first and any other value is
+  /// reported as an [OcspResponseStatusException] instead of being mistaken
+  /// for a usable response.
+  static ASN1Object parseBasicResponse(Uint8List encodedResponse) {
+    final root = ASN1Parser(encodedResponse).nextObject();
+    if (root is! ASN1Sequence || root is ASN1Set) {
+      throw const FormatException('OCSPResponse is not a SEQUENCE');
+    }
+    final statusValue = readResponseStatusValue(root);
+    final status = OcspResponseStatus.fromValue(statusValue);
+    if (status != OcspResponseStatus.successful) {
+      throw OcspResponseStatusException(status, statusValue);
+    }
+    final elements = root.elements!;
+    if (elements.length != 2) {
+      throw const FormatException(
+          'Successful OCSPResponse carries no responseBytes');
+    }
+    final wrapper = elements[1];
+    if (wrapper is! ASN1Sequence ||
+        wrapper.tag != 0xa0 ||
+        wrapper.elements!.length != 1) {
+      throw const FormatException('Malformed OCSPResponse responseBytes');
+    }
+    final responseBytes = wrapper.elements!.first;
+    if (responseBytes is! ASN1Sequence || responseBytes.elements!.length != 2) {
+      throw const FormatException('Malformed OCSP ResponseBytes');
+    }
+    final type = responseBytes.elements![0],
+        response = responseBytes.elements![1];
+    if (type is! ASN1ObjectIdentifier ||
+        type.objectIdentifierAsString != basicResponseOid) {
+      throw const FormatException('Unsupported OCSP responseType');
+    }
+    if (response is! ASN1OctetString) {
+      throw const FormatException('OCSP response is not an OCTET STRING');
+    }
+    // Transport extraction only: callers must validate the signed response.
+    return ASN1Parser(response.octets).nextObject();
   }
 
   /// Gets the basic OCSP response.
@@ -42,34 +164,17 @@ class HttpOcspClient implements OcspClient {
     //   responseStatus         OCSPResponseStatus,
     //   responseBytes          [0] EXPLICIT ResponseBytes OPTIONAL }
 
+    _lastStatus = null;
     try {
-      final seq = ASN1Parser(ocspResponse).nextObject() as ASN1Sequence;
-      if (seq.elements!.length != 2) return null;
-      final status = seq.elements![0];
-      if (status is! ASN1Enumerated || status.integer != BigInt.zero) {
-        return null;
-      }
-      final wrapper = seq.elements![1];
-      if (wrapper is! ASN1Sequence ||
-          wrapper.tag != 0xa0 ||
-          wrapper.elements!.length != 1) {
-        return null;
-      }
-      final responseBytes = wrapper.elements!.first;
-      if (responseBytes is! ASN1Sequence ||
-          responseBytes.elements!.length != 2) {
-        return null;
-      }
-      final type = responseBytes.elements![0],
-          response = responseBytes.elements![1];
-      if (type is! ASN1ObjectIdentifier ||
-          type.objectIdentifierAsString != '1.3.6.1.5.5.7.48.1.1' ||
-          response is! ASN1OctetString) {
-        return null;
-      }
-      // Transport extraction only: callers must validate the signed response.
-      return ASN1Parser(response.octets).nextObject();
+      final basic = parseBasicResponse(ocspResponse);
+      _lastStatus = OcspResponseStatus.successful;
+      return basic;
+    } on OcspResponseStatusException catch (e) {
+      _lastStatus = e.status;
+      _logger.logError(e.toString());
+      return null;
     } catch (e) {
+      _logger.logError('Unreadable OCSP response: $e');
       return null;
     }
   }

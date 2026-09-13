@@ -95,3 +95,112 @@ class IccProfile {
   /// Get the number of color components in the profile.
   int getNumComponents() => numComponents;
 }
+
+/// Reads the parts of an ICC profile header a conformance check needs.
+///
+/// [IccProfile.getInstance] throws on the first defect, which is right for a
+/// decoder and wrong for a validator: a validator has to say what is wrong
+/// rather than stop. These helpers describe the header instead.
+class IccProfileHeader {
+  /// Profile size declared by the first four bytes of the header.
+  final int declaredSize;
+
+  /// Actual number of bytes available.
+  final int actualSize;
+
+  /// Device class, e.g. `prtr` for an output device.
+  final String deviceClass;
+
+  /// Data colour space, e.g. `RGB ` or `CMYK`.
+  final String colourSpace;
+
+  /// Major version, from the high byte of the version field.
+  final int majorVersion;
+
+  /// Minor version, from the high nibble of the next byte.
+  final int minorVersion;
+
+  const IccProfileHeader({
+    required this.declaredSize,
+    required this.actualSize,
+    required this.deviceClass,
+    required this.colourSpace,
+    required this.majorVersion,
+    required this.minorVersion,
+  });
+
+  /// Number of colour components the data colour space implies, or null when
+  /// the space is not one ICC defines.
+  int? get numberOfComponents => IccProfile._cstags[colourSpace];
+
+  /// Device classes that describe an output condition, which is what an
+  /// output intent names.
+  static const Set<String> outputDeviceClasses = {'prtr', 'mntr'};
+
+  /// Every device class ICC defines.
+  static const Set<String> knownDeviceClasses = {
+    'scnr',
+    'mntr',
+    'prtr',
+    'link',
+    'spac',
+    'abst',
+    'nmcl',
+  };
+
+  /// Parses the 128 byte header of [data], or returns null when there is no
+  /// header to read.
+  static IccProfileHeader? parse(Uint8List data) {
+    if (data.length < 128) return null;
+    return IccProfileHeader(
+      declaredSize:
+          (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3],
+      actualSize: data.length,
+      deviceClass: String.fromCharCodes(data.sublist(12, 16)),
+      colourSpace: String.fromCharCodes(data.sublist(16, 20)),
+      majorVersion: data[8],
+      minorVersion: (data[9] >> 4) & 0x0F,
+    );
+  }
+
+  /// True when the header carries the `acsp` signature ICC requires at offset
+  /// 36. Without it the bytes are not an ICC profile at all.
+  static bool hasSignature(Uint8List data) =>
+      data.length >= 40 &&
+      data[36] == 0x61 &&
+      data[37] == 0x63 &&
+      data[38] == 0x73 &&
+      data[39] == 0x70;
+
+  /// The defects of this header, in English, one per problem. An empty list
+  /// means the header is sound.
+  List<String> defects() {
+    final problems = <String>[];
+    if (declaredSize < 128) {
+      problems.add('the header declares a profile size of $declaredSize '
+          'bytes, which is smaller than the 128 byte header itself');
+    } else if (declaredSize > actualSize) {
+      problems.add('the header declares $declaredSize bytes but only '
+          '$actualSize are present, so the profile is truncated');
+    }
+    if (!knownDeviceClasses.contains(deviceClass)) {
+      problems.add('the device class "$deviceClass" is not one ICC defines');
+    } else if (!outputDeviceClasses.contains(deviceClass)) {
+      problems.add('the device class is "$deviceClass"; an output intent has '
+          'to name an output condition, so only prtr and mntr fit');
+    }
+    if (numberOfComponents == null) {
+      problems.add('the data colour space "$colourSpace" is not one ICC '
+          'defines');
+    }
+    if (majorVersion < 2 || majorVersion > 5) {
+      problems.add('the profile declares version $majorVersion.$minorVersion, '
+          'which no ICC specification uses');
+    }
+    return problems;
+  }
+
+  @override
+  String toString() => 'IccProfileHeader($deviceClass, $colourSpace, '
+      'v$majorVersion.$minorVersion, $declaredSize bytes)';
+}

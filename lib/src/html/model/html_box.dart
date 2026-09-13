@@ -17,6 +17,9 @@ enum HtmlTextAlign { start, center, end, justify }
 /// Structural roles consumed by the portable table layout pass.
 enum HtmlBoxRole { normal, table, tableRow, tableHeaderCell, tableCell }
 
+/// Lines drawn with the text by `text-decoration` (CSS 2.1 §16.3.1).
+enum HtmlTextDecoration { underline, overline, lineThrough }
+
 class HtmlTextStyle {
   final double fontSize;
 
@@ -26,11 +29,32 @@ class HtmlTextStyle {
   final bool italic;
   final CssColor color;
 
+  /// `line-height` given as a number, which inherits as the factor itself
+  /// rather than as the length it produced (CSS 2.1 §10.8.1).
+  final double? lineHeightFactor;
+
+  /// `line-height` given as a length or a percentage, already computed into
+  /// points; it inherits as that computed length.
+  final double? lineHeightLength;
+
+  /// Decoration lines propagated to the text of this box and its descendants.
+  final Set<HtmlTextDecoration> decoration;
+
   const HtmlTextStyle(this.fontSize,
       {this.fontFamily,
       this.bold = false,
       this.italic = false,
-      this.color = CssColor.black});
+      this.color = CssColor.black,
+      this.lineHeightFactor,
+      this.lineHeightLength,
+      this.decoration = const <HtmlTextDecoration>{}});
+
+  /// Height of the line box this text sits in.
+  ///
+  /// `normal` is 1.35 times the font size, the ratio the flow engine has
+  /// always used for its line boxes.
+  double get lineHeight =>
+      lineHeightLength ?? fontSize * (lineHeightFactor ?? 1.35);
 }
 
 class HtmlBorder {
@@ -50,6 +74,11 @@ class HtmlBoxStyle {
   final String? gridTemplateColumns;
   final double gap;
   final CssLength width;
+
+  /// Explicit content height (CSS 2.1 §10.5). A percentage needs a
+  /// containing block whose height is known, which the flow profile never
+  /// establishes, so only absolute lengths take effect.
+  final CssLength height;
   final CssEdges margin;
   final CssEdges padding;
   final HtmlTextAlign textAlign;
@@ -66,6 +95,7 @@ class HtmlBoxStyle {
     this.gridTemplateColumns,
     this.gap = 0,
     this.width = const CssLength.auto(),
+    this.height = const CssLength.auto(),
     this.margin = const CssEdges.zero(),
     this.padding = const CssEdges.zero(),
     this.textAlign = HtmlTextAlign.start,

@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:dpdf/src/kernel/crypto/securityhandler/pub_key_security_handler.dart';
+
 import 'compression_constants.dart';
 import 'pdf_version.dart';
 import 'encryption_constants.dart';
@@ -40,7 +42,9 @@ class WriterProperties {
   PdfVersion? pdfVersion;
 
   /// The ID entry that represents the initial identifier.
-  // TODO: Add PdfString support when encryption is implemented
+  ///
+  /// The value is the raw first element of the trailer `/ID` array; the
+  /// standard security handler hashes it in "Algorithm 2", step (e).
   String? initialDocumentId;
 
   /// The ID entry that represents a change in a document.
@@ -52,6 +56,11 @@ class WriterProperties {
   int permissions = 0;
   int encryptionAlgorithm = EncryptionConstants.standardEncryption40;
   bool isStandardEncryptionUsed = false;
+
+  /// The recipient groups of a public-key security handler
+  /// (ISO 32000-1:2008, 7.6.4). Each group carries its own permissions.
+  List<PublicKeyRecipientGroup>? publicKeyRecipients;
+  bool isPublicKeyEncryptionUsed = false;
 
   /// Creates default writer properties.
   WriterProperties();
@@ -125,6 +134,24 @@ class WriterProperties {
     this.permissions = permissions;
     this.encryptionAlgorithm = encryptionAlgorithm;
     isStandardEncryptionUsed = true;
+    isPublicKeyEncryptionUsed = false;
+    publicKeyRecipients = null;
+    return this;
+  }
+
+  /// Sets public-key encryption for the created document.
+  ///
+  /// ISO 32000-1:2008, Table 23: "There shall be only one PKCS#7 object per
+  /// unique set of access permissions", so every group in [recipients] becomes
+  /// one entry of the `/Recipients` array.
+  WriterProperties setPublicKeyEncryption(
+      List<PublicKeyRecipientGroup> recipients, int encryptionAlgorithm) {
+    publicKeyRecipients = recipients;
+    this.encryptionAlgorithm = encryptionAlgorithm;
+    isPublicKeyEncryptionUsed = true;
+    isStandardEncryptionUsed = false;
+    userPassword = null;
+    ownerPassword = null;
     return this;
   }
 }

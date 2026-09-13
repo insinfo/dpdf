@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:dpdf/src/io/font/adobe_glyph_list.dart';
+import 'package:dpdf/src/io/font/base_encodings.dart';
 import 'package:dpdf/src/io/font/font_program.dart';
 import 'font_metrics.dart';
 import 'package:dpdf/src/io/font/otf/glyph.dart';
@@ -134,6 +136,55 @@ class TrueTypeFont extends FontProgram {
   bool isCff() {
     return fontParser.cff;
   }
+
+  /// The glyph a symbolic font shows for the single byte [code].
+  ///
+  /// ISO 32000-1:2008, 9.6.6.4: when a font has no `/Encoding` entry or its
+  /// descriptor sets the Symbolic flag, "if the font contains a (3, 0)
+  /// subtable, the range of character codes shall be one of these:
+  /// 0x0000 - 0x00FF, 0xF000 - 0xF0FF, 0xF100 - 0xF1FF, or 0xF200 - 0xF2FF.
+  /// Depending on the range of codes, each byte from the string shall be
+  /// prepended with the high byte of the range". Otherwise the byte reaches
+  /// a (1, 0) subtable unchanged.
+  Glyph? getGlyphBySymbolicCode(int code) {
+    if (code < 0 || code > 0xff) return null;
+    final symbolic = fontParser.cmaps.symbolic;
+    if (symbolic != null) {
+      for (final page in const [0x0000, 0xf000, 0xf100, 0xf200]) {
+        final entry = symbolic[page | code];
+        if (entry != null) return _glyphOf(entry, code);
+      }
+    }
+    final macRoman = fontParser.cmaps.macRoman;
+    final entry = macRoman?[code];
+    return entry == null ? null : _glyphOf(entry, code);
+  }
+
+  /// The glyph this program stores under [glyphName].
+  ///
+  /// ISO 32000-1:2008, 9.6.6.4 reaches a TrueType glyph from a name in
+  /// three steps, each tried in turn: through the Adobe Glyph List and a
+  /// (3, 1) subtable; through the Mac OS Roman encoding of Table 115 and a
+  /// (1, 0) subtable; and finally through the "post" table, which is the
+  /// only one of the three that stores names itself.
+  Glyph? getGlyphByName(String glyphName) {
+    final unicode = AdobeGlyphList.nameToUnicode(glyphName);
+    if (unicode > -1) {
+      final entry = fontParser.cmaps.cmap31?[unicode];
+      if (entry != null) return _glyphOf(entry, unicode);
+    }
+    final macRomanCode = BaseEncodings.macOsRomanCode(glyphName);
+    if (macRomanCode != null) {
+      final entry = fontParser.cmaps.macRoman?[macRomanCode];
+      if (entry != null) return _glyphOf(entry, unicode);
+    }
+    final glyphIndex = fontParser.postGlyphIndex(glyphName);
+    if (glyphIndex == null) return null;
+    return Glyph(glyphIndex, fontParser.getGlyphWidth(glyphIndex), unicode);
+  }
+
+  Glyph _glyphOf(List<int> cmapEntry, int unicode) =>
+      Glyph(cmapEntry[0], cmapEntry[1], unicode);
 
   Uint8List? getFontStreamBytes() {
     if (fontStreamBytes != null) return fontStreamBytes;

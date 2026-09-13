@@ -564,6 +564,42 @@ class SvgAttributes {
 
   /// Attribute defining version.
   static const String VERSION = "version";
+
+  /// Letter spacing added after each rendered character.
+  static const String LETTER_SPACING = "letter-spacing";
+
+  /// Extra spacing added at each space character.
+  static const String WORD_SPACING = "word-spacing";
+
+  /// Decoration lines drawn with the text.
+  static const String TEXT_DECORATION = "text-decoration";
+
+  /// Per-character rotation applied to positioned text.
+  static const String ROTATE = "rotate";
+
+  /// Offset along the referenced path where text rendering starts.
+  static const String START_OFFSET = "startOffset";
+
+  /// Glyph placement algorithm used by textPath.
+  static const String METHOD = "method";
+
+  /// Glyph spacing adjustment used by textPath.
+  static const String SPACING = "spacing";
+
+  /// Feature strings a conditional element requires to be rendered.
+  static const String REQUIRED_FEATURES = "requiredFeatures";
+
+  /// Extension URIs a conditional element requires to be rendered.
+  static const String REQUIRED_EXTENSIONS = "requiredExtensions";
+
+  /// Language tags a conditional element requires to be rendered.
+  static const String SYSTEM_LANGUAGE = "systemLanguage";
+
+  /// Filter reference applied to an element.
+  static const String FILTER = "filter";
+
+  /// Clipping behaviour of an element that establishes a viewport.
+  static const String OVERFLOW = "overflow";
 }
 
 /// Standard values used by SVG attributes and elements.
@@ -671,4 +707,29 @@ class SvgValues {
 
   @deprecated
   static const String VERSION1_1 = "1.1";
+
+  /// Whitespace handling that collapses runs of spaces.
+  static const String XML_SPACE_DEFAULT = "default";
+
+  /// Whitespace handling that keeps every space character.
+  static const String XML_SPACE_PRESERVE = "preserve";
+
+  /// Prefix of every SVG 1.1 feature string.
+  static const String FEATURE_STRING_PREFIX =
+      "http://www.w3.org/TR/SVG11/feature#";
+
+  /// Underline decoration.
+  static const String UNDERLINE = "underline";
+
+  /// Overline decoration.
+  static const String OVERLINE = "overline";
+
+  /// Strike-through decoration.
+  static const String LINE_THROUGH = "line-through";
+
+  /// Viewport clipping kept enabled.
+  static const String HIDDEN = "hidden";
+
+  /// Viewport clipping disabled.
+  static const String VISIBLE = "visible";
 }

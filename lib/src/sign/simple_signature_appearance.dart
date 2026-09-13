@@ -3,17 +3,51 @@ import '../kernel/pdf/xobject/pdf_form_x_object.dart';
 import '../kernel/pdf/canvas/pdf_canvas.dart';
 import '../kernel/font/pdf_font_factory.dart';
 import '../kernel/geom/rectangle.dart';
-import '../kernel/colors/device_gray.dart';
+import 'signature_field_appearance.dart';
 import 'signer_properties.dart';
 
-/// Helper class to generate a simple visual appearance for signatures.
-///  TODO This replaces the heavy dependency on the full Layout module for now.
+/// Builds the `/AP` `/N` form XObject of a visible signature field.
+///
+/// The layout is intentionally minimal: ISO 32000-1 12.7.4.5 leaves the
+/// appearance to the signature handler, so only the values declared by
+/// [SignerProperties.getSignatureAppearance] are painted.
 class SimpleSignatureAppearance {
   final SignerProperties properties;
 
   SimpleSignatureAppearance(this.properties);
 
+  /// The lines that [generate] paints, top to bottom.
+  List<String> composeLines() {
+    final appearance = properties.getSignatureAppearance();
+    if (appearance.getMode() == SignatureAppearanceMode.empty) {
+      return const [];
+    }
+    final lines = <String>[];
+    if (appearance.getMode() == SignatureAppearanceMode.nameAndDescription) {
+      final name = appearance.getSignerName();
+      if (name != null && name.isNotEmpty) {
+        lines.add(name);
+      }
+    }
+    lines.addAll(appearance.getContentLines());
+    if (appearance.isRenderingSignerProperties()) {
+      if (properties.getReason().isNotEmpty) {
+        lines.add('Reason: ${properties.getReason()}');
+      }
+      if (properties.getLocation().isNotEmpty) {
+        lines.add('Location: ${properties.getLocation()}');
+      }
+      if (properties.getContact().isNotEmpty) {
+        lines.add('Contact: ${properties.getContact()}');
+      }
+      lines.add('Date: '
+          '${properties.getClaimedSignDate().toIso8601String().split('T')[0]}');
+    }
+    return lines;
+  }
+
   Future<PdfFormXObject> generate(PdfDocument doc) async {
+    final appearance = properties.getSignatureAppearance();
     final rect = properties.getPageRect();
     // Use the rect dimension for the BBox, but start at 0,0 for the Local Coordinate System
     final width = rect.getWidth();
@@ -26,57 +60,54 @@ class SimpleSignatureAppearance {
     // Create canvas
     final canvas = await PdfCanvas.fromFormXObject(xObj, doc);
 
-    // Draw Background (Light Gray)
-    canvas
-        .saveState()
-        .setFillColor(DeviceGray(0.9))
-        .rectangle(0, 0, width, height)
-        .fill()
-        .restoreState();
+    final background = appearance.getBackgroundColor();
+    if (background != null) {
+      canvas
+          .saveState()
+          .setFillColor(background)
+          .rectangle(0, 0, width, height)
+          .fill()
+          .restoreState();
+    }
 
-    // Draw Border (Dark Gray)
-    canvas
-        .saveState()
-        .setStrokeColor(DeviceGray(0.5))
-        .setLineWidth(1)
-        .rectangle(0.5, 0.5, width - 1, height - 1)
-        .stroke()
-        .restoreState();
+    final borderWidth = appearance.getBorderWidth();
+    if (borderWidth > 0) {
+      final inset = borderWidth / 2;
+      canvas
+          .saveState()
+          .setStrokeColor(appearance.getBorderColor())
+          .setLineWidth(borderWidth)
+          .rectangle(
+              inset, inset, width - borderWidth, height - borderWidth)
+          .stroke()
+          .restoreState();
+    }
 
-    // Prepare Text
+    final lines = composeLines();
+    if (lines.isEmpty) {
+      return xObj;
+    }
+
     final font = PdfFontFactory.createFont('Helvetica');
-    // if (font != null) { // Removed check
-    double fontSize = 10;
-    double leading = 12;
-    double margin = 5;
-    double y = height - margin - fontSize; // Start from top
+    final fontSize = appearance.getFontSize();
+    final leading = fontSize * 1.2;
+    final margin = appearance.getMargin();
+    final y = height - margin - fontSize; // Start from top
 
+    canvas.saveState();
+    canvas.setFillColor(appearance.getTextColor());
     canvas.beginText();
     await canvas.setFontAndSize(font, fontSize);
     canvas.setLeading(leading);
     canvas.moveText(margin, y);
-
-    // Signer Name (Simulation) or Reason/Location
-
-    if (properties.getReason().isNotEmpty) {
-      canvas.showText("Reason: ${properties.getReason()}");
-      canvas.newlineText();
+    for (var index = 0; index < lines.length; index++) {
+      if (index > 0) {
+        canvas.newlineText();
+      }
+      canvas.showText(lines[index]);
     }
-
-    if (properties.getLocation().isNotEmpty) {
-      canvas.showText("Location: ${properties.getLocation()}");
-      canvas.newlineText();
-    }
-
-    if (properties.getContact().isNotEmpty) {
-      canvas.showText("Contact: ${properties.getContact()}");
-      canvas.newlineText();
-    }
-
-    canvas.showText(
-        "Date: ${properties.getClaimedSignDate().toIso8601String().split('T')[0]}");
-
     canvas.endText();
+    canvas.restoreState();
 
     return xObj;
   }

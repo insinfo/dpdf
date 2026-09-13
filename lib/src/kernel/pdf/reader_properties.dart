@@ -1,5 +1,8 @@
 import 'dart:typed_data';
 
+import 'package:dpdf/src/pki/rsa.dart';
+import 'package:dpdf/src/sign/x509_certificate.dart';
+
 /// Optional recovery when the declared cross-reference sections cannot be read.
 enum PdfRecoveryMode { strict, scan, skipStreams }
 
@@ -40,6 +43,15 @@ class ReaderProperties {
   /// The password for encrypted documents.
   Uint8List? password;
 
+  /// The certificate that identifies the reader among the recipients of a
+  /// document encrypted by a public-key security handler
+  /// (ISO 32000-1:2008, 7.6.4).
+  X509Certificate? certificate;
+
+  /// The private key matching [certificate], used to unwrap the content
+  /// encryption key of the PKCS#7 enveloped data.
+  RSAPrivateKey? certificateKey;
+
   /// Maximum memory to use for decompressed streams.
   /// Set to null for no limit (default).
   int? memoryLimit;
@@ -55,6 +67,8 @@ class ReaderProperties {
         fileCacheBlocks = other.fileCacheBlocks,
         password =
             other.password != null ? Uint8List.fromList(other.password!) : null,
+        certificate = other.certificate,
+        certificateKey = other.certificateKey,
         memoryLimit = other.memoryLimit,
         recoveryMode = other.recoveryMode,
         recoveryScanLimit = other.recoveryScanLimit,
@@ -85,13 +99,25 @@ class ReaderProperties {
     return this;
   }
 
-  void _clearEncryptionParams() {
-    password = null;
-    // TODO: Clear certificate params when public key encryption is implemented
+  /// Defines the recipient credentials for documents encrypted with a
+  /// public-key security handler (ISO 32000-1:2008, 7.6.4).
+  ///
+  /// The reader scans the `/Recipients` list for an enveloped data object
+  /// addressed to [certificate] and unwraps the content encryption key with
+  /// [privateKey].
+  ReaderProperties setPublicKeySecurityParams(
+      X509Certificate certificate, RSAPrivateKey privateKey) {
+    _clearEncryptionParams();
+    this.certificate = certificate;
+    certificateKey = privateKey;
+    return this;
   }
 
-  // TODO: Add public key security params when crypto module is implemented
-  // setPublicKeySecurityParams(CertificateDetails certificate, SigningPrivateKey key)
+  void _clearEncryptionParams() {
+    password = null;
+    certificate = null;
+    certificateKey = null;
+  }
 }
 
 /// Handler for memory limits during PDF processing.

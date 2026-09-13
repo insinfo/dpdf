@@ -5,6 +5,13 @@ class OID {
   static const String pkcs7Data = "1.2.840.113549.1.7.1";
   static const String idData = "1.2.840.113549.1.7.1";
   static const String pkcs7SignedData = "1.2.840.113549.1.7.2";
+  static const String pkcs7EnvelopedData = "1.2.840.113549.1.7.3";
+  static const String aes128Cbc = "2.16.840.1.101.3.4.1.2";
+  static const String aes192Cbc = "2.16.840.1.101.3.4.1.22";
+  static const String aes256Cbc = "2.16.840.1.101.3.4.1.42";
+  static const String desEde3Cbc = "1.2.840.113549.3.7";
+  static const String rc2Cbc = "1.2.840.113549.3.2";
+  static const String sha1 = "1.3.14.3.2.26";
   static const String rsa = "1.2.840.113549.1.1.1";
   static const String rsassaPss = "1.2.840.113549.1.1.10";
   static const String rsaWithSha256 = "1.2.840.113549.1.1.11";

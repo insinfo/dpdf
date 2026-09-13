@@ -21,20 +21,27 @@ import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 
 /// Converte SVG em conteúdo PDF.
 ///
-/// Cobre a parte vetorial mais comum do formato: `svg`, `g`, `a`, `path`,
-/// `rect`, `circle`, `ellipse`, `line`, `polyline` e `polygon`, com `fill`,
-/// `stroke`, `stroke-width`, `fill-rule`, `display`, `visibility`, o atributo
-/// `style` inline e interno, herança de atributos, `transform`, `viewBox`,
-/// `preserveAspectRatio`, referências `use` e recortes por `clip-path`.
+/// Cobre a parte vetorial do formato: `svg`, `g`, `a`, `switch`, `defs`,
+/// `symbol`, `use`, `path`, `rect`, `circle`, `ellipse`, `line`, `polyline` e
+/// `polygon`, com `fill`, `stroke`, `stroke-width`, `stroke-dasharray`,
+/// `fill-rule`, `display`, `visibility`, o atributo `style` inline e interno,
+/// herança de atributos, `transform`, `viewBox`, `preserveAspectRatio`,
+/// recortes por `clip-path` e os atributos de processamento condicional
+/// (`requiredFeatures`, `requiredExtensions`, `systemLanguage`).
 ///
-/// Também renderiza texto e `tspan`, imagens embutidas ou resolvidas por um
-/// carregador, gradientes, padrões, máscaras e marcadores. Casos avançados de
-/// servidores de pintura ainda podem exigir simplificação pelo chamador.
+/// O texto cobre `text`, `tspan` e `textPath`, com o tratamento de espaços da
+/// SVG 1.1 §10.15, `text-anchor`, listas de `x`, `y`, `dx`, `dy` e `rotate`,
+/// `letter-spacing`, `word-spacing` e `text-decoration`. Também renderiza
+/// imagens embutidas ou resolvidas por um carregador, gradientes, padrões,
+/// máscaras e marcadores.
 ///
-/// `stroke-dasharray` não é emitido por causa de um defeito no canvas do
-/// kernel, e as opacidades parciais exigem um ExtGState — logo, só saem
-/// quando o canvas pertence a um documento. Ambos os pontos estão anotados
-/// em `renderers/impl/abstract_svg_node_renderer.dart`.
+/// `filter` e `foreignObject` são reconhecidos e nunca pintam: o primeiro
+/// exigiria rasterização, que não tem equivalente no modelo de imagem do PDF,
+/// e o segundo carrega conteúdo de outro vocabulário. Um elemento que
+/// referencia um filtro continua sendo desenhado, só que sem o efeito.
+///
+/// Texto e opacidades parciais exigem recursos de página — uma fonte e um
+/// ExtGState — logo só saem quando o canvas pertence a um documento.
 ///
 /// Uma unidade de usuário do SVG equivale a um pixel CSS, ou seja 0,75 pt.
 /// É por isso que `<rect width="100">` sem `viewBox` mede 75 pt no PDF.

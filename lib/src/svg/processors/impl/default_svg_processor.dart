@@ -20,6 +20,9 @@ class DefaultSvgProcessor {
 
   static final RegExp _cssRule = RegExp(r'([^{}]+)\{([^{}]*)\}');
 
+  static final RegExp _lineBreak = RegExp(r'[\n\r]');
+  static final RegExp _lineBreakOrTab = RegExp(r'[\n\r\t]');
+
   static final List<StyleInheritance> _inheritanceRules = [
     SvgAttributeInheritance(),
     CssInheritance(),
@@ -47,11 +50,11 @@ class DefaultSvgProcessor {
       for (final child in element.nodes) {
         SvgNodeRenderer? childRenderer;
         if (child is dom.Text &&
-            (name == SvgTags.TEXT || name == SvgTags.TSPAN) &&
+            _holdsCharacterData(name) &&
             child.data.isNotEmpty) {
           childRenderer = TextLeafSvgNodeRenderer()
-            ..setAttributesAndStyles(
-                Map<String, String>.from(resolved)..['_text'] = child.data);
+            ..setAttributesAndStyles(Map<String, String>.from(resolved)
+              ..[SvgTextLeafAttributes.text] = child.data);
         } else if (child is dom.Element) {
           childRenderer = _build(child, inheritable, rules);
         }
@@ -60,8 +63,89 @@ class DefaultSvgProcessor {
           renderer.addChild(childRenderer);
         }
       }
+      if (name == SvgTags.TEXT) _normalizeWhitespace(renderer);
     }
     return renderer;
+  }
+
+  static bool _holdsCharacterData(String name) =>
+      name == SvgTags.TEXT ||
+      name == SvgTags.TSPAN ||
+      name == SvgTags.TEXT_PATH;
+
+  /// Aplica o tratamento de espaços em branco da SVG 1.1 §10.15 ao conteúdo
+  /// de um elemento `<text>`.
+  ///
+  /// Com `xml:space="default"` as quebras de linha somem, as tabulações
+  /// viram espaços, os espaços contíguos se fundem num só e os das pontas do
+  /// elemento são descartados. Com `preserve`, quebras e tabulações viram
+  /// espaços e nada mais é removido. A varredura é feita sobre todas as
+  /// folhas do elemento porque a fusão atravessa a fronteira entre elas: em
+  /// `<text>a <tspan> b</tspan></text>` há um único espaço.
+  static void _normalizeWhitespace(BranchSvgNodeRenderer textRenderer) {
+    final leaves = <TextLeafSvgNodeRenderer>[];
+    _collectTextLeaves(textRenderer, leaves);
+    if (leaves.isEmpty) return;
+
+    final texts = <String>[];
+    final preserved = <bool>[];
+    for (final leaf in leaves) {
+      final mode = leaf.getAttribute(SvgAttributes.XML_SPACE)?.trim();
+      final preserve = mode == SvgValues.XML_SPACE_PRESERVE;
+      var text = leaf.getAttribute(SvgTextLeafAttributes.text) ?? '';
+      text = preserve
+          ? text.replaceAll(_lineBreakOrTab, ' ')
+          : text.replaceAll(_lineBreak, '').replaceAll('\t', ' ');
+      texts.add(text);
+      preserved.add(preserve);
+    }
+
+    // Começa como se um espaço já tivesse sido emitido: é isso que descarta
+    // os espaços iniciais do elemento inteiro.
+    var afterSpace = true;
+    for (var index = 0; index < texts.length; index++) {
+      if (preserved[index]) {
+        if (texts[index].isNotEmpty) afterSpace = false;
+        continue;
+      }
+      final buffer = StringBuffer();
+      for (final unit in texts[index].codeUnits) {
+        if (unit == 0x20) {
+          if (afterSpace) continue;
+          afterSpace = true;
+        } else {
+          afterSpace = false;
+        }
+        buffer.writeCharCode(unit);
+      }
+      texts[index] = buffer.toString();
+    }
+
+    for (var index = texts.length - 1; index >= 0; index--) {
+      if (preserved[index]) break;
+      if (texts[index].isEmpty) continue;
+      if (texts[index].endsWith(' ')) {
+        texts[index] = texts[index].substring(0, texts[index].length - 1);
+      }
+      break;
+    }
+
+    for (var index = 0; index < leaves.length; index++) {
+      leaves[index].setAttribute(SvgTextLeafAttributes.text, texts[index]);
+    }
+  }
+
+  static void _collectTextLeaves(
+      SvgNodeRenderer node, List<TextLeafSvgNodeRenderer> leaves) {
+    if (node is TextLeafSvgNodeRenderer) {
+      leaves.add(node);
+      return;
+    }
+    if (node is BranchSvgNodeRenderer) {
+      for (final child in node.getChildren()) {
+        _collectTextLeaves(child, leaves);
+      }
+    }
   }
 
   /// Ordem de precedência: herdado, depois atributo de apresentação, depois

@@ -4,6 +4,7 @@ import 'package:dpdf/src/io/font/true_type_font.dart';
 import 'package:dpdf/src/io/font/type1_font.dart';
 import 'package:dpdf/src/io/font/constants/standard_fonts.dart';
 import 'package:dpdf/src/io/font/font_cache.dart';
+import 'package:dpdf/src/io/font/woff_converter.dart';
 
 class FontProgramFactory {
   static const bool DEFAULT_CACHED = true;
@@ -43,15 +44,9 @@ class FontProgramFactory {
       if (cachedFont != null) return cachedFont;
     }
 
-    // Try TrueType first
-    FontProgram font;
-    try {
-      font = TrueTypeFont.fromBytes(bytes);
-    } catch (e) {
-      // Try Type1?
-      // For now just rethrow or try Type1 if we have a parser that works with bytes.
-      rethrow;
-    }
+    // A WOFF wrapper holds an ordinary sfnt font, so it is unwrapped before
+    // the sfnt reader ever sees it.
+    FontProgram font = TrueTypeFont.fromBytes(WoffConverter.toSfnt(bytes));
 
     if (cached) {
       FontCache.saveFont(font, FontCacheKey(null, bytes));

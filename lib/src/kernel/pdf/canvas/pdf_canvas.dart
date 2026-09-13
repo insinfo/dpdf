@@ -722,6 +722,43 @@ class PdfCanvas {
     return this;
   }
 
+  /// Opens an optional content section, ISO 32000-1, clause 8.11.3.2.
+  ///
+  /// Writes `/OC /name BDC`, where the name is a `/Properties` resource
+  /// pointing at [group] — an optional content group or a membership
+  /// dictionary. Close the section with [endOptionalContent]; content between
+  /// the two is drawn only when the group is ON.
+  Future<PdfCanvas> beginOptionalContent(PdfDictionary group) async {
+    if (resources == null || document == null) {
+      throw StateError('Optional content needs a document-backed canvas.');
+    }
+    // Clause 8.11.3.2: a group is an indirect object and a membership
+    // dictionary refers to indirect objects, so the operand has to reach the
+    // content stream through a named /Properties resource.
+    return beginMarkedContent(PdfName.intern('OC'), group);
+  }
+
+  /// Closes the section opened by [beginOptionalContent].
+  PdfCanvas endOptionalContent() => endMarkedContent();
+
+  /// Writes a `/OC /name DP` marked content point, ISO 32000-1, clause
+  /// 8.11.3.2.
+  ///
+  /// It forces a reference to [group] onto the page even when the page has no
+  /// content in that layer, which is how a reader learns the layer exists.
+  Future<PdfCanvas> markOptionalContentPoint(PdfDictionary group) async {
+    if (resources == null || document == null) {
+      throw StateError('Optional content needs a document-backed canvas.');
+    }
+    final name = await resources!.addProperties(document!, group);
+    contentStream!.getOutputStream()
+      ..writeBytes(ByteUtils.getIsoBytes('/OC'))
+      ..writeBytes(ByteUtils.getIsoBytes(' '))
+      ..writeBytes(ByteUtils.getIsoBytes('/${name.getValue()}'))
+      ..writeBytes(ByteUtils.getIsoBytes(' DP\n'));
+    return this;
+  }
+
   Future<PdfCanvas> addImageAt(ImageData image, double x, double y,
       [bool inline = false]) async {
     return addImageWithTransformationMatrix(image, image.getWidth().toDouble(),

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import '../io/colors/icc_profile.dart';
+import '../kernel/font/unicode_code_map.dart';
 import '../kernel/pdf/pdf_array.dart';
 import '../kernel/pdf/pdf_dictionary.dart';
 import '../kernel/pdf/pdf_document.dart';
@@ -11,19 +13,26 @@ import '../kernel/pdf/pdf_reader.dart';
 import '../kernel/pdf/pdf_stream.dart';
 import '../kernel/pdf/pdf_version.dart';
 import '../kernel/pdf/reader_properties.dart';
+import 'content_stream_scan.dart';
 import 'finding_sink.dart';
 import 'pdf_conformance.dart';
 import 'pdf_conformance_report.dart';
+import 'structure_scan.dart';
 import 'xmp_identification.dart';
 
 /// Checks an existing document against a PDF/A profile.
 ///
 /// The verifier reads; it never rewrites the input. It decides the rules that
-/// can be settled from the document's object graph — metadata, output intents,
-/// font embedding, encryption, forbidden actions and annotations, transparency
-/// and filters. Rules that need a content-stream interpreter or an ICC parser
-/// are listed in [PdfConformanceReport.unverifiedRules] rather than silently
-/// passed.
+/// can be settled from the file itself: metadata and its agreement with the
+/// document information dictionary, the output intent and the ICC profile it
+/// names, font embedding and the metrics and Unicode maps that go with it, the
+/// colour spaces the content streams actually select, encryption, forbidden
+/// actions and annotations, transparency, filters, and — at the accessible
+/// levels — the shape of the structure tree.
+///
+/// What is left is listed in [PdfConformanceReport.unverifiedRules] rather
+/// than silently passed, because a clean report that hid a rule would be worse
+/// than no report at all.
 class PdfAVerifier {
   PdfAVerifier._();
 
@@ -89,10 +98,12 @@ class PdfAVerifier {
       await _checkVersion(document, target, findings);
       await _checkEncryption(document, findings);
       await _checkMetadata(catalog, findings);
-      await _checkOutputIntents(catalog, target, findings);
+      final intentSpace = await _checkOutputIntents(catalog, target, findings);
       await _checkCatalogEntries(catalog, target, findings);
+      await _checkEmbeddedFiles(catalog, target, findings);
+      await _checkXmp(document, claim, target, findings);
       await _checkTagging(catalog, target, findings);
-      await _checkPages(document, target, findings);
+      await _checkPages(document, target, intentSpace, findings);
       await _checkObjects(document, target, findings);
 
       return PdfConformanceReport(
@@ -106,17 +117,27 @@ class PdfAVerifier {
     }
   }
 
+  /// The rules this verifier does not settle, each with the reason it cannot.
+  ///
+  /// Every entry here needs something the object graph does not contain: the
+  /// decoded glyph table of an embedded font program, or a judgement about
+  /// what the page looks like. A rule that can be decided from the file is
+  /// implemented above instead of being listed here.
   static List<String> _unverified(PdfAConformanceLevel level) => [
-        'Content stream operators (colour operators used without a matching '
-            'output intent, text rendering mode 7, unbalanced q/Q).',
-        'ICC profile validity inside /DestOutputProfile.',
-        'Glyph presence: whether every code used on a page exists in the '
-            'embedded font program.',
-        if (level.requiresUnicodeMapping)
-          'Completeness of /ToUnicode coverage for every glyph actually drawn.',
+        // Deciding this means decoding the embedded CFF, TrueType or Type 1
+        // program and mapping each code through the font's encoding to a
+        // glyph — a font rasteriser's job, not a validator's.
+        'Glyph presence: whether every code drawn exists as a glyph in the '
+            'embedded font program. Font embedding, /Widths consistency and '
+            'the presence and coverage of /ToUnicode are checked; the glyph '
+            'table inside the font program is not opened.',
         if (level.requiresTagging)
-          'Semantic correctness of the structure tree (heading nesting, '
-              'table regularity, reading order).',
+          // Reading order is the order a person would read the page in. Only
+          // rendering the page and judging the result can decide it.
+          'Whether the reading order recorded in the structure tree matches '
+              'the order a reader would follow on the rendered page. The '
+              'shape of the tree — heading nesting, table geometry, list '
+              'composition, role mapping — is checked.',
       ];
 
   // --- document wide --------------------------------------------------------
@@ -202,7 +223,14 @@ class PdfAVerifier {
     }
   }
 
-  static Future<void> _checkOutputIntents(
+  // --- output intent and its ICC profile ------------------------------------
+
+  /// Checks the output intents and returns the ICC data colour space the
+  /// PDF/A intent declares, e.g. `RGB ` or `CMYK`.
+  ///
+  /// That value is what decides whether a device colour operator on a page is
+  /// legal, so the colour rules below depend on this one running first.
+  static Future<String?> _checkOutputIntents(
     PdfDictionary catalog,
     PdfAConformanceLevel level,
     FindingSink findings,
@@ -216,10 +244,11 @@ class PdfAVerifier {
             'device colour needs one to define what those values mean.',
         clause: 'ISO 19005-${level.part}:6.2.2',
       ));
-      return;
+      return null;
     }
 
     var seenPdfA = false;
+    String? colourSpace;
     PdfObject? firstProfile;
     for (var i = 0; i < intents.size(); i++) {
       final intent = await intents.dictionaryEntry(i);
@@ -247,6 +276,10 @@ class PdfAVerifier {
               clause: 'ISO 19005-${level.part}:6.2.2',
             ));
           }
+          colourSpace ??= await _checkDestOutputProfile(
+              await intent.streamEntry(PdfName('DestOutputProfile')),
+              level,
+              findings);
         }
         if (!intent.containsKey(PdfName('OutputConditionIdentifier'))) {
           findings.add(PdfConformanceFinding(
@@ -266,7 +299,95 @@ class PdfAVerifier {
         clause: 'ISO 19005-${level.part}:6.2.2',
       ));
     }
+    return colourSpace;
   }
+
+  /// Reads the ICC profile header and reports what is wrong with it.
+  ///
+  /// Returns the data colour space the profile declares, which is what the
+  /// device colour rules are measured against, or null when the profile
+  /// cannot be read at all.
+  static Future<String?> _checkDestOutputProfile(
+    PdfStream? profile,
+    PdfAConformanceLevel level,
+    FindingSink findings,
+  ) async {
+    if (profile == null) {
+      findings.add(PdfConformanceFinding(
+        'output-profile-not-a-stream',
+        PdfConformanceSeverity.violation,
+        'The /DestOutputProfile is not a stream, so it carries no ICC '
+            'profile.',
+        clause: 'ISO 19005-${level.part}:6.2.2',
+      ));
+      return null;
+    }
+
+    Uint8List? data;
+    try {
+      data = await profile.getBytes();
+    } on Object {
+      data = null;
+    }
+    if (data == null || data.length < 128) {
+      findings.add(PdfConformanceFinding(
+        'output-profile-truncated',
+        PdfConformanceSeverity.violation,
+        'The /DestOutputProfile holds ${data?.length ?? 0} bytes; an ICC '
+            'profile starts with a 128 byte header.',
+        clause: 'ISO 19005-${level.part}:6.2.2',
+      ));
+      return null;
+    }
+    if (!IccProfileHeader.hasSignature(data)) {
+      findings.add(PdfConformanceFinding(
+        'output-profile-not-icc',
+        PdfConformanceSeverity.violation,
+        'The /DestOutputProfile does not carry the "acsp" signature ICC '
+            'requires at offset 36, so it is not an ICC profile.',
+        clause: 'ISO 19005-${level.part}:6.2.2',
+      ));
+      return null;
+    }
+
+    final header = IccProfileHeader.parse(data)!;
+    for (final defect in header.defects()) {
+      findings.add(PdfConformanceFinding(
+        'output-profile-invalid',
+        PdfConformanceSeverity.violation,
+        'The ICC profile in /DestOutputProfile is not usable: $defect.',
+        clause: 'ISO 19005-${level.part}:6.2.2',
+      ));
+    }
+
+    // ISO 19005-1 is built on PDF 1.4, whose ICC support stops at version 2;
+    // the later parts follow PDF 1.7 and PDF 2.0 and accept version 4.
+    if (level.part == '1' && header.majorVersion > 2) {
+      findings.add(PdfConformanceFinding(
+        'output-profile-version',
+        PdfConformanceSeverity.violation,
+        'The ICC profile declares version ${header.majorVersion}.'
+            '${header.minorVersion}; ${level.label} is built on PDF 1.4, '
+            'which only defines ICC version 2 profiles.',
+        clause: 'ISO 19005-1:6.2.2',
+      ));
+    }
+
+    final declared = await profile.integerEntry(PdfName.n);
+    final expected = header.numberOfComponents;
+    if (declared != null && expected != null && declared != expected) {
+      findings.add(PdfConformanceFinding(
+        'output-profile-component-count',
+        PdfConformanceSeverity.violation,
+        'The /DestOutputProfile stream declares /N $declared but its ICC '
+            'colour space "${header.colourSpace}" has $expected components.',
+        clause: 'ISO 19005-${level.part}:6.2.2',
+      ));
+    }
+    return header.colourSpace;
+  }
+
+  // --- catalog --------------------------------------------------------------
 
   /// Entries a PDF/A catalog must not carry, with the clause that forbids them.
   static const Map<String, String> _forbiddenCatalogEntries = {
@@ -315,12 +436,211 @@ class PdfAVerifier {
       }
     }
 
+    await _checkAcroForm(catalog, level, findings);
+
     final openAction = await catalog.get(PdfName('OpenAction'));
     if (openAction != null &&
         openAction.objectKind() == PdfObjectType.dictionary) {
       await _checkAction(openAction as PdfDictionary, level, findings);
     }
   }
+
+  static Future<void> _checkAcroForm(
+    PdfDictionary catalog,
+    PdfAConformanceLevel level,
+    FindingSink findings,
+  ) async {
+    final form = await catalog.dictionaryEntry(PdfName.acroForm);
+    if (form == null) return;
+
+    if (form.containsKey(PdfName('XFA'))) {
+      findings.add(PdfConformanceFinding(
+        'acroform-xfa',
+        PdfConformanceSeverity.violation,
+        'The interactive form carries an /XFA entry. An XFA form is an XML '
+            'application the PDF only hosts, so the appearance of the file '
+            'would depend on software outside it.',
+        clause: 'ISO 19005-${level.part}:6.6.1',
+      ));
+    }
+    if (await form.flagEntry(PdfName('NeedAppearances')) == true) {
+      findings.add(PdfConformanceFinding(
+        'acroform-needappearances',
+        PdfConformanceSeverity.violation,
+        'The interactive form sets /NeedAppearances true, which asks the '
+            'reader to generate the field appearances rather than storing '
+            'them.',
+        clause: 'ISO 19005-${level.part}:6.6.1',
+      ));
+    }
+  }
+
+  /// Embedded files: forbidden outright before PDF/A-3, and from PDF/A-3 on
+  /// permitted only when each one says how it relates to the document.
+  static Future<void> _checkEmbeddedFiles(
+    PdfDictionary catalog,
+    PdfAConformanceLevel level,
+    FindingSink findings,
+  ) async {
+    if (!level.allowsEmbeddedFiles) return;
+
+    final names = await catalog.dictionaryEntry(PdfName('Names'));
+    final tree = await names?.dictionaryEntry(PdfName('EmbeddedFiles'));
+    if (tree == null) return;
+
+    for (final specification in await _fileSpecifications(tree, 0)) {
+      if (!specification.containsKey(PdfName('AFRelationship'))) {
+        findings.add(PdfConformanceFinding(
+          'embedded-file-without-relationship',
+          PdfConformanceSeverity.violation,
+          'An embedded file has no /AFRelationship, so nothing says whether '
+              'it is the source of the document, its data, or an unrelated '
+              'attachment. ${level.label} permits attachments only when they '
+              'declare that.',
+          clause: 'ISO 19005-3:6.8',
+        ));
+      }
+    }
+  }
+
+  /// Walks a name tree of file specifications, through its /Kids.
+  static Future<List<PdfDictionary>> _fileSpecifications(
+    PdfDictionary node,
+    int depth,
+  ) async {
+    if (depth > 32) return const [];
+    final result = <PdfDictionary>[];
+
+    final values = await node.arrayEntry(PdfName('Names'));
+    if (values != null) {
+      for (var i = 1; i < values.size(); i += 2) {
+        final specification = await values.dictionaryEntry(i);
+        if (specification != null) result.add(specification);
+      }
+    }
+    final kids = await node.arrayEntry(PdfName('Kids'));
+    if (kids != null) {
+      for (var i = 0; i < kids.size(); i++) {
+        final kid = await kids.dictionaryEntry(i);
+        if (kid != null) {
+          result.addAll(await _fileSpecifications(kid, depth + 1));
+        }
+      }
+    }
+    return result;
+  }
+
+  // --- XMP ------------------------------------------------------------------
+
+  /// Document information entries and the XMP properties that must agree with
+  /// them, per ISO 19005-1 6.7.3.
+  static const Map<String, String> _infoToXmp = {
+    'Title': 'dc:title',
+    'Author': 'dc:creator',
+    'Subject': 'dc:description',
+    'Keywords': 'pdf:Keywords',
+    'Creator': 'xmp:CreatorTool',
+    'Producer': 'pdf:Producer',
+    'CreationDate': 'xmp:CreateDate',
+    'ModDate': 'xmp:ModifyDate',
+  };
+
+  static Future<void> _checkXmp(
+    PdfDocument document,
+    XmpIdentification claim,
+    PdfAConformanceLevel level,
+    FindingSink findings,
+  ) async {
+    if (!claim.present) return;
+
+    if (claim.pdfAPart != null && claim.pdfALevel == null) {
+      findings.add(PdfConformanceFinding(
+        'unknown-pdfaid',
+        PdfConformanceSeverity.violation,
+        'The XMP metadata declares pdfaid:part ${claim.pdfAPart} with '
+            'conformance ${claim.pdfAConformance ?? "(none)"}, which is not a '
+            'profile ISO 19005 defines.',
+        clause: 'ISO 19005-${level.part}:6.7.11',
+      ));
+    }
+
+    for (final namespace in claim.propertyNamespaces) {
+      if (XmpIdentification.predefinedNamespaces.contains(namespace)) continue;
+      if (claim.extensionNamespaces.contains(namespace)) continue;
+      findings.add(PdfConformanceFinding(
+        'xmp-extension-schema-missing',
+        PdfConformanceSeverity.violation,
+        'The XMP packet carries properties in the namespace $namespace, which '
+            'is not one of the predefined schemas, and declares no PDF/A '
+            'extension schema for it. A later reader would have no way to '
+            'learn what those properties mean.',
+        clause: 'ISO 19005-${level.part}:6.7.9',
+      ));
+    }
+
+    final info = await document.fileTrailer().dictionaryEntry(PdfName.info);
+    if (info == null) return;
+    final xmpValues = <String, String?>{
+      'Title': claim.title,
+      'Author': claim.creator,
+      'Subject': claim.description,
+      'Keywords': claim.keywords,
+      'Creator': claim.creatorTool,
+      'Producer': claim.producer,
+      'CreationDate': claim.createDate,
+      'ModDate': claim.modifyDate,
+    };
+
+    for (final entry in _infoToXmp.entries) {
+      final stored = await info.stringEntry(PdfName(entry.key));
+      if (stored == null) continue;
+      final value = stored.decodeMappingText().trim();
+      if (value.isEmpty) continue;
+      final declared = xmpValues[entry.key];
+
+      if (declared == null) {
+        findings.add(PdfConformanceFinding(
+          'xmp-info-missing-property',
+          PdfConformanceSeverity.violation,
+          'The document information dictionary sets /${entry.key} but the XMP '
+              'packet carries no ${entry.value}. The two have to say the same '
+              'thing, because a reader may consult either.',
+          clause: 'ISO 19005-${level.part}:6.7.3',
+        ));
+        continue;
+      }
+
+      final agrees = entry.key.endsWith('Date')
+          ? _sameInstant(value, declared)
+          : value == declared.trim();
+      if (!agrees) {
+        findings.add(PdfConformanceFinding(
+          'xmp-info-mismatch',
+          PdfConformanceSeverity.violation,
+          'The document information dictionary says /${entry.key} is "$value" '
+              'while the XMP packet says ${entry.value} is "$declared".',
+          clause: 'ISO 19005-${level.part}:6.7.3',
+        ));
+      }
+    }
+  }
+
+  /// Compares a PDF date string (`D:20240102030405+00'00'`) with an XMP one
+  /// (`2024-01-02T03:04:05+00:00`) by the instant they name.
+  ///
+  /// Only the digits carry the value in both forms, so the comparison is over
+  /// the leading fourteen of them; a date that stops earlier is compared as
+  /// far as both go, which is what a shorter date means.
+  static bool _sameInstant(String pdfDate, String xmpDate) {
+    final left = pdfDate.replaceAll(RegExp(r'[^0-9]'), '');
+    final right = xmpDate.replaceAll(RegExp(r'[^0-9]'), '');
+    if (left.isEmpty || right.isEmpty) return false;
+    final length =
+        [left.length, right.length, 14].reduce((a, b) => a < b ? a : b);
+    return left.substring(0, length) == right.substring(0, length);
+  }
+
+  // --- tagging --------------------------------------------------------------
 
   static Future<void> _checkTagging(
     PdfDictionary catalog,
@@ -339,7 +659,8 @@ class PdfAVerifier {
         clause: 'ISO 19005-${level.part}:6.8.2',
       ));
     }
-    if (!catalog.containsKey(PdfName.structTreeRoot)) {
+    final root = await catalog.dictionaryEntry(PdfName.structTreeRoot);
+    if (root == null) {
       findings.add(PdfConformanceFinding(
         'missing-structure-tree',
         PdfConformanceSeverity.violation,
@@ -347,6 +668,24 @@ class PdfAVerifier {
             'structure.',
         clause: 'ISO 19005-${level.part}:6.8.2',
       ));
+    } else {
+      final scan = await scanStructureTree(root);
+      if (!scan.hasElements) {
+        findings.add(PdfConformanceFinding(
+          'empty-structure-tree',
+          PdfConformanceSeverity.violation,
+          'The structure tree carries no elements, so it describes nothing.',
+          clause: 'ISO 19005-${level.part}:6.8.2',
+        ));
+      }
+      for (final issue in scan.issues) {
+        findings.add(PdfConformanceFinding(
+          issue.code,
+          PdfConformanceSeverity.violation,
+          issue.message,
+          clause: 'ISO 19005-${level.part}:6.8.3',
+        ));
+      }
     }
     final lang = await catalog.stringEntry(PdfName('Lang'));
     if (lang == null) {
@@ -386,9 +725,18 @@ class PdfAVerifier {
     'NoOp',
   };
 
+  /// The named actions ISO 19005 keeps, all of them page navigation.
+  static const Set<String> _permittedNamedActions = {
+    'NextPage',
+    'PrevPage',
+    'FirstPage',
+    'LastPage',
+  };
+
   static Future<void> _checkPages(
     PdfDocument document,
     PdfAConformanceLevel level,
+    String? intentColourSpace,
     FindingSink findings,
   ) async {
     final pageCount = document.pageHierarchy().pageTotal();
@@ -423,7 +771,115 @@ class PdfAVerifier {
       }
 
       await _checkAnnotations(page, number, level, findings);
-      await _checkPageResources(page, number, level, findings);
+
+      final resources = await dictionary.dictionaryEntry(PdfName.resources);
+      final scan = await _scanPage(page, resources);
+      if (scan != null) {
+        _reportContent(scan, number, level, intentColourSpace, findings);
+      }
+      await _checkResources(
+        resources,
+        number,
+        level,
+        intentColourSpace,
+        scan,
+        findings,
+        <PdfDictionary>{},
+        0,
+      );
+    }
+  }
+
+  static Future<ContentStreamScan?> _scanPage(
+    PdfPage page,
+    PdfDictionary? resources,
+  ) async {
+    Uint8List content;
+    try {
+      content = await page.contentPayload();
+    } on Object {
+      return null;
+    }
+    if (content.isEmpty) return null;
+    return scanContentStream(content, resources);
+  }
+
+  /// Turns the facts a content scan collected into findings.
+  static void _reportContent(
+    ContentStreamScan scan,
+    int page,
+    PdfAConformanceLevel level,
+    String? intentColourSpace,
+    FindingSink findings,
+  ) {
+    if (!scan.parsed) {
+      findings.add(PdfConformanceFinding(
+        'content-stream-unparsable',
+        PdfConformanceSeverity.violation,
+        'The content stream is not valid PDF content: ${scan.failure}.',
+        clause: 'ISO 19005-${level.part}:6.2.1',
+        page: page,
+      ));
+      return;
+    }
+
+    if (scan.unbalancedSaveRestore) {
+      findings.add(PdfConformanceFinding(
+        'unbalanced-graphics-state',
+        PdfConformanceSeverity.violation,
+        'The content stream does not pair its q and Q operators, so the '
+            'graphics state it leaves behind depends on how a reader recovers '
+            'from the imbalance.',
+        clause: 'ISO 19005-${level.part}:6.2.1',
+        page: page,
+      ));
+    }
+    if (scan.unbalancedTextObjects) {
+      findings.add(PdfConformanceFinding(
+        'unbalanced-text-object',
+        PdfConformanceSeverity.violation,
+        'The content stream does not pair its BT and ET operators.',
+        clause: 'ISO 19005-${level.part}:6.2.1',
+        page: page,
+      ));
+    }
+    for (final missing in scan.missingResources) {
+      findings.add(PdfConformanceFinding(
+        'undefined-resource',
+        PdfConformanceSeverity.violation,
+        'The content stream uses /$missing, which the resource dictionary '
+            'does not define, so there is nothing to draw with.',
+        clause: 'ISO 19005-${level.part}:6.2.1',
+        page: page,
+      ));
+    }
+
+    // Device colour only means something once an output intent says what the
+    // numbers stand for. With no readable profile there is nothing to compare
+    // against, and the missing intent has already been reported.
+    if (intentColourSpace == null) return;
+    if (scan.deviceColourSpaces.contains('DeviceRGB') &&
+        intentColourSpace.trim() != 'RGB') {
+      findings.add(PdfConformanceFinding(
+        'device-rgb-without-rgb-output-intent',
+        PdfConformanceSeverity.violation,
+        'The page selects DeviceRGB but the output intent profile describes a '
+            '"${intentColourSpace.trim()}" device, so the red, green and blue '
+            'values name no particular colour.',
+        clause: 'ISO 19005-${level.part}:6.2.3',
+        page: page,
+      ));
+    }
+    if (scan.deviceColourSpaces.contains('DeviceCMYK') &&
+        intentColourSpace.trim() != 'CMYK') {
+      findings.add(PdfConformanceFinding(
+        'device-cmyk-without-cmyk-output-intent',
+        PdfConformanceSeverity.violation,
+        'The page selects DeviceCMYK but the output intent profile describes '
+            'a "${intentColourSpace.trim()}" device.',
+        clause: 'ISO 19005-${level.part}:6.2.4',
+        page: page,
+      ));
     }
   }
 
@@ -502,6 +958,17 @@ class PdfAVerifier {
         }
       }
 
+      if (annotation.containsKey(PdfName('AA'))) {
+        findings.add(PdfConformanceFinding(
+          'annotation-additional-actions',
+          PdfConformanceSeverity.violation,
+          'A /$subtype annotation declares /AA additional actions, which run '
+              'on events a reader generates.',
+          clause: 'ISO 19005-${level.part}:6.6.2',
+          page: number,
+        ));
+      }
+
       final action = await annotation.dictionaryEntry(PdfName('A'));
       if (action != null) {
         await _checkAction(action, level, findings, page: number);
@@ -525,24 +992,48 @@ class PdfAVerifier {
         page: page,
       ));
     }
+    if (type == 'Named') {
+      final name = (await action.nameEntry(PdfName.n))?.getValue();
+      if (name == null || !_permittedNamedActions.contains(name)) {
+        findings.add(PdfConformanceFinding(
+          'forbidden-named-action',
+          PdfConformanceSeverity.violation,
+          'A named action asks for /${name ?? "(unnamed)"}; PDF/A keeps only '
+              'the four page navigation names, because every other name asks '
+              'the reader application to do something of its own.',
+          clause: 'ISO 19005-${level.part}:6.6.1',
+          page: page,
+        ));
+      }
+    }
   }
 
-  static Future<void> _checkPageResources(
-    PdfPage page,
+  // --- resources ------------------------------------------------------------
+
+  static Future<void> _checkResources(
+    PdfDictionary? resources,
     int number,
     PdfAConformanceLevel level,
+    String? intentColourSpace,
+    ContentStreamScan? scan,
     FindingSink findings,
+    Set<PdfDictionary> visited,
+    int depth,
   ) async {
-    final resources =
-        await page.pdfRepresentation().dictionaryEntry(PdfName.resources);
-    if (resources == null) return;
+    if (resources == null || depth > 8 || !visited.add(resources)) return;
 
     final fonts = await resources.dictionaryEntry(PdfName.font);
     if (fonts != null) {
       for (final key in fonts.keySet()) {
         final font = await fonts.dictionaryEntry(key);
         if (font != null) {
-          await _checkFont(font, number, level, findings);
+          await _checkFont(
+            font,
+            number,
+            level,
+            findings,
+            scan?.shownTextByFont[key.getValue()] ?? const [],
+          );
         }
       }
     }
@@ -561,22 +1052,50 @@ class PdfAVerifier {
     if (xobjects != null) {
       for (final key in xobjects.keySet()) {
         final xobject = await xobjects.streamEntry(key);
-        if (xobject != null) {
-          await _checkXObject(xobject, number, level, findings);
+        if (xobject == null) continue;
+        await _checkXObject(
+            xobject, number, level, intentColourSpace, findings);
+
+        final subtype = (await xobject.nameEntry(PdfName.subtype))?.getValue();
+        if (subtype != 'Form') continue;
+        // A form XObject is a content stream with a resource dictionary of its
+        // own; everything the page rules say applies inside it too.
+        final inner =
+            await xobject.dictionaryEntry(PdfName.resources) ?? resources;
+        ContentStreamScan? innerScan;
+        try {
+          final content = await xobject.getBytes();
+          if (content != null && content.isNotEmpty) {
+            innerScan = await scanContentStream(content, inner);
+          }
+        } on Object {
+          innerScan = null;
         }
+        if (innerScan != null) {
+          _reportContent(innerScan, number, level, intentColourSpace, findings);
+        }
+        await _checkResources(inner, number, level, intentColourSpace,
+            innerScan, findings, visited, depth + 1);
       }
     }
   }
 
+  // --- fonts ----------------------------------------------------------------
+
   /// Font subtypes that carry their own glyph programs elsewhere and are
   /// checked through their descendants instead.
   static const Set<String> _compositeFonts = {'Type0'};
+
+  /// Bit 3 of a font descriptor's /Flags: the font has its own built-in
+  /// encoding rather than following a standard one.
+  static const int _symbolicFlag = 4;
 
   static Future<void> _checkFont(
     PdfDictionary font,
     int page,
     PdfAConformanceLevel level,
     FindingSink findings,
+    List<Uint8List> shownText,
   ) async {
     final subtype = (await font.nameEntry(PdfName.subtype))?.getValue();
     final baseFont =
@@ -585,7 +1104,7 @@ class PdfAVerifier {
     if (subtype == 'Type3') {
       // A Type 3 font carries its glyphs as content streams, so there is
       // nothing to embed; its charprocs are covered by the content stream
-      // rules this verifier does not evaluate.
+      // rules applied to the resources they name.
       return;
     }
 
@@ -602,40 +1121,44 @@ class PdfAVerifier {
         ));
         return;
       }
-      await _checkFontDescriptor(descendant, baseFont, page, level, findings);
+      final embedded = await _checkFontDescriptor(
+          descendant, baseFont, page, level, findings);
+      await _checkCidFont(
+          descendant, baseFont, page, level, embedded, findings);
+
+      final encoding = (await font.nameEntry(PdfName.encoding))?.getValue();
+      final identity = encoding == null || encoding.startsWith('Identity');
       if (level.requiresUnicodeMapping &&
-          !font.containsKey(PdfName('ToUnicode'))) {
-        final encoding = (await font.nameEntry(PdfName.encoding))?.getValue();
-        // The two identity encodings carry no implicit Unicode mapping.
-        if (encoding == null || encoding.startsWith('Identity')) {
-          findings.add(PdfConformanceFinding(
-            'font-without-tounicode',
-            PdfConformanceSeverity.violation,
-            'The font $baseFont has no /ToUnicode map, so ${level.label} '
-                'cannot guarantee its text can be extracted.',
-            clause: 'ISO 19005-${level.part}:6.3.8',
-            page: page,
-          ));
-        }
+          !font.containsKey(PdfName.toUnicode) &&
+          identity) {
+        findings.add(PdfConformanceFinding(
+          'font-without-tounicode',
+          PdfConformanceSeverity.violation,
+          'The font $baseFont has no /ToUnicode map, so ${level.label} '
+              'cannot guarantee its text can be extracted.',
+          clause: 'ISO 19005-${level.part}:6.3.8',
+          page: page,
+        ));
+      } else if (level.requiresUnicodeMapping && identity) {
+        await _checkUnicodeCoverage(
+            font, baseFont, page, level, shownText, 2, findings);
       }
       return;
     }
 
     await _checkFontDescriptor(font, baseFont, page, level, findings);
+    await _checkSimpleFontMetrics(font, baseFont, page, level, findings);
+    await _checkSimpleFontEncoding(
+        font, subtype, baseFont, page, level, findings);
 
-    if (!font.containsKey(PdfName.widths)) {
-      findings.add(PdfConformanceFinding(
-        'font-without-widths',
-        PdfConformanceSeverity.violation,
-        'The font $baseFont has no /Widths array, so its metrics would come '
-            'from the reader.',
-        clause: 'ISO 19005-${level.part}:6.3.5',
-        page: page,
-      ));
+    if (level.requiresUnicodeMapping) {
+      await _checkSimpleFontUnicode(
+          font, baseFont, page, level, shownText, findings);
     }
   }
 
-  static Future<void> _checkFontDescriptor(
+  /// Returns true when the descriptor embeds a font program.
+  static Future<bool> _checkFontDescriptor(
     PdfDictionary font,
     String baseFont,
     int page,
@@ -653,7 +1176,7 @@ class PdfAVerifier {
         clause: 'ISO 19005-${level.part}:6.3.4',
         page: page,
       ));
-      return;
+      return false;
     }
     final embedded = descriptor.containsKey(PdfName.fontFile) ||
         descriptor.containsKey(PdfName.fontFile2) ||
@@ -668,7 +1191,250 @@ class PdfAVerifier {
         page: page,
       ));
     }
+    return embedded;
   }
+
+  /// Rules a CIDFont carries on top of the common font rules.
+  static Future<void> _checkCidFont(
+    PdfDictionary descendant,
+    String baseFont,
+    int page,
+    PdfAConformanceLevel level,
+    bool embedded,
+    FindingSink findings,
+  ) async {
+    final subtype = (await descendant.nameEntry(PdfName.subtype))?.getValue();
+    final descriptor = await descendant.dictionaryEntry(PdfName.fontDescriptor);
+
+    // PDF/A-1 to -3 require the descriptor of an embedded CIDFont to list the
+    // CIDs the program actually contains, so a reader can tell a subset from
+    // a damaged font. PDF/A-4 dropped the requirement.
+    if (embedded &&
+        level.part != '4' &&
+        descriptor != null &&
+        !descriptor.containsKey(PdfName('CIDSet'))) {
+      findings.add(PdfConformanceFinding(
+        'cidfont-without-cidset',
+        PdfConformanceSeverity.violation,
+        'The CIDFont $baseFont embeds a font program but its descriptor has '
+            'no /CIDSet saying which CIDs that program defines.',
+        clause: 'ISO 19005-${level.part}:6.3.3',
+        page: page,
+      ));
+    }
+
+    if (subtype != 'CIDFontType2') return;
+    final map = await descendant.get(PdfName('CIDToGIDMap'));
+    if (map == null) {
+      if (level.part == '1') {
+        findings.add(PdfConformanceFinding(
+          'cidfont-without-cidtogidmap',
+          PdfConformanceSeverity.violation,
+          'The CIDFontType2 $baseFont declares no /CIDToGIDMap; '
+              '${level.label} requires the entry to be present and to be '
+              'either /Identity or a stream.',
+          clause: 'ISO 19005-1:6.3.3',
+          page: page,
+        ));
+      }
+      return;
+    }
+    if (map.objectKind() == PdfObjectType.name &&
+        (map as PdfName).getValue() != 'Identity') {
+      findings.add(PdfConformanceFinding(
+        'cidfont-bad-cidtogidmap',
+        PdfConformanceSeverity.violation,
+        'The CIDFontType2 $baseFont declares /CIDToGIDMap /${map.getValue()}; '
+            'only /Identity or a stream maps CIDs to glyphs unambiguously.',
+        clause: 'ISO 19005-${level.part}:6.3.3',
+        page: page,
+      ));
+    }
+  }
+
+  /// A simple font's metrics have to come from the file, and have to describe
+  /// exactly the codes the font claims.
+  static Future<void> _checkSimpleFontMetrics(
+    PdfDictionary font,
+    String baseFont,
+    int page,
+    PdfAConformanceLevel level,
+    FindingSink findings,
+  ) async {
+    final widths = await font.arrayEntry(PdfName.widths);
+    if (widths == null) {
+      findings.add(PdfConformanceFinding(
+        'font-without-widths',
+        PdfConformanceSeverity.violation,
+        'The font $baseFont has no /Widths array, so its metrics would come '
+            'from the reader.',
+        clause: 'ISO 19005-${level.part}:6.3.5',
+        page: page,
+      ));
+      return;
+    }
+
+    final first = await font.integerEntry(PdfName('FirstChar'));
+    final last = await font.integerEntry(PdfName('LastChar'));
+    if (first == null || last == null) {
+      findings.add(PdfConformanceFinding(
+        'font-without-char-range',
+        PdfConformanceSeverity.violation,
+        'The font $baseFont has a /Widths array but no /FirstChar and '
+            '/LastChar, so nothing says which codes those widths belong to.',
+        clause: 'ISO 19005-${level.part}:6.3.5',
+        page: page,
+      ));
+      return;
+    }
+    final expected = last - first + 1;
+    if (widths.size() != expected) {
+      findings.add(PdfConformanceFinding(
+        'font-widths-inconsistent',
+        PdfConformanceSeverity.violation,
+        'The font $baseFont covers codes $first to $last, which is $expected '
+            'widths, but its /Widths array has ${widths.size()} entries. The '
+            'codes past the end would be measured by the reader.',
+        clause: 'ISO 19005-${level.part}:6.3.5',
+        page: page,
+      ));
+    }
+  }
+
+  /// A symbolic TrueType font carries its own character map, and an /Encoding
+  /// on top of it would say something the font contradicts.
+  static Future<void> _checkSimpleFontEncoding(
+    PdfDictionary font,
+    String? subtype,
+    String baseFont,
+    int page,
+    PdfAConformanceLevel level,
+    FindingSink findings,
+  ) async {
+    if (subtype != 'TrueType') return;
+    final descriptor = await font.dictionaryEntry(PdfName.fontDescriptor);
+    final flags = await descriptor?.integerEntry(PdfName('Flags')) ?? 0;
+    if (flags & _symbolicFlag == 0) return;
+    if (!font.containsKey(PdfName.encoding)) return;
+
+    findings.add(PdfConformanceFinding(
+      'symbolic-truetype-with-encoding',
+      PdfConformanceSeverity.violation,
+      'The symbolic TrueType font $baseFont carries an /Encoding entry. A '
+          'symbolic font maps codes through its own cmap, so an /Encoding can '
+          'only disagree with it.',
+      clause: 'ISO 19005-${level.part}:6.3.7',
+      page: page,
+    ));
+  }
+
+  /// The `u` and `a` levels promise the text can be read back out, which needs
+  /// a Unicode value for every code drawn.
+  static Future<void> _checkSimpleFontUnicode(
+    PdfDictionary font,
+    String baseFont,
+    int page,
+    PdfAConformanceLevel level,
+    List<Uint8List> shownText,
+    FindingSink findings,
+  ) async {
+    if (font.containsKey(PdfName.toUnicode)) {
+      await _checkUnicodeCoverage(
+          font, baseFont, page, level, shownText, 1, findings);
+      return;
+    }
+
+    // A named standard encoding already maps every code to a character, so a
+    // font that uses one needs no /ToUnicode. Anything else does.
+    final encoding = await font.get(PdfName.encoding);
+    final named =
+        encoding != null && encoding.objectKind() == PdfObjectType.name
+            ? (encoding as PdfName).getValue()
+            : null;
+    const standard = {
+      'WinAnsiEncoding',
+      'MacRomanEncoding',
+      'MacExpertEncoding',
+      'StandardEncoding',
+    };
+    if (named != null && standard.contains(named)) return;
+
+    findings.add(PdfConformanceFinding(
+      'font-without-tounicode',
+      PdfConformanceSeverity.violation,
+      'The font $baseFont has no /ToUnicode map and does not use a named '
+          'standard encoding, so ${level.label} cannot guarantee its text can '
+          'be extracted.',
+      clause: 'ISO 19005-${level.part}:6.3.8',
+      page: page,
+    ));
+  }
+
+  /// Checks that the `/ToUnicode` map covers the codes the page actually drew.
+  ///
+  /// A map that exists but omits the codes in use is the common way a file
+  /// claims level `u` without delivering it, and it is decidable here because
+  /// the content scan recorded the strings that were shown.
+  static Future<void> _checkUnicodeCoverage(
+    PdfDictionary font,
+    String baseFont,
+    int page,
+    PdfAConformanceLevel level,
+    List<Uint8List> shownText,
+    int codeBytes,
+    FindingSink findings,
+  ) async {
+    if (shownText.isEmpty) return;
+    final stream = await font.streamEntry(PdfName.toUnicode);
+    if (stream == null) return;
+
+    Map<int, String> mappings;
+    try {
+      mappings = (await UnicodeCodeMap.fromStream(stream)).mappings;
+    } on Object {
+      findings.add(PdfConformanceFinding(
+        'tounicode-unreadable',
+        PdfConformanceSeverity.violation,
+        'The /ToUnicode map of $baseFont is not a CMap that can be read, so '
+            'the text it maps cannot be extracted.',
+        clause: 'ISO 19005-${level.part}:6.3.8',
+        page: page,
+      ));
+      return;
+    }
+
+    final uncovered = <int>{};
+    for (final string in shownText) {
+      for (var i = 0; i + codeBytes <= string.length; i += codeBytes) {
+        var code = 0;
+        for (var b = 0; b < codeBytes; b++) {
+          code = (code << 8) | string[i + b];
+        }
+        final text = mappings[code];
+        // A code mapped to U+0000 is mapped to nothing: ISO 19005 singles it
+        // out because it is what a tool writes when it does not know.
+        if (text == null || text.isEmpty || text.codeUnitAt(0) == 0) {
+          uncovered.add(code);
+        }
+      }
+    }
+    if (uncovered.isEmpty) return;
+
+    final sample = (uncovered.toList()..sort()).take(8).map(
+        (code) => '0x${code.toRadixString(16).padLeft(codeBytes * 2, '0')}');
+    findings.add(PdfConformanceFinding(
+      'tounicode-incomplete',
+      PdfConformanceSeverity.violation,
+      'The page draws ${uncovered.length} code(s) with $baseFont that its '
+          '/ToUnicode map does not give a Unicode value for '
+          '(${sample.join(', ')}). ${level.label} promises the text can be '
+          'extracted, and these characters cannot be.',
+      clause: 'ISO 19005-${level.part}:6.3.8',
+      page: page,
+    ));
+  }
+
+  // --- graphics state and XObjects ------------------------------------------
 
   static Future<void> _checkExtGState(
     PdfDictionary state,
@@ -739,6 +1505,7 @@ class PdfAVerifier {
     PdfStream xobject,
     int page,
     PdfAConformanceLevel level,
+    String? intentColourSpace,
     FindingSink findings,
   ) async {
     final subtype = (await xobject.nameEntry(PdfName.subtype))?.getValue();
@@ -768,6 +1535,8 @@ class PdfAVerifier {
           ));
         }
       }
+      await _checkImageColourSpace(
+          xobject, page, level, intentColourSpace, findings);
     }
 
     if (subtype == 'Form' && level.forbidsTransparency) {
@@ -797,18 +1566,75 @@ class PdfAVerifier {
     }
   }
 
+  /// An image's samples are in a colour space just as a fill is, and the same
+  /// output intent rule applies to them.
+  static Future<void> _checkImageColourSpace(
+    PdfStream image,
+    int page,
+    PdfAConformanceLevel level,
+    String? intentColourSpace,
+    FindingSink findings,
+  ) async {
+    if (intentColourSpace == null) return;
+    final space = await image.nameEntry(PdfName.colorSpace);
+    final value = space?.getValue();
+    if (value == 'DeviceRGB' && intentColourSpace.trim() != 'RGB') {
+      findings.add(PdfConformanceFinding(
+        'device-rgb-without-rgb-output-intent',
+        PdfConformanceSeverity.violation,
+        'An image declares /ColorSpace /DeviceRGB but the output intent '
+            'profile describes a "${intentColourSpace.trim()}" device.',
+        clause: 'ISO 19005-${level.part}:6.2.3',
+        page: page,
+      ));
+    }
+    if (value == 'DeviceCMYK' && intentColourSpace.trim() != 'CMYK') {
+      findings.add(PdfConformanceFinding(
+        'device-cmyk-without-cmyk-output-intent',
+        PdfConformanceSeverity.violation,
+        'An image declares /ColorSpace /DeviceCMYK but the output intent '
+            'profile describes a "${intentColourSpace.trim()}" device.',
+        clause: 'ISO 19005-${level.part}:6.2.4',
+        page: page,
+      ));
+    }
+  }
+
   // --- object graph ---------------------------------------------------------
+
+  /// Filters a profile forbids, each mapped to the finding code it raises and
+  /// the reason the profile keeps it out.
+  static Map<String, (String, String)> _forbiddenFilters(
+          PdfAConformanceLevel level) =>
+      {
+        if (level.forbidsLzw)
+          'LZWDecode': (
+            'lzw-filter',
+            'its patent history kept it out of the archival profiles'
+          ),
+        // JPEG 2000 arrived with PDF 1.5, after the PDF 1.4 base of PDF/A-1.
+        if (level.part == '1')
+          'JPXDecode': (
+            'jpxdecode-filter',
+            'JPEG 2000 is a PDF 1.5 feature and ${level.label} is built on '
+                'PDF 1.4'
+          ),
+        'Crypt': (
+          'crypt-filter',
+          'a crypt filter means the stream is encrypted, and an archival file '
+              'must be readable without a key'
+        ),
+      };
 
   static Future<void> _checkObjects(
     PdfDocument document,
     PdfAConformanceLevel level,
     FindingSink findings,
   ) async {
-    if (!level.forbidsLzw) return;
-
+    final forbidden = _forbiddenFilters(level);
     final xref = document.crossReferenceTable();
     var reported = 0;
-    for (var number = 1; number < xref.size() && reported < 10; number++) {
+    for (var number = 1; number < xref.size() && reported < 40; number++) {
       final reference = xref.get(number);
       if (reference == null || reference.isFree()) continue;
       PdfObject? object;
@@ -821,12 +1647,14 @@ class PdfAVerifier {
         continue;
       }
       final stream = object as PdfStream;
-      if (await _usesFilter(stream, 'LZWDecode')) {
+      final filters = await _filtersOf(stream);
+      for (final entry in forbidden.entries) {
+        if (!filters.contains(entry.key)) continue;
         findings.add(PdfConformanceFinding(
-          'lzw-filter',
+          entry.value.$1,
           PdfConformanceSeverity.violation,
-          'A stream uses the LZWDecode filter, which ${level.label} does not '
-              'permit.',
+          'A stream uses the ${entry.key} filter, which ${level.label} does '
+          'not permit: ${entry.value.$2}.',
           clause: 'ISO 19005-${level.part}:6.1.10',
           objectNumber: number,
         ));
@@ -846,18 +1674,21 @@ class PdfAVerifier {
     }
   }
 
-  static Future<bool> _usesFilter(PdfStream stream, String name) async {
+  static Future<Set<String>> _filtersOf(PdfStream stream) async {
     final filter = await stream.get(PdfName.filter);
-    if (filter == null) return false;
+    if (filter == null) return const {};
     if (filter.objectKind() == PdfObjectType.name) {
-      return (filter as PdfName).getValue() == name;
+      return {(filter as PdfName).getValue()};
     }
     if (filter.objectKind() == PdfObjectType.array) {
       final array = filter as PdfArray;
+      final names = <String>{};
       for (var i = 0; i < array.size(); i++) {
-        if ((await array.nameEntry(i))?.getValue() == name) return true;
+        final name = await array.nameEntry(i);
+        if (name != null) names.add(name.getValue());
       }
+      return names;
     }
-    return false;
+    return const {};
   }
 }

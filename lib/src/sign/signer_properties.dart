@@ -1,5 +1,7 @@
 import '../kernel/geom/rectangle.dart';
+import '../forms/pdf_sig_field_lock.dart';
 import 'access_permissions.dart';
+import 'signature_field_appearance.dart';
 
 /// Properties to be used in signing operations.
 class SignerProperties {
@@ -7,8 +9,8 @@ class SignerProperties {
   /// which will be used for signing since its ID will be ignored anyway.
   static const String ignoredId = '';
 
-  // TODO: PdfSigFieldLock _fieldLock;
-  // TODO: SignatureFieldAppearance _appearance;
+  PdfSigFieldLock? _fieldLock;
+  SignatureFieldAppearance _appearance = SignatureFieldAppearance();
 
   DateTime _signDate;
   AccessPermissions _certificationLevel;
@@ -45,8 +47,22 @@ class SignerProperties {
     return this;
   }
 
-  // TODO: setSignatureAppearance and getSignatureAppearance
-  // after SignatureFieldAppearance is implemented
+  /// Returns the declarative description of the visible signature layer.
+  ///
+  /// The instance is never null; an appearance is only painted when the page
+  /// rectangle has a non-zero area.
+  ///
+  /// @return the signature appearance
+  SignatureFieldAppearance getSignatureAppearance() => _appearance;
+
+  /// Sets the declarative description of the visible signature layer.
+  ///
+  /// @param appearance the signature appearance
+  /// @return this instance to support fluent interface
+  SignerProperties setSignatureAppearance(SignatureFieldAppearance appearance) {
+    _appearance = appearance;
+    return this;
+  }
 
   /// Returns the document's certification level.
   ///
@@ -118,8 +134,23 @@ class SignerProperties {
     return this;
   }
 
-  // TODO: getFieldLockDict and setFieldLockDict
-  // after PdfSigFieldLock is implemented
+  /// Returns the signature field lock dictionary, ISO 32000-1 table 233.
+  ///
+  /// @return the field lock dictionary, or null when the field is not locked
+  PdfSigFieldLock? getFieldLockDict() => _fieldLock;
+
+  /// Sets the signature field lock dictionary, ISO 32000-1 table 233.
+  ///
+  /// The dictionary is written to the `/Lock` entry of the signed field and,
+  /// as required by 12.8.2.4, its `/Action` and `/Fields` entries are copied
+  /// into the FieldMDP transform parameters of the signature.
+  ///
+  /// @param fieldLock the field lock dictionary
+  /// @return this instance to support fluent interface
+  SignerProperties setFieldLockDict(PdfSigFieldLock? fieldLock) {
+    _fieldLock = fieldLock;
+    return this;
+  }
 
   /// Returns the signature creator.
   ///

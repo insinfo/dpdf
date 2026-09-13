@@ -104,10 +104,25 @@ class HtmlLayoutEngine {
     if (box.style.display == HtmlDisplay.block && _cursor > start) {
       _cursor += box.style.text.fontSize * .35;
     }
+    _applyDeclaredHeight(box, geometry, start);
     _cursor += geometry.paddingBottom;
     _addDecoration(box, geometry, start + geometry.marginTop, _cursor);
     _cursor += geometry.marginBottom;
     return _cursor - start;
+  }
+
+  /// Forces the content box to the height declared by CSS 2.1 §10.5.
+  ///
+  /// Content taller than the declared height is left where it is: the profile
+  /// has no `overflow` handling, and cutting the flow short would drop text
+  /// that a reader still needs to see.
+  void _applyDeclaredHeight(
+      HtmlBox box, HtmlBoxGeometry geometry, double start) {
+    final declared = box.style.height;
+    if (declared.points == null) return;
+    final contentTop = start + geometry.marginTop + geometry.paddingTop;
+    final bottom = contentTop + declared.points!;
+    if (bottom > _cursor) _cursor = bottom;
   }
 
   List<HtmlBox>? _inlineLeaves(HtmlBox box) {
@@ -159,7 +174,7 @@ class HtmlLayoutEngine {
           final offset = used + space;
           line.add(_InlineWord(word, style, offset, leaf.linkTarget));
           used = offset + glyphWidth;
-          final height = style.fontSize * 1.35;
+          final height = style.lineHeight;
           if (height > lineHeight) lineHeight = height;
         }
         if (index + 1 < forcedLines.length) flush();
@@ -342,7 +357,7 @@ class HtmlLayoutEngine {
 
   double _paragraph(String value, HtmlTextStyle style, double x, double width,
       {String? linkTarget}) {
-    final lineHeight = style.fontSize * 1.35;
+    final lineHeight = style.lineHeight;
     final limit = HtmlTextMeasure.charactersPerLine(style, width);
     for (final line in _wrap(value, limit)) {
       _cursor += lineHeight;

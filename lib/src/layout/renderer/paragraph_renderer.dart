@@ -18,10 +18,15 @@ class ParagraphRenderer extends BlockRenderer {
     LayoutArea area = layoutContext.getArea();
     Rectangle parentBox = area.getBBox().clone();
     double parentWidth = parentBox.getWidth();
+    final collapseInfo = layoutContext.getMarginsCollapseInfo();
 
     // Box Model Properties
     double mt = getResolvedProperty(Property.MARGIN_TOP, parentWidth);
     double mb = getResolvedProperty(Property.MARGIN_BOTTOM, parentWidth);
+    if (collapseInfo != null) {
+      if (collapseInfo.isIgnoreOwnMarginTop()) mt = 0;
+      if (collapseInfo.isIgnoreOwnMarginBottom()) mb = 0;
+    }
     double ml = getResolvedProperty(Property.MARGIN_LEFT, parentWidth);
     double mr = getResolvedProperty(Property.MARGIN_RIGHT, parentWidth);
 
@@ -123,8 +128,13 @@ class ParagraphRenderer extends BlockRenderer {
     // We should call layout() on each LineRenderer to set their positions.
 
     double curY = parentBox.getY() + parentBox.getHeight() - currentHeightUsed;
+    final double heightLimit = parentBox.getHeight() - mb - pb;
+    final bool forced = getProperty<bool>(Property.FORCED_PLACEMENT) == true;
+    final List<LineRenderer> placedLines = [];
+    int firstOverflowLine = lines.length;
 
-    for (var line in lines) {
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
       // Essential: Set parent so LineRenderer (and its children) inherits properties from ParagraphRenderer
       line.setParent(this);
 
@@ -138,10 +148,59 @@ class ParagraphRenderer extends BlockRenderer {
 
       if (lineRes != null && lineRes.getOccupiedArea() != null) {
         double h = lineRes.getOccupiedArea()!.getBBox().getHeight();
+        if (!forced && currentHeightUsed + h > heightLimit) {
+          firstOverflowLine = i;
+          break;
+        }
         currentHeightUsed += h;
         curY -= h;
         line.occupiedArea = lineRes.getOccupiedArea();
+        placedLines.add(line);
       }
+    }
+
+    if (firstOverflowLine < lines.length && placedLines.isNotEmpty) {
+      // The paragraph does not fit: keep the lines laid out so far and hand the
+      // remaining ones to an overflow renderer.
+      childRenderers
+        ..clear()
+        ..addAll(placedLines);
+      currentHeightUsed += pb;
+      occupiedArea = LayoutArea(
+          area.pageOrdinal(),
+          Rectangle(
+              parentBox.getX(),
+              parentBox.getY() + parentBox.getHeight() - currentHeightUsed,
+              parentWidth,
+              currentHeightUsed));
+
+      final splitRenderer =
+          createSplitRenderer(LayoutResult.PARTIAL) as ParagraphRenderer;
+      splitRenderer.childRenderers.addAll(placedLines);
+      splitRenderer._originalChildren = List.from(placedLines);
+      splitRenderer.occupiedArea = occupiedArea;
+
+      final overflowRenderer =
+          createOverflowRenderer(LayoutResult.PARTIAL) as ParagraphRenderer;
+      final remaining = <Renderer>[];
+      for (int i = firstOverflowLine; i < lines.length; i++) {
+        remaining.addAll(lines[i].getChildRenderers());
+      }
+      overflowRenderer._originalChildren = remaining;
+      overflowRenderer.childRenderers.addAll(remaining);
+      overflowRenderer.setProperty(Property.MARGIN_TOP, null);
+
+      return LayoutResult(
+          LayoutResult.PARTIAL, occupiedArea, splitRenderer, overflowRenderer);
+    }
+
+    if (placedLines.isEmpty && lines.isNotEmpty && !forced) {
+      final overflowRenderer =
+          createOverflowRenderer(LayoutResult.NOTHING) as ParagraphRenderer;
+      overflowRenderer._originalChildren = List.from(sourceChildren);
+      overflowRenderer.childRenderers.addAll(sourceChildren);
+      return LayoutResult(
+          LayoutResult.NOTHING, null, null, overflowRenderer, this);
     }
 
     currentHeightUsed += mb + pb;
@@ -155,5 +214,10 @@ class ParagraphRenderer extends BlockRenderer {
             currentHeightUsed));
 
     return LayoutResult(LayoutResult.FULL, occupiedArea, null, null);
+  }
+
+  @override
+  Renderer getNextRenderer() {
+    return ParagraphRenderer(modelElement as Paragraph);
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:dpdf/src/kernel/crypto/aes_decryptor.dart';
+import 'package:dpdf/src/kernel/crypto/crypt_filter_cipher.dart';
 import 'package:dpdf/src/kernel/crypto/decryptor.dart';
 import 'package:dpdf/src/kernel/crypto/output_stream_aes_encryption.dart';
 import 'package:dpdf/src/kernel/crypto/output_stream_encryption.dart';
@@ -10,10 +11,11 @@ import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 
-/// Standard security handler using AES-128 algorithm.
+/// The revision 4 standard security handler using the `AESV2` crypt filter
+/// method of ISO 32000-1:2008, Table 25.
 class StandardHandlerUsingAes128 extends StandardHandlerUsingStandard128 {
-  static final Uint8List salt =
-      Uint8List.fromList([0x73, 0x41, 0x6c, 0x54]); // 'sAlT'
+  /// The `sAlT` suffix of "Algorithm 1", step (b).
+  static final Uint8List salt = CryptFilterCipher.aesSalt;
 
   StandardHandlerUsingAes128(
       super.encryptionDictionary,
@@ -22,10 +24,11 @@ class StandardHandlerUsingAes128 extends StandardHandlerUsingStandard128 {
       super.permissions,
       super.encryptMetadata,
       super.embeddedFilesOnly,
-      super.documentId);
+      super.documentId,
+      {super.keyLength = 128});
 
   StandardHandlerUsingAes128.read(super.encryptionDictionary, super.password,
-      super.documentId, super.encryptMetadata)
+      super.documentId, super.encryptMetadata, {super.keyLength = 128})
       : super.read();
 
   @override
@@ -68,7 +71,7 @@ class StandardHandlerUsingAes128 extends StandardHandlerUsingStandard128 {
     encryptionDictionary.put(PdfName.v, PdfNumber.fromInt(4));
 
     final stdcf = PdfDictionary();
-    stdcf.put(PdfName.length, PdfNumber.fromInt(16));
+    stdcf.put(PdfName.length, PdfNumber.fromInt(keyLength ~/ 8));
     if (embeddedFilesOnly) {
       stdcf.put(PdfName.authEvent, PdfName.efOpen);
       encryptionDictionary.put(PdfName.eff, PdfName.stdCF);

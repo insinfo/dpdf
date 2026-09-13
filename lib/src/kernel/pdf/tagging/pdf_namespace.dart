@@ -10,7 +10,7 @@ import 'standard_namespaces.dart';
 
 /// A wrapper for namespace dictionaries (ISO 32000-2 section 14.7.4).
 class PdfNamespace extends PdfObjectWrapper<PdfDictionary> {
-  PdfNamespace(PdfDictionary dictionary) : super(dictionary);
+  PdfNamespace(super.dictionary);
 
   PdfNamespace.fromName(String namespaceName)
       : this.fromPdfString(PdfString(namespaceName));
@@ -20,9 +20,28 @@ class PdfNamespace extends PdfObjectWrapper<PdfDictionary> {
     put(PdfName.ns, namespaceName);
   }
 
+  /// The document's default namespace, declared in the /Namespaces array of
+  /// the structure tree root and reused across calls.
+  ///
+  /// PDF 2.0 requires every structure element to name a namespace; documents
+  /// written against ISO 32000-1 use the PDF 1.7 standard structure namespace,
+  /// which is what this returns.
   static Future<PdfNamespace> getDefault(PdfDocument pdfDocument) async {
-    // TODO: implement getNamespaces and addNamespace in PdfStructTreeRoot
-    return PdfNamespace.fromName(StandardNamespaces.pdf17);
+    return await fetch(pdfDocument, StandardNamespaces.getDefault());
+  }
+
+  /// Returns the namespace named [namespaceName], declaring it in the
+  /// structure tree root's /Namespaces array the first time it is asked for.
+  static Future<PdfNamespace> fetch(
+      PdfDocument pdfDocument, String namespaceName) async {
+    final structTreeRoot = pdfDocument.structureRoot();
+    structTreeRoot.setDocument(pdfDocument);
+    final existing = await structTreeRoot.findNamespace(namespaceName);
+    if (existing != null) return existing;
+    final namespace = PdfNamespace.fromName(namespaceName);
+    namespace.pdfRepresentation().attachToDocument(pdfDocument);
+    await structTreeRoot.addNamespace(namespace);
+    return namespace;
   }
 
   PdfNamespace setNamespaceName(String namespaceName) {
@@ -82,6 +101,36 @@ class PdfNamespace extends PdfObjectWrapper<PdfDictionary> {
     roleMap!.put(PdfName(thisNsRole), targetMapping);
     markChanged();
     return this;
+  }
+
+  /// The role [thisNsRole] maps to through /RoleMapNS, or null when this
+  /// namespace does not remap it.
+  ///
+  /// The mapping value is either a single name, meaning the default namespace,
+  /// or a two-element array naming the target role and the namespace it
+  /// belongs to.
+  Future<PdfName?> resolveNamespaceRole(String thisNsRole) async {
+    final roleMap = await getNamespaceRoleMap();
+    if (roleMap == null) return null;
+    final mapping = await roleMap.get(PdfName(thisNsRole), true);
+    if (mapping is PdfName) return mapping;
+    if (mapping is PdfArray && mapping.size() > 0) {
+      return await mapping.nameEntry(0);
+    }
+    return null;
+  }
+
+  /// The namespace the mapping of [thisNsRole] targets, when /RoleMapNS names
+  /// one explicitly.
+  Future<PdfNamespace?> resolveNamespaceRoleTarget(String thisNsRole) async {
+    final roleMap = await getNamespaceRoleMap();
+    if (roleMap == null) return null;
+    final mapping = await roleMap.get(PdfName(thisNsRole), true);
+    if (mapping is PdfArray && mapping.size() > 1) {
+      final target = await mapping.dictionaryEntry(1);
+      if (target != null) return PdfNamespace(target);
+    }
+    return null;
   }
 
   @override

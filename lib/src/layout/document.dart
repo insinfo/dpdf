@@ -22,6 +22,19 @@ class Document extends RootElement<Document> {
     return rootRenderer!;
   }
 
+  /// Enables margin collapsing (CSS 2.1, 8.3.1) for the whole document.
+  Document setCollapsingMargins(bool collapsingMargins) {
+    setProperty(Property.COLLAPSING_MARGINS, collapsingMargins);
+    return this;
+  }
+
+  /// Sets the page margins used to compute the usable area of every page.
+  Document setDocumentMargins(
+      double top, double right, double bottom, double left) {
+    setMargins(top, right, bottom, left);
+    return this;
+  }
+
   @override
   Future<void> close() async {
     if (rootRenderer != null) {

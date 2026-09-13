@@ -9,6 +9,7 @@ import '../kernel/pdf/pdf_array.dart';
 import '../kernel/pdf/pdf_dictionary.dart';
 import '../kernel/pdf/pdf_name.dart';
 import '../kernel/pdf/pdf_number.dart';
+import '../kernel/pdf/pdf_object.dart';
 import '../kernel/pdf/pdf_page.dart';
 import '../kernel/pdf/pdf_stream.dart';
 import '../kernel/pdf/pdf_string.dart';
@@ -57,6 +58,191 @@ class PdfRenderOptions {
   ///     File(request.isSerif ? 'serif.ttf' : 'sans.ttf').readAsBytes());
   /// ```
   final PdfFontFallback? fontFallback;
+}
+
+/// The blend modes of ISO 32000-1 clause 11.3.5.
+///
+/// The twelve separable modes apply [_BlendMode.blendChannel] to each additive
+/// component independently; the four non-separable ones (Table 137) work on
+/// the RGB triple as a whole through `Lum`, `SetLum`, `Sat` and `SetSat`.
+enum _BlendMode {
+  normal,
+  multiply,
+  screen,
+  overlay,
+  darken,
+  lighten,
+  colorDodge,
+  colorBurn,
+  hardLight,
+  softLight,
+  difference,
+  exclusion,
+  hue,
+  saturation,
+  color,
+  luminosity;
+
+  bool get isSeparable => index < _BlendMode.hue.index;
+
+  /// The named modes of Tables 136 and 137. `Compatible` is `Normal` by
+  /// definition and exists only for pre-1.4 documents.
+  static _BlendMode? byName(String name) => switch (name) {
+        'Normal' || 'Compatible' => _BlendMode.normal,
+        'Multiply' => _BlendMode.multiply,
+        'Screen' => _BlendMode.screen,
+        'Overlay' => _BlendMode.overlay,
+        'Darken' => _BlendMode.darken,
+        'Lighten' => _BlendMode.lighten,
+        'ColorDodge' => _BlendMode.colorDodge,
+        'ColorBurn' => _BlendMode.colorBurn,
+        'HardLight' => _BlendMode.hardLight,
+        'SoftLight' => _BlendMode.softLight,
+        'Difference' => _BlendMode.difference,
+        'Exclusion' => _BlendMode.exclusion,
+        'Hue' => _BlendMode.hue,
+        'Saturation' => _BlendMode.saturation,
+        'Color' => _BlendMode.color,
+        'Luminosity' => _BlendMode.luminosity,
+        _ => null,
+      };
+
+  /// `B(cb, cs)` for a separable mode, on one component in 0..1.
+  double blendChannel(double cb, double cs) {
+    switch (this) {
+      case _BlendMode.normal:
+        return cs;
+      case _BlendMode.multiply:
+        return cb * cs;
+      case _BlendMode.screen:
+        return cb + cs - cb * cs;
+      case _BlendMode.overlay:
+        return _BlendMode.hardLight.blendChannel(cs, cb);
+      case _BlendMode.darken:
+        return math.min(cb, cs);
+      case _BlendMode.lighten:
+        return math.max(cb, cs);
+      case _BlendMode.colorDodge:
+        if (cb <= 0) return 0;
+        if (cs >= 1) return 1;
+        return math.min(1.0, cb / (1 - cs));
+      case _BlendMode.colorBurn:
+        if (cb >= 1) return 1;
+        if (cs <= 0) return 0;
+        return 1 - math.min(1.0, (1 - cb) / cs);
+      case _BlendMode.hardLight:
+        return cs <= 0.5
+            ? _BlendMode.multiply.blendChannel(cb, 2 * cs)
+            : _BlendMode.screen.blendChannel(cb, 2 * cs - 1);
+      case _BlendMode.softLight:
+        if (cs <= 0.5) return cb - (1 - 2 * cs) * cb * (1 - cb);
+        // D(x) is not simply sqrt(x): below a quarter the spec substitutes a
+        // cubic so the curve stays continuous and finite at the origin.
+        final d = cb <= 0.25
+            ? ((16 * cb - 12) * cb + 4) * cb
+            : math.sqrt(cb.clamp(0.0, 1.0));
+        return cb + (2 * cs - 1) * (d - cb);
+      case _BlendMode.difference:
+        return (cb - cs).abs();
+      case _BlendMode.exclusion:
+        return cb + cs - 2 * cb * cs;
+      case _BlendMode.hue:
+      case _BlendMode.saturation:
+      case _BlendMode.color:
+      case _BlendMode.luminosity:
+        return cs;
+    }
+  }
+
+  /// `B(Cb, Cs)` for a non-separable mode, writing into [out].
+  void blendColour(List<double> cb, List<double> cs, List<double> out) {
+    switch (this) {
+      case _BlendMode.hue:
+        _setSat(cs, _sat(cb), out);
+        _setLum(out, _lum(cb), out);
+      case _BlendMode.saturation:
+        _setSat(cb, _sat(cs), out);
+        _setLum(out, _lum(cb), out);
+      case _BlendMode.color:
+        _setLum(cs, _lum(cb), out);
+      case _BlendMode.luminosity:
+        _setLum(cb, _lum(cs), out);
+      default:
+        out[0] = cs[0];
+        out[1] = cs[1];
+        out[2] = cs[2];
+    }
+  }
+
+  static double _lum(List<double> c) => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+
+  static double _sat(List<double> c) =>
+      math.max(c[0], math.max(c[1], c[2])) -
+      math.min(c[0], math.min(c[1], c[2]));
+
+  /// `SetLum` followed by `ClipColor`, clause 11.3.5.3.
+  static void _setLum(List<double> c, double l, List<double> out) {
+    final d = l - _lum(c);
+    out[0] = c[0] + d;
+    out[1] = c[1] + d;
+    out[2] = c[2] + d;
+    _clipColour(out);
+  }
+
+  static void _clipColour(List<double> c) {
+    final l = _lum(c);
+    final n = math.min(c[0], math.min(c[1], c[2]));
+    final x = math.max(c[0], math.max(c[1], c[2]));
+    if (n < 0 && l != n) {
+      for (var i = 0; i < 3; i++) {
+        c[i] = l + ((c[i] - l) * l) / (l - n);
+      }
+    }
+    if (x > 1 && x != l) {
+      for (var i = 0; i < 3; i++) {
+        c[i] = l + ((c[i] - l) * (1 - l)) / (x - l);
+      }
+    }
+  }
+
+  /// `SetSat`: stretches the colour so its maximum minus its minimum is [s],
+  /// keeping the relative position of the middle component.
+  static void _setSat(List<double> c, double s, List<double> out) {
+    var maximum = 0, middle = 1, minimum = 2;
+    void order() {
+      final indices = [0, 1, 2]..sort((a, b) => c[a].compareTo(c[b]));
+      minimum = indices[0];
+      middle = indices[1];
+      maximum = indices[2];
+    }
+
+    order();
+    if (c[maximum] > c[minimum]) {
+      out[middle] = ((c[middle] - c[minimum]) * s) / (c[maximum] - c[minimum]);
+      out[maximum] = s;
+    } else {
+      out[middle] = 0;
+      out[maximum] = 0;
+    }
+    out[minimum] = 0;
+  }
+}
+
+/// An offscreen surface used to composite one object, or one transparency
+/// group, with a blend mode the rasterizer cannot apply directly.
+class _LayerSurface {
+  final BLImage image;
+  final BLContext context;
+
+  /// What the layer's clip was configured from, kept by identity so a page
+  /// that draws thousands of blended objects under one clip only pays for
+  /// copying the mask once.
+  Uint8List? clipMask;
+  Uint8List? opacityMask;
+  BLRectI? clipRect;
+  var configured = false;
+
+  _LayerSurface(this.image) : context = BLContext(image);
 }
 
 class _MeshBitReader {
@@ -370,6 +556,9 @@ class _State {
   PdfDictionary? fillPattern;
   PdfDictionary? strokePattern;
 
+  /// The `/BM` entry of the graphics state, clause 11.3.5.
+  _BlendMode blendMode;
+
   // Text state.
   double fontSize;
   double charSpacing;
@@ -395,6 +584,7 @@ class _State {
     this.strokeAlpha = 1,
     this.fillPattern,
     this.strokePattern,
+    this.blendMode = _BlendMode.normal,
     this.fontSize = 0,
     this.charSpacing = 0,
     this.wordSpacing = 0,
@@ -420,6 +610,7 @@ class _State {
         strokeAlpha: strokeAlpha,
         fillPattern: fillPattern,
         strokePattern: strokePattern,
+        blendMode: blendMode,
         fontSize: fontSize,
         charSpacing: charSpacing,
         wordSpacing: wordSpacing,
@@ -431,7 +622,10 @@ class _State {
 }
 
 class _Renderer {
-  final BLContext context;
+  /// Where drawing goes. Not final: compositing an object through a blend
+  /// mode, or a transparency group through its group attributes, redirects
+  /// the content to an offscreen surface and puts this back afterwards.
+  BLContext context;
   final unsupported = <String, int>{};
   var glyphsSkipped = 0;
 
@@ -446,6 +640,25 @@ class _Renderer {
   BLPath _path = BLPath();
   var _pathEmpty = true;
   double _startX = 0, _startY = 0, _currentX = 0, _currentY = 0;
+
+  /// Device-space bounds of [_path], so a blended fill only has to composite
+  /// the pixels the path can reach instead of the whole surface.
+  double _pathLeft = 0, _pathTop = 0, _pathRight = 0, _pathBottom = 0;
+
+  /// The initial backdrop of the enclosing knockout group, or null when the
+  /// current group is not a knockout group (clause 11.4.6). Each object in a
+  /// knockout group composites with this rather than with what came before.
+  Uint32List? _knockoutBackdrop;
+
+  /// A reusable offscreen surface for blended objects.
+  _LayerSurface? _layer;
+  var _layerBusy = false;
+
+  /// Glyph outlines accumulated by text rendering modes 4 to 7, in device
+  /// space, plus one contour count per contour. Clause 9.3.6: their union is
+  /// intersected into the clip when the text object ends.
+  List<double>? _textClipVertices;
+  List<int>? _textClipContours;
 
   /// A `W` or `W*` seen before the painting operator that ends the path.
   BLFillRule? _pendingClip;
@@ -634,8 +847,10 @@ class _Renderer {
       case 'BT':
         _textLineMatrix = BLMatrix2D.identity;
         _textMatrix = BLMatrix2D.identity;
+        _textClipVertices = null;
+        _textClipContours = null;
       case 'ET':
-        break;
+        await _applyTextClip();
       case 'Tf':
         state.fontSize = op.number(1) ?? state.fontSize;
         await _selectFont(op.name(0), resources);
@@ -706,8 +921,22 @@ class _Renderer {
   /// they will actually be drawn at.
   (double, double) _device(double x, double y) => state.ctm.mapPoint(x, y);
 
+  /// Grows the running device-space bounds of the path under construction.
+  void _extend(double x, double y) {
+    if (_pathEmpty) {
+      _pathLeft = _pathRight = x;
+      _pathTop = _pathBottom = y;
+      return;
+    }
+    if (x < _pathLeft) _pathLeft = x;
+    if (x > _pathRight) _pathRight = x;
+    if (y < _pathTop) _pathTop = y;
+    if (y > _pathBottom) _pathBottom = y;
+  }
+
   void _moveTo(double x, double y) {
     final p = _device(x, y);
+    _extend(p.$1, p.$2);
     _path.moveTo(p.$1, p.$2);
     _startX = _currentX = p.$1;
     _startY = _currentY = p.$2;
@@ -717,6 +946,7 @@ class _Renderer {
   void _lineTo(double x, double y) {
     if (_pathEmpty) return _moveTo(x, y);
     final p = _device(x, y);
+    _extend(p.$1, p.$2);
     _path.lineTo(p.$1, p.$2);
     _currentX = p.$1;
     _currentY = p.$2;
@@ -729,11 +959,16 @@ class _Renderer {
   void _curveToDevice(
       (double, double) c1, (double, double) c2, (double, double) end) {
     if (_pathEmpty) {
+      _extend(c1.$1, c1.$2);
       _path.moveTo(c1.$1, c1.$2);
       _startX = _currentX = c1.$1;
       _startY = _currentY = c1.$2;
       _pathEmpty = false;
     }
+    // The control hull contains the curve, so its bounds are a safe cover.
+    _extend(c1.$1, c1.$2);
+    _extend(c2.$1, c2.$2);
+    _extend(end.$1, end.$2);
     _path.cubicTo(c1.$1, c1.$2, c2.$1, c2.$2, end.$1, end.$2);
     _currentX = end.$1;
     _currentY = end.$2;
@@ -758,19 +993,41 @@ class _Renderer {
 
   Future<void> _endPath({BLFillRule? fill, required bool stroke}) async {
     if (!_pathEmpty) {
+      final path = _path;
+      final bounds = _pathBounds;
       if (fill != null) {
-        if (state.fillPattern != null) {
-          await _fillPattern(_path, fill, state.fillPattern!);
-        } else {
-          await context.fillPath(_path,
-              color: _withAlpha(state.fillColour, state.fillAlpha), rule: fill);
-        }
+        await _paint(
+          () async {
+            if (state.fillPattern != null) {
+              await _fillPattern(path, fill, state.fillPattern!);
+            } else {
+              await context.fillPath(path,
+                  color: _withAlpha(state.fillColour, state.fillAlpha),
+                  rule: fill);
+            }
+          },
+          bounds: bounds,
+          constantAlpha: state.fillAlpha,
+        );
       }
       if (stroke) {
-        await _strokeCurrentPath();
+        // A stroke reaches half a line width plus the miter allowance past
+        // the path itself, which the fill bounds do not cover.
+        final reach =
+            (state.lineWidth * _averageScale(state.ctm) * state.miterLimit)
+                .ceil()
+                .clamp(1, 1 << 20);
+        await _paint(
+          _strokeCurrentPath,
+          bounds: bounds == null
+              ? null
+              : BLRectI(bounds.x - reach, bounds.y - reach,
+                  bounds.width + reach * 2, bounds.height + reach * 2),
+          constantAlpha: state.strokeAlpha,
+        );
       }
       final clip = _pendingClip;
-      if (clip != null) context.clipToPath(_path, rule: clip);
+      if (clip != null) context.clipToPath(path, rule: clip);
     }
     _pendingClip = null;
     _path = BLPath();
@@ -827,6 +1084,252 @@ class _Renderer {
     final x = math.sqrt(m.m00 * m.m00 + m.m01 * m.m01);
     final y = math.sqrt(m.m10 * m.m10 + m.m11 * m.m11);
     return (x + y) / 2;
+  }
+
+  // --- transparency ---------------------------------------------------------
+
+  /// Draws one elementary object, clause 11.3.3.
+  ///
+  /// With the Normal blend mode outside a knockout group the rasterizer does
+  /// the whole job and [body] paints straight onto the surface. Otherwise the
+  /// object goes to an offscreen layer first, because both the blend function
+  /// and the knockout rule need the object's own colour and alpha separately
+  /// from what is already on the page.
+  ///
+  /// [bounds] limits the compositing pass to the pixels the object can reach;
+  /// null means the whole surface. [constantAlpha] is the `ca`/`CA` used to
+  /// paint, which is what lets the knockout rule recover the object's shape
+  /// from the layer's alpha.
+  Future<void> _paint(
+    Future<void> Function() body, {
+    BLRectI? bounds,
+    double constantAlpha = 1,
+  }) async {
+    final mode = state.blendMode;
+    final knockout = _knockoutBackdrop;
+    if (mode == _BlendMode.normal && knockout == null) {
+      await body();
+      return;
+    }
+
+    final target = context;
+    final rect = _clampToSurface(bounds, target.image);
+    if (rect == null) return;
+
+    final reused = !_layerBusy;
+    final layer = reused
+        ? _borrowLayer(target)
+        : _LayerSurface(BLImage(target.image.width, target.image.height));
+    if (!reused) _configureLayer(layer, target);
+    _layerBusy = true;
+    _clearRegion(layer.image, rect);
+
+    context = layer.context;
+    try {
+      await body();
+    } finally {
+      context = target;
+      layer.context.flush();
+      if (reused) _layerBusy = false;
+    }
+
+    _composeObject(target, layer.image, rect,
+        mode: mode, knockout: knockout, constantAlpha: constantAlpha);
+  }
+
+  _LayerSurface _borrowLayer(BLContext target) {
+    var layer = _layer;
+    if (layer == null ||
+        layer.image.width != target.image.width ||
+        layer.image.height != target.image.height) {
+      layer = _LayerSurface(BLImage(target.image.width, target.image.height));
+      _layer = layer;
+    }
+    _configureLayer(layer, target);
+    return layer;
+  }
+
+  /// Gives [layer] the same clip and soft mask as [target].
+  ///
+  /// Both are compared by identity: [BLContext] publishes a new mask whenever
+  /// the clip changes, so an unchanged reference means an unchanged clip and
+  /// the copy can be skipped.
+  static void _configureLayer(_LayerSurface layer, BLContext target) {
+    final rect = target.clipRect;
+    if (layer.configured &&
+        identical(layer.clipMask, target.clipMask) &&
+        identical(layer.opacityMask, target.opacityMask) &&
+        _sameRect(layer.clipRect, rect)) {
+      return;
+    }
+    layer.context.resetClip();
+    layer.context.setClipRect(rect);
+    final mask = target.clipMask;
+    if (mask != null) layer.context.intersectClipMask(mask);
+    layer.context.setOpacityMask(target.opacityMask);
+    layer.clipMask = mask;
+    layer.opacityMask = target.opacityMask;
+    layer.clipRect = rect;
+    layer.configured = true;
+  }
+
+  static bool _sameRect(BLRectI? a, BLRectI? b) {
+    if (a == null || b == null) return a == null && b == null;
+    return a.x == b.x &&
+        a.y == b.y &&
+        a.width == b.width &&
+        a.height == b.height;
+  }
+
+  static BLRectI? _clampToSurface(BLRectI? bounds, BLImage image) {
+    if (bounds == null) return BLRectI(0, 0, image.width, image.height);
+    final x0 = math.max(0, bounds.x);
+    final y0 = math.max(0, bounds.y);
+    final x1 = math.min(image.width, bounds.x + bounds.width);
+    final y1 = math.min(image.height, bounds.y + bounds.height);
+    if (x1 <= x0 || y1 <= y0) return null;
+    return BLRectI(x0, y0, x1 - x0, y1 - y0);
+  }
+
+  /// Device bounds of a rectangle whose corners are [points], padded by one
+  /// pixel so antialiased edges are not clipped away.
+  static BLRectI _boundsOf(List<(double, double)> points) {
+    var left = points.first.$1, right = left;
+    var top = points.first.$2, bottom = top;
+    for (final point in points.skip(1)) {
+      left = math.min(left, point.$1);
+      right = math.max(right, point.$1);
+      top = math.min(top, point.$2);
+      bottom = math.max(bottom, point.$2);
+    }
+    final x = left.floor() - 1;
+    final y = top.floor() - 1;
+    return BLRectI(x, y, right.ceil() + 1 - x, bottom.ceil() + 1 - y);
+  }
+
+  BLRectI? get _pathBounds => _pathEmpty
+      ? null
+      : _boundsOf([(_pathLeft, _pathTop), (_pathRight, _pathBottom)]);
+
+  static void _clearRegion(BLImage image, BLRectI rect) {
+    final pixels = image.pixels;
+    if (rect.x == 0 && rect.width == image.width) {
+      pixels.fillRange(
+          rect.y * image.width, (rect.y + rect.height) * image.width, 0);
+      return;
+    }
+    for (var y = rect.y; y < rect.y + rect.height; y++) {
+      final row = y * image.width;
+      pixels.fillRange(row + rect.x, row + rect.x + rect.width, 0);
+    }
+  }
+
+  /// Composites an object rendered into [source] onto [target].
+  void _composeObject(
+    BLContext target,
+    BLImage source,
+    BLRectI rect, {
+    required _BlendMode mode,
+    required Uint32List? knockout,
+    required double constantAlpha,
+  }) {
+    final destination = target.image.pixels;
+    final layer = source.pixels;
+    final opacity = target.opacityMask;
+    final width = target.image.width;
+    final backdrop = List<double>.filled(3, 0);
+    final colour = List<double>.filled(3, 0);
+    final blended = List<double>.filled(3, 0);
+
+    for (var y = rect.y; y < rect.y + rect.height; y++) {
+      final row = y * width;
+      for (var x = rect.x; x < rect.x + rect.width; x++) {
+        final index = row + x;
+        final src = layer[index];
+        final sourceAlpha = (src >>> 24) & 0xff;
+        if (sourceAlpha == 0) continue;
+
+        if (knockout == null) {
+          destination[index] = _composite(destination[index], src,
+              sourceAlpha / 255, mode, backdrop, colour, blended);
+          continue;
+        }
+
+        // Clause 11.4.6: the object composites with the group's initial
+        // backdrop using a source shape of 1.0, and that result then replaces
+        // the accumulated group content in proportion to the object's shape.
+        // The layer's alpha is shape times opacity, so dividing by the
+        // constant alpha that painted it recovers the shape.
+        var opacityFactor = constantAlpha;
+        if (opacity != null) opacityFactor *= opacity[index] / 255;
+        if (opacityFactor <= 0) continue;
+        final shape = math.min(1.0, (sourceAlpha / 255) / opacityFactor);
+        if (shape <= 0) continue;
+        final composed = _composite(knockout[index], src, opacityFactor, mode,
+            backdrop, colour, blended);
+        destination[index] = _mix(destination[index], composed, shape);
+      }
+    }
+  }
+
+  /// The colour and alpha compositing formulas of clauses 11.3.6 and 11.3.7,
+  /// for one source pixel over one backdrop pixel.
+  static int _composite(
+    int backdropPixel,
+    int sourcePixel,
+    double sourceAlpha,
+    _BlendMode mode,
+    List<double> backdrop,
+    List<double> colour,
+    List<double> blended,
+  ) {
+    if (sourceAlpha <= 0) return backdropPixel;
+    final ab = ((backdropPixel >>> 24) & 0xff) / 255;
+    final as = sourceAlpha.clamp(0.0, 1.0);
+    final ar = ab + as - ab * as;
+    if (ar <= 0) return 0;
+
+    backdrop[0] = ((backdropPixel >>> 16) & 0xff) / 255;
+    backdrop[1] = ((backdropPixel >>> 8) & 0xff) / 255;
+    backdrop[2] = (backdropPixel & 0xff) / 255;
+    colour[0] = ((sourcePixel >>> 16) & 0xff) / 255;
+    colour[1] = ((sourcePixel >>> 8) & 0xff) / 255;
+    colour[2] = (sourcePixel & 0xff) / 255;
+
+    if (mode.isSeparable) {
+      for (var i = 0; i < 3; i++) {
+        blended[i] = mode.blendChannel(backdrop[i], colour[i]);
+      }
+    } else {
+      mode.blendColour(backdrop, colour, blended);
+    }
+
+    final weight = as / ar;
+    var result = (ar * 255).round().clamp(0, 255) << 24;
+    for (var i = 0; i < 3; i++) {
+      final mixed = (1 - ab) * colour[i] + ab * blended[i];
+      final value = (1 - weight) * backdrop[i] + weight * mixed;
+      result |= (value.clamp(0.0, 1.0) * 255).round() << (16 - i * 8);
+    }
+    return result;
+  }
+
+  /// A weighted average of two straight-alpha pixels, done on premultiplied
+  /// values so a transparent pixel contributes no colour.
+  static int _mix(int a, int b, double weight) {
+    if (weight >= 1) return b;
+    if (weight <= 0) return a;
+    final aa = (a >>> 24) & 0xff;
+    final ba = (b >>> 24) & 0xff;
+    final alpha = aa * (1 - weight) + ba * weight;
+    if (alpha <= 0) return 0;
+    var result = alpha.round().clamp(0, 255) << 24;
+    for (var shift = 16; shift >= 0; shift -= 8) {
+      final value = ((a >>> shift) & 0xff) * aa * (1 - weight) +
+          ((b >>> shift) & 0xff) * ba * weight;
+      result |= (value / alpha).round().clamp(0, 255) << shift;
+    }
+    return result;
   }
 
   // --- colour ---------------------------------------------------------------
@@ -1026,8 +1529,11 @@ class _Renderer {
       ..lineTo(context.image.width.toDouble(), context.image.height.toDouble())
       ..lineTo(0, context.image.height.toDouble())
       ..close();
-    await _fillShadingPattern(surface, BLFillRule.nonZero, pattern,
-        stroke: false);
+    await _paint(
+      () => _fillShadingPattern(surface, BLFillRule.nonZero, pattern,
+          stroke: false),
+      constantAlpha: state.fillAlpha,
+    );
   }
 
   Future<void> _fillPattern(BLPath path, BLFillRule rule, PdfDictionary pattern,
@@ -1122,6 +1628,8 @@ class _Renderer {
     context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
   }
 
+  /// Paints a shading, honouring the `/BBox` every shading dictionary may
+  /// carry (Table 78): a clip, expressed in the shading's target space.
   Future<void> _fillShadingPattern(
       BLPath path, BLFillRule rule, PdfDictionary pattern,
       {required bool stroke}) async {
@@ -1130,6 +1638,44 @@ class _Renderer {
       _note('scn:malformed-shading-pattern');
       return;
     }
+    final bbox = await shadingObject.arrayEntry(PdfName.bBox);
+    if (bbox == null || bbox.size() != 4) {
+      await _fillShadingPatternInner(path, rule, pattern, shadingObject,
+          stroke: stroke);
+      return;
+    }
+    final b = await bbox.toDoubleArray();
+    final toDevice = (await _patternMatrix(pattern)).multiply(state.ctm);
+    final x0 = math.min(b[0], b[2]);
+    final y0 = math.min(b[1], b[3]);
+    final x1 = math.max(b[0], b[2]);
+    final y1 = math.max(b[1], b[3]);
+    context.save();
+    context.clipToPath(_polygon(<(double, double)>[
+      toDevice.mapPoint(x0, y0),
+      toDevice.mapPoint(x1, y0),
+      toDevice.mapPoint(x1, y1),
+      toDevice.mapPoint(x0, y1),
+    ]));
+    try {
+      await _fillShadingPatternInner(path, rule, pattern, shadingObject,
+          stroke: stroke);
+    } finally {
+      context.restore();
+    }
+  }
+
+  /// The pattern's `/Matrix`, or the identity when it has none.
+  Future<BLMatrix2D> _patternMatrix(PdfDictionary pattern) async {
+    final array = await pattern.arrayEntry(PdfName.matrix);
+    if (array == null || array.size() != 6) return BLMatrix2D.identity;
+    final m = await array.toDoubleArray();
+    return BLMatrix2D(m[0], m[1], m[2], m[3], m[4], m[5]);
+  }
+
+  Future<void> _fillShadingPatternInner(BLPath path, BLFillRule rule,
+      PdfDictionary pattern, PdfDictionary shadingObject,
+      {required bool stroke}) async {
     final shading = shadingObject;
     final shadingType = await shading.integerEntry(PdfName.shadingType);
     final expectedCoords = shadingType == 2 ? 4 : (shadingType == 3 ? 6 : 0);
@@ -1140,6 +1686,14 @@ class _Renderer {
     final colorSpace = colorObject == null
         ? null
         : await PdfColorSpace.makeColorSpace(colorObject);
+    if (shadingType == 1 && colorSpace != null) {
+      if (await _fillFunctionShading(path, rule, pattern, shading, colorSpace,
+          stroke: stroke)) {
+        return;
+      }
+      _note('scn:unsupported-shading-pattern');
+      return;
+    }
     if (shadingType == 4 && shading is PdfStream && colorSpace != null) {
       if (await _fillFreeFormShading(
           path, rule, pattern, shading, colorSpace, function,
@@ -1240,6 +1794,152 @@ class _Renderer {
     }
     await context.fillPath(path, rule: rule);
     context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
+  }
+
+  /// ShadingType 1, clause 8.7.4.5.2: the colour at a point is whatever the
+  /// shading's function says it is, over a rectangular domain that `/Matrix`
+  /// places in the pattern's space.
+  Future<bool> _fillFunctionShading(
+    BLPath clipPath,
+    BLFillRule rule,
+    PdfDictionary pattern,
+    PdfDictionary shading,
+    PdfColorSpace colorSpace, {
+    required bool stroke,
+  }) async {
+    final evaluate =
+        await _surfaceFunction(await shading.get(PdfName.function, true));
+    if (evaluate == null) return false;
+
+    var domain = <double>[0, 1, 0, 1];
+    final domainArray = await shading.arrayEntry(PdfName('Domain'));
+    if (domainArray != null && domainArray.size() == 4) {
+      domain = await domainArray.toDoubleArray();
+    }
+    if (!(domain[1] > domain[0]) || !(domain[3] > domain[2])) return false;
+
+    var matrix = BLMatrix2D.identity;
+    final matrixArray = await shading.arrayEntry(PdfName.matrix);
+    if (matrixArray != null && matrixArray.size() == 6) {
+      final m = await matrixArray.toDoubleArray();
+      matrix = BLMatrix2D(m[0], m[1], m[2], m[3], m[4], m[5]);
+    }
+    final toDevice =
+        matrix.multiply((await _patternMatrix(pattern)).multiply(state.ctm));
+    final fromDevice = toDevice.invert();
+    if (fromDevice == null) return false;
+
+    // Points outside the transformed domain take the shading's /Background
+    // when it has one, and stay unpainted when it does not.
+    int background = 0x00000000;
+    final backgroundArray = await shading.arrayEntry(PdfName('Background'));
+    if (backgroundArray != null &&
+        backgroundArray.size() == colorSpace.getNumberOfComponents()) {
+      try {
+        final rgb = colorSpace.toRgb(await backgroundArray.toDoubleArray());
+        background = _rgb(rgb[0], rgb[1], rgb[2]);
+      } on Object {
+        background = 0x00000000;
+      }
+    }
+
+    final region =
+        _clampToSurface(_boundsOf(_pathCorners(clipPath)), context.image);
+    if (region == null) return true;
+
+    final alpha =
+        ((stroke ? state.strokeAlpha : state.fillAlpha).clamp(0.0, 1.0) * 255)
+            .round();
+    final surface = BLImage(region.width, region.height);
+    final pixels = surface.pixels;
+    final cache = <int, int>{};
+    for (var y = 0; y < region.height; y++) {
+      final row = y * region.width;
+      for (var x = 0; x < region.width; x++) {
+        // Sample at the pixel centre, which is where the rasterizer decides
+        // coverage from.
+        final point =
+            fromDevice.mapPoint(region.x + x + 0.5, region.y + y + 0.5);
+        if (point.$1 < domain[0] ||
+            point.$1 > domain[1] ||
+            point.$2 < domain[2] ||
+            point.$2 > domain[3]) {
+          pixels[row + x] =
+              background == 0 ? 0 : _withAlphaByte(background, alpha);
+          continue;
+        }
+        // Function evaluation dominates the cost here, and a smooth shading
+        // repeats colours constantly; quantising the domain to a fine grid
+        // makes the cache hit almost always without a visible difference.
+        final key = ((point.$1 - domain[0]) / (domain[1] - domain[0]) * 1023)
+                    .round()
+                    .clamp(0, 1023) *
+                1024 +
+            ((point.$2 - domain[2]) / (domain[3] - domain[2]) * 1023)
+                .round()
+                .clamp(0, 1023);
+        var colour = cache[key];
+        if (colour == null) {
+          try {
+            final rgb = colorSpace.toRgb(evaluate(point.$1, point.$2));
+            colour = _withAlphaByte(_rgb(rgb[0], rgb[1], rgb[2]), alpha);
+          } on Object {
+            colour = 0;
+          }
+          cache[key] = colour;
+        }
+        pixels[row + x] = colour;
+      }
+    }
+
+    context.setPattern(BLPattern(
+      image: surface,
+      transform:
+          BLMatrix2D(1, 0, 0, 1, -region.x.toDouble(), -region.y.toDouble()),
+    ));
+    await context.fillPath(clipPath, rule: rule);
+    context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
+    return true;
+  }
+
+  static int _withAlphaByte(int colour, int alpha) =>
+      (colour & 0x00FFFFFF) | (alpha.clamp(0, 255) << 24);
+
+  static List<(double, double)> _pathCorners(BLPath path) {
+    final data = path.toPathData();
+    if (data.vertices.isEmpty) return const [(0.0, 0.0)];
+    var left = data.vertices[0], right = left;
+    var top = data.vertices[1], bottom = top;
+    for (var i = 2; i < data.vertices.length; i += 2) {
+      left = math.min(left, data.vertices[i]);
+      right = math.max(right, data.vertices[i]);
+      top = math.min(top, data.vertices[i + 1]);
+      bottom = math.max(bottom, data.vertices[i + 1]);
+    }
+    return <(double, double)>[(left, top), (right, bottom)];
+  }
+
+  /// A 2-in n-out function, which `/Function` may also express as n separate
+  /// 2-in 1-out functions (clause 8.7.4.5.2).
+  Future<List<double> Function(double, double)?> _surfaceFunction(
+      PdfObject? object) async {
+    if (object is PdfArray) {
+      final parts = <PdfFunction>[];
+      for (var i = 0; i < object.size(); i++) {
+        final part = await PdfFunction.parse(await object.get(i));
+        if (part == null || part.inputCount != 2 || part.outputCount != 1) {
+          return null;
+        }
+        parts.add(part);
+      }
+      if (parts.isEmpty) return null;
+      return (x, y) => <double>[
+            for (final part in parts) part.evaluate(<double>[x, y]).first
+          ];
+    }
+    final function = await PdfFunction.parse(object);
+    if (function == null || function.inputCount != 2) return null;
+    return (x, y) => function.evaluate(<double>[x, y]);
   }
 
   Future<bool> _fillPatchShading(
@@ -1773,13 +2473,39 @@ class _Renderer {
         }
       }
     }
-    final blend = await gs.nameEntry(PdfName('BM'));
-    final blendName = blend?.getValue();
-    if (blendName != null &&
-        blendName != 'Normal' &&
-        blendName != 'Compatible') {
-      _note('gs:BM/$blendName');
+    if (gs.containsKey(PdfName('BM'))) {
+      await _setBlendMode(await gs.get(PdfName('BM'), true));
     }
+  }
+
+  /// Clause 11.6.3: `/BM` is a blend mode name, or an array of names from
+  /// which the first one this renderer implements shall be used.
+  Future<void> _setBlendMode(PdfObject? value) async {
+    if (value is PdfName) {
+      final mode = _BlendMode.byName(value.getValue());
+      if (mode == null) {
+        _note('gs:BM/${value.getValue()}');
+        return;
+      }
+      state.blendMode = mode;
+      return;
+    }
+    if (value is PdfArray) {
+      for (var i = 0; i < value.size(); i++) {
+        final entry = await value.get(i);
+        if (entry is! PdfName) continue;
+        final mode = _BlendMode.byName(entry.getValue());
+        if (mode != null) {
+          state.blendMode = mode;
+          return;
+        }
+      }
+      // An array with nothing recognisable in it means Normal, which is what
+      // the array form is for: naming a preferred mode with a fallback.
+      state.blendMode = _BlendMode.normal;
+      return;
+    }
+    _note('gs:BM');
   }
 
   Future<void> _applySoftMask(
@@ -2010,17 +2736,68 @@ class _Renderer {
       return;
     }
 
-    // Render mode 3 is invisible and 7 only adds to the clip; neither paints.
-    // This is what makes the text layer of a scanned page stay hidden.
-    final invisible = state.renderMode == 3 || state.renderMode == 7;
-    final stroke = state.renderMode == 1 || state.renderMode == 5;
+    // Clause 9.3.6, Table 106. Mode 3 draws nothing at all, which is what
+    // keeps the text layer of a scanned page hidden; modes 4 to 7 additionally
+    // add the glyph outlines to the clipping path, and mode 7 only does that.
+    final mode = state.renderMode;
+    final fill = mode == 0 || mode == 2 || mode == 4 || mode == 6;
+    final stroke = mode == 1 || mode == 2 || mode == 5 || mode == 6;
+    final clip = mode >= 4 && mode <= 7;
+    if (clip) {
+      // An empty union clips everything away, which is the right answer for a
+      // text object that shows no glyphs under a clipping mode.
+      _textClipVertices ??= <double>[];
+      _textClipContours ??= <int>[];
+    }
 
     for (final code in font.codes(bytes)) {
-      if (!invisible) {
-        await _drawGlyph(font, code, stroke: stroke);
+      if (fill || stroke || clip) {
+        await _drawGlyph(font, code, fill: fill, stroke: stroke, clip: clip);
       }
       _advanceForCode(code, font.width(code), composite: font.composite);
     }
+  }
+
+  /// Intersects the clip with the glyph outlines collected since `BT`.
+  Future<void> _applyTextClip() async {
+    final vertices = _textClipVertices;
+    final contours = _textClipContours;
+    _textClipVertices = null;
+    _textClipContours = null;
+
+    final width = context.image.width;
+    final height = context.image.height;
+
+    if (vertices == null || contours == null) {
+      // Clause 9.4.3: at ET the glyph outlines accumulated since BT become the
+      // clipping path. A text object that never reached a show-text operator
+      // accumulated nothing, so under a clipping mode the union is empty and
+      // the clip removes the whole page. Only a text object that used no
+      // clipping mode at all leaves the existing clip untouched.
+      final mode = state.renderMode;
+      if (mode < 4 || mode > 7) return;
+      context.intersectClipMask(Uint8List(width * height));
+      return;
+    }
+    final coverage = Uint8List(width * height);
+    if (vertices.length >= 6) {
+      // The outlines are rasterized once, as a single non-zero path: glyph
+      // contours are wound consistently, so non-zero is their union and
+      // overlapping glyphs do not punch holes in each other.
+      final surface = BLImage(width, height);
+      final scratch = BLContext(surface);
+      await scratch.fillPolygon(
+        vertices,
+        contourVertexCounts: contours,
+        color: 0xFFFFFFFF,
+        rule: BLFillRule.nonZero,
+      );
+      scratch.flush();
+      for (var i = 0; i < coverage.length; i++) {
+        coverage[i] = (surface.pixels[i] >>> 24) & 0xff;
+      }
+    }
+    context.intersectClipMask(coverage);
   }
 
   /// Advances the text matrix past one glyph.
@@ -2043,7 +2820,9 @@ class _Renderer {
   Future<void> _drawGlyph(
     PdfGlyphSource font,
     int code, {
+    required bool fill,
     required bool stroke,
+    required bool clip,
   }) async {
     final face = font.face!;
     final gid = font.glyph(code);
@@ -2083,28 +2862,69 @@ class _Renderer {
       mapped[i + 1] = y;
     }
 
-    if (stroke) {
-      final scale = _averageScale(state.ctm);
-      await context.strokePolygon(
-        mapped,
-        contourVertexCounts: outline.contourVertexCounts,
-        color: _withAlpha(state.strokeColour, state.strokeAlpha),
-        options: BLStrokeOptions(
-          width: state.lineWidth * scale,
-          startCap: state.lineCap,
-          endCap: state.lineCap,
-          join: state.lineJoin,
-          miterLimit: state.miterLimit,
-        ),
-      );
-    } else {
+    if (clip) {
+      _textClipVertices!.addAll(mapped);
+      // Contour counts are in points, and one glyph's contours have to stay
+      // separated from the next glyph's, so a missing list becomes a single
+      // contour covering this glyph rather than nothing.
+      final counts = outline.contourVertexCounts;
+      if (counts == null || counts.isEmpty) {
+        _textClipContours!.add(mapped.length ~/ 2);
+      } else {
+        _textClipContours!.addAll(counts);
+      }
+    }
+    if (!fill && !stroke) return;
+
+    var left = mapped[0], right = mapped[0];
+    var top = mapped[1], bottom = mapped[1];
+    for (var i = 2; i < mapped.length; i += 2) {
+      left = math.min(left, mapped[i]);
+      right = math.max(right, mapped[i]);
+      top = math.min(top, mapped[i + 1]);
+      bottom = math.max(bottom, mapped[i + 1]);
+    }
+    final strokeReach = stroke
+        ? (state.lineWidth * _averageScale(state.ctm) * state.miterLimit)
+            .ceil()
+            .clamp(1, 1 << 20)
+        : 0;
+    final bounds = _boundsOf([(left, top), (right, bottom)]);
+
+    // Table 106 names modes 2 and 6 "Fill, then stroke": the stroke has to
+    // land on top of the fill, so the fill goes down first.
+    if (fill) {
       // Glyph outlines are always non-zero: counters are wound the other way
       // round, and even-odd would punch holes through overlapping contours.
-      await context.fillPolygon(
-        mapped,
-        contourVertexCounts: outline.contourVertexCounts,
-        color: _withAlpha(state.fillColour, state.fillAlpha),
-        rule: BLFillRule.nonZero,
+      await _paint(
+        () => context.fillPolygon(
+          mapped,
+          contourVertexCounts: outline.contourVertexCounts,
+          color: _withAlpha(state.fillColour, state.fillAlpha),
+          rule: BLFillRule.nonZero,
+        ),
+        bounds: bounds,
+        constantAlpha: state.fillAlpha,
+      );
+    }
+    if (stroke) {
+      final scale = _averageScale(state.ctm);
+      await _paint(
+        () => context.strokePolygon(
+          mapped,
+          contourVertexCounts: outline.contourVertexCounts,
+          color: _withAlpha(state.strokeColour, state.strokeAlpha),
+          options: BLStrokeOptions(
+            width: state.lineWidth * scale,
+            startCap: state.lineCap,
+            endCap: state.lineCap,
+            join: state.lineJoin,
+            miterLimit: state.miterLimit,
+          ),
+        ),
+        bounds: BLRectI(bounds.x - strokeReach, bounds.y - strokeReach,
+            bounds.width + strokeReach * 2, bounds.height + strokeReach * 2),
+        constantAlpha: state.strokeAlpha,
       );
     }
   }
@@ -2132,38 +2952,34 @@ class _Renderer {
       return;
     }
 
-    // A form runs with its own matrix and resources, inside a saved state, and
-    // clipped to its bounding box.
+    // Clause 11.6.6: a form that carries a transparency group dictionary is
+    // not just executed in place. Its content is composited as a unit, so the
+    // graphics state's alpha, soft mask and blend mode apply once to the
+    // finished group rather than to each object inside it.
+    final group = await xobject.dictionaryEntry(PdfName('Group'));
+    final isTransparency =
+        (await group?.nameEntry(PdfName.s))?.getValue() == 'Transparency';
+    if (group != null && isTransparency) {
+      await _drawTransparencyGroup(xobject, group, resources, depth);
+      return;
+    }
+
+    await _runForm(xobject, resources, depth);
+  }
+
+  /// Runs a form XObject with its own matrix and resources, inside a saved
+  /// state, clipped to its bounding box (clause 8.10.2).
+  Future<void> _runForm(
+    PdfStream xobject,
+    PdfDictionary? resources,
+    int depth,
+  ) async {
     final saved = state.clone();
     final savedStack = _stack.length;
     context.save();
 
-    final matrix = await xobject.arrayEntry(PdfName('Matrix'));
-    if (matrix != null && matrix.size() == 6) {
-      final m = <double>[];
-      for (var i = 0; i < 6; i++) {
-        final value = await matrix.get(i);
-        m.add(value is PdfNumber
-            ? value.doubleValue()
-            : (i == 0 || i == 3 ? 1 : 0));
-      }
-      state.ctm =
-          BLMatrix2D(m[0], m[1], m[2], m[3], m[4], m[5]).multiply(state.ctm);
-    }
-
-    final bbox = await xobject.arrayEntry(PdfName('BBox'));
-    if (bbox != null && bbox.size() == 4) {
-      final b = <double>[];
-      for (var i = 0; i < 4; i++) {
-        final value = await bbox.get(i);
-        b.add(value is PdfNumber ? value.doubleValue() : 0);
-      }
-      _rectangle(math.min(b[0], b[2]), math.min(b[1], b[3]),
-          (b[2] - b[0]).abs(), (b[3] - b[1]).abs());
-      context.clipToPath(_path);
-      _path = BLPath();
-      _pathEmpty = true;
-    }
+    await _applyFormMatrix(xobject);
+    await _clipToFormBBox(xobject);
 
     final formResources =
         await xobject.dictionaryEntry(PdfName.resources) ?? resources;
@@ -2177,6 +2993,250 @@ class _Renderer {
       _stack.removeLast();
     }
     state = saved;
+  }
+
+  Future<void> _applyFormMatrix(PdfStream xobject) async {
+    final matrix = await xobject.arrayEntry(PdfName('Matrix'));
+    if (matrix == null || matrix.size() != 6) return;
+    final m = <double>[];
+    for (var i = 0; i < 6; i++) {
+      final value = await matrix.get(i);
+      m.add(value is PdfNumber
+          ? value.doubleValue()
+          : (i == 0 || i == 3 ? 1 : 0));
+    }
+    state.ctm =
+        BLMatrix2D(m[0], m[1], m[2], m[3], m[4], m[5]).multiply(state.ctm);
+  }
+
+  /// The form's `/BBox`, mapped to device space, or null when it has none.
+  Future<List<(double, double)>?> _formBBoxCorners(PdfStream xobject) async {
+    final bbox = await xobject.arrayEntry(PdfName('BBox'));
+    if (bbox == null || bbox.size() != 4) return null;
+    final b = <double>[];
+    for (var i = 0; i < 4; i++) {
+      final value = await bbox.get(i);
+      b.add(value is PdfNumber ? value.doubleValue() : 0);
+    }
+    final x0 = math.min(b[0], b[2]);
+    final y0 = math.min(b[1], b[3]);
+    final x1 = math.max(b[0], b[2]);
+    final y1 = math.max(b[1], b[3]);
+    return <(double, double)>[
+      _device(x0, y0),
+      _device(x1, y0),
+      _device(x1, y1),
+      _device(x0, y1),
+    ];
+  }
+
+  static BLPath _polygon(List<(double, double)> corners) {
+    final path = BLPath()..moveTo(corners[0].$1, corners[0].$2);
+    for (var i = 1; i < corners.length; i++) {
+      path.lineTo(corners[i].$1, corners[i].$2);
+    }
+    return path..close();
+  }
+
+  Future<void> _clipToFormBBox(PdfStream xobject) async {
+    final corners = await _formBBoxCorners(xobject);
+    if (corners == null) return;
+    context.clipToPath(_polygon(corners));
+  }
+
+  /// Composites a transparency group XObject, clauses 11.4 and 11.6.6.
+  ///
+  /// The group's elements are drawn onto their own surface — transparent for
+  /// an isolated group, a copy of the backdrop otherwise — with the blend
+  /// mode, alpha constants and soft mask reset, exactly as the `Do` operator
+  /// is defined to do. The finished surface is composited once afterwards,
+  /// with the transparency parameters that were in force at the `Do`.
+  Future<void> _drawTransparencyGroup(
+    PdfStream xobject,
+    PdfDictionary group,
+    PdfDictionary? resources,
+    int depth,
+  ) async {
+    if (depth >= _maxDepth) return;
+    final isolated = await group.flagEntry(PdfName('I')) ?? false;
+    final knockout = await group.flagEntry(PdfName('K')) ?? false;
+    final constantAlpha = state.fillAlpha.clamp(0.0, 1.0);
+    final mode = state.blendMode;
+    final target = context;
+
+    final saved = state.clone();
+    final savedStack = _stack.length;
+    final savedKnockout = _knockoutBackdrop;
+    final savedBusy = _layerBusy;
+
+    // The bounding box has to be mapped through the form's own matrix, so the
+    // matrix goes on first; knowing the box up front keeps the initialisation
+    // and the final compositing to the pixels the group can actually reach.
+    await _applyFormMatrix(xobject);
+    final corners = await _formBBoxCorners(xobject);
+    final bounds = _clampToSurface(
+        corners == null ? null : _boundsOf(corners), target.image);
+    if (bounds == null) {
+      state = saved;
+      return;
+    }
+
+    // Nothing else composites against a group that changes nothing: a
+    // non-isolated, non-knockout group painted with Normal, full alpha and no
+    // soft mask produces exactly what drawing its content in place would
+    // (clause 11.4.4, NOTE 5).
+    if (!isolated &&
+        !knockout &&
+        mode == _BlendMode.normal &&
+        constantAlpha >= 1 &&
+        target.opacityMask == null &&
+        _knockoutBackdrop == null) {
+      state = saved;
+      await _runForm(xobject, resources, depth);
+      return;
+    }
+
+    final surface = BLImage(target.image.width, target.image.height);
+    if (!isolated) {
+      // A non-isolated group starts from everything painted in the parent so
+      // far, so blend modes inside the group see the real backdrop.
+      _copyRegion(target.image, surface, bounds);
+    }
+
+    final groupContext = BLContext(surface);
+    groupContext.setClipRect(target.clipRect);
+    final clipMask = target.clipMask;
+    if (clipMask != null) groupContext.intersectClipMask(clipMask);
+    if (corners != null) groupContext.clipToPath(_polygon(corners));
+
+    context = groupContext;
+    _layerBusy = false;
+
+    // Clause 11.6.6: the group's own content starts from Normal, alpha 1 and
+    // no soft mask, so those are not applied twice.
+    state.fillAlpha = 1;
+    state.strokeAlpha = 1;
+    state.blendMode = _BlendMode.normal;
+    _knockoutBackdrop = knockout ? Uint32List.fromList(surface.pixels) : null;
+
+    final formResources =
+        await xobject.dictionaryEntry(PdfName.resources) ?? resources;
+    final content = await xobject.getBytes();
+    if (content != null) {
+      await run(content, formResources, depth + 1);
+    }
+    groupContext.flush();
+
+    context = target;
+    _knockoutBackdrop = savedKnockout;
+    _layerBusy = savedBusy;
+    state = saved;
+    while (_stack.length > savedStack) {
+      _stack.removeLast();
+    }
+
+    _composeGroup(target, surface, bounds,
+        isolated: isolated, mode: mode, constantAlpha: constantAlpha);
+  }
+
+  static void _copyRegion(BLImage from, BLImage to, BLRectI rect) {
+    final source = from.pixels;
+    final destination = to.pixels;
+    final width = from.width;
+    for (var y = rect.y; y < rect.y + rect.height; y++) {
+      final row = y * width;
+      destination.setRange(
+          row + rect.x, row + rect.x + rect.width, source, row + rect.x);
+    }
+  }
+
+  /// Composites a finished group surface onto its backdrop.
+  void _composeGroup(
+    BLContext target,
+    BLImage surface,
+    BLRectI rect, {
+    required bool isolated,
+    required _BlendMode mode,
+    required double constantAlpha,
+  }) {
+    final destination = target.image.pixels;
+    final group = surface.pixels;
+    final opacity = target.opacityMask;
+    final knockout = _knockoutBackdrop;
+    final width = target.image.width;
+    final backdrop = List<double>.filled(3, 0);
+    final colour = List<double>.filled(3, 0);
+    final blended = List<double>.filled(3, 0);
+
+    for (var y = rect.y; y < rect.y + rect.height; y++) {
+      final row = y * width;
+      for (var x = rect.x; x < rect.x + rect.width; x++) {
+        final index = row + x;
+        final source = group[index];
+        if (((source >>> 24) & 0xff) == 0) continue;
+
+        var factor = constantAlpha;
+        if (opacity != null) factor *= opacity[index] / 255;
+        if (factor <= 0) continue;
+
+        final base = knockout ?? destination;
+        final backdropPixel = base[index];
+        var pixel = source;
+        if (!isolated) {
+          // Clause 11.4.4: the backdrop's contribution is removed before the
+          // group is composited, or it would be counted twice.
+          final removed = _removeBackdrop(backdropPixel, source);
+          if (removed == null) {
+            // With an opaque backdrop the group's own alpha cannot be
+            // recovered. Averaging the group result back over the backdrop is
+            // exactly right for Normal, which this case almost always is, and
+            // the closest available answer otherwise.
+            if (mode != _BlendMode.normal) _note('Do:group-opaque-backdrop');
+            destination[index] = _mix(
+                destination[index],
+                knockout == null ? source : _mix(backdropPixel, source, 1),
+                factor);
+            continue;
+          }
+          pixel = removed;
+        }
+        final shape = ((pixel >>> 24) & 0xff) / 255;
+        if (shape <= 0) continue;
+
+        final composed = _composite(
+            backdropPixel,
+            pixel,
+            knockout == null ? shape * factor : factor,
+            mode,
+            backdrop,
+            colour,
+            blended);
+        destination[index] = knockout == null
+            ? composed
+            : _mix(destination[index], composed, shape);
+      }
+    }
+  }
+
+  /// Undoes compositing with [backdropPixel], recovering the group's own
+  /// colour and alpha, or null when the backdrop is opaque and the group's
+  /// alpha is therefore not recoverable.
+  static int? _removeBackdrop(int backdropPixel, int groupPixel) {
+    final a0 = ((backdropPixel >>> 24) & 0xff) / 255;
+    final an = ((groupPixel >>> 24) & 0xff) / 255;
+    if (a0 <= 0) return groupPixel;
+    if (a0 >= 1) return null;
+    final ag = ((an - a0) / (1 - a0)).clamp(0.0, 1.0);
+    if (ag <= 0) return 0;
+    final scale = a0 / ag - a0;
+    var result = (ag * 255).round().clamp(0, 255) << 24;
+    for (var shift = 16; shift >= 0; shift -= 8) {
+      final cn = ((groupPixel >>> shift) & 0xff) / 255;
+      final c0 = ((backdropPixel >>> shift) & 0xff) / 255;
+      final value = cn + (cn - c0) * scale;
+      result |= (value.clamp(0.0, 1.0) * 255).round() << shift;
+    }
+    return result;
   }
 
   Future<void> _inlineImage(PdfContentOperation op) async {
@@ -2224,6 +3284,7 @@ class _Renderer {
     }
     path.close();
 
+    final bounds = _boundsOf(corners);
     final stencil = decoded.stencil;
     if (stencil != null) {
       // A stencil paints the current fill colour where its samples say so.
@@ -2234,7 +3295,11 @@ class _Renderer {
         final coverage = stencil[i] * alpha ~/ 255;
         surface.pixels[i] = (coverage << 24) | colour;
       }
-      await _fillWithPattern(path, surface, inverse, interpolate);
+      await _paint(
+        () => _fillWithPattern(path, surface, inverse, interpolate),
+        bounds: bounds,
+        constantAlpha: state.fillAlpha,
+      );
       return;
     }
 
@@ -2246,7 +3311,11 @@ class _Renderer {
       surface.pixels[i] =
           (a << 24) | (rgba[at] << 16) | (rgba[at + 1] << 8) | rgba[at + 2];
     }
-    await _fillWithPattern(path, surface, inverse, interpolate);
+    await _paint(
+      () => _fillWithPattern(path, surface, inverse, interpolate),
+      bounds: bounds,
+      constantAlpha: state.fillAlpha,
+    );
   }
 
   Future<void> _fillWithPattern(BLPath path, BLImage surface,

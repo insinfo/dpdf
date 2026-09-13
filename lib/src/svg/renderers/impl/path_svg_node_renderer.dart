@@ -20,6 +20,11 @@ class PathSvgNodeRenderer extends AbstractSvgNodeRenderer
         unitScale: parseHorizontalLength('1', context));
   }
 
+  /// Geometria já convertida para pontos, na forma em que `<textPath>`
+  /// precisa dela.
+  List<SvgPathSegment> pathSegments(SvgDrawContext context) =>
+      _segments(context);
+
   @override
   Future<void> doDraw(SvgDrawContext context) async {
     final canvas = context.getCurrentCanvas();

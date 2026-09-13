@@ -354,7 +354,14 @@ class PdfWriter {
     writeString('endstream');
   }
 
+  /// Writes a classic cross-reference table (ISO 32000-1, 7.5.4).
+  ///
+  /// The free entries are emitted as the linked list the clause requires: the
+  /// first field of a free entry holds the object number of the next free
+  /// object and the last link is 0, with the head of the chain in the
+  /// mandatory entry for object 0.
   void writeXrefTable(PdfXrefTable xref) {
+    xref.initFreeReferencesList(document);
     writeString('xref\n');
     writeString('0 ${xref.size()}\n');
     for (var i = 0; i < xref.size(); i++) {
@@ -364,6 +371,8 @@ class PdfWriter {
         // Format: nnnnnnnnnn ggggg f \r\n (CR+LF) or n \n (SP+LF)
         writeString('0000000000 65535 f \n');
       } else {
+        // For a free entry getOffset() carries the next free object number,
+        // which initFreeReferencesList has just linked up.
         final offset = ref.getOffset().toString().padLeft(10, '0');
         final gen = ref.generationNumber().toString().padLeft(5, '0');
         final type = ref.isFree() ? 'f' : 'n';
@@ -441,6 +450,12 @@ class PdfWriter {
     xrefStream.put(PdfName.type, PdfName.xref);
     xrefStream.put(PdfName.size, PdfNumber.fromInt(xref.size()));
 
+    // 7.5.8.4 requires the cross-reference stream to carry an entry for
+    // itself. Its offset has to be known before the table is serialised,
+    // because the table is the stream payload; writeObject below lands on
+    // exactly this position.
+    xrefStream.indirectHandle()?.setOffset(getPosition());
+
     // Copy the trailer's own entries — /Root, /Info, /ID, /Encrypt and any
     // extension the input carried — into the cross-reference stream dictionary,
     // which is where they live in this format.
@@ -468,36 +483,69 @@ class PdfWriter {
       }
     }
 
+    // 7.5.8.2 /Index: the subsections covered by this stream. Object numbers
+    // that no subsection covers are free, so a run of free entries can simply
+    // be left out. The table is laid out first, because /W has to describe the
+    // maxima of the entries that are actually written.
+    xref.initFreeReferencesList(document);
+    final freeChain = xref.freeReferencesChain();
+    final nextFree = <int, int>{};
+    var previousFree = 0;
+    for (final number in freeChain) {
+      nextFree[previousFree] = number;
+      previousFree = number;
+    }
+    nextFree[previousFree] = 0;
+
+    final subsections = <List<int>>[];
+    for (var i = 0; i < xref.size(); i++) {
+      final ref = xref.get(i);
+      final include = i == 0 || (ref != null && !ref.isFree());
+      if (!include) continue;
+      if (subsections.isNotEmpty &&
+          subsections.last[0] + subsections.last[1] == i) {
+        subsections.last[1]++;
+      } else {
+        subsections.add([i, 1]);
+      }
+    }
+    if (subsections.isEmpty) subsections.add([0, 0]);
+
+    final covered = subsections.length == 1 &&
+        subsections.first[0] == 0 &&
+        subsections.first[1] == xref.size();
+    if (!covered) {
+      final index = PdfArray();
+      for (final subsection in subsections) {
+        index.add(PdfNumber.fromInt(subsection[0]));
+        index.add(PdfNumber.fromInt(subsection[1]));
+      }
+      xrefStream.put(PdfName.index, index);
+    }
+
     // Determine field widths (W)
     int maxOffset = 0;
     int maxIndex = 0;
 
-    // We need to iterate to find max values for W calculation
-    // And also to build data.
-    // Ideally we do one pass if possible, or two.
-    // Let's iterate to find max.
-    for (int i = 0; i < xref.size(); i++) {
-      final ref = xref.get(i);
-      if (ref != null) {
+    for (final subsection in subsections) {
+      for (var i = subsection[0]; i < subsection[0] + subsection[1]; i++) {
+        final ref = xref.get(i);
+        if (ref == null) continue;
         if (ref.getObjStreamNumber() > 0) {
           // Compressed: type 2
           if (ref.getObjStreamNumber() > maxOffset) {
             maxOffset = ref.getObjStreamNumber();
           }
           if (ref.getIndex() > maxIndex) maxIndex = ref.getIndex();
+        } else if (ref.isFree()) {
+          // Free: type 0. Field 2 is the next free object number.
+          final next = nextFree[i] ?? 0;
+          if (next > maxOffset) maxOffset = next;
         } else {
-          if (ref.isFree()) {
-            // Free: type 0
-            // Field 2: next free - usually small or offset?
-            // Field 2: object number of next free object.
-            // But here we might just use offset logic.
-            // The standard says: type 0, field 2 = obj number of next free object.
-          } else {
-            // In-use: type 1
-            if (ref.getOffset() > maxOffset) maxOffset = ref.getOffset();
-            if (ref.generationNumber() > maxIndex) {
-              maxIndex = ref.generationNumber();
-            }
+          // In-use: type 1
+          if (ref.getOffset() > maxOffset) maxOffset = ref.getOffset();
+          if (ref.generationNumber() > maxIndex) {
+            maxIndex = ref.generationNumber();
           }
         }
       }
@@ -531,52 +579,38 @@ class PdfWriter {
     // Generate data
     final builder = BytesBuilder();
 
-    // Build index array if needed (for subsections)
-    // For now assuming contiguous 0..size.
-    // Or we should support subsections using /Index [first size first size ...]
-    // Standard recommended subsections for sparse tables.
-    // For now simplistic assumption: 0..N
-    // TODO: Optimize with /Index for sparse tables
+    for (final subsection in subsections) {
+      for (var i = subsection[0]; i < subsection[0] + subsection[1]; i++) {
+        final ref = xref.get(i);
 
-    for (int i = 0; i < xref.size(); i++) {
-      final ref = xref.get(i);
+        int type;
+        int field2;
+        int field3;
 
-      int type = 0;
-      int field2 = 0;
-      int field3 = 0;
+        if (ref == null || ref.isFree()) {
+          type = 0;
+          // Field 2 of a free entry is the next free object number (7.5.8.3).
+          field2 = nextFree[i] ?? 0;
+          field3 = ref == null ? 65535 : ref.generationNumber();
+        } else if (ref.getObjStreamNumber() > 0) {
+          type = 2;
+          field2 = ref.getObjStreamNumber();
+          field3 = ref.getIndex();
+        } else {
+          type = 1;
+          field2 = ref.getOffset();
+          field3 = ref.generationNumber();
+        }
 
-      if (ref == null) {
-        // Implicitly free or missing?
-        // Treat as free, offset 0?
-        type = 0;
-        field2 = 0; // Next free?
-        field3 = 65535;
-      } else if (ref.isFree()) {
-        type = 0;
-        // Field 2 is next free obj number.
-        // We don't track next free chain in simple implementation easily without traversing.
-        // But if we just mark it free, does it matter?
-        // A conforming reader might ignore.
-        field2 = 0;
-        field3 = 65535;
-      } else if (ref.getObjStreamNumber() > 0) {
-        type = 2;
-        field2 = ref.getObjStreamNumber();
-        field3 = ref.getIndex();
-      } else {
-        type = 1;
-        field2 = ref.getOffset();
-        field3 = ref.generationNumber();
+        // Write W1
+        builder.addByte(type);
+
+        // Write W2
+        _writeBytesBigEndian(builder, field2, w2);
+
+        // Write W3
+        _writeBytesBigEndian(builder, field3, w3);
       }
-
-      // Write W1
-      builder.addByte(type);
-
-      // Write W2
-      _writeBytesBigEndian(builder, field2, w2);
-
-      // Write W3
-      _writeBytesBigEndian(builder, field3, w3);
     }
 
     xrefStream.setData(builder.toBytes());

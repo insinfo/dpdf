@@ -102,6 +102,7 @@ abstract final class PdfImageDecoder {
       channels: channels,
       space: space,
       decode: decode,
+      colourKey: await _colourKeyRanges(image, channels, bits),
     );
     if (rgba == null) return null;
 
@@ -209,36 +210,61 @@ abstract final class PdfImageDecoder {
     final decoded = j2k.decodeJpeg2000(raw);
     final count = decoded.width * decoded.height;
     final channels = decoded.components;
-    final rgba = Uint8List(count * 4);
+    if (channels < 1 || channels > 4) return null;
 
+    // Clause 8.9.5.1, /SMaskInData: 0 ignores any alpha the codestream
+    // carries, 1 uses it as it stands, and 2 says the colour channels were
+    // premultiplied by it and have to be divided back out.
+    final smaskInData =
+        (await image.integerEntry(PdfName('SMaskInData')) ?? 0).clamp(0, 2);
+
+    // The image dictionary's own colour space wins over whatever the
+    // codestream declares, which is the only way to read a four-component
+    // JPEG 2000 image correctly: without it CMYK is indistinguishable from
+    // RGB plus an alpha channel.
+    final space = await PdfColorSpace.makeColorSpace(
+        await image.get(PdfName('ColorSpace'), true));
+    var colourChannels = space?.getNumberOfComponents() ?? -1;
+    if (colourChannels < 1 || colourChannels > channels) {
+      colourChannels = smaskInData > 0 ? channels - 1 : channels;
+    }
+    if (colourChannels < 1) return null;
+    final hasAlpha = smaskInData > 0 && channels > colourChannels;
+
+    final rgba = Uint8List(count * 4);
+    final components = List<double>.filled(colourChannels, 0);
+    final convert =
+        space != null && space.getNumberOfComponents() == colourChannels;
     for (var i = 0, at = 0; i < count; i++, at += 4) {
       final base = i * channels;
-      switch (channels) {
-        case 1:
-          final v = decoded.pixels[base];
-          rgba[at] = v;
-          rgba[at + 1] = v;
-          rgba[at + 2] = v;
-          rgba[at + 3] = 255;
-        case 2:
-          final v = decoded.pixels[base];
-          rgba[at] = v;
-          rgba[at + 1] = v;
-          rgba[at + 2] = v;
-          rgba[at + 3] = decoded.pixels[base + 1];
-        case 3:
-          rgba[at] = decoded.pixels[base];
-          rgba[at + 1] = decoded.pixels[base + 1];
-          rgba[at + 2] = decoded.pixels[base + 2];
-          rgba[at + 3] = 255;
-        case 4:
-          rgba[at] = decoded.pixels[base];
-          rgba[at + 1] = decoded.pixels[base + 1];
-          rgba[at + 2] = decoded.pixels[base + 2];
-          rgba[at + 3] = decoded.pixels[base + 3];
-        default:
-          return null;
+      final alpha = hasAlpha ? decoded.pixels[base + colourChannels] : 255;
+      int red, green, blue;
+      if (convert) {
+        for (var c = 0; c < colourChannels; c++) {
+          components[c] = decoded.pixels[base + c] / 255.0;
+        }
+        final rgb = space.toRgb(components);
+        red = (rgb[0] * 255).round().clamp(0, 255);
+        green = (rgb[1] * 255).round().clamp(0, 255);
+        blue = (rgb[2] * 255).round().clamp(0, 255);
+      } else if (colourChannels == 1) {
+        red = green = blue = decoded.pixels[base];
+      } else if (colourChannels >= 3) {
+        red = decoded.pixels[base];
+        green = decoded.pixels[base + 1];
+        blue = decoded.pixels[base + 2];
+      } else {
+        return null;
       }
+      if (smaskInData == 2 && alpha > 0 && alpha < 255) {
+        red = (red * 255 ~/ alpha).clamp(0, 255);
+        green = (green * 255 ~/ alpha).clamp(0, 255);
+        blue = (blue * 255 ~/ alpha).clamp(0, 255);
+      }
+      rgba[at] = red;
+      rgba[at + 1] = green;
+      rgba[at + 2] = blue;
+      rgba[at + 3] = alpha;
     }
     return PdfDecodedImage(
         width: decoded.width, height: decoded.height, rgba: rgba);
@@ -279,6 +305,26 @@ abstract final class PdfImageDecoder {
     return result;
   }
 
+  /// Clause 8.9.6.4: `/Mask` may be `[min1 max1 ... minn maxn]`, ranges of
+  /// **undecoded** sample values that shall not be painted. Returns null when
+  /// the entry is absent or is not a usable colour key for this image.
+  static Future<Int32List?> _colourKeyRanges(
+      PdfStream image, int channels, int bits) async {
+    final mask = await image.get(PdfName('Mask'), true);
+    if (mask is! PdfArray || mask.size() != channels * 2) return null;
+    final maximum = (1 << bits) - 1;
+    final ranges = Int32List(channels * 2);
+    for (var i = 0; i < channels * 2; i++) {
+      final value = await mask.get(i);
+      if (value is! PdfNumber) return null;
+      ranges[i] = value.intValue().clamp(0, maximum);
+    }
+    for (var c = 0; c < channels; c++) {
+      if (ranges[c * 2] > ranges[c * 2 + 1]) return null;
+    }
+    return ranges;
+  }
+
   static Uint8List? _expand({
     required Uint8List samples,
     required int width,
@@ -287,6 +333,7 @@ abstract final class PdfImageDecoder {
     required int channels,
     required PdfColorSpace space,
     required Float64List decode,
+    Int32List? colourKey,
   }) {
     final stride = (width * channels * bits + 7) >> 3;
     if (samples.length < stride * height) return null;
@@ -298,7 +345,7 @@ abstract final class PdfImageDecoder {
     // whole conversion collapses to a lookup. That covers Indexed and grey,
     // which between them are most of the images in a real document.
     Uint8List? palette;
-    if (channels == 1) {
+    if (channels == 1 && colourKey == null) {
       final entries = 1 << bits;
       palette = Uint8List(entries * 3);
       for (var value = 0; value < entries; value++) {
@@ -325,10 +372,21 @@ abstract final class PdfImageDecoder {
           rgba[at + 3] = 255;
           continue;
         }
+        var masked = colourKey != null;
         for (var c = 0; c < channels; c++) {
           final raw = reader.read();
+          if (masked &&
+              (raw < colourKey![c * 2] || raw > colourKey[c * 2 + 1])) {
+            masked = false;
+          }
           components[c] = decode[c * 2] +
               raw * (decode[c * 2 + 1] - decode[c * 2]) / maximum;
+        }
+        if (masked) {
+          // A sample inside every range is not painted at all, so the
+          // backdrop shows through; its colour is irrelevant.
+          rgba[at + 3] = 0;
+          continue;
         }
         final rgb = space.toRgb(components);
         rgba[at] = (rgb[0] * 255).round().clamp(0, 255);
@@ -359,6 +417,8 @@ abstract final class PdfImageDecoder {
     }
 
     final mask = await image.get(PdfName('Mask'), true);
+    // A colour key mask is an array, and was already folded into the alpha
+    // channel while the samples were unpacked.
     if (mask is PdfStream) {
       final stencil = await _decodeStencil(
         mask,

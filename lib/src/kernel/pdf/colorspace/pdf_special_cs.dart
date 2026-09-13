@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:dpdf/src/kernel/pdf/pdf_array.dart';
+import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
@@ -138,6 +139,9 @@ class PdfSpecialCsSeparation extends PdfSpecialCs {
   PdfSpecialCsSeparation(PdfArray super.pdfObject, this.colorantName,
       this.alternate, this.tintTransform);
 
+  /// The special colourant name `/All` of clause 8.6.6.4.
+  static final PdfName allColorant = PdfName.intern('All');
+
   static Future<PdfSpecialCsSeparation?> parseArray(PdfArray array) async {
     if (array.size() < 4) return null;
     final name = await array.nameEntry(1);
@@ -147,6 +151,12 @@ class PdfSpecialCsSeparation extends PdfSpecialCs {
     return PdfSpecialCsSeparation(array, name, alternate, tint);
   }
 
+  /// Whether this is the `/None` separation, which never marks the page.
+  bool isNone() => colorantName == PdfName.none;
+
+  /// Whether this is the `/All` separation, which paints every colorant.
+  bool isAll() => colorantName == allColorant;
+
   @override
   int getNumberOfComponents() => 1;
 
@@ -155,11 +165,92 @@ class PdfSpecialCsSeparation extends PdfSpecialCs {
     // A /None separation is never painted at all. There is no "no paint" value
     // in RGB, so report white, which is what leaving the area untouched looks
     // like on a blank page.
-    if (colorantName == PdfName.none) {
+    if (isNone()) {
       return <double>[1.0, 1.0, 1.0];
     }
-    final tint = PdfColorSpace.componentAt(components, 0);
+    final tint = PdfColorSpace.clampUnit(
+        PdfColorSpace.componentAt(components, 0));
+    if (isAll()) {
+      // Clause 8.6.6.4 requires every reader to support /All and to ignore the
+      // alternate space and the tint transform for it: the tint goes to all
+      // colorants at once. Every colorant at the same subtractive tint is a
+      // neutral, so on an RGB device the honest approximation is 1 - tint.
+      final grey = PdfColorSpace.clampUnit(1.0 - tint);
+      return <double>[grey, grey, grey];
+    }
     return alternate.toRgb(tintTransform.evaluate(<double>[tint]));
+  }
+}
+
+/// The attributes dictionary of a DeviceN colour space (ISO 32000-1,
+/// clause 8.6.6.5, table 71).
+///
+/// A `/Subtype` of `/NChannel` (PDF 1.6) promises that the dictionary carries
+/// enough information — `/Colorants` for the spot components and `/Process`
+/// for the process ones — for a reader to blend the components itself instead
+/// of going through the tint transform.
+class PdfDeviceNAttributes {
+  static final PdfName subtypeKey = PdfName.intern('Subtype');
+  static final PdfName colorantsKey = PdfName.intern('Colorants');
+  static final PdfName processKey = PdfName.intern('Process');
+  static final PdfName componentsKey = PdfName.intern('Components');
+  static final PdfName mixingHintsKey = PdfName.intern('MixingHints');
+
+  /// `/DeviceN` (the default) or `/NChannel`.
+  final PdfName subtype;
+
+  /// `/Colorants`: one Separation space per named spot colourant.
+  final Map<String, PdfSpecialCsSeparation> colorants;
+
+  /// The `/Process` `/ColorSpace` entry, or null when there is none.
+  final PdfColorSpace? processColorSpace;
+
+  /// The `/Process` `/Components` entry: the names of the process components
+  /// in the order the process space expects them.
+  final List<PdfName> processComponents;
+
+  /// The `/MixingHints` dictionary, kept verbatim for callers that want it.
+  final PdfDictionary? mixingHints;
+
+  PdfDeviceNAttributes(this.subtype, this.colorants, this.processColorSpace,
+      this.processComponents, this.mixingHints);
+
+  /// Whether this space asked to be treated as an NChannel space.
+  bool isNChannel() => subtype == PdfName.intern('NChannel');
+
+  static Future<PdfDeviceNAttributes> parse(PdfDictionary dict) async {
+    final subtype =
+        await dict.nameEntry(subtypeKey) ?? PdfName.intern('DeviceN');
+
+    final colorants = <String, PdfSpecialCsSeparation>{};
+    final colorantsDict = await dict.dictionaryEntry(colorantsKey);
+    if (colorantsDict != null) {
+      for (final key in colorantsDict.keySet()) {
+        final space =
+            await PdfColorSpace.makeColorSpace(await colorantsDict.get(key));
+        if (space is PdfSpecialCsSeparation) {
+          colorants[key.getValue()] = space;
+        }
+      }
+    }
+
+    PdfColorSpace? processSpace;
+    final processComponents = <PdfName>[];
+    final processDict = await dict.dictionaryEntry(processKey);
+    if (processDict != null) {
+      processSpace = await PdfColorSpace.makeColorSpace(
+          await processDict.get(PdfName.colorSpace));
+      final componentsArray = await processDict.arrayEntry(componentsKey);
+      if (componentsArray != null) {
+        for (var i = 0; i < componentsArray.size(); i++) {
+          final name = await componentsArray.nameEntry(i);
+          if (name != null) processComponents.add(name);
+        }
+      }
+    }
+
+    return PdfDeviceNAttributes(subtype, colorants, processSpace,
+        processComponents, await dict.dictionaryEntry(mixingHintsKey));
   }
 }
 
@@ -174,8 +265,12 @@ class PdfSpecialCsDeviceN extends PdfSpecialCs {
 
   final PdfFunction tintTransform;
 
+  /// The optional attributes dictionary (table 71), or null when absent.
+  final PdfDeviceNAttributes? attributes;
+
   PdfSpecialCsDeviceN(PdfArray super.pdfObject, this.colorantNames,
-      this.alternate, this.tintTransform);
+      this.alternate, this.tintTransform,
+      [this.attributes]);
 
   static Future<PdfSpecialCsDeviceN?> parseArray(PdfArray array) async {
     if (array.size() < 4) return null;
@@ -192,14 +287,35 @@ class PdfSpecialCsDeviceN extends PdfSpecialCs {
     }
     if (names.isEmpty) return null;
 
-    return PdfSpecialCsDeviceN(array, names, alternate, tint);
+    PdfDeviceNAttributes? attributes;
+    if (array.size() >= 5) {
+      final dict = await array.dictionaryEntry(4);
+      if (dict != null) attributes = await PdfDeviceNAttributes.parse(dict);
+    }
+
+    return PdfSpecialCsDeviceN(array, names, alternate, tint, attributes);
   }
+
+  /// Whether the attributes dictionary asks for NChannel treatment.
+  bool isNChannel() => attributes?.isNChannel() ?? false;
+
+  /// Whether every colourant is `/None`, in which case clause 8.6.6.5 says the
+  /// space discards its output and never reverts to the alternate space.
+  bool paintsNothing() =>
+      colorantNames.every((name) => name == PdfName.none);
 
   @override
   int getNumberOfComponents() => colorantNames.length;
 
   @override
   List<double> toRgb(List<double> components) {
+    if (paintsNothing()) {
+      // Nothing is ever marked, so the page keeps whatever was under it; on a
+      // blank page that is white, the same answer /None gives in a Separation.
+      return <double>[1.0, 1.0, 1.0];
+    }
+    // Clause 8.6.6.5: components that name /None are still handed to the tint
+    // transform when the space reverts to its alternate, so no filtering here.
     final tints = List<double>.generate(
         colorantNames.length, (i) => PdfColorSpace.componentAt(components, i));
     return alternate.toRgb(tintTransform.evaluate(tints));

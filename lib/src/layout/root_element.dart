@@ -11,6 +11,7 @@ import 'package:dpdf/src/layout/properties/text_alignment.dart';
 import 'package:dpdf/src/layout/properties/vertical_alignment.dart';
 import 'package:dpdf/src/layout/properties/horizontal_alignment.dart';
 import 'package:dpdf/src/layout/properties/property.dart';
+import 'package:dpdf/src/kernel/pdf/tagging/standard_roles.dart';
 
 abstract class RootElement<T extends PropertyContainer>
     extends ElementPropertyContainer<T> {
@@ -96,7 +97,12 @@ abstract class RootElement<T extends PropertyContainer>
     div.setFixedPosition(pageNumber, divX, divY, divSize);
     div.setMinHeight(divSize);
 
-    // TODO: Check accessibility properties role
+    // The wrapper div only carries the placement: when the paragraph itself
+    // is not tagged, the wrapper is marked as an artifact so it does not add a
+    // spurious level to the structure tree (ISO 32000-1, 14.8.2.2).
+    if (p.getAccessibilityProperties().getRole() == null) {
+      div.getAccessibilityProperties().setRole(StandardRoles.artifact);
+    }
 
     div.add(p);
     await add(div);

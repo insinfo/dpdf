@@ -13,8 +13,13 @@ import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 import 'package:dpdf/src/kernel/exceptions/pdf_exception.dart';
 import 'package:dpdf/src/kernel/exceptions/kernel_exception_message_constant.dart';
 
-/// Standard security handler using Standard 40 algorithm (RC4).
+/// The revision 2 standard security handler of ISO 32000-1:2008, 7.6.3.
+///
+/// The class also carries the parts of "Algorithm 2" through "Algorithm 7"
+/// that revisions 3 and greater reuse; [StandardHandlerUsingStandard128]
+/// overrides the steps those revisions change.
 class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
+  /// The 32-byte padding string of "Algorithm 2", step (a).
   static final Uint8List pad = Uint8List.fromList([
     0x28,
     0xBF,
@@ -50,6 +55,8 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
     0x7A
   ]);
 
+  /// The four bytes of "Algorithm 2", step (f), hashed when the document
+  /// metadata is not encrypted.
   static final Uint8List metadataPad = Uint8List.fromList([255, 255, 255, 255]);
 
   Uint8List? documentId;
@@ -67,19 +74,31 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
       int permissions,
       bool encryptMetadata,
       bool embeddedFilesOnly,
-      Uint8List? documentId) {
+      Uint8List? documentId,
+      {this.keyLength = defaultKeyLengthValue}) {
     _encryptMetadata = encryptMetadata;
     _initKeyAndFillDictionary(encryptionDictionary, userPassword, ownerPassword,
         permissions, encryptMetadata, embeddedFilesOnly, documentId);
   }
 
   StandardHandlerUsingStandard40.read(PdfDictionary encryptionDictionary,
-      Uint8List password, Uint8List? documentId, bool encryptMetadata) {
-    keyLength = 40;
-    this.documentId = documentId;
+      Uint8List password, this.documentId, bool encryptMetadata,
+      {this.keyLength = defaultKeyLengthValue}) {
     _encryptMetadata = encryptMetadata;
   }
 
+  /// Whether the document metadata stream is covered by the encryption.
+  bool isEncryptMetadata() => _encryptMetadata;
+
+  /// The number of leading `/U` bytes "Algorithm 6" compares.
+  ///
+  /// Revision 2 stores the whole 32-byte result; revisions 3 and greater
+  /// append 16 bytes of arbitrary padding, so only the first 16 are checked.
+  int get userKeyComparisonLength => 32;
+
+  /// Authenticates a password against `/O` and `/U`, per "Algorithm 6:
+  /// Authenticating the user password" and "Algorithm 7: Authenticating the
+  /// owner password".
   Future<void> initForReading(PdfDictionary encryptionDictionary,
       Uint8List password, Uint8List? documentId) async {
     final oObj = await encryptionDictionary.stringEntry(PdfName.o);
@@ -95,51 +114,52 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
     final uValue = uObj.getValueBytes();
 
     permissions = pObj.intValue();
-
     this.documentId = documentId;
-    keyLength = defaultKeyLengthValue;
 
-    if (oValue == null || uValue == null) {
+    if (oValue == null || uValue == null || oValue.length < 32 ||
+        uValue.length < userKeyComparisonLength) {
       throw PdfException(
           KernelExceptionMessageConstant.standardHandlerBadDictionary);
     }
 
-    // Try as User Password
-    final paddedUserPass = padPassword(password);
-    computeGlobalEncryptionKey(paddedUserPass, oValue, _encryptMetadata);
-
-    if (_validateUserPassword(uValue)) {
+    // "Algorithm 6": try the supplied password as the user password.
+    computeGlobalEncryptionKey(
+        padPassword(password), oValue, _encryptMetadata);
+    if (_matchesUserKey(uValue)) {
+      usedOwnerPassword = false;
       return;
     }
 
-    // Try as Owner Password (Algorithm 3.3)
-    final paddedOwnerPass = padPassword(password);
-    md5.reset();
-    md5.updateAll(paddedOwnerPass);
-    final digest = md5.digest();
-
-    final key = Uint8List(5);
-    key.setRange(0, 5, digest);
-
-    final recoveredUserPad = Uint8List(32);
-    arcfour.prepareARCFOURKey(key);
-    arcfour.encryptARCFOURAll(oValue, recoveredUserPad);
-
+    // "Algorithm 7": recover the user password from /O and retry.
+    final ownerKey = computeOwnerPasswordKey(padPassword(password));
+    final recoveredUserPad = recoverUserPasswordPad(oValue, ownerKey);
     computeGlobalEncryptionKey(recoveredUserPad, oValue, _encryptMetadata);
-
-    if (_validateUserPassword(uValue)) {
+    if (_matchesUserKey(uValue)) {
+      usedOwnerPassword = true;
       return;
     }
 
-    throw PdfException(KernelExceptionMessageConstant.badUserPassword);
+    throw BadPasswordException(KernelExceptionMessageConstant.badUserPassword);
   }
 
-  bool _validateUserPassword(Uint8List uValue) {
+  bool _matchesUserKey(Uint8List uValue) {
     if (mkey.isEmpty) return false;
-    final uTest = Uint8List(32);
-    arcfour.prepareARCFOURKey(mkey);
-    arcfour.encryptARCFOURAll(pad, uTest);
-    return equalsArray(uTest, uValue, 32);
+    return equalsArray(computeUserKey(), uValue, userKeyComparisonLength);
+  }
+
+  /// Steps (a) to (d) of "Algorithm 3": the RC4 key derived from the padded
+  /// owner password.
+  Uint8List computeOwnerPasswordKey(Uint8List ownerPad) {
+    final digest = md5.digestWithInput(ownerPad);
+    return Uint8List.fromList(digest.sublist(0, 5));
+  }
+
+  /// Step (b) of "Algorithm 7": revision 2 decrypts `/O` once.
+  Uint8List recoverUserPasswordPad(Uint8List oValue, Uint8List key) {
+    final recovered = Uint8List(32);
+    arcfour.prepareARCFOURKey(key);
+    arcfour.encryptARCFOUR(oValue, 0, 32, recovered, 0);
+    return recovered;
   }
 
   @override
@@ -164,7 +184,6 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
     ownerPassword = generateOwnerPasswordIfNullOrEmpty(ownerPassword);
     calculatePermissions(permissions);
     this.documentId = documentId;
-    keyLength = _getKeyLength(encryptionDictionary);
 
     final userPad = padPassword(userPassword);
     final ownerPad = padPassword(ownerPassword);
@@ -183,6 +202,8 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
     this.permissions = permissions;
   }
 
+  /// "Algorithm 3: Computing the encryption dictionary's O (owner password)
+  /// value".
   Uint8List computeOwnerKey(Uint8List userPad, Uint8List ownerPad) {
     final ownerKey = Uint8List(32);
     final digest = md5.digestWithInput(ownerPad);
@@ -191,6 +212,8 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
     return ownerKey;
   }
 
+  /// "Algorithm 2: Computing an encryption key", steps (b) to (i) for
+  /// revision 2.
   void computeGlobalEncryptionKey(
       Uint8List userPad, Uint8List ownerKey, bool encryptMetadata) {
     mkey = Uint8List(keyLength ~/ 8);
@@ -215,6 +238,8 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
     mkey.setRange(0, mkey.length, fullDigest);
   }
 
+  /// "Algorithm 4: Computing the encryption dictionary's U (user password)
+  /// value (Security handlers of revision 2)".
   Uint8List computeUserKey() {
     final userKey = Uint8List(32);
     arcfour.prepareARCFOURKey(mkey);
@@ -229,6 +254,7 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
     encryptionDictionary.put(PdfName.v, PdfNumber.fromInt(1));
   }
 
+  /// "Algorithm 2", step (a): pad or truncate the password to 32 bytes.
   Uint8List padPassword(Uint8List? password) {
     final userPad = Uint8List(32);
     if (password == null) {
@@ -240,11 +266,5 @@ class StandardHandlerUsingStandard40 extends StandardSecurityHandler {
       }
     }
     return userPad;
-  }
-
-  int _getKeyLength(PdfDictionary encryptionDict) {
-    // This is async in reality, but for now let's assume it's direct.
-    // TODO: Fix this when dictionary handles sync access for known values.
-    return defaultKeyLengthValue;
   }
 }

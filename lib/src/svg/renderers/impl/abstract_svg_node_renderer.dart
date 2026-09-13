@@ -21,6 +21,7 @@ import 'package:dpdf/src/svg/renderers/svg_text_node_renderer.dart';
 import 'package:dpdf/src/svg/renderers/svg_draw_context.dart';
 import 'package:dpdf/src/svg/svg_constants.dart';
 import 'package:dpdf/src/svg/utils/svg_color_utils.dart';
+import 'package:dpdf/src/svg/utils/svg_conditional_processing.dart';
 import 'package:dpdf/src/svg/utils/svg_css_utils.dart';
 import 'package:dpdf/src/svg/utils/transform_utils.dart';
 import 'package:dpdf/src/svg/renderers/impl/abstract_container_svg_node_renderer.dart';
@@ -116,7 +117,10 @@ abstract class AbstractSvgNodeRenderer implements SvgNodeRenderer {
     return CommonCssConstants.NONE ==
             getAttribute(CommonCssConstants.DISPLAY) ||
         CommonCssConstants.HIDDEN ==
-            getAttribute(CommonCssConstants.VISIBILITY);
+            getAttribute(CommonCssConstants.VISIBILITY) ||
+        // SVG 1.1 §5.8.1: os atributos de processamento condicional valem em
+        // qualquer elemento desenhável, não só dentro de um `<switch>`.
+        !SvgConditionalProcessing.isRendered(this);
   }
 
   bool canElementFill() => true;

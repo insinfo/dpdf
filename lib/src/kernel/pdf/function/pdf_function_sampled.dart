@@ -107,7 +107,16 @@ class PdfFunctionSampled extends PdfFunction {
   int get outputCount => _outputCount;
 
   /// The largest raw value a sample can hold, `2^bitsPerSample - 1`.
-  int get maxSampleValue => (1 << bitsPerSample) - 1;
+  ///
+  /// Built by repeated doubling rather than by shifting: `1 << 32` is not
+  /// 2^32 on a 32-bit shift, and `/BitsPerSample 32` is legal.
+  int get maxSampleValue {
+    var value = 1;
+    for (var i = 0; i < bitsPerSample; i++) {
+      value *= 2;
+    }
+    return value - 1;
+  }
 
   /// Reads output [output] of sample [sampleIndex] from the packed bit stream.
   ///
@@ -119,12 +128,27 @@ class PdfFunctionSampled extends PdfFunction {
     for (var bit = 0; bit < bitsPerSample; bit++) {
       final absolute = bitPosition + bit;
       final byteIndex = absolute >> 3;
-      if (byteIndex >= _samples.length) return value << (bitsPerSample - bit);
+      if (byteIndex >= _samples.length) {
+        // Pad the missing low bits with zeroes. Doubling instead of shifting
+        // keeps a 32 bit sample exact on platforms whose shift is 32 bit.
+        for (var rest = bit; rest < bitsPerSample; rest++) {
+          value *= 2;
+        }
+        return value;
+      }
       final bitValue = (_samples[byteIndex] >> (7 - (absolute & 7))) & 1;
-      value = (value << 1) | bitValue;
+      value = value * 2 + bitValue;
     }
     return value;
   }
+
+  /// Whether cubic spline interpolation applies to this function.
+  ///
+  /// Clause 7.10.2 only defines `/Order 3` for a one-input function, and adds
+  /// that a `/Size` below 4 makes a cubic spline impossible, in which case
+  /// `/Order 3` shall be ignored.
+  bool get usesCubicInterpolation =>
+      order == 3 && inputCount == 1 && size[0] >= 4;
 
   @override
   List<double> evaluateClipped(List<double> inputs) {
@@ -144,11 +168,25 @@ class PdfFunctionSampled extends PdfFunction {
       frac[i] = size[i] > 1 ? e - base[i] : 0.0;
     }
 
-    // Multilinear interpolation: every corner of the m-dimensional cell
-    // contributes with the product of the per-axis weights. `/Order 3` asks
-    // for cubic spline interpolation; this implementation deliberately falls
-    // back to the linear result, which the spec allows a reader to do and
-    // which differs only slightly for the smooth tables Order 3 is used for.
+    final outputs = usesCubicInterpolation
+        ? _cubic(base[0], frac[0])
+        : _multilinear(base, frac);
+
+    final max = maxSampleValue.toDouble();
+    for (var j = 0; j < _outputCount; j++) {
+      outputs[j] = PdfFunction.interpolate(
+          outputs[j], 0.0, max, decode[2 * j], decode[2 * j + 1]);
+    }
+    return outputs;
+  }
+
+  /// Multilinear interpolation over the `2^m` corners of the sample cell.
+  ///
+  /// Every corner contributes with the product of the per-axis weights, which
+  /// is the m-dimensional generalisation of the linear blend clause 7.10.2
+  /// describes for one input.
+  List<double> _multilinear(List<int> base, List<double> frac) {
+    final m = inputCount;
     final outputs = List<double>.filled(_outputCount, 0.0);
     final cornerCount = 1 << m;
     for (var corner = 0; corner < cornerCount; corner++) {
@@ -166,11 +204,35 @@ class PdfFunctionSampled extends PdfFunction {
         outputs[j] += weight * rawSample(sampleIndex, j);
       }
     }
+    return outputs;
+  }
+
+  /// Cubic spline interpolation for `/Order 3` (clause 7.10.2).
+  ///
+  /// A Catmull-Rom spline through the four samples around the cell: it passes
+  /// through every sample, so a table read exactly on a sample gives the same
+  /// answer as linear interpolation, and it is the curve readers use for
+  /// `/Order 3`. Sample indices are clamped at the ends of the table, which
+  /// makes the spline behave as if the edge samples repeated.
+  List<double> _cubic(int base, double t) {
+    final last = size[0] - 1;
+    int index(int i) => i < 0 ? 0 : (i > last ? last : i);
 
     final max = maxSampleValue.toDouble();
+    final outputs = List<double>.filled(_outputCount, 0.0);
     for (var j = 0; j < _outputCount; j++) {
-      outputs[j] = PdfFunction.interpolate(
-          outputs[j], 0.0, max, decode[2 * j], decode[2 * j + 1]);
+      final p0 = rawSample(index(base - 1), j).toDouble();
+      final p1 = rawSample(index(base), j).toDouble();
+      final p2 = rawSample(index(base + 1), j).toDouble();
+      final p3 = rawSample(index(base + 2), j).toDouble();
+      final value = 0.5 *
+          ((2.0 * p1) +
+              (p2 - p0) * t +
+              (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t * t +
+              (3.0 * p1 - p0 - 3.0 * p2 + p3) * t * t * t);
+      // A spline can overshoot between samples; the table cannot hold a value
+      // outside 0..max, so clamp before /Decode maps it onto the output range.
+      outputs[j] = PdfFunction.clip(value, 0.0, max);
     }
     return outputs;
   }

@@ -16,11 +16,45 @@ import 'pdf_choice_form_field.dart';
 import 'pdf_signature_form_field.dart';
 
 class PdfFormField extends AbstractPdfFormField {
+  // ISO 32000-1, Table 221 - flags common to every field type.
   static const int ffReadOnly = 1 << 0; // Bit 1
   static const int ffRequired = 1 << 1; // Bit 2
   static const int ffNoExport = 1 << 2; // Bit 3
+
+  // Table 228 - text fields.
   static const int ffMultiline = 1 << 12; // Bit 13
   static const int ffPassword = 1 << 13; // Bit 14
+  static const int ffFileSelect = 1 << 20; // Bit 21
+  static const int ffDoNotSpellCheck = 1 << 22; // Bit 23
+  static const int ffDoNotScroll = 1 << 23; // Bit 24
+  static const int ffComb = 1 << 24; // Bit 25
+  static const int ffRichText = 1 << 25; // Bit 26
+
+  // Table 226 - button fields.
+  static const int ffNoToggleToOff = 1 << 14; // Bit 15
+  static const int ffRadio = 1 << 15; // Bit 16
+  static const int ffPushButton = 1 << 16; // Bit 17
+  static const int ffRadiosInUnison = 1 << 25; // Bit 26
+
+  // Table 230 - choice fields.
+  static const int ffCombo = 1 << 17; // Bit 18
+  static const int ffEdit = 1 << 18; // Bit 19
+  static const int ffSort = 1 << 19; // Bit 20
+  static const int ffMultiSelect = 1 << 21; // Bit 22
+  static const int ffCommitOnSelChange = 1 << 26; // Bit 27
+
+  /// Entries a field inherits from its ancestors (ISO 32000-1, 12.7.3.1,
+  /// Tables 220, 222, 227 and 229).
+  static final Set<PdfName> inheritableKeys = {
+    PdfName.ft,
+    PdfName.ff,
+    PdfName.v,
+    PdfName.dv,
+    PdfName.da,
+    PdfName.q,
+    PdfName.opt,
+    PdfName.maxLen,
+  };
 
   final List<AbstractPdfFormField> childFields = [];
 
@@ -54,16 +88,35 @@ class PdfFormField extends AbstractPdfFormField {
     return field;
   }
 
+  /// Walks the `/Parent` chain looking for [key], as required for the
+  /// inheritable entries of ISO 32000-1, 12.7.3.1.
+  Future<PdfObject?> getInheritedEntry(PdfName key) async {
+    PdfDictionary? dictionary = pdfRepresentation();
+    final visited = <PdfDictionary>{};
+    while (dictionary != null && visited.add(dictionary)) {
+      final value = await dictionary.get(key, true);
+      if (value != null) return value;
+      dictionary = await dictionary.dictionaryEntry(PdfName.parent);
+    }
+    // The in-memory parent link may not have been written into the dictionary
+    // yet while the field tree is being built.
+    PdfFormField? parentField = getParentField();
+    final seen = <PdfFormField>{};
+    while (parentField != null && seen.add(parentField)) {
+      final value = await parentField.pdfRepresentation().get(key, true);
+      if (value != null) return value;
+      parentField = parentField.getParentField();
+    }
+    return null;
+  }
+
   // Helper for flags
   Future<bool> getFieldFlag(int flag) async {
-    PdfNumber? n = await pdfRepresentation().numberEntry(PdfName.ff);
-    int flags = n != null ? n.getValue().toInt() : 0;
-    return (flags & flag) != 0;
+    return (await getFieldFlags() & flag) != 0;
   }
 
   Future<void> setFieldFlag(int flag, bool value) async {
-    PdfNumber? n = await pdfRepresentation().numberEntry(PdfName.ff);
-    int flags = n != null ? n.getValue().toInt() : 0;
+    int flags = await getFieldFlags();
     if (value) {
       flags |= flag;
     } else {
@@ -138,11 +191,48 @@ class PdfFormField extends AbstractPdfFormField {
   }
 
   Future<PdfName?> getFormType() async {
-    return pdfRepresentation().nameEntry(PdfName.ft);
+    final ft = await getInheritedEntry(PdfName.ft);
+    return ft is PdfName ? ft : null;
   }
 
+  /// Sets the partial field name (`/T`). ISO 32000-1, 12.7.3.2 forbids a
+  /// PERIOD inside a partial name because it separates the components of the
+  /// fully qualified name.
   void setFieldName(String name) {
+    if (name.contains('.')) {
+      throw ArgumentError(
+          'A partial field name shall not contain a PERIOD character.');
+    }
     put(PdfName.t, PdfString(name));
+  }
+
+  /// Fully qualified field name built from the partial names of this field and
+  /// all of its ancestors (ISO 32000-1, 12.7.3.2).
+  Future<String> getFullyQualifiedFieldName() async {
+    final parts = <String>[];
+    PdfDictionary? dictionary = pdfRepresentation();
+    final visited = <PdfDictionary>{};
+    while (dictionary != null && visited.add(dictionary)) {
+      final partial = await dictionary.stringEntry(PdfName.t);
+      final text = partial?.decodeMappingText();
+      if (text != null && text.isNotEmpty) {
+        parts.insert(0, text);
+      }
+      dictionary = await dictionary.dictionaryEntry(PdfName.parent);
+    }
+    PdfFormField? parentField = getParentField();
+    if (parentField != null) {
+      final seen = <PdfFormField>{};
+      while (parentField != null && seen.add(parentField)) {
+        final partial = await parentField.getPartialFieldName();
+        final text = partial?.decodeMappingText();
+        if (text != null && text.isNotEmpty && !parts.contains(text)) {
+          parts.insert(0, text);
+        }
+        parentField = parentField.getParentField();
+      }
+    }
+    return parts.join('.');
   }
 
   Future<List<PdfWidgetAnnotation>> getWidgets() async {
@@ -237,9 +327,10 @@ class PdfFormField extends AbstractPdfFormField {
   /// Gets all child form fields (non-annotation children).
   List<AbstractPdfFormField> getChildFields() => childFields;
 
-  /// Returns the value of the field.
+  /// Returns the value of the field, inherited from the ancestors when the
+  /// field itself carries no `/V` (ISO 32000-1, Table 220).
   Future<PdfObject?> getValue() async {
-    return await pdfRepresentation().get(PdfName.v, true);
+    return await getInheritedEntry(PdfName.v);
   }
 
   /// Returns the value as a string.
@@ -328,10 +419,35 @@ class PdfFormField extends AbstractPdfFormField {
     return null;
   }
 
-  /// Gets the raw flags value of this field.
+  /// Gets the effective flags of this field, inherited when it has no `/Ff`.
   Future<int> getFieldFlags() async {
-    PdfNumber? n = await pdfRepresentation().numberEntry(PdfName.ff);
-    return n?.intValue() ?? 0;
+    final n = await getInheritedEntry(PdfName.ff);
+    return n is PdfNumber ? n.intValue() : 0;
+  }
+
+  /// Gets the rich text string of the field (`/RV`, ISO 32000-1, 12.7.3.4).
+  Future<String?> getRichText() async {
+    final rv = await pdfRepresentation().get(PdfName.rv, true);
+    if (rv is PdfString) return rv.decodeMappingText();
+    return null;
+  }
+
+  /// Sets the rich text string of the field (`/RV`). The plain text should be
+  /// kept in `/V` as well so that readers without rich text support still show
+  /// the data (ISO 32000-1, 12.7.3.4).
+  void setRichTextValue(String richText) {
+    put(PdfName.rv, PdfString(richText));
+  }
+
+  /// Gets the default style string (`/DS`, ISO 32000-1, Table 222).
+  Future<String?> getDefaultStyle() async {
+    final ds = await pdfRepresentation().stringEntry(PdfName.ds);
+    return ds?.decodeMappingText();
+  }
+
+  /// Sets the default style string (`/DS`).
+  void setDefaultStyle(String style) {
+    put(PdfName.ds, PdfString(style));
   }
 
   /// Sets the raw flags value of this field.
@@ -416,9 +532,9 @@ class PdfFormField extends AbstractPdfFormField {
     };
   }
 
-  /// Gets the default value of this field.
+  /// Gets the default value of this field (`/DV`, inheritable).
   Future<PdfObject?> getDefaultValue() async {
-    return await pdfRepresentation().get(PdfName.dv, true);
+    return await getInheritedEntry(PdfName.dv);
   }
 
   /// Sets the default value of this field.
@@ -434,8 +550,8 @@ class PdfFormField extends AbstractPdfFormField {
   /// Gets the quadding (justification) of this field.
   /// 0 = Left-justified, 1 = Centered, 2 = Right-justified.
   Future<int> getQuadding() async {
-    PdfNumber? q = await pdfRepresentation().numberEntry(PdfName.q);
-    return q?.intValue() ?? 0;
+    final q = await getInheritedEntry(PdfName.q);
+    return q is PdfNumber ? q.intValue() : 0;
   }
 
   /// Sets the quadding (justification) of this field.

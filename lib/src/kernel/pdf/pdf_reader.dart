@@ -517,6 +517,7 @@ class PdfReader {
       await _trailer!.mergeDifferent(sectionTrailer);
     }
 
+    await _readHybridXrefStream(sectionTrailer, <int>{});
     final prev = await sectionTrailer.integerEntry(PdfName.prev);
     if (prev != null) {
       await _readXrefSection(prev);
@@ -572,10 +573,53 @@ class PdfReader {
     } else {
       await _trailer!.mergeDifferent(sectionTrailer);
     }
+    await _readHybridXrefStream(sectionTrailer, visitedPositions);
     final prev = await sectionTrailer.integerEntry(PdfName.prev);
     if (prev != null) {
       await _readXrefSectionWithCycleCheck(prev, visitedPositions);
     }
+  }
+
+  /// Reads the cross-reference stream of a hybrid-reference file (7.5.8.4).
+  ///
+  /// A hybrid-reference file hides objects from PDF 1.4 readers by giving them
+  /// a free entry in a classic section and a real entry in a cross-reference
+  /// stream named by the update section's /XRefStm. 7.5.8.4 orders the search:
+  /// a number missing from a classic section is looked up in that stream
+  /// *before* the section named by /Prev, so the stream's entries beat the
+  /// free entries that a previous section carries for the same objects.
+  ///
+  /// The stream's dictionary is not merged into the file trailer: it describes
+  /// a cross-reference stream (/Type /XRef, /W, /Index) and the trailer of a
+  /// hybrid file is a classic one.
+  Future<void> _readHybridXrefStream(
+      PdfDictionary sectionTrailer, Set<int> visitedPositions) async {
+    final position = await sectionTrailer.integerEntry(PdfName.xrefStm);
+    if (position == null) return;
+    if (visitedPositions.contains(position)) return;
+    try {
+      _validateXrefPosition(position);
+    } on FormatException {
+      // A broken hint is not fatal: every object reachable by a PDF 1.4 reader
+      // is still described by the classic sections.
+      _logger.logWarning(
+          'Ignoring an /XRefStm offset that lies outside the PDF bytes: '
+          '$position');
+      return;
+    }
+    visitedPositions.add(position);
+    _tokens.seek(position);
+    if (!_tokens.nextToken()) {
+      throw PdfException(KernelExceptionMessageConstant.unexpectedEndOfFile);
+    }
+    if (_tokens.tokenValueEqualsTo(PdfTokenizer.xref)) {
+      throw FormatException(
+          '/XRefStm shall point at a cross-reference stream, not a table.');
+    }
+    _tokens.seek(position);
+    _xrefStm = true;
+    await _readXrefStreamWithCycleCheck(visitedPositions,
+        mergeTrailer: false, followPrev: false);
   }
 
   Future<void> _readXrefStream() async {
@@ -661,15 +705,23 @@ class PdfReader {
     }
   }
 
-  /// Version with cycle detection for following Prev pointers in xref streams
-  Future<void> _readXrefStreamWithCycleCheck(Set<int> visitedPositions) async {
+  /// Version with cycle detection for following Prev pointers in xref streams.
+  ///
+  /// [mergeTrailer] is false for the cross-reference stream of a hybrid file,
+  /// whose dictionary must not contribute entries to a classic trailer.
+  /// [followPrev] is false in the same case, because the classic chain owns
+  /// the /Prev traversal there.
+  Future<void> _readXrefStreamWithCycleCheck(Set<int> visitedPositions,
+      {bool mergeTrailer = true, bool followPrev = true}) async {
     _tokens.nextValidToken();
     _tokens.nextValidToken();
     final streamDict = await _readDictionary();
-    if (_trailer == null) {
-      _trailer = streamDict;
-    } else {
-      await _trailer!.mergeDifferent(streamDict);
+    if (mergeTrailer) {
+      if (_trailer == null) {
+        _trailer = streamDict;
+      } else {
+        await _trailer!.mergeDifferent(streamDict);
+      }
     }
     final size = await streamDict.integerEntry(PdfName.size);
     final wArray = await streamDict.arrayEntry(PdfName.w);
@@ -739,7 +791,7 @@ class PdfReader {
       }
     }
     final prev = await streamDict.integerEntry(PdfName.prev);
-    if (prev != null) {
+    if (followPrev && prev != null) {
       await _readXrefSectionWithCycleCheck(prev, visitedPositions);
     }
   }

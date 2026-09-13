@@ -39,13 +39,18 @@ class LZWCompressor {
   /// [output] - Destination BytesBuilder for compressed data
   /// [codeSize] - Initial code size for LZW compressor
   /// [tiff] - Flag indicating TIFF LZW fudge needs to be applied
-  LZWCompressor(BytesBuilder output, int codeSize, bool tiff)
+  /// [earlyChange] - Increase the code length one code earlier than strictly
+  /// necessary. TIFF and the PDF LZWDecode filter do this by default; the PDF
+  /// filter can turn it off with its EarlyChange parameter. Defaults to
+  /// [tiff].
+  LZWCompressor(BytesBuilder output, int codeSize, bool tiff,
+      {bool? earlyChange})
       : _codeSize = codeSize,
-        _tiffFudge = tiff,
+        _tiffFudge = earlyChange ?? tiff,
         _clearCode = 1 << codeSize,
         _endOfInfo = (1 << codeSize) + 1,
         _numBits = codeSize + 1,
-        _limit = (1 << (codeSize + 1)) - 1 - (tiff ? 1 : 0),
+        _limit = (1 << (codeSize + 1)) - 1 - ((earlyChange ?? tiff) ? 1 : 0),
         _prefix = -1,
         _lzss = LZWStringTable(),
         _bf = BitFile(output, !tiff) {
@@ -108,12 +113,15 @@ class LZWEncoder {
   /// [data] - Input data to compress
   /// [codeSize] - Initial code size (default: 8 for general data)
   /// [tiff] - Whether to use TIFF LZW variant (default: true)
+  /// [earlyChange] - Whether the code length grows one code early; defaults to
+  /// [tiff]. This is the PDF LZWDecode EarlyChange parameter.
   ///
   /// Returns compressed data as Uint8List.
   static Uint8List compress(Uint8List data,
-      {int codeSize = 8, bool tiff = true}) {
+      {int codeSize = 8, bool tiff = true, bool? earlyChange}) {
     final output = BytesBuilder();
-    final compressor = LZWCompressor(output, codeSize, tiff);
+    final compressor =
+        LZWCompressor(output, codeSize, tiff, earlyChange: earlyChange);
     compressor.compress(data, 0, data.length);
     compressor.flush();
     return output.toBytes();

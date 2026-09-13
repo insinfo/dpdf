@@ -111,12 +111,17 @@ void main() {
       expect(content, contains(_outsideCoordinates));
     });
 
-    test('several subpaths in one path object are judged together', () async {
-      // The second subpath is outside, so the path object as a whole crosses
-      // the edge and cannot be cut in two without rebuilding the geometry.
+    test('subpaths of one path object are judged one by one', () async {
+      // The first subpath is inside the area and the second outside, so the
+      // path object as a whole crosses the edge: it is rewritten with the
+      // inside subpath gone and the outside one still there.
       final source = await _page(
           '110 110 m 150 150 l h $_outsideCoordinates m 350 450 l h f\n');
-      await expectLater(_redact(source), throwsUnsupportedError);
+      final content = await _contentOf(await _redact(source));
+      expect(content, isNot(contains('110 110')));
+      expect(content, isNot(contains('150 150')));
+      expect(content, contains('311.3 422.7 m'));
+      expect(content, contains('350 450 l'));
     });
 
     test('the transformation matrix places the path, not the raw numbers',
@@ -133,28 +138,40 @@ void main() {
   });
 
   group('paths that cross an area edge', () {
-    test('the document is refused, and the message says why', () async {
-      final source = await _page('90 90 40 40 re f\n');
+    test('a stroke is refused, and the message says why', () async {
+      // A stroke lays ink either side of its geometry, so clipping the
+      // geometry against the area would leave part of the pen inside it.
+      final source = await _page('90 90 40 40 re S\n');
       await expectLater(
           _redact(source),
           throwsA(isA<UnsupportedError>().having(
               (e) => e.message,
               'message',
-              allOf(contains('crosses'),
+              allOf(contains('crosses'), contains('pen width'),
                   contains('PdfVectorArtRedaction.cover')))));
     });
 
-    test('a refusal beats a file that looks redacted', () async {
-      // A path that merely touches the area from outside is left alone; one
-      // that reaches in is refused rather than half-removed.
+    test('a fill is clipped rather than refused or half-removed', () async {
+      // A path that merely touches the area from outside is left alone, byte
+      // for byte; one that reaches in is cut flush against the edge.
       final touching = await _page('0 0 100 100 re f\n');
       expect(await _contentOf(await _redact(touching)),
           contains('0 0 100 100 re'));
-      await expectLater(_redact(await _page('0 0 100.5 100.5 re f\n')),
-          throwsUnsupportedError);
+
+      final crossing = await _contentOf(
+          await _redact(await _page('0 0 100.5 100.5 re f\n')));
+      expect(crossing, isNot(contains('100.5 100.5')),
+          reason: 'the corner that reached into the area is gone');
+      expect(crossing, isNot(contains('re')),
+          reason: 'the rectangle became an L cut flush against the edge');
+      // What is left is the square minus its top right corner: everything
+      // west of x=100 and, below y=100, the sliver east of it.
+      expect(crossing, contains('100 100.5 l'));
+      expect(crossing, contains('100.5 0 l'));
+      expect(crossing, contains('f'));
     });
 
-    test('cover keeps the previous behaviour on request', () async {
+    test('cover keeps the cover-only behaviour on request', () async {
       final source = await _page('90 90 40 40 re f\n');
       final content = await _contentOf(
           await _redact(source, vectorArt: PdfVectorArtRedaction.cover));
@@ -239,6 +256,32 @@ void main() {
       final source =
           await _page('q 1 0 0 1 400 400 cm /Art Do Q\n', resources: resources);
       expect(await _xObjectsOf(await _redact(source)), contains('55.5 55.5'));
+    });
+
+    test('artwork that crosses the edge inside a Form XObject is clipped too',
+        () async {
+      // The form is placed at 100,100, so its own 40..190 square lands at
+      // 140..290 on the page and its lower left corner reaches into the area.
+      // Mapped back into the form, the area is the 0..100 square.
+      final form = PdfStream.withBytes(
+          Uint8List.fromList(latin1.encode('40 40 150 150 re f\n')), 0)
+        ..put(PdfName.type, PdfName('XObject'))
+        ..put(PdfName.subtype, PdfName('Form'))
+        ..put(PdfName('BBox'), PdfArray.fromDoubles([0, 0, 300, 300]));
+      final resources = PdfDictionary()
+        ..put(PdfName.xObject, PdfDictionary()..put(PdfName('Art'), form));
+      final source =
+          await _page('q 1 0 0 1 100 100 cm /Art Do Q\n', resources: resources);
+      final art = await _xObjectsOf(await _redact(source));
+      expect(art, isNot(contains('40 40 150 150 re')),
+          reason: 'the rectangle was cut against the area mapped into the '
+              "form's own space");
+      // What is left is the square less its 40..100 corner: the slab east of
+      // x=100 and, west of it, the part north of y=100.
+      expect(art, contains('100 40 m'));
+      expect(art, contains('190 190 l'));
+      expect(art, contains('100 100 m'));
+      expect(art, contains('40 100 l'));
     });
 
     test('a clipping path is preserved, and that is documented', () async {

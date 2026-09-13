@@ -80,8 +80,12 @@ class PdfAreaRedactionOptions {
   ///
   /// O padrao remove de verdade: um caminho inteiramente dentro de uma area
   /// desaparece do fluxo de conteudo, um caminho inteiramente fora sobrevive
-  /// byte a byte, e um caminho que atravessa a borda faz o documento ser
-  /// recusado. Cobrir com um retangulo opaco nao e redacao — as coordenadas
+  /// byte a byte, e um caminho preenchido que atravessa a borda e recortado —
+  /// as curvas sao partidas nos parametros em que cruzam a borda e o buraco e
+  /// fechado pela propria borda, no sentido que preserva a regra de winding.
+  /// So o traco que atravessa continua recusado, porque a caneta pinta meia
+  /// largura para cada lado da geometria e recortar a geometria nao apaga essa
+  /// tinta. Cobrir com um retangulo opaco nao e redacao — as coordenadas
   /// continuam no arquivo — e por isso so acontece sob pedido explicito,
   /// com [PdfVectorArtRedaction.cover].
   final PdfVectorArtRedaction vectorArt;
@@ -112,11 +116,14 @@ class PdfAreaRedactionOptions {
 ///   removidos, preservando transparência fora da área e clonando recursos
 ///   compartilhados.
 /// * Arte vetorial inteiramente dentro da area e removida do fluxo de
-///   conteudo, inclusive dentro de Form XObjects; um caminho que atravessa a
-///   borda da area faz a operacao ser recusada, porque recortar curvas de
-///   Bezier contra um retangulo e trabalho que esta implementacao nao faz e
-///   um arquivo que parece redigido sem estar e pior que uma recusa. Veja
-///   [PdfVectorArtRedaction].
+///   conteudo, inclusive dentro de Form XObjects. Um caminho preenchido que
+///   atravessa a borda e recortado: as curvas sao partidas onde cruzam a
+///   borda, os pedacos de dentro somem e o contorno e refechado pela propria
+///   borda de modo a preservar a regra de winding (nonzero em `f`, even-odd
+///   em `f*`) em todo ponto de fora. Um caminho *tracado* que atravessa a
+///   borda ainda faz a operacao ser recusada: a caneta pinta meia largura
+///   para cada lado, entao recortar a geometria deixaria tinta dentro da
+///   area. Veja [PdfVectorArtRedaction].
 /// * Caminhos de recorte (`W`, `W*`) sao preservados: apaga-los mudaria o que
 ///   o resto da pagina mostra. O mesmo vale para sombreamentos (`sh`) e para
 ///   os procedimentos de glifo de fontes Type 3.

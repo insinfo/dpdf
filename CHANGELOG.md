@@ -28,6 +28,12 @@ binaries, and targets the Dart VM, `dart2js`, and `dart2wasm`.
   verification reports.
 - Text extraction, text and area redaction, page overlays and assembly, form
   merging, digital signatures, timestamps, OCSP, CRL, and JKS/BKS support.
+- Clipping of filled vector artwork against a redaction area: curves are split
+  at the parameters where they cross the edge and the hole is reclosed along
+  the edge itself, preserving the winding rule for both `f` and `f*`. A
+  *stroked* path that crosses an edge is still refused with an explicit
+  message, because the pen paints half the width to either side of the
+  geometry.
 - Code 39, Code 128, EAN/UPC, and QR Code generation.
 
 ### Fixed

@@ -131,9 +131,14 @@ final redacted = await PdfAreaRedaction.apply(input, [
 Area redaction removes matching text, replaces covered pixels in direct or
 Form-nested images (cloning shared resources), and **deletes** vector artwork
 that falls wholly inside an area, in page content and in nested Form XObjects.
-A path that crosses an area edge is refused rather than merely covered: a file
-that only *looks* redacted is worse than one that admits it cannot be. Clipping
-paths, shadings and Type 3 glyph procedures are still only covered.
+A **filled** path that crosses an area edge is clipped: curves are split at the
+parameters where they cross, and the hole is closed along the edge itself in the
+direction that preserves the winding rule, so `f` (nonzero) and `f*` (even-odd)
+both keep their meaning outside. A **stroked** path that crosses an edge is
+still refused, because the pen paints half the width to either side of the
+geometry and clipping the geometry would not erase that ink: a file that only
+*looks* redacted is worse than one that admits it cannot be. Clipping paths,
+shadings and Type 3 glyph procedures are still only covered.
 `PdfTextRedaction` offers a stricter reconstruction path and rejects documents
 it cannot safely rebuild.
 

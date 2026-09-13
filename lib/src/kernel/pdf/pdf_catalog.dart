@@ -12,6 +12,15 @@ import 'pdf_document.dart';
 import 'pdf_array.dart';
 import 'pdf_boolean.dart';
 import 'pdf_stream.dart';
+import 'pdf_version.dart';
+import 'article/pdf_article_thread.dart';
+import 'viewer/pdf_legal_attestation.dart';
+import 'viewer/pdf_mark_info.dart';
+import 'viewer/pdf_page_layout.dart';
+import 'viewer/pdf_page_piece.dart';
+import 'viewer/pdf_requirement.dart';
+import 'viewer/pdf_uri_dictionary.dart';
+import 'viewer/pdf_viewer_preferences.dart';
 
 /// The root of a document’s object hierarchy.
 class PdfCatalog extends PdfObjectWrapper<PdfDictionary> {
@@ -65,9 +74,36 @@ class PdfCatalog extends PdfObjectWrapper<PdfDictionary> {
     return this;
   }
 
+  /// Installs [preferences] as `/ViewerPreferences` (12.2, Table 150).
+  PdfCatalog setViewerPreferencesDictionary(PdfViewerPreferences preferences) {
+    put(PdfName.viewerPreferences, preferences.pdfRepresentation());
+    return this;
+  }
+
+  /// Gets `/ViewerPreferences` (12.2, Table 150), or `null` when the catalog
+  /// carries none. Table 150 then lets the reader use its own settings.
+  Future<PdfViewerPreferences?> getViewerPreferences() async {
+    final dictionary =
+        await pdfRepresentation().dictionaryEntry(PdfName.viewerPreferences);
+    return dictionary == null ? null : PdfViewerPreferences(dictionary);
+  }
+
+  /// Gets `/ViewerPreferences`, creating and installing an empty dictionary
+  /// when the catalog has none yet.
+  Future<PdfViewerPreferences> viewerPreferences() async {
+    final existing = await getViewerPreferences();
+    if (existing != null) return existing;
+    final created = PdfViewerPreferences();
+    setViewerPreferencesDictionary(created);
+    return created;
+  }
+
   /// Convenience method to set DisplayDocTitle.
   PdfCatalog setDisplayDocTitle(bool display) {
     var prefsObj = pdfRepresentation().getMap()?[PdfName.viewerPreferences];
+    if (prefsObj is PdfIndirectReference) {
+      prefsObj = prefsObj.targetObjectSync();
+    }
     PdfDictionary prefs;
     if (prefsObj is! PdfDictionary) {
       prefs = PdfDictionary();
@@ -80,6 +116,7 @@ class PdfCatalog extends PdfObjectWrapper<PdfDictionary> {
       prefs = prefsObj;
     }
     prefs.put(PdfName.displayDocTitle, PdfBoolean(display));
+    prefs.markChanged();
     return this;
   }
 
@@ -288,6 +325,386 @@ class PdfCatalog extends PdfObjectWrapper<PdfDictionary> {
     intents.add(outputIntent);
     intents.markChanged();
     return this;
+  }
+
+  // =====================================================================
+  // ISO 32000-1:2008, 7.7.2, Table 28 - entries in the catalog dictionary.
+  // =====================================================================
+
+  /// `/Version`.
+  static final PdfName versionKey = PdfName.intern('Version');
+
+  /// `/Extensions`.
+  static final PdfName extensionsKey = PdfName.intern('Extensions');
+
+  /// `/PageLabels`.
+  static final PdfName pageLabelsKey = PdfName.intern('PageLabels');
+
+  /// `/OpenAction`.
+  static final PdfName openActionKey = PdfName.intern('OpenAction');
+
+  /// `/AA`, the document level additional-actions dictionary.
+  static final PdfName additionalActionsKey = PdfName.intern('AA');
+
+  /// `/URI`.
+  static final PdfName uriKey = PdfName.intern('URI');
+
+  /// `/AcroForm`.
+  static final PdfName acroFormKey = PdfName.intern('AcroForm');
+
+  /// `/MarkInfo`.
+  static final PdfName markInfoKey = PdfName.intern('MarkInfo');
+
+  /// `/Lang`.
+  static final PdfName langKey = PdfName.intern('Lang');
+
+  /// `/SpiderInfo`.
+  static final PdfName spiderInfoKey = PdfName.intern('SpiderInfo');
+
+  /// `/OCProperties`.
+  static final PdfName ocPropertiesKey = PdfName.intern('OCProperties');
+
+  /// `/Perms`.
+  static final PdfName permsKey = PdfName.intern('Perms');
+
+  /// `/Legal`.
+  static final PdfName legalKey = PdfName.intern('Legal');
+
+  /// `/Collection`.
+  static final PdfName collectionKey = PdfName.intern('Collection');
+
+  /// `/NeedsRendering`.
+  static final PdfName needsRenderingKey = PdfName.intern('NeedsRendering');
+
+  /// Sets `/Version` (PDF 1.4), the version the document conforms to when it
+  /// is later than the one in the file header. Table 28 requires a name
+  /// object, so `/1.7` and not `1.7`.
+  PdfCatalog setVersion(PdfVersion version) {
+    put(versionKey, version.toPdfName());
+    return this;
+  }
+
+  /// Gets `/Version`, or `null` when the entry is absent or unparsable. The
+  /// document then conforms to the version given in the file header.
+  Future<PdfVersion?> getVersion() async {
+    final name = await pdfRepresentation().nameEntry(versionKey);
+    if (name == null) return null;
+    try {
+      return PdfVersion.fromPdfName(name);
+    } on ArgumentError {
+      return null;
+    }
+  }
+
+  /// Sets `/Extensions`, the developer extensions dictionary of 7.12.
+  PdfCatalog setExtensions(PdfDictionary extensions) {
+    put(extensionsKey, extensions);
+    return this;
+  }
+
+  /// Gets `/Extensions`, or `null` when absent.
+  Future<PdfDictionary?> getExtensions() =>
+      pdfRepresentation().dictionaryEntry(extensionsKey);
+
+  /// Sets `/PageLabels` (PDF 1.3), the number tree defining the page labels.
+  PdfCatalog setPageLabels(PdfDictionary numberTree) {
+    put(pageLabelsKey, numberTree);
+    return this;
+  }
+
+  /// Gets `/PageLabels`, or `null` when absent.
+  Future<PdfDictionary?> getPageLabels() =>
+      pdfRepresentation().dictionaryEntry(pageLabelsKey);
+
+  /// Gets `/Names` (PDF 1.2), the document's name dictionary, or `null`.
+  Future<PdfDictionary?> getNames() =>
+      pdfRepresentation().dictionaryEntry(PdfName.names);
+
+  /// Gets `/Dests` (PDF 1.1), the catalog level named destinations dictionary,
+  /// or `null` when absent.
+  Future<PdfDictionary?> getDests() =>
+      pdfRepresentation().dictionaryEntry(PdfName.dests);
+
+  /// Sets `/PageLayout` from the Table 28 vocabulary.
+  PdfCatalog setPageLayoutMode(PdfPageLayout layout) {
+    put(PdfName.pageLayout, layout.toPdfName());
+    return this;
+  }
+
+  /// Gets `/PageLayout`, defaulting to [PdfPageLayout.singlePage] as Table 28
+  /// prescribes when the entry is absent or unrecognized.
+  Future<PdfPageLayout> getPageLayoutMode() async {
+    return PdfPageLayout.fromPdfName(
+            await pdfRepresentation().nameEntry(PdfName.pageLayout)) ??
+        PdfPageLayout.singlePage;
+  }
+
+  /// Sets `/PageMode` from the Table 28 vocabulary.
+  PdfCatalog setPageModeValue(PdfPageMode mode) {
+    put(PdfName.pageMode, mode.toPdfName());
+    return this;
+  }
+
+  /// Gets `/PageMode`, defaulting to [PdfPageMode.useNone] as Table 28
+  /// prescribes when the entry is absent or unrecognized.
+  Future<PdfPageMode> getPageModeValue() async {
+    return PdfPageMode.fromPdfName(
+            await pdfRepresentation().nameEntry(PdfName.pageMode)) ??
+        PdfPageMode.useNone;
+  }
+
+  /// Sets `/OpenAction` (PDF 1.1). Table 28 allows either an array defining a
+  /// destination (12.3.2) or an action dictionary (12.6); anything else is
+  /// rejected.
+  PdfCatalog setOpenAction(PdfObject destinationOrAction) {
+    if (destinationOrAction is! PdfArray &&
+        destinationOrAction is! PdfDictionary) {
+      throw PdfException(
+          '/OpenAction shall be a destination array or an action dictionary.');
+    }
+    put(openActionKey, destinationOrAction);
+    return this;
+  }
+
+  /// Gets `/OpenAction`, resolved through any indirect reference, or `null`.
+  Future<PdfObject?> getOpenAction() =>
+      pdfRepresentation().get(openActionKey, true);
+
+  /// Removes `/OpenAction`, so the document opens at the top of the first page
+  /// at the default magnification.
+  PdfCatalog removeOpenAction() {
+    pdfRepresentation().remove(openActionKey);
+    markChanged();
+    return this;
+  }
+
+  /// Sets `/AA` (PDF 1.4), the document level additional-actions dictionary.
+  PdfCatalog setAdditionalActions(PdfDictionary additionalActions) {
+    put(additionalActionsKey, additionalActions);
+    return this;
+  }
+
+  /// Gets `/AA`, or `null` when absent.
+  Future<PdfDictionary?> getAdditionalActions() =>
+      pdfRepresentation().dictionaryEntry(additionalActionsKey);
+
+  /// Gets `/URI` (PDF 1.1), the document level URI dictionary, or `null`.
+  Future<PdfUriDictionary?> getUriDictionary() async {
+    final dictionary = await pdfRepresentation().dictionaryEntry(uriKey);
+    return dictionary == null ? null : PdfUriDictionary(dictionary);
+  }
+
+  /// Gets `/URI`, creating and installing an empty dictionary when absent.
+  Future<PdfUriDictionary> uriDictionary() async {
+    final existing = await getUriDictionary();
+    if (existing != null) return existing;
+    final created = PdfUriDictionary();
+    put(uriKey, created.pdfRepresentation());
+    return created;
+  }
+
+  /// Gets `/AcroForm` (PDF 1.2), the interactive form dictionary, or `null`.
+  Future<PdfDictionary?> getAcroForm() =>
+      pdfRepresentation().dictionaryEntry(acroFormKey);
+
+  /// Gets `/StructTreeRoot` (PDF 1.3), or `null` when the document is not
+  /// tagged.
+  Future<PdfDictionary?> getStructTreeRoot() =>
+      pdfRepresentation().dictionaryEntry(PdfName.structTreeRoot);
+
+  /// Gets `/MarkInfo` (PDF 1.4), or `null` when absent.
+  Future<PdfMarkInfo?> getMarkInfo() async {
+    final dictionary = await pdfRepresentation().dictionaryEntry(markInfoKey);
+    return dictionary == null ? null : PdfMarkInfo(dictionary);
+  }
+
+  /// Gets `/MarkInfo`, creating and installing an empty dictionary when the
+  /// catalog has none yet.
+  Future<PdfMarkInfo> markInfo() async {
+    final existing = await getMarkInfo();
+    if (existing != null) return existing;
+    final created = PdfMarkInfo();
+    put(markInfoKey, created.pdfRepresentation());
+    return created;
+  }
+
+  /// Sets `/Lang` (PDF 1.4), the natural language of all text in the document
+  /// (14.9.2). An empty identifier means the language is unknown, which
+  /// Table 28 expresses by omitting the entry instead.
+  PdfCatalog setLanguage(String language) {
+    if (language.isEmpty) {
+      throw PdfException(
+          '/Lang shall not be empty; omit the entry to leave the language '
+          'unknown.');
+    }
+    put(langKey, PdfString(language));
+    return this;
+  }
+
+  /// Gets `/Lang`, or `null` when the language is unknown.
+  Future<String?> getLanguage() async {
+    return (await pdfRepresentation().stringEntry(langKey))
+        ?.decodeMappingText();
+  }
+
+  /// Sets `/SpiderInfo` (PDF 1.3), the Web Capture information dictionary.
+  PdfCatalog setSpiderInfo(PdfDictionary spiderInfo) {
+    put(spiderInfoKey, spiderInfo);
+    return this;
+  }
+
+  /// Gets `/SpiderInfo`, or `null` when absent.
+  Future<PdfDictionary?> getSpiderInfo() =>
+      pdfRepresentation().dictionaryEntry(spiderInfoKey);
+
+  /// Sets `/OCProperties` (PDF 1.5), the optional content properties
+  /// dictionary. Table 28 requires it when the document contains optional
+  /// content.
+  PdfCatalog setOcProperties(PdfDictionary ocProperties) {
+    put(ocPropertiesKey, ocProperties);
+    return this;
+  }
+
+  /// Gets `/OCProperties`, or `null` when absent.
+  Future<PdfDictionary?> getOcProperties() =>
+      pdfRepresentation().dictionaryEntry(ocPropertiesKey);
+
+  /// Sets `/Perms` (PDF 1.5), the permissions dictionary of 12.8.4, Table 258.
+  PdfCatalog setPermissions(PdfDictionary permissions) {
+    put(permsKey, permissions);
+    return this;
+  }
+
+  /// Gets `/Perms`, or `null` when absent.
+  Future<PdfDictionary?> getPermissions() =>
+      pdfRepresentation().dictionaryEntry(permsKey);
+
+  /// Gets `/Legal` (PDF 1.5), the legal attestation dictionary of 12.8.5,
+  /// or `null` when absent.
+  Future<PdfLegalAttestation?> getLegalAttestation() async {
+    final dictionary = await pdfRepresentation().dictionaryEntry(legalKey);
+    return dictionary == null ? null : PdfLegalAttestation(dictionary);
+  }
+
+  /// Gets `/Legal`, creating and installing an empty dictionary when absent.
+  Future<PdfLegalAttestation> legalAttestation() async {
+    final existing = await getLegalAttestation();
+    if (existing != null) return existing;
+    final created = PdfLegalAttestation();
+    put(legalKey, created.pdfRepresentation());
+    return created;
+  }
+
+  /// Sets `/Collection` (PDF 1.7), the collection dictionary used to present
+  /// file attachments (12.3.5).
+  PdfCatalog setCollection(PdfDictionary collection) {
+    put(collectionKey, collection);
+    return this;
+  }
+
+  /// Gets `/Collection`, or `null` when absent.
+  Future<PdfDictionary?> getCollection() =>
+      pdfRepresentation().dictionaryEntry(collectionKey);
+
+  /// Sets `/NeedsRendering` (PDF 1.7), the XFA flag telling a reader whether
+  /// the document shall be regenerated when first opened. Default `false`.
+  PdfCatalog setNeedsRendering(bool value) {
+    put(needsRenderingKey, PdfBoolean(value));
+    return this;
+  }
+
+  /// Gets `/NeedsRendering`, defaulting to `false`.
+  Future<bool> getNeedsRendering() async {
+    return (await pdfRepresentation().booleanEntry(needsRenderingKey))
+            ?.getValue() ??
+        false;
+  }
+
+  /// Gets `/PieceInfo` (PDF 1.4), the private data conforming products keep
+  /// for the document as a whole (14.5, Table 318), or `null` when absent.
+  Future<PdfPagePiece?> getPieceInfo() async {
+    final dictionary =
+        await pdfRepresentation().dictionaryEntry(PdfPagePiece.pieceInfo);
+    return dictionary == null ? null : PdfPagePiece(dictionary);
+  }
+
+  /// Gets `/PieceInfo`, creating and installing an empty page-piece dictionary
+  /// when the catalog has none yet.
+  Future<PdfPagePiece> pieceInfo() async {
+    final existing = await getPieceInfo();
+    if (existing != null) return existing;
+    final created = PdfPagePiece();
+    put(PdfPagePiece.pieceInfo, created.pdfRepresentation());
+    return created;
+  }
+
+  /// Adds [requirement] to `/Requirements` (PDF 1.7), the array of what a
+  /// conforming reader shall provide for the document to work (12.10).
+  Future<PdfCatalog> addRequirement(PdfRequirement requirement) async {
+    await requirement.validate();
+    var requirements =
+        await pdfRepresentation().arrayEntry(PdfRequirement.requirementsKey);
+    if (requirements == null) {
+      requirements = PdfArray();
+      put(PdfRequirement.requirementsKey, requirements);
+    }
+    requirements.add(requirement.pdfRepresentation());
+    requirements.markChanged();
+    markChanged();
+    return this;
+  }
+
+  /// Gets `/Requirements`, or `null` when the document states none.
+  Future<PdfArray?> getRequirements() =>
+      pdfRepresentation().arrayEntry(PdfRequirement.requirementsKey);
+
+  /// Gets the document requirements, in the order of `/Requirements`.
+  Future<List<PdfRequirement>> getDocumentRequirements() async {
+    final requirements = await getRequirements();
+    if (requirements == null) return const [];
+    final result = <PdfRequirement>[];
+    for (var index = 0; index < requirements.size(); index++) {
+      final entry = await requirements.dictionaryEntry(index);
+      if (entry != null) result.add(PdfRequirement(entry));
+    }
+    return result;
+  }
+
+  /// `/Threads`.
+  static final PdfName threadsKey = PdfName.intern('Threads');
+
+  /// Adds [thread] to `/Threads` (PDF 1.1), the array of the document's
+  /// article threads (12.4.3). The array is created on first use and is kept
+  /// indirect, as Table 28 requires.
+  Future<PdfCatalog> addArticleThread(PdfArticleThread thread) async {
+    var threads = await pdfRepresentation().arrayEntry(threadsKey);
+    if (threads == null) {
+      threads = PdfArray();
+      final doc = pdfRepresentation().indirectHandle()?.getDocument();
+      if (doc != null) {
+        threads.attachToDocument(doc);
+      }
+      put(threadsKey, threads);
+    }
+    threads.add(thread.reference());
+    threads.markChanged();
+    markChanged();
+    return this;
+  }
+
+  /// Gets `/Threads`, or `null` when the document defines no articles.
+  Future<PdfArray?> getThreads() => pdfRepresentation().arrayEntry(threadsKey);
+
+  /// Gets the document's article threads, in the order of `/Threads`.
+  Future<List<PdfArticleThread>> getArticleThreads() async {
+    final threads = await getThreads();
+    if (threads == null) return const [];
+    final result = <PdfArticleThread>[];
+    for (var index = 0; index < threads.size(); index++) {
+      final entry = await threads.dictionaryEntry(index);
+      if (entry != null) result.add(PdfArticleThread(entry));
+    }
+    return result;
   }
 
   void put(PdfName key, PdfObject value) {

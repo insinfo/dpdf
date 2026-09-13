@@ -12,6 +12,11 @@ import 'pdf_object_wrapper.dart';
 import 'pdf_resources.dart';
 import 'pdf_pages.dart';
 import 'annot/pdf_annotation.dart';
+import 'viewer/pdf_transition.dart';
+import 'viewer/pdf_page_piece.dart';
+import 'viewer/pdf_measure.dart';
+import 'article/pdf_bead.dart';
+import '../exceptions/pdf_exception.dart';
 
 /// Wrapper class that represents a page in a PDF document.
 class PdfPage extends PdfObjectWrapper<PdfDictionary> {
@@ -168,5 +173,159 @@ class PdfPage extends PdfObjectWrapper<PdfDictionary> {
   Future<int?> getStructParents() async {
     return (await pdfRepresentation().numberEntry(PdfName.structParents))
         ?.intValue();
+  }
+
+  // =====================================================================
+  // ISO 32000-1:2008, 12.4.4 Presentations - /Trans and /Dur (Table 30).
+  // =====================================================================
+
+  /// `/Dur`, the display duration of the page in a presentation.
+  static final PdfName durationKey = PdfName.intern('Dur');
+
+  /// Sets `/Trans`, the transition used when moving to this page during a
+  /// presentation (12.4.4.1, Table 162).
+  PdfPage setTransition(PdfTransition transition) {
+    pdfRepresentation()
+        .put(PdfTransition.trans, transition.pdfRepresentation());
+    pdfRepresentation().markChanged();
+    return this;
+  }
+
+  /// Gets `/Trans`, or `null` when the page defines no transition.
+  Future<PdfTransition?> getTransition() async {
+    final dictionary =
+        await pdfRepresentation().dictionaryEntry(PdfTransition.trans);
+    return dictionary == null ? null : PdfTransition.wrap(dictionary);
+  }
+
+  /// Removes `/Trans`.
+  PdfPage removeTransition() {
+    pdfRepresentation().remove(PdfTransition.trans);
+    pdfRepresentation().markChanged();
+    return this;
+  }
+
+  /// Sets `/Dur`, the maximum number of seconds the page is displayed before a
+  /// presentation advances automatically. 12.4.4.1 gives no default: without
+  /// the entry the page does not advance on its own, so a negative value is
+  /// rejected.
+  PdfPage setDisplayDuration(double seconds) {
+    if (seconds < 0 || seconds.isNaN) {
+      throw PdfException(
+          '/Dur is a display duration in seconds and cannot be $seconds.');
+    }
+    pdfRepresentation().put(durationKey, PdfNumber(seconds));
+    pdfRepresentation().markChanged();
+    return this;
+  }
+
+  /// Gets `/Dur`, or `null` when the page does not advance automatically.
+  Future<double?> getDisplayDuration() async {
+    return (await pdfRepresentation().numberEntry(durationKey))?.doubleValue();
+  }
+
+  // =====================================================================
+  // ISO 32000-1:2008, 12.4.3 Articles - /B, the beads on this page.
+  // =====================================================================
+
+  /// `/B`, the article beads appearing on this page, in drawing order.
+  static final PdfName beadsKey = PdfName.intern('B');
+
+  /// Appends [bead] to `/B`. 12.4.3 requires every page carrying article beads
+  /// to list them, in drawing order, as indirect references.
+  ///
+  /// Beads are normally created through `PdfArticleThread.appendBead`, which
+  /// calls this method itself.
+  Future<void> addBead(PdfBead bead) async {
+    var beads = await pdfRepresentation().arrayEntry(beadsKey);
+    if (beads == null) {
+      beads = PdfArray();
+      pdfRepresentation().put(beadsKey, beads);
+    }
+    beads.add(bead.reference());
+    beads.markChanged();
+    pdfRepresentation().markChanged();
+  }
+
+  // =====================================================================
+  // ISO 32000-1:2008, 12.9 Measurement properties - /VP (Table 30).
+  // =====================================================================
+
+  /// Appends [viewport] to `/VP` (PDF 1.6), the array of viewports of this
+  /// page. 12.9 keeps that array in drawing order.
+  Future<void> addViewport(PdfViewport viewport) async {
+    await viewport.validate();
+    var viewports =
+        await pdfRepresentation().arrayEntry(PdfViewport.viewportsKey);
+    if (viewports == null) {
+      viewports = PdfArray();
+      pdfRepresentation().put(PdfViewport.viewportsKey, viewports);
+    }
+    viewports.add(viewport.pdfRepresentation());
+    viewports.markChanged();
+    pdfRepresentation().markChanged();
+  }
+
+  /// Gets the viewports listed in `/VP`, in drawing order.
+  Future<List<PdfViewport>> getViewports() async {
+    final viewports =
+        await pdfRepresentation().arrayEntry(PdfViewport.viewportsKey);
+    if (viewports == null) return const [];
+    final result = <PdfViewport>[];
+    for (var index = 0; index < viewports.size(); index++) {
+      final entry = await viewports.dictionaryEntry(index);
+      if (entry != null) result.add(PdfViewport(entry));
+    }
+    return result;
+  }
+
+  /// Finds the viewport that governs the point `(x, y)` in default user space.
+  ///
+  /// 12.9 resolves overlapping viewports by examining `/VP` from its last entry
+  /// backwards and choosing the first one whose `/BBox` contains the point.
+  /// Returns `null` when no viewport covers it.
+  Future<PdfViewport?> viewportAt(double x, double y) async {
+    final viewports = await getViewports();
+    for (var index = viewports.length - 1; index >= 0; index--) {
+      if (await viewports[index].contains(x, y)) return viewports[index];
+    }
+    return null;
+  }
+
+  // =====================================================================
+  // ISO 32000-1:2008, 14.5 Page-piece dictionaries - /PieceInfo (Table 30).
+  // =====================================================================
+
+  /// Gets `/PieceInfo`, the private data conforming products keep for this
+  /// page (14.5, Table 318), or `null` when the page carries none.
+  Future<PdfPagePiece?> getPieceInfo() async {
+    final dictionary =
+        await pdfRepresentation().dictionaryEntry(PdfPagePiece.pieceInfo);
+    return dictionary == null ? null : PdfPagePiece(dictionary);
+  }
+
+  /// Gets `/PieceInfo`, creating and installing an empty page-piece dictionary
+  /// when the page has none yet.
+  Future<PdfPagePiece> pieceInfo() async {
+    final existing = await getPieceInfo();
+    if (existing != null) return existing;
+    final created = PdfPagePiece();
+    pdfRepresentation()
+        .put(PdfPagePiece.pieceInfo, created.pdfRepresentation());
+    pdfRepresentation().markChanged();
+    return created;
+  }
+
+  /// Gets the beads listed in `/B`, in drawing order. An empty list means the
+  /// page carries no article beads.
+  Future<List<PdfBead>> getBeads() async {
+    final beads = await pdfRepresentation().arrayEntry(beadsKey);
+    if (beads == null) return const [];
+    final result = <PdfBead>[];
+    for (var index = 0; index < beads.size(); index++) {
+      final entry = await beads.dictionaryEntry(index);
+      if (entry != null) result.add(PdfBead(entry));
+    }
+    return result;
   }
 }

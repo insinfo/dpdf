@@ -78,11 +78,23 @@ class PdfTextExtraction {
         }
       }
     }
+    final textStates = <String, bool>{};
+    final states = await resources?.dictionaryEntry(PdfName('ExtGState'));
+    if (states != null) {
+      for (final entry in await states.entrySet()) {
+        final state = await states.get(entry.key, true);
+        if (state is! PdfDictionary) {
+          throw FormatException('An /ExtGState entry must be a dictionary.');
+        }
+        textStates[entry.key.getValue()] = state.containsKey(PdfName.font);
+      }
+    }
     final parts = _contentParts(bytes,
         decoder: decoder,
         inheritedFont: inheritedFont,
         allowForms: true,
         properties: propertyValues,
+        graphicsStates: textStates,
         suppressed: suppressed);
     final output = StringBuffer();
     for (final part in parts) {
@@ -294,6 +306,7 @@ class PdfTextExtraction {
       _FontBinding? inheritedFont,
       bool allowForms = false,
       Map<String, Object>? properties,
+      Map<String, bool>? graphicsStates,
       bool suppressed = false}) {
     final lexer = _ContentTokens(bytes, allowDictionaries: true);
     final operands = <Object>[];
@@ -305,6 +318,34 @@ class PdfTextExtraction {
     bool hidden() => suppressed || marked.any((value) => value != null);
     void emit(String value) {
       if (!hidden()) output.add(value);
+    }
+
+    Map<String, Object> propertyList(Object operand) {
+      Object? property = operand;
+      if (property is _Name) {
+        if (properties == null) {
+          throw UnsupportedError(
+              'Named marked-content properties require page resources.');
+        }
+        property = properties[property.value];
+      }
+      if (property is! Map<String, Object>) {
+        throw FormatException(
+            'Marked-content property list must be a dictionary.');
+      }
+      return property;
+    }
+
+    String? actualText(Map<String, Object> property) {
+      final replacement = property['ActualText'];
+      if (replacement is Uint8List) return _replacementText(replacement);
+      if (replacement is PdfString) {
+        return _replacementText(replacement.getValueBytes() ?? Uint8List(0));
+      }
+      if (replacement != null) {
+        throw FormatException('ActualText must be a PDF text string.');
+      }
+      return null;
     }
 
     void show(Object value) {
@@ -386,28 +427,7 @@ class PdfTextExtraction {
           if (operands.length != 2 || operands.first is! _Name) {
             throw FormatException('BDC requires a tag and property list.');
           }
-          Object? property = operands[1];
-          if (property is _Name) {
-            if (properties == null) {
-              throw UnsupportedError(
-                  'Named marked-content properties require page resources.');
-            }
-            property = properties[property.value];
-          }
-          if (property is! Map<String, Object>) {
-            throw FormatException(
-                'Marked-content property list must be a dictionary.');
-          }
-          final replacement = property['ActualText'];
-          String? text;
-          if (replacement is Uint8List) {
-            text = _replacementText(replacement);
-          } else if (replacement is PdfString) {
-            text =
-                _replacementText(replacement.getValueBytes() ?? Uint8List(0));
-          } else if (replacement != null) {
-            throw FormatException('ActualText must be a PDF text string.');
-          }
+          final text = actualText(propertyList(operands[1]));
           if (marked.length >= 128) {
             throw FormatException('Marked content is too deeply nested.');
           }
@@ -428,9 +448,44 @@ class PdfTextExtraction {
           }
           lexer.readInlineImage();
         case 'DP':
+          // DP designates a marked-content *point* (14.6.2), not a sequence:
+          // it has no EMC and therefore spans no content. /ActualText replaces
+          // "the marked-content sequence" (14.9.4, Table 352), and a point has
+          // none to replace, so a reader has nothing it may legally emit here.
+          // The point itself is still validated and then dropped, exactly like
+          // the MP it extends. A property list that does carry /ActualText is
+          // refused rather than silently discarded: the producer clearly meant
+          // that text to reach a reader, and this reader cannot place it.
+          if (operands.length != 2 || operands.first is! _Name) {
+            throw FormatException('DP requires a tag and property list.');
+          }
+          if (actualText(propertyList(operands[1])) != null) {
+            throw UnsupportedError(
+                'Text extraction cannot place /ActualText on a DP point.');
+          }
         case 'gs':
-          throw UnsupportedError(
-              'Text extraction cannot interpret ${token.value}.');
+          // gs installs a graphics state from /ExtGState (8.4.5, Table 58).
+          // Only its /Font entry can change extracted text; every other entry
+          // is colour, transparency, line or rendering state that no text
+          // operator reads. Refusing all of them would refuse nearly every
+          // real document, so the dictionary decides.
+          if (operands.length != 1 || operands.single is! _Name) {
+            throw FormatException('gs requires a graphics state name.');
+          }
+          final state = (operands.single as _Name).value;
+          if (graphicsStates == null) {
+            throw UnsupportedError(
+                'Resolving gs /$state requires page resources.');
+          }
+          final hasFont = graphicsStates[state];
+          if (hasFont == null) {
+            throw FormatException('Missing /ExtGState entry /$state.');
+          }
+          if (hasFont) {
+            throw UnsupportedError(
+                'Text extraction cannot interpret gs /$state, whose '
+                '/ExtGState carries a /Font entry.');
+          }
         default:
           if (!const {
             'cm',
@@ -482,7 +537,12 @@ class PdfTextExtraction {
             'K',
             'k',
             'sh',
-            'MP'
+            'MP',
+            // Compatibility section brackets (7.8.2). They carry no state and
+            // no text; the operators they enclose are still checked one by
+            // one, so an unknown operator inside one is not waved through.
+            'BX',
+            'EX'
           }.contains(token.value)) {
             throw UnsupportedError('Unknown content operator: ${token.value}.');
           }

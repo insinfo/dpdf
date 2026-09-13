@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
+import 'package:dpdf/src/editing/pdf_text_extraction.dart';
 import 'package:dpdf/src/io/font/true_type_font.dart';
 import 'package:dpdf/src/kernel/font/pdf_true_type_font.dart';
 import 'package:dpdf/src/kernel/geom/page_size.dart';
@@ -49,9 +50,9 @@ void main() {
     final pdf = PdfDocument.create(PdfWriter.fromBytesBuilder(bytes));
     final doc = Document(pdf);
 
-    await doc.add(_paragraph('primeira pagina'));
-    await doc.add(AreaBreak(AreaBreakType.NEXT_PAGE));
-    await doc.add(_paragraph('segunda pagina'));
+    doc.add(_paragraph('primeira pagina'));
+    doc.add(AreaBreak(AreaBreakType.NEXT_PAGE));
+    doc.add(_paragraph('segunda pagina'));
 
     await doc.close();
     await pdf.close();
@@ -60,6 +61,12 @@ void main() {
         await PdfDocument.open(PdfReader.fromBytes(bytes.toBytes()));
     addTearDown(reopened.close);
     expect(reopened.pageTotal(), 2);
+    // The break has to land between the two paragraphs, not before or after
+    // both of them: the queue must preserve the order add() saw.
+    expect(await PdfTextExtraction.fromPage((await reopened.pageAt(1))!),
+        contains('primeira pagina'));
+    expect(await PdfTextExtraction.fromPage((await reopened.pageAt(2))!),
+        contains('segunda pagina'));
   });
 
   test('an area break can request a different page size', () async {
@@ -67,9 +74,9 @@ void main() {
     final pdf = PdfDocument.create(PdfWriter.fromBytesBuilder(bytes));
     final doc = Document(pdf);
 
-    await doc.add(_paragraph('a4'));
-    await doc.add(AreaBreak.withPageSize(PageSize.A5));
-    await doc.add(_paragraph('a5'));
+    doc.add(_paragraph('a4'));
+    doc.add(AreaBreak.withPageSize(PageSize.A5));
+    doc.add(_paragraph('a5'));
 
     await doc.close();
     await pdf.close();
@@ -81,6 +88,9 @@ void main() {
     final second = await reopened.pageAt(2);
     final bounds = await second!.mediaBounds();
     expect(bounds.getWidth().round(), PageSize.A5.getWidth().round());
+    expect(await PdfTextExtraction.fromPage((await reopened.pageAt(1))!),
+        contains('a4'));
+    expect(await PdfTextExtraction.fromPage(second), contains('a5'));
   });
 
   test('content taller than one page is split over several pages', () async {
@@ -92,7 +102,7 @@ void main() {
     for (int i = 0; i < 12; i++) {
       tall.add(_block(100));
     }
-    await doc.add(tall);
+    doc.add(tall);
 
     await doc.close();
     await pdf.close();

@@ -54,8 +54,7 @@ void main() {
       final writer = PdfWriter.toFile(filePath);
       final pdfDoc = PdfDocument.create(writer);
       final doc = Document(pdfDoc);
-      await doc
-          .add(Paragraph("Documento de teste para integridade de assinatura."));
+      doc.add(Paragraph("Documento de teste para integridade de assinatura."));
       await doc.close();
       await pdfDoc.close();
 
@@ -171,8 +170,9 @@ void main() {
 
       // Create base
       final pdfDoc = PdfDocument.create(PdfWriter.toFile(filePath));
-      await (Document(pdfDoc))
-          .add(Paragraph("Multi-signature integrity test."));
+      final doc = Document(pdfDoc)
+        ..add(Paragraph("Multi-signature integrity test."));
+      await doc.close();
       await pdfDoc.close();
 
       final rootKeyPair = PkiUtils.generateRSAKeyPair(bitStrength: 1024);

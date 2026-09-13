@@ -61,7 +61,7 @@ Future<void> main() async {
   if(font.getFontNames().getFontName()!='Helvetica') throw StateError('Font name changed');
   final pdf=await PdfDocument.create(PdfWriter.toFile('consumer.pdf'));
   final doc=Document(pdf);
-  await doc.add(Paragraph('Helvetica outside repository'));
+  doc.add(Paragraph('Helvetica outside repository'));
   await doc.close(); await pdf.close();
   // Ler bytes, nao texto: um PDF tem dados binarios, e decodifica-lo com
   // systemEncoding so funciona onde essa codificacao aceita qualquer byte.

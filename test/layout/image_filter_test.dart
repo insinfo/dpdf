@@ -27,7 +27,7 @@ void main() {
       final imagem = Image(ImageDataFactory.create(
           File('test/assets/shapes-rgb.png').readAsBytesSync()))
         ..setWidth(120);
-      await doc.add(Div()..add(imagem));
+      doc.add(Div()..add(imagem));
       await doc.close();
       await pdf.close();
       bytes = saida.takeBytes();

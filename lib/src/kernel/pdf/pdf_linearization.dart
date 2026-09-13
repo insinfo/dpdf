@@ -66,7 +66,11 @@ class PdfLinearizer {
             're-encrypted.');
       }
       final plan = await _Plan.build(reader);
-      return plan.render();
+      // `await` antes de devolver: sem ele o `finally` fecha o leitor enquanto
+      // `render()` ainda corre, e um erro dele escaparia de qualquer `catch`
+      // em volta. Hoje `render()` nao toca no leitor, entao a falha e latente
+      // — mas e mina: quem acrescentar um acesso ali quebra em silencio.
+      return await plan.render();
     } finally {
       reader.close();
     }

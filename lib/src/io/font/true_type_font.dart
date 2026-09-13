@@ -24,6 +24,22 @@ class TrueTypeFont extends FontProgram {
     refreshParsedMetrics();
   }
 
+  /// Opens the font whose table directory starts at [directoryOffset] of the
+  /// font collection [ttc].
+  ///
+  /// Nothing is copied out of [ttc]: the parser reads the tables where they
+  /// lie, which is what lets two fonts of the collection share them. Because
+  /// the file is then not this font's own program, [standaloneSfnt] supplies
+  /// the bytes a PDF font stream should embed; it is only called if they are
+  /// asked for. [TrueTypeCollection] is the usual caller.
+  TrueTypeFont.fromCollection(Uint8List ttc, int directoryOffset,
+      {int index = -1, Uint8List Function()? standaloneSfnt}) {
+    fontParser = OpenTypeParser.atOffset(ttc, directoryOffset, ttcIndex: index);
+    fontParser.fullFontSource = standaloneSfnt;
+    fontParser.loadTables(true);
+    refreshParsedMetrics();
+  }
+
   TrueTypeFont.fromFile(String path) {
     fontParser = OpenTypeParser.fromFile(path);
     fontParser.loadTables(true);
@@ -230,6 +246,10 @@ class TrueTypeFont extends FontProgram {
   }
 
   int getDirectoryOffset() => fontParser.directoryOffset;
+
+  /// The position this font holds in the collection it came from, or -1 when
+  /// it was read from a file that holds a single font.
+  int getCollectionIndex() => fontParser.ttcIndex;
 
   Uint8List? readCffFont() => fontParser.readCffFont();
 }

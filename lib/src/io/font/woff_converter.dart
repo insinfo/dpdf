@@ -38,9 +38,14 @@ abstract final class WoffConverter {
   }
 
   /// Returns the sfnt font inside [data], or [data] itself when it is not a
-  /// WOFF file of either generation. A WOFF 2.0 file that wraps a TrueType
-  /// collection comes back as a collection, which the sfnt reader of this
-  /// package does not open on its own.
+  /// WOFF file of either generation.
+  ///
+  /// A WOFF 2.0 file that wraps a font collection comes back as a `ttcf`
+  /// file rather than a single font, because that is what it holds. Open it
+  /// with `TrueTypeCollection.fromBytes`, or let
+  /// `FontProgramFactory.createFontFromCollection` choose one font of it;
+  /// `FontProgramFactory.createFontFromBytes` takes the first font when a
+  /// collection reaches it without a selector.
   static Uint8List toSfnt(Uint8List data) {
     if (isWoff2(data)) return Woff2Converter.convert(data);
     return isWoff(data) ? convert(data) : data;

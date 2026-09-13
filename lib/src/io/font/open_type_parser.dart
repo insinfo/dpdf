@@ -123,6 +123,30 @@ class OpenTypeParser {
     initializeSfntTables();
   }
 
+  /// Reads the table directory that starts at [directoryOffset] of [ttf].
+  ///
+  /// A font collection ("Font Collections" of the OpenType specification)
+  /// holds one table directory per font and a single pool of tables, and
+  /// "the table offsets in all table directories within a TTC file are
+  /// measured from the beginning of the TTC file". Pointing a parser at a
+  /// directory therefore reads one font of the collection without moving or
+  /// copying anything: two fonts that name the same table end up reading the
+  /// same bytes of the same buffer.
+  OpenTypeParser.atOffset(Uint8List ttf, this.directoryOffset,
+      {this.ttcIndex = -1, this.isLenientMode = false}) {
+    raf = RandomAccessFileOrArray(ttf);
+    initializeSfntTables();
+  }
+
+  /// Where [getFullFont] takes the font program from, when the bytes this
+  /// parser reads are not a font file on their own.
+  ///
+  /// One font of a collection shares its file with the others, so the whole
+  /// file is not what a PDF font stream should embed; a collection sets this
+  /// to a builder that assembles the font as a standalone sfnt instead. The
+  /// builder is only run if the bytes are actually asked for.
+  Uint8List Function()? fullFontSource;
+
   OpenTypeParser.fromFile(String filename, [this.isLenientMode = false]) {
     fileName = filename;
     raf = RandomAccessFileOrArray.fromFile(File(filename));
@@ -741,6 +765,8 @@ class OpenTypeParser {
     // If from file, we need to read them.
 
     // Optimized full access using getBytes()
+    final source = fullFontSource;
+    if (source != null) return source();
     return Uint8List.fromList(raf.getBytes());
   }
 

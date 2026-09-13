@@ -23,7 +23,7 @@ Future<void> main(List<String> args) async {
       PdfName.contents,
       PdfStream.withBytes(
           Uint8List.fromList(ascii.encode(
-              'BT /F1 18 Tf 50 750 Td (Cliente: Pedro. Total: 100.) Tj ET')),
+              'BT /F1 18 Tf 50 750 Td (Customer: Pedro. Total: 100.) Tj ET')),
           0));
   // This fixture has no metadata by design. Do not strip metadata from an
   // arbitrary input document to circumvent the editing API's validation.

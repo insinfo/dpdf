@@ -4,29 +4,29 @@ import 'dart:typed_data';
 import 'package:dpdf/dpdf.dart';
 import 'package:dgfx/dgfx_io.dart';
 
-/// Um passeio pelas quatro coisas que a biblioteca faz com mais frequência:
-/// converter HTML, inspecionar um arquivo, verificar conformidade e redigir.
+/// A tour of the four things the library is asked for most often: converting
+/// HTML, inspecting a file, verifying conformance and redacting.
 ///
-/// Execute a partir da raiz do pacote:
+/// Run it from the root of the package:
 ///
 /// ```
 /// dart run example/dpdf_example.dart
 /// ```
 ///
-/// Sem argumento, grava os artefatos no diretório atual. Passe outro diretório
-/// como argumento para escolher o destino.
+/// With no argument it writes its artefacts to the current directory. Pass
+/// another directory as the argument to choose where they go.
 Future<void> main(List<String> arguments) async {
   final destination =
       arguments.isEmpty ? Directory.current : Directory(arguments.first);
 
-  final relatorio = await _converterHtml();
-  await _salvar(destination, 'relatorio.html.pdf', relatorio);
+  final report = await _convertHtml();
+  await _save(destination, 'report.html.pdf', report);
 
-  await _inspecionar(relatorio);
-  await _verificarConformidade(relatorio);
+  await _inspect(report);
+  await _verifyConformance(report);
 
-  final redigido = await _redigirPorArea();
-  await _salvar(destination, 'redigido.pdf', redigido);
+  final redacted = await _redactArea();
+  await _save(destination, 'redacted.pdf', redacted);
   final fonts = BLFontCollection();
   final fallback = await const BLFontLoader().loadSystemFont(
     fonts,
@@ -37,80 +37,81 @@ Future<void> main(List<String> arguments) async {
       'Noto Sans',
     ]),
   );
-  print('fonte fallback ......: ${fallback?.familyName ?? 'não encontrada'}');
-  print('fontes examinadas ...: ${fonts.faces.length}');
-  final document = await PdfDocument.open(PdfReader.fromBytes(redigido));
+  print('fallback font ......: ${fallback?.familyName ?? 'not found'}');
+  print('fonts examined .....: ${fonts.faces.length}');
+  final document = await PdfDocument.open(PdfReader.fromBytes(redacted));
   final page = await document.pageAt(1);
   if (page == null) {
     await document.close();
-    throw StateError('O PDF redigido não contém a primeira página.');
+    throw StateError('The redacted PDF has no first page.');
   }
   final result = await PdfPageRenderer.render(page,
       options:
           PdfRenderOptions(fontFallback: pdfFontFallbackFromCollection(fonts)));
-  print('texto ignorado ......: ${result.report.glyphsSkipped}');
+  print('text skipped .......: ${result.report.glyphsSkipped}');
   final png = result.toPng();
   await document.close();
-  await _salvar(destination, 'redigido.png', png);
+  await _save(destination, 'redacted.png', png);
 }
 
-/// HTML para PDF. O conversor mede o texto com as métricas da face que ele
-/// mesmo vai desenhar, então a quebra de linha e o alinhamento são exatos.
-Future<Uint8List> _converterHtml() async {
+/// HTML to PDF. The converter measures the text with the metrics of the very
+/// face it is going to draw, so line breaking and alignment are exact.
+Future<Uint8List> _convertHtml() async {
   const html = '''
     <html><body>
-      <h1 style="font-family: serif">Relatório trimestral</h1>
-      <p>Este parágrafo é quebrado em linhas com as larguras reais da
-         Helvetica, não com uma largura média estimada.</p>
+      <h1 style="font-family: serif">Quarterly report</h1>
+      <p>This paragraph is broken into lines using the real widths of
+         Helvetica, not an estimated average width.</p>
       <table>
-        <tr><th>Item</th><th>Valor</th></tr>
-        <tr><td>Licenças</td><td>R\$ 12.400</td></tr>
-        <tr><td>Suporte</td><td>R\$ 3.100</td></tr>
+        <tr><th>Item</th><th>Value</th></tr>
+        <tr><td>Licenses</td><td>12,400</td></tr>
+        <tr><td>Support</td><td>3,100</td></tr>
       </table>
-      <p style="font-family: monospace">Rodapé em Courier.</p>
+      <p style="font-family: monospace">Footer in Courier.</p>
     </body></html>
   ''';
 
   final bytes = await HtmlConverter.convertToBytes(html);
-  print('HTML convertido: ${bytes.length} bytes');
+  print('HTML converted: ${bytes.length} bytes');
   return bytes;
 }
 
-/// Inspeção estrutural: o arquivo abre, e o que quebraria um leitor.
-Future<void> _inspecionar(Uint8List bytes) async {
+/// Structural inspection: whether the file opens, and what would break a
+/// reader.
+Future<void> _inspect(Uint8List bytes) async {
   final report = await PdfIntegrityChecker.inspect(bytes);
 
-  print('\nIntegridade');
-  print('  legível ............ ${report.readable}');
-  print('  danificado ......... ${report.isDamaged}');
-  print('  páginas ............ ${report.reachablePageCount}');
-  print('  objetos ............ ${report.objectCount}');
-  print('  versão do cabeçalho  ${report.headerVersion}');
+  print('\nIntegrity');
+  print('  readable ........... ${report.readable}');
+  print('  damaged ............ ${report.isDamaged}');
+  print('  pages .............. ${report.reachablePageCount}');
+  print('  objects ............ ${report.objectCount}');
+  print('  header version ..... ${report.headerVersion}');
   for (final finding in report.findings) {
     print('  $finding');
   }
 }
 
-/// Conformidade PDF/A: o relatório também diz o que não foi avaliado, para
-/// que um resultado limpo não seja confundido com certificação.
-Future<void> _verificarConformidade(Uint8List bytes) async {
+/// PDF/A conformance: the report also says what was not evaluated, so a clean
+/// result is not mistaken for a certification.
+Future<void> _verifyConformance(Uint8List bytes) async {
   final report = await PdfAVerifier.verify(
     bytes,
     level: PdfAConformanceLevel.a2b,
   );
 
-  print('\nConformidade ${report.profile}');
-  print('  declarado no XMP ... ${report.claimedProfile ?? 'nenhum'}');
-  print('  conforme ........... ${report.isConforming}');
+  print('\nConformance ${report.profile}');
+  print('  claimed in the XMP . ${report.claimedProfile ?? 'none'}');
+  print('  conforming ......... ${report.isConforming}');
   for (final violation in report.violations) {
     print('  ${violation.code} (${violation.clause})');
   }
-  print('  regras não avaliadas: ${report.unverifiedRules.length}');
+  print('  rules not evaluated: ${report.unverifiedRules.length}');
 }
 
-/// Redação por área: remove do fluxo de conteúdo os caracteres dentro do
-/// retângulo e cobre a região com uma tarja opaca.
-Future<Uint8List> _redigirPorArea() async {
+/// Area redaction: removes the characters inside the rectangle from the
+/// content stream and covers the region with an opaque bar.
+Future<Uint8List> _redactArea() async {
   final output = BytesBuilder(copy: false);
   final document = PdfDocument.create(PdfWriter.fromBytesBuilder(output));
   final page = await document.appendBlankPage();
@@ -119,38 +120,37 @@ Future<Uint8List> _redigirPorArea() async {
   await canvas.setFontAndSize(PdfFontFactory.createFont('Helvetica'), 12);
   canvas
       .moveText(72, 700)
-      .showText('Cliente: Maria Souza')
+      .showText('Customer: Maria Souza')
       .moveText(0, -20)
-      .showText('CPF: 123.456.789-00')
+      .showText('Tax id: 123.456.789-00')
       .moveText(0, -20)
-      .showText('Total: R\$ 1.250,00')
+      .showText('Total: 1,250.00')
       .endText();
   await document.close();
   final original = output.takeBytes();
 
-  final redigido = await PdfAreaRedaction.apply(original, [
-    // A linha do CPF, em coordenadas de usuário da página.
+  final redacted = await PdfAreaRedaction.apply(original, [
+    // The tax id line, in the page's user space coordinates.
     PdfRedactionArea(1, left: 70, bottom: 675, right: 300, top: 693),
   ]);
 
-  final reader = PdfReader.fromBytes(redigido);
-  final reaberto = await PdfDocument.open(reader);
+  final reader = PdfReader.fromBytes(redacted);
+  final reopened = await PdfDocument.open(reader);
   try {
-    final texto = await PdfTextExtraction.fromPage((await reaberto.pageAt(1))!);
-    print('\nRedação');
-    print('  CPF ainda presente: ${texto.contains('123.456.789-00')}');
-    print('  nome preservado ..: ${texto.contains('Maria Souza')}');
+    final text = await PdfTextExtraction.fromPage((await reopened.pageAt(1))!);
+    print('\nRedaction');
+    print('  tax id still there: ${text.contains('123.456.789-00')}');
+    print('  name preserved ...: ${text.contains('Maria Souza')}');
   } finally {
-    await reaberto.close();
+    await reopened.close();
   }
-  return redigido;
+  return redacted;
 }
 
-Future<void> _salvar(
-    Directory? destination, String name, Uint8List bytes) async {
+Future<void> _save(Directory? destination, String name, Uint8List bytes) async {
   if (destination == null) return;
   await destination.create(recursive: true);
   final file = File('${destination.path}/$name');
   await file.writeAsBytes(bytes);
-  print('gravado: ${file.path}');
+  print('written: ${file.path}');
 }

@@ -14,7 +14,7 @@ Future<void> main(List<String> arguments) async {
   var remoteFontLoaded = false;
   final html = '''
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <style>
     @font-face {
@@ -35,13 +35,13 @@ Future<void> main(List<String> arguments) async {
   </style>
 </head>
 <body>
-  <h1>Relatório visual de operações</h1>
-  <p class="lead">HTML, CSS, SVG vetorial, fotografia JPEG e fonte Lato do
-     projeto Google Fonts no mesmo documento.</p>
+  <h1>Visual operations report</h1>
+  <p class="lead">HTML, CSS, vector SVG, a JPEG photograph and the Lato face
+     from the Google Fonts project, all in one document.</p>
 
   <section class="hero">
     <div class="card">
-      <h2>Indicador SVG</h2>
+      <h2>SVG gauge</h2>
       <svg width="240" height="100" viewBox="0 0 240 100">
         <defs>
           <linearGradient id="meter" x1="0" x2="1">
@@ -55,27 +55,27 @@ Future<void> main(List<String> arguments) async {
               fill="url(#meter)"/>
         <circle cx="198" cy="57" r="15" fill="#ffffff"
                 stroke="#245ea8" stroke-width="3"/>
-        <text x="18" y="31" font-size="18" fill="#172033">Meta: 92%</text>
+        <text x="18" y="31" font-size="18" fill="#172033">Target: 92%</text>
       </svg>
     </div>
     <div class="card">
-      <h2>Imagem JPEG</h2>
+      <h2>JPEG image</h2>
       <img src="data:image/jpeg;base64,${base64Encode(jpeg)}"
-           width="180" height="108" alt="Amostra em gradiente"/>
+           width="180" height="108" alt="Gradient sample"/>
     </div>
   </section>
 
-  <h2>Resumo financeiro</h2>
+  <h2>Financial summary</h2>
   <table>
-    <thead><tr><th>Produto</th><th>Quantidade</th><th>Receita</th></tr></thead>
+    <thead><tr><th>Product</th><th>Quantity</th><th>Revenue</th></tr></thead>
     <tbody>
-      <tr><td>Licenças profissionais</td><td>128</td><td>R\$ 38.400,00</td></tr>
-      <tr><td>Suporte premium</td><td>46</td><td>R\$ 13.800,00</td></tr>
-      <tr><td>Treinamentos</td><td>12</td><td>R\$ 9.600,00</td></tr>
-      <tr class="total"><td>Total</td><td>186</td><td>R\$ 61.800,00</td></tr>
+      <tr><td>Professional licenses</td><td>128</td><td>38,400.00</td></tr>
+      <tr><td>Premium support</td><td>46</td><td>13,800.00</td></tr>
+      <tr><td>Training</td><td>12</td><td>9,600.00</td></tr>
+      <tr class="total"><td>Total</td><td>186</td><td>61,800.00</td></tr>
     </tbody>
   </table>
-  <footer>Gerado com dpdf — conteúdo textual pesquisável e SVG vetorial.</footer>
+  <footer>Generated with dpdf: searchable text and vector SVG.</footer>
 </body>
 </html>
 ''';
@@ -90,7 +90,7 @@ Future<void> main(List<String> arguments) async {
           remoteFontLoaded = bytes != null;
           return bytes;
         } on Object catch (error) {
-          stderr.writeln('Fonte remota indisponível; usando fallback: $error');
+          stderr.writeln('Remote font unavailable; falling back: $error');
           return null;
         }
       },
@@ -103,13 +103,13 @@ Future<void> main(List<String> arguments) async {
   try {
     final text = await PdfTextExtraction.fromPage((await document.pageAt(1))!);
     final images = await PdfImageInventory.inspect(document);
-    print('gravado .............: ${output.path}');
-    print('bytes PDF ...........: ${pdf.length}');
+    print('written .............: ${output.path}');
+    print('PDF bytes ...........: ${pdf.length}');
     print(
-        'fonte Google ........: ${remoteFontLoaded ? 'incorporada' : 'fallback'}');
-    print('texto pesquisável ...: ${text.contains('Relatório visual')}');
-    print('imagens raster ......: ${images.images.length}');
-    print('SVG inline ..........: vetorial');
+        'Google font .........: ${remoteFontLoaded ? 'embedded' : 'fallback'}');
+    print('searchable text .....: ${text.contains('Visual operations')}');
+    print('raster images .......: ${images.images.length}');
+    print('inline SVG ..........: vector');
   } finally {
     await document.close();
   }
@@ -143,7 +143,7 @@ Future<Uint8List?> _download(Uri uri) async {
     final output = BytesBuilder(copy: false);
     await for (final chunk in response.timeout(const Duration(seconds: 20))) {
       if (output.length + chunk.length > limit) {
-        throw StateError('Fonte remota excede $limit bytes.');
+        throw StateError('The remote font exceeds $limit bytes.');
       }
       output.add(chunk);
     }

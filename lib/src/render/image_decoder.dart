@@ -159,7 +159,16 @@ abstract final class PdfImageDecoder {
     // silenciosamente descartada.
     final raw = await image.getBytes();
     if (raw == null) return null;
-    final jpeg = JpegDecoder.decode(raw);
+    final JpegImage jpeg;
+    try {
+      jpeg = JpegDecoder.decode(raw);
+    } on JpegDecodeException {
+      // A codec that refuses the data -- a JPEG process this decoder does not
+      // implement, or a damaged stream -- is one image the page cannot draw,
+      // not a reason to abandon the page. Returning null puts it on the
+      // renderer's skipped list, which is what the render report is for.
+      return null;
+    }
     final rgba = Uint8List(jpeg.width * jpeg.height * 4);
 
     switch (jpeg.format) {
@@ -207,7 +216,16 @@ abstract final class PdfImageDecoder {
     // Veja a nota em `_decodeJpeg`: o codec é o último filtro da cadeia.
     final raw = await image.getBytes();
     if (raw == null) return null;
-    final decoded = j2k.decodeJpeg2000(raw);
+    final j2k.Jpeg2000Image decoded;
+    try {
+      decoded = j2k.decodeJpeg2000(raw);
+    } on j2k.Jpeg2000Exception {
+      // Same reasoning as `_decodeJpeg`. A raw codestream with subsampled
+      // components is the case that reaches here most often: PDF embeds the
+      // codestream without a JP2 wrapper, because the colour space comes from
+      // the image dictionary, and chroma subsampling is common.
+      return null;
+    }
     final count = decoded.width * decoded.height;
     final channels = decoded.components;
     if (channels < 1 || channels > 4) return null;

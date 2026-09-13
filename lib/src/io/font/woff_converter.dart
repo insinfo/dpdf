@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:dpdf/src/io/exceptions/io_exception.dart';
 import 'package:dpdf/src/io/exceptions/io_exception_message_constant.dart';
+import 'package:dpdf/src/io/font/woff2_converter.dart';
 import 'package:dpdf/src/platform/compression.dart';
 
 /// Rebuilds the sfnt font that a WOFF 1.0 file wraps.
@@ -15,9 +16,9 @@ import 'package:dpdf/src/platform/compression.dart';
 /// the sfnt parser and the subsetter included -- can read unchanged.
 ///
 /// WOFF 2.0 is a different problem: it compresses the whole table stream
-/// with Brotli and rewrites `glyf` and `loca` into a transformed encoding.
-/// It is not handled here, and [isWoff2] identifies it so a caller can say
-/// so plainly instead of failing inside the sfnt reader.
+/// with Brotli and rewrites `glyf`, `loca` and `hmtx` into a transformed
+/// encoding. [Woff2Converter] undoes that, and [toSfnt] hands the file over
+/// to it, so a caller can unwrap either generation the same way.
 abstract final class WoffConverter {
   static const int _woffSignature = 0x774f4646; // 'wOFF'
   static const int _woff2Signature = 0x774f4632; // 'wOF2'
@@ -37,11 +38,11 @@ abstract final class WoffConverter {
   }
 
   /// Returns the sfnt font inside [data], or [data] itself when it is not a
-  /// WOFF file. A WOFF 2.0 file is rejected rather than passed through.
+  /// WOFF file of either generation. A WOFF 2.0 file that wraps a TrueType
+  /// collection comes back as a collection, which the sfnt reader of this
+  /// package does not open on its own.
   static Uint8List toSfnt(Uint8List data) {
-    if (isWoff2(data)) {
-      throw IoException(IoExceptionMessageConstant.invalidWoff2FontFile);
-    }
+    if (isWoff2(data)) return Woff2Converter.convert(data);
     return isWoff(data) ? convert(data) : data;
   }
 

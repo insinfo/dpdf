@@ -304,6 +304,80 @@ class _MeshVertex {
   }
 }
 
+/// Collects the triangles of one mesh shading so the whole mesh reaches the
+/// rasterizer as a single path.
+///
+/// Painting facet by facet and compositing each one with `srcOver` leaves a
+/// light seam along every shared edge: two antialiased edges carrying half
+/// coverage each do not add up to the full coverage the interior needs, so
+/// the background shows through in a grid. Handing every triangle to
+/// [BLContext.fillTriangleMesh] as a contour of one non-zero path makes the
+/// interior edges cancel — each is walked in opposite directions by the two
+/// triangles that share it — and leaves the antialiasing on the silhouette,
+/// which is where it belongs. Each vertex carries its own colour, so the fill
+/// is a true Gouraud interpolation rather than the average of three corners.
+class _MeshAccumulator {
+  final List<double> _xy = <double>[];
+  final List<int> _colours = <int>[];
+  final List<int> _indices = <int>[];
+
+  /// Vertices are shared between adjacent facets, so the same object is
+  /// emitted once and referenced by index. Identity, not equality: two
+  /// vertices that merely happen to coincide stay separate.
+  final Map<_MeshVertex, int> _slots = Map<_MeshVertex, int>.identity();
+
+  bool get isEmpty => _indices.isEmpty;
+
+  /// Adds one triangle whose vertices are already in device space.
+  void addTriangle(
+      _MeshVertex a, _MeshVertex b, _MeshVertex c, double alpha) {
+    _indices
+      ..add(_slot(a, alpha))
+      ..add(_slot(b, alpha))
+      ..add(_slot(c, alpha));
+  }
+
+  int _slot(_MeshVertex vertex, double alpha) {
+    final existing = _slots[vertex];
+    if (existing != null) return existing;
+    final index = _colours.length;
+    _xy
+      ..add(vertex.x)
+      ..add(vertex.y);
+    _colours.add(
+        _Renderer._withAlpha(_Renderer._rgb(vertex.r, vertex.g, vertex.b),
+            alpha));
+    _slots[vertex] = index;
+    return index;
+  }
+
+  /// Adds a triangle painted in one colour.
+  ///
+  /// A parametric mesh samples its colour once per facet, because the
+  /// function it runs the parameter through need not be affine. The three
+  /// vertices therefore get slots of their own: the facet next door samples a
+  /// different colour at the very same point.
+  void addFlatTriangle(
+      _MeshVertex a, _MeshVertex b, _MeshVertex c, int colour) {
+    for (final vertex in <_MeshVertex>[a, b, c]) {
+      _indices.add(_colours.length);
+      _xy
+        ..add(vertex.x)
+        ..add(vertex.y);
+      _colours.add(colour);
+    }
+  }
+
+  Future<void> paint(BLContext context) async {
+    if (_indices.isEmpty) return;
+    await context.fillTriangleMesh(
+      Float64List.fromList(_xy),
+      Uint32List.fromList(_colours),
+      Int32List.fromList(_indices),
+    );
+  }
+}
+
 class _MeshPoint {
   final double x, y;
   const _MeshPoint(this.x, this.y);
@@ -2255,9 +2329,15 @@ class _Renderer {
     context.save();
     context.clipToPath(clipPath, rule: rule);
     try {
+      // Every patch of the shading goes into one mesh. Adjacent patches share
+      // an edge exactly — flags 1 to 3 inherit the neighbour's control points
+      // — so painting them together is what keeps the join seamless too.
+      final mesh = _MeshAccumulator();
       for (final patch in patches) {
-        await _paintTensorPatch(patch, toDevice, colorSpace, function, alpha);
+        _tessellateTensorPatch(
+            patch, toDevice, colorSpace, function, alpha, mesh);
       }
+      await mesh.paint(context);
     } finally {
       context.restore();
       context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
@@ -2320,8 +2400,20 @@ class _Renderer {
     ]);
   }
 
-  Future<void> _paintTensorPatch(_TensorPatch patch, BLMatrix2D toDevice,
-      PdfColorSpace colorSpace, PdfFunction? function, double alpha) async {
+  /// Splits one Coons or tensor patch into a triangle grid and adds it to
+  /// [mesh].
+  ///
+  /// The colour of a grid vertex is the function evaluated at that vertex's
+  /// own parametric inputs, so the non-linearity of the function is carried
+  /// by the grid; interpolating colour between two grid vertices is what
+  /// clause 8.7.4.5.7 asks for.
+  void _tessellateTensorPatch(
+      _TensorPatch patch,
+      BLMatrix2D toDevice,
+      PdfColorSpace colorSpace,
+      PdfFunction? function,
+      double alpha,
+      _MeshAccumulator mesh) {
     final transformedControls =
         patch.points.map((point) => point.transform(toDevice)).toList();
     var left = transformedControls.first.x;
@@ -2349,9 +2441,8 @@ class _Renderer {
     });
     for (var u = 0; u < divisions; u++) {
       for (var v = 0; v < divisions; v++) {
-        await _paintMeshFacet(
-            grid[u][v], grid[u + 1][v], grid[u][v + 1], alpha);
-        await _paintMeshFacet(
+        mesh.addTriangle(grid[u][v], grid[u + 1][v], grid[u][v + 1], alpha);
+        mesh.addTriangle(
             grid[u + 1][v], grid[u + 1][v + 1], grid[u][v + 1], alpha);
       }
     }
@@ -2458,15 +2549,30 @@ class _Renderer {
     context.save();
     context.clipToPath(clipPath, rule: rule);
     try {
+      // One device-space vertex per record: triangles joined by a flag 1 or 2
+      // share vertex objects, and the mesh needs the shared corners to land
+      // on the very same coordinates for its interior edges to cancel.
+      final devices = Map<_MeshVertex, _MeshVertex>.identity();
+      _MeshVertex device(_MeshVertex vertex) =>
+          devices[vertex] ??= vertex.transform(toDevice);
+      final mesh = _MeshAccumulator();
       for (final triangle in triangles) {
-        await _fillMeshTriangle(
-            triangle[0].transform(toDevice),
-            triangle[1].transform(toDevice),
-            triangle[2].transform(toDevice),
-            alpha,
-            function: function,
-            colorSpace: colorSpace);
+        final a = device(triangle[0]);
+        final b = device(triangle[1]);
+        final c = device(triangle[2]);
+        if (function == null) {
+          mesh.addTriangle(a, b, c, alpha);
+        } else {
+          // A parametric mesh carries one value of t per vertex and takes its
+          // colour from the function. Interpolating the colour would be
+          // interpolating after the function instead of before it, which is a
+          // different picture for every function that is not affine, so the
+          // triangle is subdivided and the function sampled per facet.
+          _tessellateParametricTriangle(
+              a, b, c, alpha, function, colorSpace, mesh);
+        }
       }
+      await mesh.paint(context);
     } finally {
       context.restore();
       context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
@@ -2549,6 +2655,10 @@ class _Renderer {
     context.clipToPath(clipPath, rule: rule);
     try {
       final rows = transformed.length ~/ verticesPerRow;
+      // Without a function the vertex colours are already device RGB, so the
+      // whole lattice is one Gouraud mesh. With one, see the note in
+      // [_fillFreeFormShading]: t is interpolated, not the colour.
+      final mesh = _MeshAccumulator();
       for (var row = 0; row + 1 < rows; row++) {
         for (var column = 0; column + 1 < verticesPerRow; column++) {
           final topLeft = transformed[row * verticesPerRow + column];
@@ -2556,12 +2666,18 @@ class _Renderer {
           final bottomLeft = transformed[(row + 1) * verticesPerRow + column];
           final bottomRight =
               transformed[(row + 1) * verticesPerRow + column + 1];
-          await _fillMeshTriangle(topLeft, topRight, bottomLeft, alpha,
-              function: function, colorSpace: colorSpace);
-          await _fillMeshTriangle(topRight, bottomRight, bottomLeft, alpha,
-              function: function, colorSpace: colorSpace);
+          if (function == null) {
+            mesh.addTriangle(topLeft, topRight, bottomLeft, alpha);
+            mesh.addTriangle(topRight, bottomRight, bottomLeft, alpha);
+          } else {
+            _tessellateParametricTriangle(topLeft, topRight, bottomLeft, alpha,
+                function, colorSpace, mesh);
+            _tessellateParametricTriangle(topRight, bottomRight, bottomLeft,
+                alpha, function, colorSpace, mesh);
+          }
         }
       }
+      await mesh.paint(context);
     } finally {
       context.restore();
       context.setFillStyle(stroke ? state.strokeColour : state.fillColour);
@@ -2572,9 +2688,23 @@ class _Renderer {
   static double _meshDecode(int sample, int maximum, double low, double high) =>
       maximum == 0 ? low : low + sample * (high - low) / maximum;
 
-  Future<void> _fillMeshTriangle(
-      _MeshVertex a, _MeshVertex b, _MeshVertex c, double alpha,
-      {PdfFunction? function, PdfColorSpace? colorSpace}) async {
+  /// Splits a type 4 or type 5 triangle whose vertices carry a parameter
+  /// into flat facets and adds them to [mesh].
+  ///
+  /// Clause 8.7.4.5.5 makes the value interpolated across the triangle the
+  /// parameter, not the colour: the colour of a point is the function of the
+  /// interpolated t. Running the function once per facet is how that curve is
+  /// followed, and the subdivision is what keeps the step small. The facets
+  /// still go into one mesh, so the rasterizer draws them in a single pass
+  /// and the page does not show through their shared edges.
+  void _tessellateParametricTriangle(
+      _MeshVertex a,
+      _MeshVertex b,
+      _MeshVertex c,
+      double alpha,
+      PdfFunction function,
+      PdfColorSpace colorSpace,
+      _MeshAccumulator mesh) {
     final longest =
         math.max(a.distanceTo(b), math.max(b.distanceTo(c), c.distanceTo(a)));
     final divisions = (longest / 4).ceil().clamp(1, 16);
@@ -2583,36 +2713,36 @@ class _Renderer {
         final p00 = _MeshVertex.interpolate(a, b, c, i, j, divisions);
         final p10 = _MeshVertex.interpolate(a, b, c, i + 1, j, divisions);
         final p01 = _MeshVertex.interpolate(a, b, c, i, j + 1, divisions);
-        await _paintMeshFacet(p00, p10, p01, alpha,
-            function: function, colorSpace: colorSpace);
+        mesh.addFlatTriangle(p00, p10, p01,
+            _facetColour(p00, p10, p01, alpha, function, colorSpace));
         if (j + i + 1 < divisions) {
           final p11 = _MeshVertex.interpolate(a, b, c, i + 1, j + 1, divisions);
-          await _paintMeshFacet(p10, p11, p01, alpha,
-              function: function, colorSpace: colorSpace);
+          mesh.addFlatTriangle(p10, p11, p01,
+              _facetColour(p10, p11, p01, alpha, function, colorSpace));
         }
       }
     }
   }
 
-  Future<void> _paintMeshFacet(
-      _MeshVertex a, _MeshVertex b, _MeshVertex c, double alpha,
-      {PdfFunction? function, PdfColorSpace? colorSpace}) async {
-    var red = (a.r + b.r + c.r) / 3;
-    var green = (a.g + b.g + c.g) / 3;
-    var blue = (a.b + b.b + c.b) / 3;
-    if (function != null && colorSpace != null && a.functionInputs != null) {
-      final inputs = <double>[
-        for (var i = 0; i < a.functionInputs!.length; i++)
-          (a.functionInputs![i] + b.functionInputs![i] + c.functionInputs![i]) /
-              3,
-      ];
-      final rgb = colorSpace.toRgb(function.evaluate(inputs));
-      red = rgb[0];
-      green = rgb[1];
-      blue = rgb[2];
+  /// The colour of one parametric facet: the function of the mean parameter
+  /// of its three corners.
+  static int _facetColour(_MeshVertex a, _MeshVertex b, _MeshVertex c,
+      double alpha, PdfFunction function, PdfColorSpace colorSpace) {
+    final inputs = a.functionInputs;
+    if (inputs == null ||
+        b.functionInputs == null ||
+        c.functionInputs == null) {
+      return _withAlpha(
+          _rgb((a.r + b.r + c.r) / 3, (a.g + b.g + c.g) / 3,
+              (a.b + b.b + c.b) / 3),
+          alpha);
     }
-    context.setFillStyle(_withAlpha(_rgb(red, green, blue), alpha));
-    await context.fillPolygon(<double>[a.x, a.y, b.x, b.y, c.x, c.y]);
+    final mean = <double>[
+      for (var i = 0; i < inputs.length; i++)
+        (inputs[i] + b.functionInputs![i] + c.functionInputs![i]) / 3,
+    ];
+    final rgb = colorSpace.toRgb(function.evaluate(mean));
+    return _withAlpha(_rgb(rgb[0], rgb[1], rgb[2]), alpha);
   }
 
   // --- graphics state dictionary --------------------------------------------

@@ -812,7 +812,12 @@ class FilterHandlers {
             final retry = TIFFFaxDecoder(1, columns, height);
             retry.setOptions(TiffConstants.compressionCcittrle, options, 0);
             retry.decodeRLE(fallback, bytes);
-            if (retry.fails < failsWithEol) {
+            // Fewer failures only wins if it is not bought by giving up
+            // earlier: a stream that really does carry EOL codes looks like a
+            // single short line to the run-length reader, which then fails at
+            // nothing because it stopped at once.
+            if (retry.fails < failsWithEol &&
+                retry.rowsDecoded >= decoder.rowsDecoded) {
               buffer = fallback;
               decoder = retry;
             }
@@ -965,16 +970,18 @@ class FilterHandlers {
       case 'CCITTFaxDecode':
       case 'CCF':
         final k = await parms?.integerEntry(_kKey) ?? 0;
-        if (k >= 0) {
-          throw UnsupportedError(
-              'CCITTFaxDecode encoding supports Group 4 only (K < 0).');
-        }
         var columns = await parms?.integerEntry(_columnsKey) ?? 1728;
         if (columns <= 0) columns = 1728;
         final rows = await parms?.integerEntry(_rowsKey) ?? 0;
         final blackIs1 = await parms?.flagEntry(_blackIs1Key) ?? false;
         return ccittFaxEncode(bytes,
-            columns: columns, rows: rows, blackIs1: blackIs1);
+            k: k,
+            columns: columns,
+            rows: rows,
+            blackIs1: blackIs1,
+            encodedByteAlign:
+                await parms?.flagEntry(_encodedByteAlignKey) ?? false,
+            endOfLine: await parms?.flagEntry(_endOfLineKey) ?? false);
       default:
         throw UnsupportedError(
             'Encoding the ${filter.getValue()} filter is not supported.');
@@ -1107,13 +1114,32 @@ class FilterHandlers {
         codeSize: 8, tiff: true, earlyChange: earlyChange != 0);
   }
 
-  /// Encodes 1-bit image samples as `/CCITTFaxDecode` Group 4 data (K < 0).
+  /// Encodes 1-bit image samples as `/CCITTFaxDecode` data.
   ///
   /// [bytes] holds packed rows of [columns] pixels using the PDF convention,
   /// so a 0 bit is black unless [blackIs1] is set. [rows] may be 0, in which
   /// case it is derived from the length of [bytes].
+  ///
+  /// [k] picks the coding scheme the way Table 11 does, and only its sign
+  /// matters: negative is Group 4 (T.6), zero is Group 3 one-dimensional, and
+  /// positive is the mixed Group 3, where a one-dimensional line is followed
+  /// by at most `k - 1` two-dimensional ones. It defaults to Group 4, which
+  /// is the smallest of the three for a typical scan.
+  ///
+  /// [endOfLine] puts the EOL pattern in front of every line; a positive [k]
+  /// writes it regardless, because that is where the tag bit that says how
+  /// the next line is coded lives. [encodedByteAlign] pads each line with
+  /// zero bits so that it starts on a byte boundary.
+  ///
+  /// The result is exactly what [ccittFaxDecode] undoes when it is given the
+  /// same parameters, which is what makes the pair a round trip.
   static Uint8List ccittFaxEncode(Uint8List bytes,
-      {required int columns, int rows = 0, bool blackIs1 = false}) {
+      {required int columns,
+      int rows = 0,
+      bool blackIs1 = false,
+      int k = -1,
+      bool encodedByteAlign = false,
+      bool endOfLine = false}) {
     if (columns <= 0) {
       throw ArgumentError.value(columns, 'columns', 'must be positive');
     }
@@ -1135,7 +1161,12 @@ class FilterHandlers {
       }
       source = inverted;
     }
-    return CCITTG4Encoder.compress(source, columns, height);
+    if (k < 0) {
+      return CCITTG4Encoder.compress(source, columns, height,
+          encodedByteAlign: encodedByteAlign);
+    }
+    return CCITTG4Encoder.compressG3(source, columns, height,
+        k: k, encodedByteAlign: encodedByteAlign, endOfLine: endOfLine);
   }
 
   static Uint8List _toUint8List(List<int> bytes) {

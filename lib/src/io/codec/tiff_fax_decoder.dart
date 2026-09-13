@@ -329,9 +329,17 @@ class TIFFFaxDecoder {
 
   /// Creates a TIFFFaxDecoder.
   TIFFFaxDecoder(this._fillOrder, this._w, this._h) {
-    _prevChangingElems = List<int>.filled(2 * _w, 0);
-    _currChangingElems = List<int>.filled(2 * _w, 0);
+    _prevChangingElems = List<int>.filled(_changingElemCapacity, 0);
+    _currChangingElems = List<int>.filled(_changingElemCapacity, 0);
   }
+
+  /// Room for the changing elements of one line.
+  ///
+  /// A line of w pixels can change colour at every one of them, which is w
+  /// elements, and a coding mode may record the position it starts from and
+  /// the end of the line on top of that. Sizing this to w alone is what used
+  /// to make a one pixel checkerboard walk off the end of the array.
+  int get _changingElemCapacity => 2 * _w + 2;
 
   /// Sets options for decoding.
   void setOptions(int compression, int tiffT4Options, int tiffT6Options) {
@@ -1009,8 +1017,8 @@ class TIFFFaxDecoder {
     _bytePointer = 0;
     // _lineBitNum = 0;
     fails = 0;
-    _prevChangingElems = List<int>.filled(_w + 1, 0);
-    _currChangingElems = List<int>.filled(_w + 1, 0);
+    _prevChangingElems = List<int>.filled(_changingElemCapacity, 0);
+    _currChangingElems = List<int>.filled(_changingElemCapacity, 0);
 
     int scanlineStride = (_w + 7) ~/ 8;
     int lineOffset = 0;
@@ -1020,7 +1028,12 @@ class TIFFFaxDecoder {
     for (int i = 0; i < _h; i++) {
       if (i > 0 && _bytePointer >= _data!.length) break;
       final int failsBefore = fails;
+      final int bitsBefore = _bytePointer * 8 + _bitPointer;
       _decodeNextScanline(buffer, lineOffset);
+      // A line that consumed no bits is not a line: the data ran out, and
+      // what is left is the padding of the last byte. Stopping here is what
+      // keeps an absent /Rows from turning that padding into blank lines.
+      if (_bytePointer * 8 + _bitPointer <= bitsBefore) break;
       if (fails > failsBefore) damagedRows.add(i);
       rowsDecoded = i + 1;
       if (_bitPointer != 0) {
@@ -1039,8 +1052,8 @@ class TIFFFaxDecoder {
     _bytePointer = 0;
     // _lineBitNum = 0;
     fails = 0;
-    _prevChangingElems = List<int>.filled(_w + 1, 0);
-    _currChangingElems = List<int>.filled(_w + 1, 0);
+    _prevChangingElems = List<int>.filled(_changingElemCapacity, 0);
+    _currChangingElems = List<int>.filled(_changingElemCapacity, 0);
 
     int scanlineStride = (_w + 7) ~/ 8;
     int lineOffset = 0;
@@ -1167,7 +1180,7 @@ class TIFFFaxDecoder {
             }
           }
         }
-        cce[currIndex++] = bitOffset;
+        if (currIndex < cce.length) cce[currIndex++] = bitOffset;
         _changingElemSize = currIndex;
       } else {
         // 1D
@@ -1230,7 +1243,10 @@ class TIFFFaxDecoder {
     for (int lines = 0; lines < height; lines++) {
       if (lines > 0 && _bytePointer >= _data!.length) break;
       final int failsBefore = fails;
+      final int bitsBefore = _bytePointer * 8 + _bitPointer;
       _decodeNextScanline(buffer, lineOffset);
+      // See decodeRLE: no bits consumed means the data is spent.
+      if (_bytePointer * 8 + _bitPointer <= bitsBefore) break;
       if (fails > failsBefore) damagedRows.add(lines);
       rowsDecoded = lines + 1;
       lineOffset += scanlineStride;

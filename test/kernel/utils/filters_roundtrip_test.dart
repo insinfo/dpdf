@@ -279,6 +279,55 @@ void main() {
       return data;
     }
 
+    /// An image whose runs are far longer than the 63 pixels a terminating
+    /// code can spell, so the encoder has to reach for the makeup codes of
+    /// T.4 tables 3 and 4.
+    Uint8List longRuns(int columns, int rows) {
+      final rowBytes = (columns + 7) ~/ 8;
+      final data = Uint8List(rowBytes * rows);
+      for (var row = 0; row < rows; row++) {
+        // A black band that starts a little further right on every line, so
+        // the two-dimensional modes have something to track as well.
+        final from = (columns ~/ 8) + row;
+        final to = columns - (columns ~/ 8);
+        for (var x = from; x < to && x < columns; x++) {
+          data[row * rowBytes + (x >> 3)] |= 0x80 >> (x & 7);
+        }
+      }
+      return data;
+    }
+
+    /// The one pixel checkerboard: every run is a single pixel, which is the
+    /// worst case for both schemes and the one that makes a two-dimensional
+    /// line fall back to vertical codes on every column.
+    Uint8List checkerboard(int columns, int rows) {
+      final rowBytes = (columns + 7) ~/ 8;
+      final data = Uint8List(rowBytes * rows);
+      for (var row = 0; row < rows; row++) {
+        for (var x = 0; x < columns; x++) {
+          if ((x + row).isEven) {
+            data[row * rowBytes + (x >> 3)] |= 0x80 >> (x & 7);
+          }
+        }
+      }
+      return data;
+    }
+
+    /// The parameters a `/CCITTFaxDecode` stream declares, and the encoder is
+    /// handed, for one round trip.
+    PdfDictionary ccittParms(int k, int columns, int rows,
+            {bool encodedByteAlign = false,
+            bool endOfLine = false,
+            bool blackIs1 = false}) =>
+        _dict({
+          'K': PdfNumber.fromInt(k),
+          'Columns': PdfNumber.fromInt(columns),
+          'Rows': PdfNumber.fromInt(rows),
+          if (encodedByteAlign) 'EncodedByteAlign': PdfBoolean(true),
+          if (endOfLine) 'EndOfLine': PdfBoolean(true),
+          if (blackIs1) 'BlackIs1': PdfBoolean(true),
+        });
+
     for (final columns in [1, 8, 9, 64, 129]) {
       test('Group 4 round trip at $columns columns', () async {
         const rows = 12;
@@ -401,11 +450,262 @@ void main() {
           equals(image));
     });
 
-    test('encoding rejects Group 3 parameters', () {
+    // Group 3, one-dimensional (K = 0) and mixed (K > 0). Only the sign of K
+    // matters to the filter, so 2 and 4 stand for every positive value: they
+    // differ only in how many two-dimensional lines follow each
+    // one-dimensional one.
+    for (final k in [0, 2, 4]) {
+      final scheme = k == 0 ? 'Group 3 1-D' : 'mixed Group 3 (K = $k)';
+
+      for (final columns in [1, 8, 9, 64, 129]) {
+        test('$scheme round trip at $columns columns', () async {
+          const rows = 12;
+          final image = bilevel(columns, rows, columns + k + 3);
+          expect(
+              await _roundTrip(
+                  image, 'CCITTFaxDecode', ccittParms(k, columns, rows)),
+              equals(image));
+        });
+      }
+
+      test('$scheme round trip with EndOfLine', () async {
+        const columns = 37;
+        const rows = 9;
+        final image = bilevel(columns, rows, 91 + k);
+        expect(
+            await _roundTrip(image, 'CCITTFaxDecode',
+                ccittParms(k, columns, rows, endOfLine: true)),
+            equals(image));
+      });
+
+      test('$scheme round trip with EncodedByteAlign', () async {
+        const columns = 37;
+        const rows = 9;
+        final image = bilevel(columns, rows, 92 + k);
+        expect(
+            await _roundTrip(image, 'CCITTFaxDecode',
+                ccittParms(k, columns, rows, encodedByteAlign: true)),
+            equals(image));
+      });
+
+      test('$scheme round trip with EndOfLine and EncodedByteAlign', () async {
+        const columns = 37;
+        const rows = 9;
+        final image = bilevel(columns, rows, 93 + k);
+        expect(
+            await _roundTrip(
+                image,
+                'CCITTFaxDecode',
+                ccittParms(k, columns, rows,
+                    endOfLine: true, encodedByteAlign: true)),
+            equals(image));
+      });
+
+      test('$scheme round trip honours BlackIs1', () async {
+        const columns = 40;
+        const rows = 6;
+        final image = bilevel(columns, rows, 78 + k);
+        expect(
+            await _roundTrip(image, 'CCITTFaxDecode',
+                ccittParms(k, columns, rows, blackIs1: true)),
+            equals(image));
+      });
+
+      test('$scheme round trip of runs long enough to need makeup codes',
+          () async {
+        const columns = 2600;
+        const rows = 8;
+        final image = longRuns(columns, rows);
+        expect(
+            await _roundTrip(
+                image, 'CCITTFaxDecode', ccittParms(k, columns, rows)),
+            equals(image));
+      });
+
+      test('$scheme round trip of a one pixel checkerboard', () async {
+        const columns = 101;
+        const rows = 17;
+        final image = checkerboard(columns, rows);
+        expect(
+            await _roundTrip(
+                image, 'CCITTFaxDecode', ccittParms(k, columns, rows)),
+            equals(image));
+      });
+    }
+
+    test('Group 4 round trip of runs long enough to need makeup codes',
+        () async {
+      const columns = 2600;
+      const rows = 8;
+      final image = longRuns(columns, rows);
       expect(
-          () => FilterHandlers.encodeBytes(Uint8List(2),
-              PdfName('CCITTFaxDecode'), _dict({'K': PdfNumber.fromInt(0)})),
-          throwsA(isA<UnsupportedError>()));
+          await _roundTrip(
+              image, 'CCITTFaxDecode', ccittParms(-1, columns, rows)),
+          equals(image));
+    });
+
+    test('Group 4 round trip of a one pixel checkerboard', () async {
+      const columns = 101;
+      const rows = 17;
+      final image = checkerboard(columns, rows);
+      expect(
+          await _roundTrip(
+              image, 'CCITTFaxDecode', ccittParms(-1, columns, rows)),
+          equals(image));
+    });
+
+    test('EncodedByteAlign really aligns every Group 3 line', () {
+      const columns = 37;
+      const rows = 6;
+      final image = bilevel(columns, rows, 55);
+      final aligned = FilterHandlers.ccittFaxEncode(image,
+          k: 0, columns: columns, rows: rows, encodedByteAlign: true);
+      final packed = FilterHandlers.ccittFaxEncode(image,
+          k: 0, columns: columns, rows: rows);
+      expect(aligned.length, greaterThan(packed.length),
+          reason: 'the fill bits have to cost something');
+      // Decoding the aligned stream without the parameter reads the fill bits
+      // as data, so the two decodes cannot agree.
+      expect(
+          FilterHandlers.ccittFaxDecode(aligned,
+              k: 0, columns: columns, rows: rows, encodedByteAlign: true),
+          equals(image));
+      expect(
+          FilterHandlers.ccittFaxDecode(aligned,
+              k: 0, columns: columns, rows: rows),
+          isNot(equals(image)));
+    });
+
+    test('EncodedByteAlign round trips a Group 4 image with real fill bits',
+        () async {
+      const columns = 33;
+      const rows = 7;
+      final image = bilevel(columns, rows, 19);
+      final encoded = await FilterHandlers.encodeBytes(
+          image,
+          PdfName('CCITTFaxDecode'),
+          ccittParms(-1, columns, rows, encodedByteAlign: true));
+      expect(
+          FilterHandlers.ccittFaxDecode(encoded,
+              k: -1,
+              columns: columns,
+              rows: rows,
+              encodedByteAlign: true),
+          equals(image));
+    });
+
+    test('a Group 3 stream with EndOfLine opens with the EOL pattern', () {
+      const columns = 24;
+      const rows = 3;
+      final image = bilevel(columns, rows, 61);
+      final withEol = FilterHandlers.ccittFaxEncode(image,
+          k: 0, columns: columns, rows: rows, endOfLine: true);
+      // 000000000001 fills the first byte and a half.
+      expect(withEol[0], equals(0x00));
+      expect(withEol[1] & 0xF0, equals(0x10));
+      final withoutEol = FilterHandlers.ccittFaxEncode(image,
+          k: 0, columns: columns, rows: rows);
+      expect(withoutEol[0], isNot(equals(0x00)));
+    });
+
+    test('every mixed Group 3 line carries its one or two dimensional tag',
+        () {
+      // Two lines, K = 2: the first is coded one-dimensionally and tagged 1,
+      // the second two-dimensionally and tagged 0.
+      const columns = 16;
+      final image = bilevel(columns, 2, 88);
+      final encoded =
+          FilterHandlers.ccittFaxEncode(image, k: 2, columns: columns, rows: 2);
+      var bit = 0;
+      bool next() {
+        final value = (encoded[bit >> 3] >> (7 - (bit & 7))) & 1;
+        bit++;
+        return value == 1;
+      }
+
+      int eolAt(int from) {
+        for (var start = from; start + 13 <= encoded.length * 8; start++) {
+          var zeros = 0;
+          while (zeros < 11) {
+            final value =
+                (encoded[(start + zeros) >> 3] >> (7 - ((start + zeros) & 7))) &
+                    1;
+            if (value != 0) break;
+            zeros++;
+          }
+          if (zeros == 11) {
+            final one = (encoded[(start + 11) >> 3] >>
+                    (7 - ((start + 11) & 7))) &
+                1;
+            if (one == 1) return start;
+          }
+        }
+        return -1;
+      }
+
+      expect(eolAt(0), equals(0));
+      bit = 12;
+      expect(next(), isTrue, reason: 'the first line is one dimensional');
+      final second = eolAt(13);
+      expect(second, greaterThan(0));
+      bit = second + 12;
+      expect(next(), isFalse, reason: 'the second line is two dimensional');
+    });
+
+    test('the three schemes produce three different encodings', () {
+      const columns = 64;
+      const rows = 10;
+      final image = bilevel(columns, rows, 101);
+      final group4 = FilterHandlers.ccittFaxEncode(image,
+          k: -1, columns: columns, rows: rows);
+      final oneDimensional = FilterHandlers.ccittFaxEncode(image,
+          k: 0, columns: columns, rows: rows);
+      final mixed = FilterHandlers.ccittFaxEncode(image,
+          k: 4, columns: columns, rows: rows);
+      expect(group4, isNot(equals(oneDimensional)));
+      expect(group4, isNot(equals(mixed)));
+      expect(oneDimensional, isNot(equals(mixed)));
+      // Two dimensional coding is what pays for itself, but only on an image
+      // that has something for a reference line to predict: on noise, where
+      // every line is unlike the one above it, Group 4 is the larger of the
+      // three.
+      final scan = longRuns(columns, rows);
+      expect(
+          FilterHandlers.ccittFaxEncode(scan,
+                  k: -1, columns: columns, rows: rows)
+              .length,
+          lessThan(FilterHandlers.ccittFaxEncode(scan,
+                  k: 0, columns: columns, rows: rows)
+              .length));
+    });
+
+    for (final k in [0, 2, 4]) {
+      for (final endOfLine in [false, true]) {
+        final scheme = k == 0 ? 'Group 3 1-D' : 'mixed Group 3 (K = $k)';
+        test(
+            '$scheme with EndOfLine $endOfLine trims an absent Rows to the '
+            'rows really decoded', () {
+          const columns = 24;
+          const rows = 5;
+          final image = bilevel(columns, rows, 31);
+          final encoded = FilterHandlers.ccittFaxEncode(image,
+              k: k, columns: columns, rows: rows, endOfLine: endOfLine);
+          final decoded = FilterHandlers.ccittFaxDecode(encoded,
+              k: k, columns: columns, endOfLine: endOfLine);
+          expect(decoded.length, equals(image.length));
+          expect(decoded, equals(image));
+        });
+      }
+    }
+
+    test('encoding defaults to Group 4 when no K is given', () {
+      const columns = 32;
+      const rows = 5;
+      final image = bilevel(columns, rows, 17);
+      expect(
+          FilterHandlers.ccittFaxEncode(image, columns: columns, rows: rows),
+          equals(FilterHandlers.ccittFaxEncode(image,
+              k: -1, columns: columns, rows: rows)));
     });
   });
 

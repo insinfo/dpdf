@@ -29,11 +29,19 @@ dependencies:
 
 # jbig2 and dgfx are not on pub.dev yet. Remove this block once they are
 # published, or the publish of this package will be rejected.
+#
+# j2k IS published, but 0.9.0 carries two defects fixed only in the local
+# checkout: every 8-bit non-RGB decode breaks under dart2js, and a raw
+# codestream with subsampled components is refused -- which is the common
+# /JPXDecode case, because PDF embeds the codestream without a JP2 wrapper.
+# Drop the j2k entry once a release carrying those fixes is on pub.dev.
 dependency_overrides:
   jbig2:
     path: ../jbig2 #https://github.com/insinfo/jbig2.git
   dgfx:
     path: ../dgfx #https://github.com/insinfo/dgfx.git
+  j2k:
+    path: ../jpeg2000 #https://github.com/insinfo/jpeg2000.git
 
 dev_dependencies:
   lints: ^5.0.0

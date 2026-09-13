@@ -1,9 +1,18 @@
 import 'dart:typed_data';
 
-/// Encodes data in the CCITT G4 FAX format.
+/// Encodes bi-level images in the CCITT facsimile formats.
 ///
-/// This encoder is used for compressing bi-level (black and white) images
-/// using the ITU-T T.6 (CCITT Group 4) facsimile compression.
+/// [compress] produces ITU-T T.6 (Group 4) data, purely two-dimensional, and
+/// [compressG3] produces ITU-T T.4 (Group 3) data, either purely
+/// one-dimensional or in the mixed scheme. The three share one set of code
+/// tables, because T.6 is T.4's two-dimensional coding with the
+/// end-of-line machinery removed: the run lengths of a horizontal mode are
+/// spelled with the very Table 2 to 4 codes a one-dimensional line is made
+/// of.
+///
+/// The three schemes are what /K of ISO 32000-1 table 11 selects for a
+/// `/CCITTFaxDecode` stream: negative for Group 4, zero for Group 3 1-D and
+/// positive for the mixed Group 3.
 class CCITTG4Encoder {
   final int _rowpixels;
   final int _rowbytes;
@@ -14,6 +23,9 @@ class CCITTG4Encoder {
   late Uint8List _dataBp;
   int _offsetData = 0;
   int _sizeData = 0;
+
+  /// `/EncodedByteAlign`: start every encoded line on a byte boundary.
+  bool _byteAlign = false;
 
   // Code table constants
   static const int _length = 0;
@@ -30,11 +42,46 @@ class CCITTG4Encoder {
     _refline = Uint8List(_rowbytes);
   }
 
-  /// Encodes a full image.
-  static Uint8List compress(Uint8List data, int width, int height) {
+  /// Encodes a full image as Group 4 (T.6) data.
+  ///
+  /// [encodedByteAlign] matches the filter parameter of the same name: every
+  /// encoded line is preceded by as many zero bits as it takes to start it on
+  /// a byte boundary.
+  static Uint8List compress(Uint8List data, int width, int height,
+      {bool encodedByteAlign = false}) {
     final g4 = CCITTG4Encoder(width);
+    g4._byteAlign = encodedByteAlign;
     g4.fax4Encode(data, 0, g4._rowbytes * height);
     return g4.close();
+  }
+
+  /// Encodes a full image as Group 3 (T.4) data.
+  ///
+  /// [k] is the /K of ISO 32000-1 table 11 with the sign already decided by
+  /// the caller: zero selects pure one-dimensional coding, and a positive
+  /// value the mixed scheme, in which a one-dimensionally coded line may be
+  /// followed by at most `k - 1` two-dimensionally coded ones.
+  ///
+  /// [endOfLine] writes the EOL pattern 000000000001 of T.4 4.1.2 in front of
+  /// every line. The mixed scheme writes it whatever [endOfLine] says: the tag
+  /// bit that tells a decoder whether the line to come is one- or
+  /// two-dimensional has nowhere else to sit.
+  ///
+  /// [encodedByteAlign] pads with zero bits in front of every line, EOL
+  /// included, so that each line starts on a byte boundary. That is what
+  /// table 11 describes, and it is where the decoder looks for the padding.
+  ///
+  /// No RTC closes the data. Table 11 lets /Rows, or the image's /Height, say
+  /// where the rows end, and the six trailing EOLs of an RTC would decode as
+  /// six blank lines every time the row count is left to the data instead.
+  static Uint8List compressG3(Uint8List data, int width, int height,
+      {int k = 0,
+      bool encodedByteAlign = false,
+      bool endOfLine = false}) {
+    final encoder = CCITTG4Encoder(width);
+    encoder._byteAlign = encodedByteAlign;
+    encoder.fax3Encode(data, height, k: k, endOfLine: endOfLine);
+    return encoder.closeG3();
   }
 
   /// Encodes a number of lines.
@@ -43,7 +90,45 @@ class CCITTG4Encoder {
     _offsetData = offset;
     _sizeData = size;
     while (_sizeData > 0) {
+      if (_byteAlign) _alignToByte();
       _fax3Encode2DRow();
+      for (int i = 0; i < _rowbytes; i++) {
+        _refline[i] = _dataBp[_offsetData + i];
+      }
+      _offsetData += _rowbytes;
+      _sizeData -= _rowbytes;
+    }
+  }
+
+  /// Encodes [height] lines of [data] as Group 3, as [compressG3] describes.
+  void fax3Encode(Uint8List data, int height,
+      {int k = 0, bool endOfLine = false}) {
+    _dataBp = data;
+    _offsetData = 0;
+    _sizeData = _rowbytes * height;
+    // A positive K groups the lines: the first line of every group of k is
+    // coded one-dimensionally and tagged with a 1 bit, and the up to k - 1
+    // that follow are coded against their predecessor and tagged with a 0.
+    final tagged = k > 0;
+    final writeEol = endOfLine || tagged;
+    for (var row = 0; row < height; row++) {
+      if (_byteAlign) _alignToByte();
+      final twoDimensional = tagged && row % k != 0;
+      if (writeEol) {
+        if (tagged) {
+          // EOL followed by the tag bit of T.4 4.2.1, one codeword.
+          _putBits((_eol << 1) | (twoDimensional ? 0 : 1), 13);
+        } else {
+          _putBits(_eol, 12);
+        }
+      }
+      if (twoDimensional) {
+        _fax3Encode2DRow();
+      } else {
+        _fax3Encode1DRow();
+      }
+      // The reference line of a two-dimensionally coded line is the line
+      // above it, whether that one was coded in one dimension or two.
       for (int i = 0; i < _rowbytes; i++) {
         _refline[i] = _dataBp[_offsetData + i];
       }
@@ -60,6 +145,15 @@ class CCITTG4Encoder {
   /// Closes the encoder and returns the encoded data.
   Uint8List close() {
     _fax4PostEncode();
+    return _outBuf.toBytes();
+  }
+
+  /// Closes a Group 3 encoding and returns the encoded data.
+  ///
+  /// Only the last partial byte is flushed; see [compressG3] on why no RTC
+  /// follows it.
+  Uint8List closeG3() {
+    _alignToByte();
     return _outBuf.toBytes();
   }
 
@@ -102,6 +196,23 @@ class CCITTG4Encoder {
       _outBuf.addByte(_data & 0xFF);
       _data = 0;
       _bit = 8;
+    }
+  }
+
+  /// Codes the current row one-dimensionally.
+  ///
+  /// T.4 4.1.3 makes a line an alternating sequence of white and black runs
+  /// that always starts with a white one, so a line that opens on black opens
+  /// on a white run of zero, which has a codeword of its own.
+  void _fax3Encode1DRow() {
+    var start = 0;
+    var white = true;
+    while (start < _rowpixels) {
+      final end =
+          _finddiff(_dataBp, _offsetData, start, _rowpixels, white ? 0 : 1);
+      _putspan(end - start, white ? _tiffFaxWhiteCodes : _tiffFaxBlackCodes);
+      start = end;
+      white = !white;
     }
   }
 
@@ -154,11 +265,15 @@ class CCITTG4Encoder {
   void _fax4PostEncode() {
     _putBits(_eol, 12);
     _putBits(_eol, 12);
-    if (_bit != 8) {
-      _outBuf.addByte(_data & 0xFF);
-      _data = 0;
-      _bit = 8;
-    }
+    _alignToByte();
+  }
+
+  /// Pads the stream with zero bits up to the next byte boundary.
+  void _alignToByte() {
+    if (_bit == 8) return;
+    _outBuf.addByte(_data & 0xFF);
+    _data = 0;
+    _bit = 8;
   }
 
   int _pixel(Uint8List data, int offset, int bit) {

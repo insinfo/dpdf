@@ -50,9 +50,9 @@ class PdfFileSpec extends PdfObjectWrapper<PdfDictionary> {
   /// Creates a file specification carrying an embedded file stream in
   /// `/EF /F` and `/EF /UF` (7.11.4 "Embedded File Streams", Table 45).
   ///
-  /// [mimeType] is written as the stream's `/Subtype`; [size], [creationDate]
-  /// and [modificationDate] populate the embedded file parameter dictionary
-  /// of Table 46.
+  /// [mimeType] is written as the stream's `/Subtype`; [creationDate] and
+  /// [modificationDate] populate the embedded file parameter dictionary of
+  /// Table 46, whose `/Size` comes from the length of [bytes].
   factory PdfFileSpec.embedded(String fileName, Uint8List bytes,
       {String? description,
       String? mimeType,

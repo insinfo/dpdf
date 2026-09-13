@@ -2,6 +2,7 @@ import 'package:dpdf/src/kernel/pdf/pdf_boolean.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
+import 'package:dpdf/src/kernel/pdf/multimedia/pdf_sound.dart';
 import 'pdf_action.dart';
 
 /// Sound action, playing a sound through the computer's speakers.
@@ -83,4 +84,13 @@ class PdfActionSound extends PdfAction {
       (await pdfRepresentation().booleanEntry(PdfName.intern('Mix')))
           ?.getValue() ??
       false;
+
+  /// Creates a `/Sound` action playing the sound object of 13.3, Table 294.
+  factory PdfActionSound.forSound(PdfSound sound,
+          {double? volume, bool? synchronous, bool? repeat, bool? mix}) =>
+      PdfActionSound.create(sound.pdfRepresentation(),
+          volume: volume, synchronous: synchronous, repeat: repeat, mix: mix);
+
+  /// Gets `/Sound` as the sound object of 13.3, Table 294.
+  Future<PdfSound?> getSoundObject() async => PdfSound.read(await getSound());
 }

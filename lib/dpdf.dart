@@ -221,3 +221,27 @@ export 'src/render/glyph_source.dart'
         pdfFontFallbackFromCollection;
 export 'src/render/image_decoder.dart';
 export 'src/render/page_renderer.dart';
+
+// Multimedia features: ISO 32000-1:2008, clause 13.
+export 'src/kernel/pdf/multimedia/multimedia.dart';
+export 'src/kernel/pdf/filespec/pdf_file_spec.dart';
+export 'src/kernel/pdf/annot/pdf_media_annotations.dart';
+export 'src/kernel/pdf/annot/pdf_3d_annotation.dart';
+export 'src/kernel/pdf/action/pdf_action_sound.dart';
+export 'src/kernel/pdf/action/pdf_action_movie.dart';
+export 'src/kernel/pdf/action/pdf_action_rendition.dart';
+
+// Document structure and page navigation: ISO 32000-1:2008, 7.7.2 (catalog),
+// 12.2 (viewer preferences), 12.4.3 (articles), 12.4.4 (presentations),
+// 12.9 (measurement properties), 12.10 (requirements) and 14.5 (page pieces).
+export 'src/kernel/pdf/viewer/pdf_viewer_preferences.dart';
+export 'src/kernel/pdf/viewer/pdf_page_layout.dart';
+export 'src/kernel/pdf/viewer/pdf_mark_info.dart';
+export 'src/kernel/pdf/viewer/pdf_legal_attestation.dart';
+export 'src/kernel/pdf/viewer/pdf_uri_dictionary.dart';
+export 'src/kernel/pdf/viewer/pdf_transition.dart';
+export 'src/kernel/pdf/viewer/pdf_page_piece.dart';
+export 'src/kernel/pdf/viewer/pdf_requirement.dart';
+export 'src/kernel/pdf/viewer/pdf_measure.dart';
+export 'src/kernel/pdf/article/pdf_article_thread.dart';
+export 'src/kernel/pdf/article/pdf_bead.dart';

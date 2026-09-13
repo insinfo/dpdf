@@ -6,6 +6,11 @@ import '../pdf_stream.dart';
 import '../pdf_string.dart';
 
 import '../action/pdf_action.dart';
+import '../action/pdf_action_rendition.dart';
+import '../multimedia/pdf_movie.dart';
+import '../multimedia/pdf_rendition.dart';
+import '../multimedia/pdf_sound.dart';
+import '../../geom/rectangle.dart';
 import 'pdf_annotation.dart';
 import 'pdf_markup_annotation.dart';
 
@@ -47,6 +52,13 @@ class PdfSoundAnnotation extends PdfMarkupAnnotation {
   /// Gets `/Name`; the default is `/Speaker` per Table 185.
   Future<PdfName> getIconName() async =>
       await pdfRepresentation().nameEntry(PdfName.name) ?? iconSpeaker;
+
+  /// Creates a sound annotation playing the sound object of 13.3.
+  factory PdfSoundAnnotation.forSound(Rectangle rect, PdfSound sound) =>
+      PdfSoundAnnotation.fromRect(rect, sound.pdfRepresentation());
+
+  /// Gets `/Sound` as the sound object of 13.3, Table 294.
+  Future<PdfSound?> getSoundObject() async => PdfSound.read(await getSound());
 }
 
 /// Movie annotation.
@@ -102,6 +114,39 @@ class PdfMovieAnnotation extends PdfAnnotation {
   /// Gets `/A` as written; the value is either a boolean or a dictionary.
   Future<PdfObject?> getActivation() async =>
       await pdfRepresentation().get(PdfName.a, true);
+
+  /// Creates a movie annotation for the movie dictionary of 13.4, Table 295.
+  factory PdfMovieAnnotation.forMovie(Rectangle rect, PdfMovie movie) =>
+      PdfMovieAnnotation.fromRect(rect, movie.pdfRepresentation());
+
+  /// Gets `/Movie` as the movie dictionary of 13.4, Table 295.
+  Future<PdfMovie?> getMovieObject() async {
+    final dictionary = await getMovie();
+    return dictionary == null ? null : PdfMovie(dictionary);
+  }
+
+  /// Sets `/A` to the movie activation dictionary of 13.4, Table 296.
+  PdfMovieAnnotation setActivationParameters(PdfMovieActivation activation) =>
+      setActivation(activation.pdfRepresentation());
+
+  /// Gets `/A` as a movie activation dictionary, or null when `/A` carries
+  /// the boolean form of Table 186.
+  Future<PdfMovieActivation?> getActivationParameters() async {
+    final activation = await getActivation();
+    if (activation is PdfDictionary && activation is! PdfStream) {
+      return PdfMovieActivation(activation);
+    }
+    return null;
+  }
+
+  /// Whether the annotation plays the movie when activated, resolving both
+  /// forms of `/A`: a boolean says so directly, and an activation dictionary
+  /// implies playback. Table 186 defaults `/A` to true.
+  Future<bool> isPlayOnActivation() async {
+    final activation = await getActivation();
+    if (activation is PdfBoolean) return activation.getValue();
+    return true;
+  }
 }
 
 /// Screen annotation, a region on which media clips may be played.
@@ -157,4 +202,32 @@ class PdfScreenAnnotation extends PdfAnnotation {
   /// Gets `/AA`.
   Future<PdfDictionary?> getAdditionalActions() async =>
       await pdfRepresentation().dictionaryEntry(PdfName.aa);
+
+  /// Sets `/A` to a rendition action (12.6.4.13, Table 214) that plays
+  /// [rendition] on this annotation, the pairing described by 13.2.1
+  /// "Rendition Actions".
+  ///
+  /// Table 214 requires `/AN` to name the screen annotation, so this
+  /// annotation's dictionary is written there; because `/AN` shall be an
+  /// indirect reference in a saved file, the annotation is required to have
+  /// been attached to a document first.
+  PdfScreenAnnotation setRenditionAction(PdfRendition rendition,
+      {int operation = PdfActionRendition.operationPlayNew}) {
+    final action = PdfActionRendition.withOperation(operation,
+        rendition: rendition.pdfRepresentation(),
+        screenAnnotation: pdfRepresentation());
+    put(PdfName.a, action.pdfRepresentation());
+    return this;
+  }
+
+  /// Gets the rendition played by `/A`, or null when `/A` is not a rendition
+  /// action carrying a recognised `/R`.
+  Future<PdfRendition?> getRendition() async {
+    final action = await getAction();
+    if (action == null) return null;
+    if ((await action.nameEntry(PdfName.s))?.getValue() != 'Rendition') {
+      return null;
+    }
+    return await PdfActionRendition(action).getRenditionObject();
+  }
 }

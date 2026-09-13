@@ -4,6 +4,7 @@ import 'package:dpdf/src/kernel/pdf/pdf_number.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_object.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_stream.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/kernel/pdf/multimedia/pdf_rendition.dart';
 import 'pdf_action.dart';
 
 /// Rendition action, controlling the playing of multimedia content.
@@ -80,4 +81,20 @@ class PdfActionRendition extends PdfAction {
   /// Gets `/JS` as written; it is a text string or a stream.
   Future<PdfObject?> getScript() async =>
       await pdfRepresentation().get(PdfName.js, true);
+
+  /// Creates a `/Rendition` action from the rendition objects of 13.2.3,
+  /// checking the same `/OP` requirements as [PdfActionRendition.withOperation].
+  factory PdfActionRendition.forRendition(int operation,
+          {PdfRendition? rendition, PdfDictionary? screenAnnotation}) =>
+      PdfActionRendition.withOperation(operation,
+          rendition: rendition?.pdfRepresentation(),
+          screenAnnotation: screenAnnotation);
+
+  /// Gets `/R` as one of the rendition objects of 13.2.3, or null when `/R`
+  /// is absent or carries an unrecognised `/S` (which Table 266 makes
+  /// non-viable).
+  Future<PdfRendition?> getRenditionObject() async {
+    final dictionary = await getRendition();
+    return dictionary == null ? null : await PdfRendition.read(dictionary);
+  }
 }

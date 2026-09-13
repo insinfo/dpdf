@@ -1,6 +1,7 @@
 import 'package:dpdf/src/kernel/pdf/pdf_dictionary.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_name.dart';
 import 'package:dpdf/src/kernel/pdf/pdf_string.dart';
+import 'package:dpdf/src/kernel/pdf/annot/pdf_media_annotations.dart';
 import 'pdf_action.dart';
 
 /// Movie action, controlling the playing of a movie annotation.
@@ -66,4 +67,17 @@ class PdfActionMovie extends PdfAction {
   /// Gets `/T`, the movie annotation title.
   Future<String?> getMovieTitle() async =>
       (await pdfRepresentation().stringEntry(PdfName.t))?.getValue();
+
+  /// Creates a `/Movie` action targeting [annotation]. Table 209 allows
+  /// either `/Annotation` or `/T`, but not both.
+  factory PdfActionMovie.forAnnotation(PdfMovieAnnotation annotation,
+          {PdfName? operation}) =>
+      PdfActionMovie.byAnnotation(annotation.pdfRepresentation(),
+          operation: operation);
+
+  /// Gets `/Annotation` as a movie annotation.
+  Future<PdfMovieAnnotation?> getMovieAnnotation() async {
+    final dictionary = await getAnnotation();
+    return dictionary == null ? null : PdfMovieAnnotation(dictionary);
+  }
 }

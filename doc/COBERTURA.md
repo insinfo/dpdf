@@ -227,13 +227,13 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 | Ladrilhamento, camadas, as cinco ordens de progressão | OK | |
 | Sondagem de cabeçalho e orçamentos | OK | `maxPixels`, `maxDimension` |
 | Codificador: pixels entrelaçados, PGM/PPM, J2K e JP2 | OK | Sem perdas ou com controle de taxa |
-| **Componentes subamostrados em codestream cru** | Ausente | **Em curso.** O caso mais comum em PDF: o codestream vem sem envoltório JP2 e com croma subamostrado. Hoje lança `Jpeg2000UnsupportedException` |
-| Reamostragem além de 2:1 | Ausente | **Em curso.** `Resampler` recusa outros fatores; a norma permite `XRsiz`/`YRsiz` de 1 a 255 |
+| Componentes subamostrados em codestream cru | OK | Reamostrados pelo mesmo código que o caminho JP2 usa; fator inteiro de 1 a 255, todo o alcance de `XRsiz`/`YRsiz` |
+| Codificador com profundidade por componente e sinal | OK | `bitsPerComponent` e `signedComponents`; a MCT é desligada quando os três primeiros componentes divergem, como a G.2 exige |
 | Saída com profundidade diferente de 8 ou 16 bits | Parcial | Reescalonada; a profundidade original fica em `sourceBitsPerComponent` |
-| Codificador com amostras com sinal | Ausente | Só amostras sem sinal; profundidade por componente não exposta |
+
 | Filtros wavelet customizados (id ≥ 128) | Ausente | Trabalho **limitado**: o marcador ATK da Parte 2 descreve núcleos por *lifting*, e uma síntese genérica por lifting atende a todos. Não é questão de princípio, só não foi feito |
 | Part 2 / JPX (demais extensões) | Ausente | Trabalho **grande e aberto**: decomposição arbitrária (DFS/ADS), transformada multicomponente (MCT), precisão estendida, deslocamento DC variável, ROI arbitrária. Cada uma é independente e pode ser feita isoladamente |
-| Decodificação em paralelo | Ausente | **Em curso.** Monothread hoje. Viável sem custo para Web: `dart:isolate` atrás de `if (dart.library.io)`, com caminho sequencial como padrão — o padrão que `lib/src/j2k/platform/platform.dart` já usa no pacote. Tiles e code-blocks são independentes por construção |
+| Decodificação em paralelo | OK | `decodeJpeg2000Parallel`, assíncrona, com isolates atrás de `if (dart.library.io)` e caminho sequencial como padrão na Web. Paraleliza por tile e, quando há menos tiles que workers, por code-block — que é o caso de tile único do PDF. Medido 2,6x a 3,8x em 8 núcleos acima de 0,2 MP, com saída bit a bit idêntica. `decodeJpeg2000` segue síncrona e inalterada |
 
 ### `dgfx` — rasterizador
 
@@ -261,8 +261,10 @@ conformidade embutido. Consumido pelo `dpdf` no renderizador e no compressor de 
 
 1. **Quadros diferenciais por DCT no JPEG** (SOF5, SOF6, SOF13, SOF14) — exigem IDCT com
    saída assinada sem *level shift*; o plano de componente hoje é `Uint8List`.
-2. **Componentes subamostrados em codestream JPEG 2000 cru** (`j2k`) — em curso. É o caso
-   comum de `/JPXDecode` em PDF, e hoje a imagem é pulada em vez de desenhada.
+2. **`Jpeg2000DecodeOptions.resolution` quebrado** (`j2k`) — pedir resolução reduzida lança
+   `Índice fora de alcance` no decodificador **síncrono**, com ou sem ladrilhos. Bug
+   pré-existente, encontrado ao paralelizar; o buffer parece ser dimensionado com a largura
+   reduzida enquanto os ladrilhos são posicionados pela grade de referência.
 3. **Imagens inline na extração de texto** (8.9.7 + 9.10) — a extração as ignora.
 4. **Coleções `ttcf`** — reconstruídas a partir de WOFF 2.0, mas o leitor sfnt não abre
    coleção, então a fonte falha depois da conversão.

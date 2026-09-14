@@ -17,9 +17,9 @@ Future<void> main(List<String> args) async {
   final substituir = !args.contains('sem-substituicao');
   // `paginas=N` limita quantas paginas renderizar. Um diario oficial tem
   // milhares; a primeira pagina ja diz se o documento abre e desenha.
-  final limite = int.tryParse(
-          args.firstWhere((a) => a.startsWith('paginas='), orElse: () => '')
-              .replaceFirst('paginas=', '')) ??
+  final limite = int.tryParse(args
+          .firstWhere((a) => a.startsWith('paginas='), orElse: () => '')
+          .replaceFirst('paginas=', '')) ??
       100;
   Directory(saida).createSync(recursive: true);
 

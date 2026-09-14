@@ -113,8 +113,8 @@ void main() {
       // Guard case. Sharpening the sampling must not turn every gradient into
       // a staircase: an exponential function has no discontinuity, and the
       // page must show the smooth sweep, not two flat colours.
-      final function = _type4(
-          '{ dup dup }', const [0, 1], const [0, 1, 0, 1, 0, 1]);
+      final function =
+          _type4('{ dup dup }', const [0, 1], const [0, 1, 0, 1, 0, 1]);
       final shading = PdfDictionary()
         ..put(PdfName.shadingType, PdfNumber.fromInt(2))
         ..put(PdfName.colorSpace, PdfName('DeviceRGB'))

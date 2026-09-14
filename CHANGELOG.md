@@ -57,6 +57,12 @@ binaries, and targets the Dart VM, `dart2js`, and `dart2wasm`.
 
 ### Fixed
 
+- Axial and radial shadings resampled their function at 257 points before
+  handing it to the rasterizer, which builds a lookup table of up to 1024
+  entries. A function that changes colour abruptly — a type 4 `ifelse`, or a
+  type 3 stitching boundary — fell between two samples, the gap was
+  interpolated, and the page got a ramp where the document asked for an edge:
+  10 px wide on an A4 page at 300 dpi. The sampling now matches the table.
 - Prevented xref-stream rewrites from copying a stale `/Index` entry from the
   source trailer and corrupting externally produced or signed documents.
 - Rejected append mode combined with full compression with a clear error.

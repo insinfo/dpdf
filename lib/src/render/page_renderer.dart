@@ -2080,9 +2080,22 @@ class _Renderer {
     }
     final toDevice = matrix.multiply(state.ctm);
     final alpha = stroke ? state.strokeAlpha : state.fillAlpha;
+    // A axial/radial shading is a function, and the gradient is a table, so
+    // drawing one means resampling the other. The sample count has to match
+    // the table the rasterizer builds -- 1024 entries, its maximum -- because
+    // any coarser and a discontinuity in the function lands *between* two
+    // samples, gets interpolated, and reaches the page as a ramp instead of an
+    // edge. At 257 samples that ramp measured 10 px wide on an A4 page at
+    // 300 dpi; at 1024, aligned with the table, the edge comes out exact.
+    //
+    // The cost is the function evaluations, and even the slowest function
+    // (type 4, an interpreted PostScript calculator) runs at over two million
+    // evaluations a second: under a millisecond for the whole table, once per
+    // shading rather than once per pixel.
+    const sampleCount = 1024;
     final stops = <BLGradientStop>[];
-    for (var index = 0; index <= 256; index++) {
-      final offset = index / 256;
+    for (var index = 0; index < sampleCount; index++) {
+      final offset = index / (sampleCount - 1);
       try {
         final input = domainStart + offset * (domainEnd - domainStart);
         final components = function.evaluate([input]);
